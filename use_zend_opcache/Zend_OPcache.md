@@ -19,7 +19,7 @@
 ####`opcache.max_accelerated_files=4000 //最大缓存的文件数目`
 ####`opcache.save_comments=0    //不保存文件／函数的注释`
 ####`opcache.validate_timestamps = 1 //在生产环境中设为"0"`
-####`opcache.revalidate_frep = 0`
+####`opcache.revalidate_frep = 0 //检查文件更新时间间隔`
 ####`opcache.memory_consumption = 64`
 ####`opcache.interned_strings_buffer = 16`
 ####`opcache.max_accelerated_files = 4000`

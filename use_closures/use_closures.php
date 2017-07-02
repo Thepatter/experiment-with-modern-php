@@ -5,6 +5,7 @@
  * Date: 2017/7/1
  * Time: 21:19
  */
+
 $closure = function ($name) {
     /**
      * sprintf - 返回格式化的字符串
