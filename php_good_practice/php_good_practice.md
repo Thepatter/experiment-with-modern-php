@@ -53,3 +53,10 @@ DatePeriod实例是迭代器。每次迭代会产生一个DateTime实例。
 ####数据库连接和DSN
 实例化PDO类的作用是把PHP类和数据库连接起来。PDO类的构造方法有一个字符串参数，用于指定DSN(数据源名称)，提供数据库连接的详细信息。DSN由驱动器
 名称：符号，包含主机明或IP地址，端口号，数据库名，字符集
+####预处理语句
+预处理语句是 PDOStatement 实例。一般通过 PDO 实例 prepare() 方法获取预处理语句对象。这个方法第一个参数是一个SQL语句字符串，返回值是一个
+PDOStatement 对象。然后 PDOStatement 对象调用bindValue() 方法绑定各个sql语句中的占位符的值，如果要指定占位符的类型，则传入第三个参数，
+默认绑定数据为字符串。
+####查询结果
+调用预处理语句 PDOStatement 实例的execute() 方法来执行SQL语句，如果执行的是INSERT、UPDATE、DELETE 语句，调用 execute() 后结束操作。
+如果执行的是 SELECT 语句，可以调用预处理语句 fetch(), fetchAll(), fetchColumn(), fetchObject() 方法、获取查询结果。
