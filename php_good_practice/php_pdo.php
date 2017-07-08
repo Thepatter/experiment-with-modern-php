@@ -57,3 +57,16 @@ $statement->execute();
 while (($result = $statement->fetch(PDO::FETCH_ASSOC)) !== false) {
     echo $result['email'];
 }
+// 让预处理语句获取所有结果，把结果保存到关联数组中
+$result = $statement->fetchAll(PDO::FETCH_ASSOC);
+foreach ($result as $item) {
+    echo $result['email'];
+}
+// 让预处理语句获取一列，且一次获取一行，把结果保存到关联数组中
+while (($email = $statement->fetchColumn(1)) !== false) {
+    echo $email;
+}
+// 把预处理语句获取的行当成对象
+while (($result = $statement->fetchObject()) !== false) {
+    echo $result->name;
+}

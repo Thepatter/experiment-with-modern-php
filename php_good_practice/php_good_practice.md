@@ -59,4 +59,23 @@ PDOStatement 对象。然后 PDOStatement 对象调用bindValue() 方法绑定�
 默认绑定数据为字符串。
 ####查询结果
 调用预处理语句 PDOStatement 实例的execute() 方法来执行SQL语句，如果执行的是INSERT、UPDATE、DELETE 语句，调用 execute() 后结束操作。
-如果执行的是 SELECT 语句，可以调用预处理语句 fetch(), fetchAll(), fetchColumn(), fetchObject() 方法、获取查询结果。
+如果执行的是 SELECT 语句，可以调用预处理语句 fetch(), fetchAll(), fetchColumn(), fetchObject() 方法、获取查询结果。在预处理语句实例
+调用fetch() 或 fetchAll() 方法时，这个方法的第一个参数设为 PDO::FETCH_ASSOC 常量，返回一个关联数组，数组的键是数据库的列名，为 
+PDO::FETCH_NUM 常量时，返回一个键为数字的数组，数组的键是数据库列在查询结果中的索引。设为 PDO::FETCH_BOTH 常量时，返回一个既有键为列名又
+有键为数字的数组。等于合并 PDO::FETCH_ASSOC 和 PDO::FETCH_NUM， 设为 PDO::OBJ 常量时，返回一个对象，对象的属性是数据库的列名
+###事务
+把一列系数据库语句当成单个逻辑单元(具有原子性)执行。事务的一系列SQL查询要么都成功执行，要么根本不执行，事务的原子性能保证数据的一致性，安全性
+持久性。事务可以提升性能，多个查询队列，一次全部执行。把要在事务中运行的SQL语句放在PDO实例的 beginTransaction() 方法和 commit() 方法之间
+###多字节字符串
+PHP假设字符串中每个字符都是八位字符，占一个字节的内存。如果使用PHP原生的字符串函数处理包含多字节字符的 Unicode 字符串，会造成错误。应使用
+mbstring 扩展。使用 mbstring 扩展函数来处理。
+####字符编码
+一定要知道数据的字符编码，使用 UTF-8 字符编码存储数据，使用 UTF-8 字符编码输出数据。使用 mb_detect_encoding() 和 mb_convert_encoding()
+ 可以把字符串从一种字符编码转换成另一种字符编码
+####输出 UTF-8 数据
+在 php.ini 文件中设置 default_charset = "UTF-8"
+在 PHP 返回的响应中，Content-Type 首部设置 UTF-8 
+`header('Content-Type: application/json;charset=utf-8)`。在 HTML 文档头部加入 meta 标签。`<meta charset="UTF-8"/>`
+###流
+流作用是使用同意的方式处理文件、网络和数据压缩等公用同一套函数和用法的操作。流三世具有流式行为的资源对象，流可以线性读写。流为 PHP 的很多 IO
+函数提供了底层实现， 流函数提供了处理不同流资源的统一接口。
