@@ -33,3 +33,6 @@ $errstr 错误消息
 $errfile    发生错误的文件名
 $errline    发送错误的行号
 $errcontext 一个数组,执行错误发生时候可用的符号表.
+PHP 错误转换只能转换满足 php.ini 文件中的error_reporting 指令设置的错误。
+####在开发环境中处理错误和异常
+可以使用 Whoops 组件来处理错误。包名为 filp/whoops
