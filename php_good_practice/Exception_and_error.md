@@ -36,3 +36,5 @@ $errcontext 一个数组,执行错误发生时候可用的符号表.
 PHP 错误转换只能转换满足 php.ini 文件中的error_reporting 指令设置的错误。
 ####在开发环境中处理错误和异常
 可以使用 Whoops 组件来处理错误。包名为 filp/whoops
+####在生产环境中处理错误和异常
+PHP error_log() 函数可以把错误消息写入文件系统或syslog，还可以通过电子邮件发送错误消息。
