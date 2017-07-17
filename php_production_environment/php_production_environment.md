@@ -51,5 +51,70 @@ PHP 子进程.通常一个 PHP 应用有自己的一个 PHP-FPM 进程池
  `pm.max_children = 51` 这个设置任何时间点 PHP-FPM 进程池中最多能有多少个进程.这个设置没有正确的值,测试 PHP 应用,确定每个 PHP 进程需要多少
  内存,然后把这个设置设为设备可用内存能容纳的 PHP 进程总数.对大多数中小型 PHP 应用来说,每个 PHP 进程要使用5-15mb 内存.假设我们使用的设备为这个
  PHP-FPM 进程池分配了512mb 可用内存,则可以把这个设置的值设为(512 MB 总内存)/(每个进程使用10 MB) = 51个进程
- 
- 
+ `pm.start_servers = 3` PHP-FPM 启动时 PHP-FPM 进程池中立即可用的进程数.这个设置没有正确的值.对大多数中小型 PHP 应用来说,设为2或3
+ 先准备号两到三个进程,等待请求进入,不让 PHP 应用的头几个 HTTP 请求等待 PHP-FPM 初始化进程池中的进程
+ `pm.min_spare_servers = 2` PHP 应用空闲时 PHP-FPM 进程池中可以存在的进程数量最小值.这个设置的值一般与 `pm.start.servers` 设置的值一样
+ 可以用来确保新进入的 HTTP 请求无需等待 PHP-FPM 在进程池中重新初始化进程
+ `pm.max_spare_servers = 4` PHP 应用空闲时 PHP-FPM 进程池中可以存在的进程数量最大值.这个设置的值一般比 `pm.start_servers` 设置的值大
+ 用于确保新进入的 HTTP 请求无序等待 PHP-FPM 在进程池中重新初始化进程
+ `pm.max_requests = 1000` 回收进程前,PHP-FPM 进程池中各个进程最多能处理的 HTTP 请求数量.这个设置有助避免  PHP 代码内存泄露
+ `showlog = /path/to/slowlog.log` 这个设置的值是一个日志文件在文件系统中的绝对路径.这个日志文件用于记录处理时间超过 n 秒的 HTTP 请求信息,
+ 以便找出 PHP 应用的瓶颈, 进行调试. PHP-FPM 进程池所属的用户和用户组必须有这个文件的写权限.
+ `request_slowlog_timeout = 5s` 如果当前 HTTP 请求的处理时间超过指定的值,就把请求的回溯信息写入 slowlog 设置指定的日志文件.
+ 重启 PHP-FPM 主进程
+ Ubuntu `sudo service php5-fpm restart`
+ Centos `sudo systemctl restart php-fpm.service`
+ ###nginx
+ ####安装
+ Ubuntu `sudo add-apt-repository ppa:nginx/stable`, `sudo apt-get update`, `sudo apt-get install nginx`
+ Centos `sudo yum install nginx`, `sudo systemctl enable nginx.service`, `sudo systemctl start nginx.service`
+ ####虚拟主机
+ 创建应用文件目录及创建日志文件目录,修改目录权限
+ `mkdir -p /home/username/apps/example.com/current/public`
+ `mkdir -p /home/username/apps/logs`
+ `chmod -R +rx /home/deploy`
+ ####虚拟机配置文件
+ Ubuntu `etc/nginx/sites-available/example.conf`
+ CentOs `/etc/nginx/conf.d/example.conf`
+ 虚拟主机的设置
+```angular2html
+server{
+    listen 80;
+    server_name example.com;
+    index index.php
+    client_max_body_size 50m;
+    error_log /home/username/apps/logs/example.access.log;
+    access_log /home/username/apps/logs/example.access.log;
+    root /home/username/apps/example.com/current/public;
+    
+    location ~ \.php {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+    
+    location ~ \.php {
+        try_files $uri = 404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param SCRIPT_NAME $fastcgi_script_name;
+        fastcgi_index index.php
+        fastcgi_pass 127.0.0.1:9000;
+    }
+}
+```
+listen 设置 nginx 监听那个端口进入的 HTTP 请求.HTTP 流量从80端口进入, HTTPS 流量从443端口进入
+server_name 用于识别虚拟主机的域名.这个设置设为应用使用的域名,而且域名要指向服务器的 IP 地址,如果 HTTP 请求中 host 首部的值和虚拟主机中 server_name的值
+匹配,nginx 就会把这个 HTTP 请求转发给这个虚拟主机 
+index  HTTP 请求 URI 没指定文件时候的默认文件
+client_max_body_size  对这个虚拟主机来说,nginx 接受 HTTP 请求主体长度的最大值.如果请求主体的长度超过这个值 ,nginx 会返回 HTTP 4xx 响应
+error_log 这个虚拟主机错误日志文件在文件系统中路径
+access_log  这个虚拟主机访问日志文件在文件系统中路径
+root   文档根目录的路径;
+两个 location 块的作用是告诉 nginx 如何处理匹配 URL 模式的 HTTP 请求, try_files 指令查找匹配所请求 URI 的文件;如果未找到相应的文件,再查找匹配
+所请求 URI 的目录;如果也未找到相应的目录,把 HTTP 请求的 URI 重写为 /index.php,如果由查询字符串的话,还会把查询字符附加到 URL 的末尾.这个重写的
+ URL, 以及所有以 .php 结尾的 URI,都由 location ~ \.php {}管理,location ~ \.php {} 块把 HTTP 请求转发给 PHP-FPM 进程池处理.其他几行的作用
+ 是避免潜在的远程代码执行攻击.
+####符号连接
+Ubuntu 中,在 /etc/nginx/sites-enabled/目录中创建虚拟主机配置文件的符号连接
+`sudo ln -s /etc/nginx/sites-available/example.conf /etc/nginx/sites-enabled/example.conf`
+重启nginx Ubuntu `sudo service nginx restart` CentOS `sudo systemctl restart nginx.service`
