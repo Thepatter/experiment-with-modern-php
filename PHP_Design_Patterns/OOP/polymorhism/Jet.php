@@ -13,18 +13,15 @@ class Jet implements ISpeed
 {
     function slow()
     {
-        // TODO: Implement slow() method.
         return 120;
     }
     function cruise()
     {
-        // TODO: Implement cruise() method.
         return 1200;
     }
     function fast()
     {
         return 1500;
-        // TODO: Implement fast() method.
     }
 }
 $f22 = new Jet();

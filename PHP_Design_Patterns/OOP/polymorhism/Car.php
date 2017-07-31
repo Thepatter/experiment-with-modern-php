@@ -13,19 +13,16 @@ class Car implements ISpeed
 {
     function slow()
     {
-        // TODO: Implement slow() method.
         $carSlow = 15;
         return $carSlow;
     }
     function cruise()
     {
-        // TODO: Implement cruise() method.
         $carCruise = 65;
         return $carCruise;
     }
     function fast()
     {
-        // TODO: Implement fast() method.
         $carZoom = 110;
         return $carZoom;
     }
