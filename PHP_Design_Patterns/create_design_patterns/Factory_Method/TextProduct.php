@@ -15,8 +15,27 @@ class TextProduct implements Product
 
     public function getProperties()
     {
-        // TODO: Implement getProperties() method.
-        $this->mfgProduct = "This is text.";
+        // 开始heredoc格式化
+        $this->mfgProduct = <<<MAIL
+<!doctype html>
+<html>
+<head>
+<style type="text/css">
+header {
+color: #900;
+font-weight: bold;
+font-size: 24px;
+font-family: Verdana,Geneva, sans-serif;
+}
+p {
+font-family: Verdana, Geneva,sans-serif;
+font-size:12px;
+}
+</style>
+<meta charset="UTF-8"><title>Mail</title></head>
+</head>
+MAIL;
+
         return $this->mfgProduct;
     }
 }

@@ -14,8 +14,12 @@ class GraphicProduct implements Product
     private $mfgProduct;
     public function getProperties()
     {
-        // TODO: Implement getProperties() method.
-        $this->mfgProduct = "This is a graphic.<3";
+        $this->mfgProduct = "<!doctype html><html><head><meta charset='UTF-8'>";
+        $this->mfgProduct .= "<title>Map Factory</title>";
+        $this->mfgProduct .= "</head><body>";
+        $this->mfgProduct .= "<img src='Mail.png' width='500' height='500' />";
+
+        $this->mfgProduct .= "</body></html>";
         return $this->mfgProduct;
     }
 }
