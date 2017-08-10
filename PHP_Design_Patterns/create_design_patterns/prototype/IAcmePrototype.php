@@ -6,7 +6,7 @@
  * Time: 22:08
  */
 
-namespace PHP_Design_Patterns\create_design_patterns\prototype;
+//namespace PHP_Design_Patterns\create_design_patterns\prototype;
 
 
 abstract class IAcmePrototype
@@ -18,4 +18,32 @@ abstract class IAcmePrototype
 
     //dept
     abstract function setDept($orgCode);
+    abstract function getDept();
+    // name
+    public function setName($emName)
+    {
+        $this->name = $emName;
+    }
+    public function getName()
+    {
+        return $this->name;
+    }
+    // id
+    public function setId($emID)
+    {
+        $this->id = $emID;
+    }
+    public function getId()
+    {
+        return $this->id;
+    }
+    public function setPic($ePic)
+    {
+        $this->employeePic = $ePic;
+    }
+    public function getPic()
+    {
+        return $this->employeePic;
+    }
+    abstract function __clone();
 }
