@@ -6,7 +6,8 @@ git remote -v 查看主机
 
 git push [默认分支] 推送到默认分支
 
-git clone url [-b 主机名 -分支] 克隆选择分支
+git clone url [-b 分支] 克隆选择分支
+`git clone git@git.oschina.net:tenghuaguoji/wine.git -b feature/php/api win` 克隆 feature/php/api 分支
 
 #### 添加提交
 
