@@ -16,6 +16,20 @@ class Client
 
     public function __construct()
     {
-        $this->requestNow = new \experuse_interface\PHP_Design_Patterns\Structural_design_pattern\class_adapter\EuroAdapter();
+        $this->requestNow = new EuroAdapter();
+        $this->dollarRequest = new DollarCalc();
+        $euro = "&8364";
+        echo 'Euros' . $this->makeAdapterRequest($this->requestNow);
+        echo 'dollars' , $this->makeDollarRequest($this->dollarRequest);
+    }
+    // 类型提示为接口的，参数可以为实现接口类的实例
+    private function makeAdapterRequest(ITarget $req)
+    {
+        return $req->requestCalc(40,50);
+    }
+    private function makeDollarRequest(DollarCalc $req)
+    {
+        return $req->requestCalc(40, 50);
     }
 }
+$worker = new Client();
