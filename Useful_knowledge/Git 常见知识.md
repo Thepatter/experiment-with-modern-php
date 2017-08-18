@@ -58,3 +58,6 @@ git clone url [-b 分支] 克隆选择分支
 丢弃所有本地改动与提交，到服务器上获取最新的版本并将你本地分支指向它
 
 `git fetch origin` `git reset —hard origin/master`
+#### git回滚历史记录
+`git log` 会显示 `git commit` 的历史记录
+回滚历史记录 `git reset --hard 8ff24a6803173208f3e606e32dfcf82db9ac84d8` 回滚到历史提交,可以是输入前10位记录
