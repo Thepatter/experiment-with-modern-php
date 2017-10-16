@@ -1,5 +1,4 @@
 **PHP 代码块里的变量在需要时候才声明,如果提前声明而后面未用到该变量就返回了或者跳出了,**
-
 **则会导致内存额外开销.对数据类型与数据尽量进行判断,避免出现错误.**
 **调用一个函数,若没有正确返回,则返回值为 null**
 `mixed array_rand (array $array [, int $num = 1])` 函数返回的是**数组的键而非值**
@@ -11,3 +10,4 @@ $array = [false, false];
 $array = [null, null];
 empty($array); // false
 ```
+过滤数组的值http://php.net/manual/zh/function.array-filter.php
