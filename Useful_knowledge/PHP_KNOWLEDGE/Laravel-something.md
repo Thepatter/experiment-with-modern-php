@@ -36,4 +36,21 @@ Windows  下，安装 git bash
 删除旧版本相关文件夹，从新导入盒子(删除文件夹前需删除相关 homestead 版本`vagrant box remove laravel/homestead --box-version "0.6.0"`，在旧版本文件夹里运行 `vagrant destroy` 删除 homestead
 
 或者去 virtualBox 里删除虚拟机。homestead 只能存在一个，后面导入的 homestead 会覆盖前面的 homestead 配置。
+#### Composer 安装依赖问题
+`composer install` 的时候报错，无法安装依赖报错如下
+```
+ Problem 1
+    - Installation request for doctrine/instantiator 1.0.5 -> satisfiable by doctrine/instant          iator[1.0.5].
+    - doctrine/instantiator 1.0.5 requires php 7.0 -> your PHP version (7.0.13) does not sati          sfy that requirement.
+  Problem 2
+    - Installation request for phpunit/phpunit-mock-objects 4.0.4 -> satisfiable by phpunit/p          hpunit-mock-objects[4.0.4].
+    - phpunit/phpunit-mock-objects 4.0.4 requires php 7.0 -> your PHP version (7.0.13) does n          ot satisfy that requirement.
+  Problem 3
+    - doctrine/instantiator 1.0.5 requires php 7.0 -> your PHP version (7.0.13) does not sati          sfy that requirement.
+    - phpspec/prophecy v1.7.2 requires doctrine/instantiator 1.0.5 -> satisfiable by doctrine          /instantiator[1.0.5].
+    - Installation request for phpspec/prophecy v1.7.2 -> satisfiable by phpspec/prophecy[v1.          7.2].
+```
+__原因：是安装依赖的时候几个包依赖的包 php 版本不对，无法安装。__
+__解决: 分别看每个 problem 的问题，在 composer.lock 文件中，找到对应包的 require 中需要的包的环境，去 packagist 里查看该包过往版本的。修改包的版本以使用服务器的配置__
+
 
