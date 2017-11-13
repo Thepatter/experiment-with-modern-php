@@ -1,13 +1,13 @@
 
 
-##Homestead 相关
+## Homestead 相关
 
-###laravel 官方Homestead环境安装
+### laravel 官方Homestead环境安装
 1.下载和导入 Homestead Box 虚拟机盒子
 2.安装 Git, 为下载 Homestead 管理脚本做准备
 3.使用 Git，下载 Homestead 管理脚本
 
-####1 下载和导入 Homestead Box
+#### 1 下载和导入 Homestead Box
 
 下载 url http://download.fsdhub.com/lt-homestead-3-0-0-2017082400.zip
 
@@ -19,7 +19,7 @@ Mac 下，通过安装 Xcode 命令来安装 Git `xcode-select --install`
 
 Windows  下，安装 git bash
 
-####3. 下载 Homestead 管理脚本
+#### 3. 下载 Homestead 管理脚本
 
 国内定制化 Homestead 脚本（Composr 加速，配置了 Composer 中国全量镜像，集成 heroku，集成Yarn，为 Yarn 加了淘宝镜像加速，使用 CNPM 对 NPM 加速，移除了每一次 provision 时 composer self-update）
 
@@ -36,21 +36,22 @@ Windows  下，安装 git bash
 删除旧版本相关文件夹，从新导入盒子(删除文件夹前需删除相关 homestead 版本`vagrant box remove laravel/homestead --box-version "0.6.0"`，在旧版本文件夹里运行 `vagrant destroy` 删除 homestead
 
 或者去 virtualBox 里删除虚拟机。homestead 只能存在一个，后面导入的 homestead 会覆盖前面的 homestead 配置。
-#### Composer 安装依赖问题
+### Composer 安装依赖问题
 `composer install` 的时候报错，无法安装依赖报错如下
 ```
  Problem 1
-    - Installation request for doctrine/instantiator 1.0.5 -> satisfiable by doctrine/instant          iator[1.0.5].
-    - doctrine/instantiator 1.0.5 requires php 7.0 -> your PHP version (7.0.13) does not sati          sfy that requirement.
+    - Installation request for doctrine/instantiator 1.0.5 -> satisfiable by doctrine/instantiator[1.0.5].
+    - doctrine/instantiator 1.0.5 requires php 7.0 -> your PHP version (7.0.13) does not satisfy that requirement.
   Problem 2
-    - Installation request for phpunit/phpunit-mock-objects 4.0.4 -> satisfiable by phpunit/p          hpunit-mock-objects[4.0.4].
-    - phpunit/phpunit-mock-objects 4.0.4 requires php 7.0 -> your PHP version (7.0.13) does n          ot satisfy that requirement.
+    - Installation request for phpunit/phpunit-mock-objects 4.0.4 -> satisfiable by phpunit/phpunit-mock-objects[4.0.4].
+    - phpunit/phpunit-mock-objects 4.0.4 requires php 7.0 -> your PHP version (7.0.13) does not satisfy that requirement.
   Problem 3
-    - doctrine/instantiator 1.0.5 requires php 7.0 -> your PHP version (7.0.13) does not sati          sfy that requirement.
-    - phpspec/prophecy v1.7.2 requires doctrine/instantiator 1.0.5 -> satisfiable by doctrine          /instantiator[1.0.5].
-    - Installation request for phpspec/prophecy v1.7.2 -> satisfiable by phpspec/prophecy[v1.          7.2].
+    - doctrine/instantiator 1.0.5 requires php 7.0 -> your PHP version (7.0.13) does not satisfy that requirement.
+    - phpspec/prophecy v1.7.2 requires doctrine/instantiator 1.0.5 -> satisfiable by doctrine/instantiator[1.0.5].
+    - Installation request for phpspec/prophecy v1.7.2 -> satisfiable by phpspec/prophecy[v1.7.2].
 ```
 __原因：是安装依赖的时候几个包依赖的包 php 版本不对，无法安装。__
+
 __解决: 分别看每个 problem 的问题，在 composer.lock 文件中，找到对应包的 require 中需要的包的环境，去 packagist 里查看该包过往版本的。修改包的版本以使用服务器的配置__
 
 
