@@ -53,5 +53,47 @@ Windows  下，安装 git bash
 __原因：是安装依赖的时候几个包依赖的包 php 版本不对，无法安装。__
 
 __解决: 分别看每个 problem 的问题，在 composer.lock 文件中，找到对应包的 require 中需要的包的环境，去 packagist 里查看该包过往版本的。修改包的版本以使用服务器的配置__
-
+### windows 环境下 Homestead 前端流安装问题
+直接 `yarn install --no-bin-links` 安装报错
+```
+error /home/vagrant/Code/larabbs/node_modules/node-sass: Command failed.
+Exit code: 139
+Command: sh
+Arguments: -c node scripts/build.js
+Directory: /home/vagrant/Code/larabbs/node_modules/node-sass
+Output:
+Binary found at /home/vagrant/Code/larabbs/node_modules/node-sass/vendor/linux-x64-48/binding.node
+Testing binary
+Segmentation fault (core dumped)
+info Visit https://yarnpkg.com/en/docs/cli/install for documentation about this command.
+```
+直接 `yarn install` 安装则报错
+```
+error /home/vagrant/Code/larabbs/node_modules/node-sass: Command failed.
+Exit code: 139
+Command: sh
+Arguments: -c node scripts/build.js
+Directory: /home/vagrant/Code/larabbs/node_modules/node-sass
+Output:
+Binary found at /home/vagrant/Code/larabbs/node_modules/node-sass/vendor/linux-x64-48/binding.node
+Testing binary
+Segmentation fault (core dumped)
+info Visit https://yarnpkg.com/en/docs/cli/install for documentation about this command.
+```
+#### 解决方案
+1 删除 node_modules 文件夹与 yarn.lock 文件
+2 设置淘宝镜像 `yarn config set registry https://registry.npm.taobao.org`
+3 安装 `yarn install --no-bin-links`
+4 修改 package.json 文件
+```
+"scripts": {
+        "dev": "npm run development",
+        "development": "NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+        "watch": "NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+        "watch-poll": "npm run watch -- --watch-poll",
+        "hot": "NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+        "prod": "npm run production",
+        "production": "NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
+    },
+```
 
