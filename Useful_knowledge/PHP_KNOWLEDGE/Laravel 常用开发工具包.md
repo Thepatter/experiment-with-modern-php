@@ -183,3 +183,240 @@ function active_class($condition, $activeClass = 'active', $inactiveClass = '')
 6. if_uri_pattern() - 判断当前的 url 是否含有指定的字符；
 
 文档: https://getbootstrap.com/docs/3.3/components/#navbar
+
+### 编辑器 Simditor
+
+1.下载 https://github.com/mycolorway/simditor/releases/download/v2.3.6/simditor-2.3.6.zip
+
+​    文档: http://simditor.tower.im/docs/doc-usage.html
+
+2.集成到项目中
+
+​	1.新建文件夹 `resources/assets/editor/css`
+
+​				`resources/assets/editor/js`
+
+​	    将下载的 `simditor.css` 放置于 `resources/assets/editor/css` 文件夹,
+
+​	    将 `hotkeys.js` , `module.js` , `simditor.js` , `uploader.js` ,放置于 `resources/assets/editor/js`
+
+ 2.  修改 Mix 配置信息,将编辑器的 CSS 和 JS 文件复制到 `public` 文件夹下,使用 Mix 的 `copyDirectory`
+
+     方法.
+
+     ```php
+     mix.js('resources/assets/js/app.js', 'public/js')
+        .sass('resources/assets/sass/app.scss', 'public/css')
+        .copyDirectory('resources/assets/editor/js', 'public/js')
+        .copyDirectory('resources/assets/editor/css', 'public/css')
+        ;
+     ```
+
+   3.重启 `npm run watch-poll`
+
+4. 主要布局文件中种下锚点 `styles` 和 `scripts`
+
+   ```php+HTML
+   <!-- Styles -->
+       <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+       @yield('styles')
+   </head>
+
+   <body>
+   .
+   .
+   .
+       <!-- Scripts -->
+       <script src="{{ asset('js/app.js') }}"></script>
+       @yield('scripts')
+
+   </body>
+   </html>
+
+   ```
+
+5. 页面调用:
+
+   ```html
+   @section('styles')
+       <link rel="stylesheet" type="text/css" href="{{ asset('css/simditor.css') }}">
+   @stop
+
+   @section('scripts')
+       <script type="text/javascript"  src="{{ asset('js/module.js') }}"></script>
+       <script type="text/javascript"  src="{{ asset('js/hotkeys.js') }}"></script>
+       <script type="text/javascript"  src="{{ asset('js/uploader.js') }}"></script>
+       <script type="text/javascript"  src="{{ asset('js/simditor.js') }}"></script>
+
+       <script>
+       $(document).ready(function(){
+           var editor = new Simditor({
+               textarea: $('#editor'),
+           });
+       });
+       </script>
+
+   @stop
+   ```
+
+   编辑器图片上传:
+
+   JS 脚本调用
+
+   ```js
+   @section('scripts')
+       <script type="text/javascript"  src="{{ asset('js/module.js') }}"></script>
+       <script type="text/javascript"  src="{{ asset('js/hotkeys.js') }}"></script>
+       <script type="text/javascript"  src="{{ asset('js/uploader.js') }}"></script>
+       <script type="text/javascript"  src="{{ asset('js/simditor.js') }}"></script>
+
+       <script>
+       $(document).ready(function(){
+           var editor = new Simditor({
+               textarea: $('#editor'),
+               upload: {
+                   url: '{{ route('topics.upload_image') }}',
+                   params: { _token: '{{ csrf_token() }}' },
+                   fileKey: 'upload_file',
+                   connectionCount: 3,
+                   leaveConfirm: '文件上传中，关闭此页面将取消上传。'
+               },
+               pasteImage: true,
+           });
+       });
+       </script>
+
+   @stop
+   ```
+
+   参数含义:
+
+   `pasteImage` -- 设定是否支持图片黏贴上传，这里我们使用 true 进行开启；
+
+   `url`-- 处理上传图片的 URL
+
+   `params` 表单提交的参数，Laravel 的 POST 请求必须带防止 CSRF 跨站请求伪造的 `_token` 参数；
+
+   `fileKey`  是服务器端获取图片的键值，我们设置为 `upload_file`;
+
+   `connectionCount` -- 最多只能同时上床 3 张图片
+
+   `leaveConfirm` 上传过程中,用户关闭页面时的提醒
+
+   响应参数
+
+   ```json
+   {
+     "success": true/false,
+     "msg": "error message", # optional
+     "file_path": "[real file path]"
+   }
+   ```
+
+   ### HTMLPurifier for Laravel 5 html 客户端输入过滤包
+
+   1.安装 `composer require "mews/purifier:~2.0"`
+
+   2.配置 `php artisan vendor:publish --provider="Mews\Purifier\PurifierServiceProvider"`
+
+   ```php
+   <?php
+
+   return [
+       'encoding'      => 'UTF-8',
+       'finalize'      => true,
+       'cachePath'     => storage_path('app/purifier'),
+       'cacheFileMode' => 0755,
+       'settings'      => [
+           'user_topic_body' => [
+               'HTML.Doctype'             => 'XHTML 1.0 Transitional',
+               'HTML.Allowed'             => 'div,b,strong,i,em,a[href|title],ul,ol,ol[start],li,p[style],br,span[style],img[width|height|alt|src],*[style|class],pre,hr,code,h2,h3,h4,h5,h6,blockquote,del,table,thead,tbody,tr,th,td',
+               'CSS.AllowedProperties'    => 'font,font-size,font-weight,font-style,margin,width,height,font-family,text-decoration,padding-left,color,background-color,text-align',
+               'AutoFormat.AutoParagraph' => true,
+               'AutoFormat.RemoveEmpty'   => true,
+           ],
+       ],
+   ];
+   ```
+
+   配置里的 `user_topic_body` 是为话题内容定制,配合 `clean()` 方法使用
+
+   `$topic->body = clean($topic->body, 'user_topic_body')`
+
+   3. 使用在数据入库前进行过滤
+
+      ```php
+      <?php
+      namespace App\Observers;
+      use App\Models\Topic;
+      class TopicObserver
+      {
+        	public function saving(Topic $topic)
+        	{
+            	$topic->body = clean($topic->body, 'user_topic_body');
+            	$topic->excerpt = make_excerpt($topic->body);
+        	}
+      }
+      ```
+
+### PHP HTTP 请求套件
+
+1. 安装 `composer require "guzzlehttp/guzzle:~6.3"`
+
+2. 文档 http://docs.guzzlephp.org/en/stable/
+
+3. 使用 `use GuzzleHttp\Client`
+
+4. DEMO
+
+   ```php
+   $client = new GuzzleHttp\Client();
+   $res = $client->request('GET', 'https://api.github.com/user', [
+       'auth' => ['user', 'pass']
+   ]);
+   echo $res->getStatusCode();
+   // "200"
+   echo $res->getHeader('content-type');
+   // 'application/json; charset=utf8'
+   echo $res->getBody();
+   // {"type":"User"...'
+
+   // Send an asynchronous request.
+   $request = new \GuzzleHttp\Psr7\Request('GET', 'http://httpbin.org');
+   $promise = $client->sendAsync($request)->then(function ($response) {
+       echo 'I completed! ' . $response->getBody();
+   });
+   $promise->wait();
+   ```
+
+   ​
+
+5. 请求百度翻译接口
+
+```PHP
+// 实例化 HTTP 客户端
+$http = new Client;
+$api = 'http://api.fanyi.baidu.com/api/trans/vip/translate?';
+// 生成 URL-encode 之后的请求字符串
+$query = http_build_query([
+            "q"     =>  $text,
+            "from"  => "zh",
+            "to"    => "en",
+            "appid" => $appid,
+            "salt"  => $salt,
+            "sign"  => $sign,
+        ]);
+// 发送 HTTP Get 请求
+$response = $http->get($api.$query);
+```
+
+### redis 队列视图话工具 horizon
+
+1.安装 `composer require "laravel/horizon:~1.0"`
+
+2.配置 `php artisan vendor:publish --provider="Laravel\Horizon\HorizonServiceProvider"`
+
+3.浏览器访问 http://larabbs.one.test/horizon/dashboard
+
+4.horzion 是一个监控程序,需要常驻运行, 启动 `php artisan horizon`
+
