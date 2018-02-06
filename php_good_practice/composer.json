@@ -1,7 +1,0 @@
-{
-    "require": {
-        "filp/whoops": "^2.1",
-        "monolog/monolog": "^1.23",
-        "swiftmailer/swiftmailer": "^5.3"
-    }
-}
