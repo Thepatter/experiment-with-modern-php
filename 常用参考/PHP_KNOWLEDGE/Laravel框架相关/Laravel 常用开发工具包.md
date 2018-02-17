@@ -1,4 +1,4 @@
-                                                                                                                                                                                                                                                                                                                      ## Laravel 常用开发工具包
+                                                                                                                                                                                                                                                                                                                      ____## Laravel 常用开发工具包
 ### 测试友好输出工具包 
 
 ### `composer require --dev codedungeon/phpunit-result-printer`
@@ -420,3 +420,11 @@ $response = $http->get($api.$query);
 
 4.horzion 是一个监控程序,需要常驻运行, 启动 `php artisan horizon`
 
+### laravel migration 修改数据表字段的属性
+```php
+Schema::table('users', function (Blueprint $table) {
+    $table->string('phone')->nullable()->unique()->after('name');
+    $table->string('email')->nullable()->change();
+});
+```
+`composer require doctrine/dbal`
