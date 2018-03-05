@@ -25,6 +25,7 @@ Windows  下，安装 git bash
 
 `git clone https://git.coding.net/summerblue/homestead.git Homestead`
 
+生成 key `ssh-keygen -t rsa -C "your_email@example.com"`
 检出需要的 Homestead 版本 `git checkout v5.4.0`  并初始化 `bash init.sh` 后，生成 Homestead.yaml 文件为 Homestead 虚拟机配置文件（虚拟机设置，SSH 密钥登陆设置，共享文件夹，站点，数据库，自定义变量，**每次修改该文件后需要运行 `vagant provision && vagrant reload`）、after.sh（每一次 Homestead 盒子重置后 `vagrant provision` 会调用的 shell 脚本文件）、aliases（每一次 Homestead 盒子重置后`vagrant provison`，会被替换至虚拟机的`~/.bash_aliases` 文件中，aliases 放一些快捷命令)
 
 ### 启动和运行 vagrant
