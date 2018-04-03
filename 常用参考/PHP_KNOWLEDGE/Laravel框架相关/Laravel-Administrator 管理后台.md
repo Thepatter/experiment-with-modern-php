@@ -1,0 +1,252 @@
+### Laravel-Administrator 管理后台
+
+* 安装：`composer require "summer/administrator:~1.1"`
+
+* 发布资源文件：`php artisan vendor:publish --provider="Frozennode\Administrator\AdministratorServiceProvider"`
+
+  生成 `config/administrator.php` 配置文件和 `public/packages/summerblue/administrator` 前端资源文件
+
+* 配置后台 `config/administrator.php`
+
+  ```php
+  <?php
+
+  return [
+       // 后台的 URI 入口，
+       'uri' => 'admin',
+       // 后台专属域名，没有为空
+       'domain' => '',
+       // 应用名称，在页面标题和左上角站点名称处显示
+       'title' => env('APP_NAME', 'Laravel'),
+       // 模型配置信息文件存放目录
+       'model_config_path' => config_path('administrator');
+       // 配置信息文件存放目录
+       'settings_config_path' => config_path('administrator/settings');
+       /*
+       * 后台菜单数组，多维数组渲染结果为多级嵌套菜单。
+       *
+       * 数组里的值有三种类型：
+       * 1. 字符串 —— 子菜单的入口，不可访问；
+       * 2. 模型配置文件 —— 访问 `model_config_path` 目录下的模型文件，如 `users` 访问的是 `users.php` 模型配置文件；
+       * 3. 配置信息 —— 必须使用前缀 `settings.`，对应 `settings_config_path` 目录下的文件，如：默认设置下，
+       *              `settings.site` 访问的是 `administrator/settings/site.php` 文件
+       * 4. 页面文件 —— 必须使用前缀 `page.`，如：`page.pages.analytics` 对应 `administrator/pages/analytics.php`
+       *               或者是 `administrator/pages/analytics.blade.php` ，两种后缀名皆可
+       *
+       * 示例：
+       *  [
+       *      'users',
+       *      'E-Commerce' => ['collections', 'products', 'product_images', 'orders'],
+       *      'Settings'  => ['settings.site', 'settings.ecommerce', 'settings.social'],
+       *      'Analytics' => ['E-Commerce' => 'page.pages.analytics'],
+       *  ]
+       */
+      'menu' => [
+          '用户与权限' => [
+              'users',
+          ],
+      ],
+      /*
+       * 权限控制的回调函数。
+       *
+       * 此回调函数需要返回 true 或 false ，用来检测当前用户是否有权限访问后台。
+       * `true` 为通过，`false` 会将页面重定向到 `login_path` 选项定义的 URL 中。
+       */
+       'permission' => function () {
+           // 只要是能管理内容的用户，就允许访问后台
+           return Auth::check() && Auth::user()->can('manage_contents');
+       },
+       /*
+       * 使用布尔值来设定是否使用后台主页面。
+       *
+       * 如值为 `true`，将使用 `dashboard_view` 定义的视图文件渲染页面；
+       * 如值为 `false`，将使用 `home_page` 定义的菜单条目来作为后台主页。
+       */
+      'use_dashboard' => false,
+
+      // 设置后台主页视图文件，由 `use_dashboard` 选项决定
+      'dashboard_view' => '',
+
+      // 用来作为后台主页的菜单条目，由 `use_dashboard` 选项决定，菜单指的是 `menu` 选项
+      'home_page' => 'users',
+
+      // 右上角『返回主站』按钮的链接
+      'back_to_site_path' => '/',
+
+      // 当选项 `permission` 权限检测不通过时，会重定向用户到此处设置的路径
+      'login_path' => 'login',
+
+      // 允许在登录成功后使用 Session::get('redirect') 将用户重定向到原本想要访问的后台页面
+      'login_redirect_key' => 'redirect',
+
+      // 控制模型数据列表页默认的显示条目
+      'global_rows_per_page' => 20,
+
+      // 可选的语言，如果不为空，将会在页面顶部显示『选择语言』按钮
+      'locales' => [],
+  ];
+  ```
+
+  permission -- 生产环境中，谨慎定义权限
+
+  menus -- 后台管理菜单，后面新增 Model 管理时，将会频繁修改此选项
+
+* 创建文件夹：`Administrator` 会检测 `settings_config_path` 和 `model_config_path` 选项目录是否能正常访问，否则会报错 `mkdir config/administrator config/administrator/settinfs`
+
+* 导航入口：新增管理后台导航入口，需要判断权限
+
+  ```php
+  @can('manage_contents')
+   	<li>
+   		<a href="{{ url(config('administrator.uri')) }}">
+   			<span class="glyphicon glyphicon-dashboard" aria-hidden="true"></span>
+             	 管理后台
+           </a>
+      </li>
+  @endcan
+  ```
+
+### 管理后台 - 用户
+
+* 模型配置信息：Administrator 的运行机制是通过解析模型配置信息来生成后台，每一个模型配置文件对应一个数据模型，同时也对应一个页面
+
+* 配置信息与后台布局：配置信息主要由三个布局选项，再加上其他如数据模型，权限控制，表单验证规则等选项构成
+
+* 布局选项：三个布局选项分别是：
+
+  1：数据表格 -- 对应选项 `columns`,用来列表数据，支持分页和批量删除；
+
+  2：模型表单 -- 对应选项 `edit_fields` ，用来新建和编辑模型数据；
+
+  3：数据过滤 -- 对应选项 `filters` ,与数据表格实时响应的表单，用来筛选数据
+
+  ![](C:\Users\76073\Pictures\数据表格.png)
+
+![](C:\Users\76073\Pictures\模型表单.png)
+
+* 必填选项
+
+  1：title -- 标题设置
+
+  2：single -- 模型单数，用作新建按钮的命名如新建 【新建 $single】
+
+  3:   model -- 数据模型，用作数据的 CRUD
+
+* 用户模型配置 users
+
+  `config/administrator/users.php`
+
+  ```php
+  <?php
+
+  use App\Models\User;
+
+  return [
+      // 页面标题
+      'title'   => '用户',
+
+      // 模型单数，用作页面『新建 $single』
+      'single'  => '用户',
+
+      // 数据模型，用作数据的 CRUD
+      'model'   => User::class,
+
+      // 设置当前页面的访问权限，通过返回布尔值来控制权限。
+      // 返回 True 即通过权限验证，False 则无权访问并从 Menu 中隐藏
+      'permission'=> function()
+      {
+          return Auth::user()->can('manage_users');
+      },
+
+      // 字段负责渲染『数据表格』，由无数的『列』组成，
+      'columns' => [
+
+          // 列的标示，这是一个最小化『列』信息配置的例子，读取的是模型里对应
+          // 的属性的值，如 $model->id
+          'id',
+
+          'avatar' => [
+              // 数据表格里列的名称，默认会使用『列标识』
+              'title'  => '头像',
+
+              // 默认情况下会直接输出数据，你也可以使用 output 选项来定制输出内容
+              'output' => function ($avatar, $model) {
+                  return empty($avatar) ? 'N/A' : '<img src="'.$avatar.'" width="40">';
+              },
+
+              // 是否允许排序
+              'sortable' => false,
+          ],
+
+          'name' => [
+              'title'    => '用户名',
+              'sortable' => false,
+              'output' => function ($name, $model) {
+                  return '<a href="/users/'.$model->id.'" target=_blank>'.$name.'</a>';
+              },
+          ],
+
+          'email' => [
+              'title' => '邮箱',
+          ],
+
+          'operation' => [
+              'title'  => '管理',
+              'sortable' => false,
+          ],
+      ],
+
+      // 『模型表单』设置项
+      'edit_fields' => [
+          'name' => [
+              'title' => '用户名',
+          ],
+          'email' => [
+              'title' => '邮箱',
+          ],
+          'password' => [
+              'title' => '密码',
+
+              // 表单使用 input 类型 password
+              'type' => 'password',
+          ],
+          'avatar' => [
+              'title' => '用户头像',
+
+              // 设置表单条目的类型，默认的 type 是 input
+              'type' => 'image',
+
+              // 图片上传必须设置图片存放路径
+              'location' => public_path() . '/uploads/images/avatars/',
+          ],
+          'roles' => [
+              'title'      => '用户角色',
+
+              // 指定数据的类型为关联模型
+              'type'       => 'relationship',
+
+              // 关联模型的字段，用来做关联显示
+              'name_field' => 'name',
+          ],
+      ],
+
+      // 『数据过滤』设置
+      'filters' => [
+          'id' => [
+
+              // 过滤表单条目显示名称
+              'title' => '用户 ID',
+          ],
+          'name' => [
+              'title' => '用户名',
+          ],
+          'email' => [
+              'title' => '邮箱',
+          ],
+      ],
+  ]
+  ```
+
+  ​
+
+   
