@@ -247,6 +247,172 @@
   ]
   ```
 
-  ​
+### 管理后台-角色权限
 
-   
+* 新增 menu 选项，新增 roles 和 permission
+
+  `config/administrator.php`
+
+  ```php
+  return [
+      'menu' => [
+          '用户与权限' => [
+              'users',
+              'roles',
+              'permissions',
+          ]
+      ]
+  ]
+  ```
+
+* 新建模型配置，新建角色配置文件 `config/administrator/roles.php`
+
+  ```php
+  <?php
+
+  use Spatie\Permission\Models\Role;
+
+  return [
+      'title'   => '角色',
+      'single'  => '角色',
+      'model'   => Role::class,
+
+      'permission'=> function()
+      {
+          return Auth::user()->can('manage_users');
+      },
+
+      'columns' => [
+          'id' => [
+              'title' => 'ID',
+          ],
+          'name' => [
+              'title' => '标识'
+          ],
+          'permissions' => [
+              'title'  => '权限',
+              'output' => function ($value, $model) {
+                  $model->load('permissions');
+                  $result = [];
+                  foreach ($model->permissions as $permission) {
+                      $result[] = $permission->name;
+                  }
+
+                  return empty($result) ? 'N/A' : implode($result, ' | ');
+              },
+              'sortable' => false,
+          ],
+          'operation' => [
+              'title'  => '管理',
+              'output' => function ($value, $model) {
+                  return $value;
+              },
+              'sortable' => false,
+          ],
+      ],
+
+      'edit_fields' => [
+          'name' => [
+              'title' => '标识',
+          ],
+          'permissions' => [
+              'type' => 'relationship',
+              'title' => '权限',
+              'name_field' => 'name',
+          ],
+      ],
+
+      'filters' => [
+          'id' => [
+              'title' => 'ID',
+          ],
+          'name' => [
+              'title' => '标识',
+          ]
+      ],
+
+      // 新建和编辑时的表单验证规则
+      'rules' => [
+          'name' => 'required|max:15|unique:roles,name',
+      ],
+
+      // 表单验证错误时定制错误消息
+      'messages' => [
+          'name.required' => '标识不能为空',
+          'name.unique' => '标识已存在',
+      ]
+  ];
+  ```
+
+* 新建权限控制的配置信息 `config/administrator/permissions.php`
+
+  ```php
+  <?php
+
+  use Spatie\Permission\Models\Permission;
+
+  return [
+      'title'   => '权限',
+      'single'  => '权限',
+      'model'   => Permission::class,
+
+      'permission' => function () {
+          return Auth::user()->can('manage_users');
+      },
+
+      // 对 CRUD 动作的单独权限控制，通过返回布尔值来控制权限。
+      'action_permissions' => [
+          // 控制『新建按钮』的显示
+          'create' => function ($model) {
+              return true;
+          },
+          // 允许更新
+          'update' => function ($model) {
+              return true;
+          },
+          // 不允许删除
+          'delete' => function ($model) {
+              return false;
+          },
+          // 允许查看
+          'view' => function ($model) {
+              return true;
+          },
+      ],
+
+      'columns' => [
+          'id' => [
+              'title' => 'ID',
+          ],
+          'name' => [
+              'title'    => '标示',
+          ],
+          'operation' => [
+              'title'    => '管理',
+              'sortable' => false,
+          ],
+      ],
+
+      'edit_fields' => [
+          'name' => [
+              'title' => '标示（请慎重修改）',
+
+              // 表单条目标题旁的『提示信息』
+              'hint' => '修改权限标识会影响代码的调用，请不要轻易更改。'
+          ],
+          'roles' => [
+              'type' => 'relationship',
+              'title' => '角色',
+              'name_field' => 'name',
+          ],
+      ],
+
+      'filters' => [
+          'name' => [
+              'title' => '标示',
+          ],
+      ],
+  ];
+  ```
+
+  ​
