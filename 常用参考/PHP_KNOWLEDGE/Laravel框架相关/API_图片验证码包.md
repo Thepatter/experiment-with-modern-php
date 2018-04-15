@@ -26,3 +26,4 @@ public function store(CaptchaRequest $request, CaptchaBuilder $captchaBuilder)
 
         return $this->response->array($result)->setStatusCode(201);
     }
+$captcha->inline() 得到 base64 格式字符串 img
