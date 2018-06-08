@@ -4,6 +4,15 @@
 
 ubuntu >= 16.04, jdk8
 
+#### 安装 JDK-8
+```
+sudo add-apt-repository -y ppa:webupd8team/java
+sudo apt-get update
+echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections
+sudo apt-get -y install oracle-java8-installer
+
+```
 #### 安装 Elasticsearch
 
 #####安装 Elasticsearch
@@ -121,7 +130,7 @@ __测试配置文件：__
 
 ##### 安装 X-PACK:
 
-`/usr/share/Logstash/logstash-plugin install x-pack`
+`/usr/share/Logstash/bin/logstash-plugin install x-pack`
 
 __启动并指定配置：__
 
