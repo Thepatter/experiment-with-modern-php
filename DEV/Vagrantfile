@@ -14,7 +14,7 @@ config.vm.define :php do |php|
     # 设置主机与虚拟机的共享目录
     php.vm.synced_folder "C:/Users/home/code", "/home/vagrant/code"
     v.name = "php"
-    v.memory = "2048"
+    v.memory = "4096"
     v.cpus = "6"
   end
 end
@@ -23,43 +23,34 @@ config.vm.define :db do |db|
   db.vm.network :private_network, ip: "192.168.10.101"
   db.vm.provider "virtualbox" do |v|
       v.name = "db"
-      v.memory = "2048"
-      v.cpus = "6"
-  end
-end
-config.vm.define :nginx do |nginx|
-  nginx.vm.hostname = "nginx"
-  nginx.vm.network "private_network", ip: "192.168.10.102"
-  nginx.vm.provider "virtualbox" do |v|
-      v.name = "nginx"
-      v.memory = "2048"
-      v.cpus = "6"
-  end
-end
-config.vm.define :elasticmaster do |nginx|
-  nginx.vm.hostname = "elasticmaster"
-  nginx.vm.network "private_network", ip: "192.168.10.103"
-  nginx.vm.provider "virtualbox" do |v|
-      v.name = "elasticmaster"
       v.memory = "4096"
       v.cpus = "6"
   end
 end
 config.vm.define :elasticnode1 do |nginx|
-  nginx.vm.hostname = "elasticmaster"
-  nginx.vm.network "private_network", ip: "192.168.10.104"
-  nginx.vm.provider "elasticnode1" do |v|
+  nginx.vm.hostname = "elasticnode1"
+  nginx.vm.network "private_network", ip: "192.168.10.103"
+  nginx.vm.provider "virtualbox" do |v|
       v.name = "elasticnode1"
-      v.memory = "2048"
+      v.memory = "4096"
       v.cpus = "6"
   end
 end
 config.vm.define :elasticnode2 do |nginx|
   nginx.vm.hostname = "elasticnode2"
+  nginx.vm.network "private_network", ip: "192.168.10.104"
+  nginx.vm.provider "elasticnode2" do |v|
+      v.name = "elasticnode1"
+      v.memory = "4096"
+      v.cpus = "6"
+  end
+end
+config.vm.define :elasticnode3 do |nginx|
+  nginx.vm.hostname = "elasticnode3"
   nginx.vm.network "private_network", ip: "192.168.10.105"
   nginx.vm.provider "virtualbox" do |v|
-      v.name = "elasticnode2"
-      v.memory = "2048"
+      v.name = "elasticnode3"
+      v.memory = "4096"
       v.cpus = "6"
   end
 end
