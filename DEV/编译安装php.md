@@ -7,20 +7,27 @@
 
 #### 安装编译软件库
 
-* `sudo apt-get install make`
-* `sudo apt-get install autoconf`
-* `sudo apt-get install openssl`
-* `sudo apt-get install curl`
-* `sudo apt-get install socket`
-* `sudo apt-get install libmcrypt-dev`
-* `sudo apt-get install libpng-dev `
-* `sudo apt-get install libjpeg-dev `
-* `sudo apt-get install libcurl4-gnutls-dev `
-* `sudo apt-get install gcc`
-* `sudo apt-get install cc`
-* `sudo apt-get install libxml2`
-* `sudo apt-get install libxml2-dev`
-* `sudo apt-get install -y libssl-dev`
+```
+  sudo apt-get install -y \
+  build-essential \
+  gcc \
+  g++ \
+  autoconf \
+  libiconv-hook-dev \
+  libmcrypt-dev \
+  libxml2-dev \
+  libmysqlclient-dev \
+  libcurl4-openssl-dev \
+  libjpeg8-dev \
+  libfreetype6-dev \
+  openssl \
+  curl \
+  libpng12-dev \
+  libjpeg-dev \
+  libcurl4-gnutls-dev \
+  libxml2 \
+  libssl-dev \
+```
 
 #### 编译配置参数
 
@@ -92,7 +99,7 @@ alias php-fpm='/usr/local/php/sbin/php-fpm'
 
 ```
 cp php.ini-development /usr/local/php7.2/lib/php.ini
- 
+备注：拷贝到 （/etc/php/php.ini cli 也能读取) 
 cp /usr/local/php7.2/etc/php-fpm.conf.default /usr/local/php7.2/etc/php-fpm.conf
  
 cp /usr/local/php7.2/etc/php-fpm.d/www.conf.default /usr/local/php7.2/etc/php-fpm.d/www.conf
@@ -122,7 +129,7 @@ pm.max_requests = 5000
 
 创建 php 运行时目录：
 
-`make /run/php`
+`mkdir /run/php`
 
 修改`php.ini` 配置
 
@@ -153,8 +160,6 @@ php -h 获取帮助
  --ri <name>      Show configuration for extension <name>.
  --ini            Show configuration file names
 ```
-
-
 
 #### pecl 扩展编译安装（以 swoole 为例子）
 
@@ -189,5 +194,9 @@ php -h 获取帮助
   sudo make
   sudo make install
   ```
+
+* 修改 php.ini 扩展增加扩展 so
+
+  `extension=swoole.so`
 
   
