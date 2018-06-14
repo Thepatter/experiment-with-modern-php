@@ -53,6 +53,7 @@ sudo ./configure  --prefix=/usr/local/php7.2 \
 --enable-soap \
 --enable-sockets \
 --enable-sysvsem \
+--enable-sysvmsg \
 --enable-xml \
 --enable-zip \
 --enable-ctype \
@@ -99,7 +100,7 @@ alias php-fpm='/usr/local/php/sbin/php-fpm'
 
 ```
 cp php.ini-development /usr/local/php7.2/lib/php.ini
-备注：拷贝到 （/etc/php/php.ini cli 也能读取) 
+
 cp /usr/local/php7.2/etc/php-fpm.conf.default /usr/local/php7.2/etc/php-fpm.conf
  
 cp /usr/local/php7.2/etc/php-fpm.d/www.conf.default /usr/local/php7.2/etc/php-fpm.d/www.conf
@@ -199,4 +200,7 @@ php -h 获取帮助
 
   `extension=swoole.so`
 
-  
+* 备注
+
+  编译时候：`phpize` ， `php` , `php-config` ，三个文件版本要一致。并软连接到 `/usr/bin/` 目录
+
