@@ -150,6 +150,9 @@
   2.`sudo find / -name libssl.so` 并建立软连接到 `/usr/lib` 目录
 
   `sudo ln -s /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib`
+* `Please reinstall the libcurl distribution - easy.h should be in <curl-dir>/include/curl/`
+   编译报错找不到 `curl` 
+   解决方案为：安装 `libcurl4-openssl-dev` 并建立链接 `sudo ln -s  /usr/include/x86_64-linux-gnu/curl  /usr/include/curl`
 
 #### 编译和安装
 
