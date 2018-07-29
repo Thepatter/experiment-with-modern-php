@@ -100,18 +100,33 @@ info Visit https://yarnpkg.com/en/docs/cli/install for documentation about this 
 
 #### homestead 下编译 PHP 模块
   下载模块源码并编译
+  
   `git clone or wget`
+  
   `/usr/bin/phpize5.6` // 不同的 php 版本的 phpize 版本不同
+  
   `./configure --with-php-config=/usr/bin/php-config5.6`  // 保持与 phpize 版本一致
+  
   `make && make install`
+  
   编译完成后，redis 的 php 扩展在 module 目录中，他的文件名是`redis.o`
+  
   查看对应 php 的 extension_dir
+  
   `/usr/bin/php5.6 -i | grep extension_fir`
+  
   移动扩展模块到 extension_dir 
+  
   `mv ./module/redis.so /usr/lib/php/20160303`
+  
   添加配置文件
+  
   `touch /etc/php7.6/fpm/conf.d/20-redis.ini` // 前缀是加载顺序优先级
+  
   写入配置
+  
   `extension=redis.so`
+  
   重启对应版本 php-fpm
+  
   `service php5.6-fpm restart`
