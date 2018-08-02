@@ -1,6 +1,6 @@
-###Ubuntu 开发环境配置
+### Ubuntu 开发环境配置
 
-####操作环境：
+#### 操作环境：
 
 * ubuntu16.04
 * php7.2.6 http://cn2.php.net/distributions/php-7.2.6.tar.bz2
@@ -31,46 +31,43 @@
 
 #### 编译配置参数详解：
 
-```
---prefix=/usr/local/php                      //指定 php 安装目录 
---with-apxs2=/usr/local/apache/bin/apxs      //整合apache，
-                        //apxs功能是使用mod_so中的LoadModule指令，
-                       //加载指定模块到 apache，要求 apache 要打开SO模块
---with-config-file-path=/usr/local/php/etc    //指定php.ini位置
---with-MySQL=/usr/local/mysql                 //mysql安装目录，对mysql的支持
---with-mysqli=/usr/local/mysql/bin/mysql_config
-                      //mysqli扩展技术不仅可以调用MySQL的存储过程、处理MySQL事务，
-                      //而且还可以使访问数据库工作变得更加稳定。
---enable-safe-mode    //打开安全模式 
---enable-ftp          //打开ftp的支持 
---enable-zip          //打开对zip的支持 
-
---with-bz2            //打开对bz2文件的支持 
---with-jpeg-dir       //打开对jpeg图片的支持 
---with-png-dir        //打开对png图片的支持 
---with-freetype-dir   //打开对freetype字体库的支持 
---without-iconv       //关闭iconv函数，各种字符集间的转换 
---with-libXML-dir     //打开libxml2库的支持 
---with-XMLrpc         //打开xml-rpc的c语言 
---with-zlib-dir       //打开zlib库的支持 
---with-gd             //打开gd库的支持 
---enable-gd-native-ttf //支持TrueType字符串函数库 
---with-curl            //打开curl浏览工具的支持 
---with-curlwrappers    //运用curl工具打开url流 
---with-ttf             //打开freetype1.*的支持，可以不加了 
---with-xsl             //打开XSLT 文件支持，扩展了libXML2库 ，需要libxslt软件 
---with-gettext         //打开gnu 的gettext 支持，编码库用到 
---with-pear            //打开pear命令的支持，PHP扩展用的 
---enable-calendar      //打开日历扩展功能 
---enable-mbstring      //多字节，字符串的支持 
---enable-bcmath        //打开图片大小调整,用到zabbix监控的时候用到了这个模块
---enable-sockets       //打开 sockets 支持
---enable-exif          //图片的元数据支持 
---enable-magic-quotes  //魔术引用的支持 
---disable-rpath        //关闭额外的运行库文件 
---disable-debug        //关闭调试模式 
---with-mime-magic=/usr/share/file/magic.mime  //魔术头文件位置
-```
+  ```
+  --prefix=/usr/local/php                      //指定 php 安装目录 
+  --with-apxs2=/usr/local/apache/bin/apxs      //整合apache，
+                            //apxs功能是使用mod_so中的LoadModule指令，
+                           //加载指定模块到 apache，要求 apache 要打开SO模块
+  --with-config-file-path=/usr/local/php/etc    //指定php.ini位置
+  --with-MySQL=/usr/local/mysql                 //mysql安装目录，对mysql的支持
+  --with-mysqli=/usr/local/mysql/bin/mysql_config //mysqli扩展技术不仅可以调用MySQL的存储过程、处理MySQL事务，还可以使访问数据库工作变得更加稳定。
+  --enable-safe-mode    //打开安全模式 
+  --enable-ftp          //打开ftp的支持 
+  --enable-zip          //打开对zip的支持 
+  --with-bz2            //打开对bz2文件的支持 
+  --with-jpeg-dir       //打开对jpeg图片的支持 
+  --with-png-dir        //打开对png图片的支持 
+  --with-freetype-dir   //打开对freetype字体库的支持 
+  --without-iconv       //关闭iconv函数，各种字符集间的转换 
+  --with-libXML-dir     //打开libxml2库的支持 
+  --with-XMLrpc         //打开xml-rpc的c语言 
+  --with-zlib-dir       //打开zlib库的支持 
+  --with-gd             //打开gd库的支持 
+  --enable-gd-native-ttf //支持TrueType字符串函数库 
+  --with-curl            //打开curl浏览工具的支持 
+  --with-curlwrappers    //运用curl工具打开url流 
+  --with-ttf             //打开freetype1.*的支持，可以不加了 
+  --with-xsl             //打开XSLT 文件支持，扩展了libXML2库 ，需要libxslt软件 
+  --with-gettext         //打开gnu 的gettext 支持，编码库用到 
+  --with-pear            //打开pear命令的支持，PHP扩展用的 
+  --enable-calendar      //打开日历扩展功能 
+  --enable-mbstring      //多字节，字符串的支持 
+  --enable-bcmath        //不损失精度的数据模块
+  --enable-sockets       //打开 sockets 支持
+  --enable-exif          //图片的元数据支持 
+  --enable-magic-quotes  //魔术引用的支持 
+  --disable-rpath        //关闭额外的运行库文件 
+  --disable-debug        //关闭调试模式 
+  --with-mime-magic=/usr/share/file/magic.mime  //魔术头文件位置
+  ```
 
 * CGI 安装参数
 
@@ -86,7 +83,7 @@
   //以上函数库需要安装
   
   --with-gmp                     //应该是支持一种规范
-  --enable-inline-optimization   //优化线程
+  --enable-inline-optimization   
   --with-openssl                 //openssl的支持，加密传输时用到的
   --enable-dbase                 //建立DBA 作为共享模块
   --with-pcre-dir=/usr/local/bin/pcre-config       //perl的正则库案安装位置
@@ -102,13 +99,13 @@
   --enable-soap
   ```
 
-  * 5.6 常用参数
-
+  * 编译 `php` 的常用参数
     ```
-    ./configure --prefix=/usr/local/php/5.6 \
-    --with-config-file-path=/etc/php/5.6 \
+    ./configure --prefix=/usr/local/php/7.1 \
+    --with-config-file-path=/etc/php/7.1 \
     --enable-fpm \
-    --enable-pcntl \
+    --with-fpm-user=www-data \
+    --with-fpm-group=www-data \
     --enable-bcmath \
     --enable-mysqlnd \
     --enable-opcache \
@@ -120,13 +117,11 @@
     --enable-zip \
     --enable-soap \
     --enable-xml \
+    --enable-pcntl \
     --enable-mbstring \
-    --disable-rpath \
-    --disable-debug \
-    --disable-fileinfo \
+    --enable-blackfire \
     --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
-    --with-pdo-mysql=mysqlnd \
     --with-pcre-regex \
     --with-iconv \
     --with-zlib \
@@ -136,11 +131,9 @@
     --with-mhash \
     --with-xmlrpc \
     --with-curl \
-    --with-imap-ssl
+    --with-imap-ssl 
     ```
-
     
-
 **配置报错备注**
 
 * configure: error: Cannot find OpenSSL's libraries
@@ -186,10 +179,9 @@
 
 #### 安装后配置（以下操作需要 sudo)
 
+设置快速访问别名：
+
 `vim ~/.bash_aliases`
-
-写入信息：
-
 ```
 alias php='/usr/local/php/bin/php'
 alias phpize='/usr/local/php/bin/phpize'
@@ -266,29 +258,14 @@ php -h 获取帮助
 
 #### pecl 扩展编译安装（以 swoole 为例子）
 
-* 下载 swoole `wget https://github.com/swoole/swoole-src/archive/v2.2.0.tar.gz`
+* 下载 `swoole` 源码 `wget https://github.com/swoole/swoole-src/archive/v2.2.0.tar.gz`
 
 * 解压 `tar jxf v2.2.0.tar.gz` 
 
-* 安装依赖库
-
-  ```
-  sudo apt-get install \
-  build-essential \
-  gcc \
-  g++ \
-  autoconf \
-  libiconv-hook-dev \
-  libmcrypt-dev \
-  libxml2-dev \
-  libmysqlclient-dev \
-  libcurl4-openssl-dev \
-  libjpeg8-dev \
-  libpng12-dev \
-  libfreetype6-dev \
-  ```
-
-* 安装 swoole
+* `swoole` configure 常用参数
+  
+  `./configure --with-php-config=/usr/local/php/5.6/bin/php-config --enable-swoole-debug --enable-sockets --enable-async-redis --enable-openssl --enable-http2 --enable-mysqlnd --with-openssl-dir=/usr/local/openssl098`
+* 安装 `swoole`
 
   ```
   cd swoole-src-swoole-2.2.0-stable/
@@ -304,7 +281,7 @@ php -h 获取帮助
 
 * 备注
 
-  编译时候：`phpize` ， `php` , `php-config` ，三个文件版本要一致。并软连接到 `/usr/bin/` 目录
+  编译时候：`phpize` ， `php` , `php-config` ，三个文件版本要一致。
 
 #### composer 安装
 
@@ -344,7 +321,59 @@ php -h 获取帮助
       }
   }
   ```
+  
 
-  #### 备注：Linux下编译两次php后无法php-fpm启动服务的问题
-  原因：没有删除第一次编译的文件夹，重新编译生成的文件，文件夹还是上次编译参数生成的
+#### 解决编译安装 php 后，fpm.service 无法启动问题
+  原因：没有删除第一次编译的文件夹，重新编译生成的文件，文件夹还是上次编译参数生成的，没有重新配置启动服务等
   解决：需要重新编译软件的时候千万要删除原来编译的文件夹，不然原来编译生成的`config, php-fpm`等文件还是上次编译参数生成的文件和编译参数
+  
+  无法启动服务类似 `fpm.service is maskd` 之类错误
+
+  首先查看对应的 `fpm-service` 是否链接到 `/dev/null` `file /lib/systemd/system/php-fpm.service`
+
+  如果返回 `/lib/systemd/system/php-fpm.service: symbolic link to /dev/null` 则删除它 `rm /lib/systemd/system/php-fpm.service`
+
+  重置服务 `systemctl daemon-reload`
+
+  解决 php 编译成功后无法启动 php-fpm 服务。
+
+  进入编译目录的 `sapi` 目录下 `fpm` 目录拷贝 `init.d.php-fpm` 到 `/etc/init.d/php5.6-fpm` 并给与执行和设置自启动
+
+  `cd php/sapi/fpm/` `cp init.d.php-fpm /etc/init.d/php5.6-fpm` `chmod +x /etc/init.d/php5.6-fpm` `update-rc.d php5.6-fpm defaults`
+
+#### 解决编译`PHP5.6` 时 `openssl` 库版本不兼容 `7.0 及以上 1.0 版本，5.6 不超过 1.0`
+
+* 查看当前 `openssl` 版本
+
+  `openssl verions -a`
+
+* 编译安装 `php` 版本对应 `openssl`
+  `php7.0` 及以下支持0.9.8  `php7.1` 及以上支持1.0.1 
+
+  `wget https://www.openssl.org/source/old/0.9.x/openssl-0.9.8zh.tar.gz`
+
+  `tar -xf openssl-0.9.8zh.tar.gz`
+
+  `./config --prefix=/usr/local/openssl098 shared zlib`
+
+  `ln -s /usr/local/openssl098/bin/openssl /usr/bin/openssl` // 要兼容新/旧版则不执行该指令
+
+  `ln -s /usr/local/openssl098/include/openssl /usr/include/openssl` // 解决编译 `php-openssl` 时候找不到  `.h` 文件错误
+
+  `echo "/usr/local/openssl098/lib" >> /etc/ld.so.conf`
+
+  查看 `ldconfig -v`
+
+  如果已安装有 `openssl` 则需要将 `cp /usr/local/openssl098/lib/libcrypto.so.0.9.8 /usr/lib`, 否则编译 `php` 回报错
+
+* 编译安装`php` 配置 `php-openssl` 模块参数
+
+  `--with-openssl=/usr/local/openssl098`
+
+#### 解决编译 `php` 时候 `easy.h should be in <--dir>/includ/dir` 错误
+
+  在 `/usr/include` 创建符号连接
+
+  `cd /usr/include`
+
+  `sudo ln -s x86_64-linux-gnu/curl`

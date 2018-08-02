@@ -37,4 +37,13 @@
 
 * 编译 `php`
 
+* 导出盒子
+
+  `vagrant package --base source_box_name --output target_box_name.box --vagrantfile=/vagrantfile/path  --include=/include/file`
+  
+* 导入盒子
+  
+  在一个新文件夹下放入盒子文件执行 `vagrant init box_name.box`, 配置 `vagrantfile` `vagrant up` 使用 `vagrant` 默认密码 `vagrant` 登录
+  
+ 
    
