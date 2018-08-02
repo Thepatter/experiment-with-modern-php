@@ -330,6 +330,8 @@ php -h 获取帮助
   无法启动服务类似 `fpm.service is maskd` 之类错误
 
   首先查看对应的 `fpm-service` 是否链接到 `/dev/null` `file /lib/systemd/system/php-fpm.service`
+  
+  及 `/etc/systemd/system` 目录文件夹下是否有该 `php-fpm.service -> /dev/null` 有的话先删除在操作
 
   如果返回 `/lib/systemd/system/php-fpm.service: symbolic link to /dev/null` 则删除它 `rm /lib/systemd/system/php-fpm.service`
 
