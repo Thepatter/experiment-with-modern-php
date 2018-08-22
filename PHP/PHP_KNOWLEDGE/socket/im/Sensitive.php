@@ -48,8 +48,7 @@ class Sensitive
      */
     public function __construct()
     {
-        $filterWords = require_once 'filterWords.php';
-        $sensitiveWords = array_values($filterWords);
+        $sensitiveWords = require_once 'filterWords.php';
         foreach ($sensitiveWords as $words) {
             $nowWords = &$this->trieTreeMap;
             $len = mb_strlen($words);

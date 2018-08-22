@@ -20,6 +20,20 @@ class WSServer
         $this->mysqlConnection('127.0.0.1', 'root');
     }
 
+    public function start()
+    {
+        $subPid = pcntl_wait($status);
+        while (true) {
+            if ($this->wsServerPid == $subPid) {
+                $this->wsServer();
+                $this-start();
+            }
+            if ($this-redisSubPid == $subPid) {
+                $this->redisSubscribeMsg();
+                $this-start();
+            }
+        }
+    }
     private function currentEnvIsSupport()
     {
         $result = [
@@ -60,6 +74,7 @@ class WSServer
                 }
 
             });
+            $this->mysqlConnection->query();
         }
     }
 
@@ -68,5 +83,20 @@ class WSServer
         $mysqlConnection = new mysqli($host, $username, $password, $dbName, $port);
         $mysqlConnection->set_charset('utf8');
         $this->mysqlConnection = $mysqlConnection;
+    }
+
+    private function wsServer()
+    {
+        $wsServerPid = pcntl_fork();
+        if ($wsServerPid) {
+            $this->wsServerPid = $wsServerPid;
+        }
+        if ($wsServerPid == 0) {
+            error_reporting(E_ALL);
+            set_time_limit(0);
+            date_default_timezone_set('Asia/Shanghai');
+            ini_set('memory_limit', '2048m');
+            new WebSocket("0.0.0.0", "8081");
+        }
     }
 }
