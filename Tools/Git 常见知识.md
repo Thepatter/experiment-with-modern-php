@@ -1,4 +1,4 @@
-### Git 常见知识
+### Git 常用命令
 
 git push 主机名 本地分支 远程分支 推送本地分支到远程分支
 
@@ -62,3 +62,10 @@ git clone url [-b 分支] 克隆选择分支
 #### git回滚历史记录
 `git log` 会显示 `git commit` 的历史记录
 回滚历史记录 `git reset --hard 8ff24a6803173208f3e606e32dfcf82db9ac84d8` 回滚到历史提交,可以是输入前10位记录
+
+#### 使用 .gitignore 文件忽略文件
+在不需要加入版本控制的地方建立 `.gitignore` 文件来配置，一个文件或一个文件夹占一行,语法如下
+```
+.idea
+.gitignore
+```
