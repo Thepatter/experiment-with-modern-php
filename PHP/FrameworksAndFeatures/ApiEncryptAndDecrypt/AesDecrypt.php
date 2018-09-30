@@ -6,8 +6,6 @@
  * Time: 16:53
  */
 
-namespace App\Handlers;
-
 class AesDecrypt
 {
     private $key;

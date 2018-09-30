@@ -2,8 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Handlers\AesDecrypt;
-use Closure;
 /**
  * Class Secret
  * @package App\Http\Middleware
@@ -11,13 +9,6 @@ use Closure;
  */
 class Secret
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
-     */
     public function handle($request, Closure $next)
     {
         if ($request->hasHeader('token')) {
@@ -53,6 +44,6 @@ class Secret
             }
             $request->encrypt = true;
         }
-        return $next($request);
+        //return $next($request);
     }
 }
