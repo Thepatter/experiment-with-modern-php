@@ -76,7 +76,7 @@ useDelimiter(pattern: String): Scanner	// 设置 Scanner 的分隔符，并且�
 
 __为了读取一个文件，首先要使用 `java.net.URL` 类的这个构造方法，为该文件创建一个 URL 对象，出错抛出 `MalformedURLException` 可以使用 URL 类中定义的 `openStream()` 方法来打开输入流和用输入流创建 `Scanner` 对象 __
 
-#### 从控制台上读取数据 `Scanner("system.in")`
+#### 从控制台上读取数据 `Scanner(System.in)`
 
 ### 二进制 IO
 
