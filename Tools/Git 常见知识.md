@@ -69,3 +69,8 @@ git clone url [-b 分支] 克隆选择分支
 .idea
 .gitignore
 ```
+
+#### 使 Git 忽略已经跟踪的文件
+
+`git update-index --assume-unchanged <files>`, 这样即使已经更改了文件，用 `git status` 也不会看见文件已经更改,取消 `git update-index --no-assume-unchanged <files>`
+
