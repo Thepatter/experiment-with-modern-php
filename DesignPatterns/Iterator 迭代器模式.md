@@ -20,7 +20,7 @@
 
 ### Iterator 模式类图
 
-### ![](C:\Users\work\Pictures\Iterator.jpg)
+![](C:\Users\work\IdeaProjects\some_book\DesignPatterns\ClassDiagram\Iterator.jpg)
 
 ## Adapter 适配器模式
 
@@ -36,9 +36,13 @@
 
 ### Adapter 模式类图
 
-![](C:\Users\work\Pictures\类适配器模式类图.png)
+* 类适配器模式类图
 
-![](C:\Users\work\Pictures\对象适配器模式的类图.png)
+![](C:\Users\work\IdeaProjects\some_book\DesignPatterns\ClassDiagram\类适配器模式类图.png)
+
+* 对象适配器模式类图
+
+  ![](C:\Users\work\IdeaProjects\some_book\DesignPatterns\ClassDiagram\对象适配器模式的类图.png)
 
 ### 使用
 

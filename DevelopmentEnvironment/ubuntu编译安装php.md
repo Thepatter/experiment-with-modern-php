@@ -29,7 +29,7 @@
   libssl-dev \
 ```
 
-#### 编译配置参数详解：
+#### `configure --help` 编译配置参数详解：(with 指要依赖外部库,enable 指 php 功能开关)
 
   ```
   --prefix=/usr/local/php                      //指定 php 安装目录 
@@ -119,7 +119,6 @@
     --enable-xml \
     --enable-pcntl \
     --enable-mbstring \
-    --enable-blackfire \
     --with-mysql=mysqlnd \
     --with-mysqli=mysqlnd \
     --with-pcre-regex \
