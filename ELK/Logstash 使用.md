@@ -18,7 +18,7 @@
 
 包含用于为系统生成适当的启动脚本的脚本所使用的选项。安装 Logstash 包时, 脚本将在安装过程结束时执行, 并使用中指定的设置设置选项, 如用户、组、服务名称和服务说明。默认情况下, Logstash 服务安装在用户下。该文件使您可以更轻松地安装 Logstash 服务的多个实例。您可以复制该文件并更改特定设置的值。请注意, 在启动时不会读取该文件。如果要更改 Logstash 启动脚本 (例如, 要更改 Logstash 用户或从其他配置路径读取), 则必须重新运行脚本 (作为 root) 以传入新设置
 
-##### logstash.yml 配置
+#### logstash.yml 配置
 
 |              设置               |                             描述                             |                            默认值                            |
 | :-----------------------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
@@ -55,9 +55,9 @@
 |           `path.logs`           |                 Logstash将其日志写入的目录。                 |                      LOGSTASH_HOME/logs                      |
 |         `path.plugins`          | 在哪里可以找到自定义插件。您可以多次指定此设置以包含多个路径。插件预计将在一个特定的目录层次结构：`PATH/logstash/TYPE/NAME.rb`其中`TYPE`是`inputs`，`filters`，`outputs`，或`codecs`，并且`NAME`是插件的名称 | 特定于平台的。请参阅[Logstash目录布局](https://www.elastic.co/guide/en/logstash/current/dir-layout.html)。 |
 
-#### 使用：
+### 使用：
 
-##### 从命令行运行 Logstash
+#### 从命令行运行 Logstash
 
 `bin/logstash [option]` 在命令行设置的标志会覆盖 `logstash.yml` 中的设置，但不会改变文件
 
