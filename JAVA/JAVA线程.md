@@ -80,4 +80,33 @@ synchronized (expr) {
 
 #### 利用加锁同步：显式地采用锁和状态同步线程
 
-一个锁是一个 `Lock` 接口的实例，它定义了加锁和释放锁的方法。锁也可以使用 `newCondition()` 方法来创建任意个数的 `Condition` 对象，用来进行线程间通信。`ReentrantLock` 是 `Lock` 的一个具体实现，用于创建相互排斥的
+一个锁是一个 `Lock` 接口的实例，它定义了加锁和释放锁的方法。锁也可以使用 `newCondition()` 方法来创建任意个数的 `Condition` 对象，用来进行线程间通信。`ReentrantLock` 是 `Lock` 的一个具体实现，用于创建相互排斥的的锁。可以创建具有特定的公平策略的锁。公平策略值为真，则确保等待时间最长的线程首先获得锁。为假则将锁给任一等待的线程。被多个线程访问的使用公正锁的程序，其整体性能可能比那些使用默认设置的程序差，但是在获取锁且避免资源缺乏时又更小的时间变化
+
+*java.util.concurrent.locks.Lock.java* 接口
+
+```java
+lock(): void			// 得到一个锁
+unlock(): void			// 释放锁
+newCondition(): Condition		// 返回一个绑定到该 Lock 实例的 Condition 实例
+```
+
+*java.util.concurrent.locks.ReentrantLock.java*
+
+```Java
+ReentrantLock()				// 等价 ReentrantLock(false)
+ReentrantLock(fair: boolean)		// 跟
+```
+
+#### 线程间协作：锁上的条件可以用于协调线程之间的交互
+
+通过保证在临界区上多个线程的相互排斥，线程同步完全可以避免竞争条件的发生，可以使用条件实现线程间通信。一个线程可以指定在某种条件下该做什么。条件时通过调用 `Lock` 对象的 `newCondition()` 方法而创建的对象。一旦创建了条件，可以使用 `await()`, `signal()` ,`signalAll()` 方法来实现线程间相互通信。
+
+*java.util.concurrent.Condition.java* 接口
+
+```java
+await(): void			// 引起当前线程等待，直到发出条件信号
+signal(): void			// 唤醒一个等待线程
+signalAll(): Condition		// 唤醒所有等待线程
+```
+
+一旦线程调用条件上的 `await()` ，线程就进入等待状态，等待恢复的信号。如果忘记对状态调用 `signal()` 或者 `signalAll()` 那么线程就永远等待下去。条件由 `Lock` 对象创建。为了调用它的方法，必须首先拥有锁。如果没有获取锁就调用这些方法。会抛出 `IllegalMonitorStateExceptuib` 异常
