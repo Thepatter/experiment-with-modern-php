@@ -76,4 +76,18 @@
   sudo service mysql start
   ```
 
+### 服务脚本
+
+```shell
+#!/bin/bash
+sudo service mysql start
+sudo service php7.2-fpm start
+sudo service nginx start
+sudo service mongodb start
+sudo service redis-server start
+sudo service elasticsearch start
+sudo service kibana start
+```
+
+
 
