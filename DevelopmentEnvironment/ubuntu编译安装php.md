@@ -133,6 +133,7 @@
     --with-imap-ssl 
     ```
     
+
 **配置报错备注**
 
 * configure: error: Cannot find OpenSSL's libraries
@@ -325,11 +326,11 @@ php -h 获取帮助
 #### 解决编译安装 php 后，fpm.service 无法启动问题
   原因：没有删除第一次编译的文件夹，重新编译生成的文件，文件夹还是上次编译参数生成的，没有重新配置启动服务等
   解决：需要重新编译软件的时候千万要删除原来编译的文件夹，不然原来编译生成的`config, php-fpm`等文件还是上次编译参数生成的文件和编译参数
-  
+
   无法启动服务类似 `fpm.service is maskd` 之类错误
 
   首先查看对应的 `fpm-service` 是否链接到 `/dev/null` `file /lib/systemd/system/php-fpm.service`
-  
+
   及 `/etc/systemd/system` 目录文件夹下是否有该 `php-fpm.service -> /dev/null` 有的话先删除在操作
 
   如果返回 `/lib/systemd/system/php-fpm.service: symbolic link to /dev/null` 则删除它 `rm /lib/systemd/system/php-fpm.service`
@@ -375,6 +376,21 @@ php -h 获取帮助
 
   在 `/usr/include` 创建符号连接
 
-  `cd /usr/include`
+ 	 `cd /usr/include`
 
-  `sudo ln -s x86_64-linux-gnu/curl`
+ 	 `sudo ln -s x86_64-linux-gnu/curl`
+
+### apt 仓库安装
+
+* 添加 `apt` 仓库源
+
+  ```shell
+  sudo add-apt-repository ppa:ondrej/php			// php 仓库源
+  sudo add-apt-repository ppa:ondrej/php5-compat			// php5.5 仓库
+  sudo apt update && sudo apt upgrade
+  sudo apt install php-fpm php-common php-dev php-mbstring php-gd php-mysqli php-pdo-mysqli php-curl
+  ```
+
+* 如果没有 `add-apt-repository` 二进制文件
+
+  `sudo apt install python-software-properties`
