@@ -87,7 +87,13 @@ sudo service mongodb start
 sudo service redis-server start
 sudo service elasticsearch start
 sudo service kibana start
+sudo umount /mnt/c
+sudo umount /mnt/d
 ```
+
+### 备注
+最好分开搭建 `php nginx` 在一个 `Linux` 子系统上，`MySQL` 及其他存储在一个子系统，其他服务在一个子系统上，分布式，互不干扰
+
 
 
 
