@@ -37,6 +37,15 @@ sudo apt-get -y install oracle-java8-installer
 
   `sudo  /bin/systemctl enable elasticsearch.service`
 
+* 设置 elasticsearch 自动重启
+
+   `sudo systemctl edit elasticsearch.service` (先设置默认编辑器为 vim)
+   ```
+   [Service]        // 修改service 配置
+   Restart=always
+   ``` 
+   `systemctl daemon-reload`   
+
 * 启动及停止命令
 
   `sudo systemctl start elasticsearch.service`
