@@ -2,3 +2,5 @@
 
 * 修改默认编辑器为 vim
 `sudo update-alternatives --config editor`
+
+YPgpALV2Tn6X

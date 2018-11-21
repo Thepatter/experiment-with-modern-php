@@ -47,6 +47,8 @@
   |   `Second()`    |    返回一个时间的秒部分    |
   |    `Time()`     | 返回一个日期时间的时间部分 |
   |    `Year()`     |   返回一个日期的年份部分   |
+  |    `from_unixtime(int timestamp)`     |   返回对应时间戳的日期   |
+  |    `unix_timestamp(string date)`     |   返回对应时间的时间戳   |
 
 * 数值处理函数
 
