@@ -6,13 +6,12 @@
  * Time: 13:43
  */
 
-class CSVToArray
+class ReadFile
 {
     public function csv2Array(string $file)
     {
         $csvArray = [];
         if (file_exists($file)) {
-            // 替换成协程读取文件
             $readCSVFile = function ($fileHandle) {
                 if ($fileHandle !== false) {
                     while ($csvLine = fgetcsv($fileHandle, 1024, ',')) {
@@ -31,5 +30,26 @@ class CSVToArray
             fclose($tempFileHandle);
         }
         return $csvArray;
+    }
+
+    public function readFileOnePage(string $file, int $page = 1, int $perPage = 0)
+    {
+        $fileLineValueArray = [];
+        if (file_exists($file)) {
+            $fileHandler = fopen($file, 'r');
+            $readOnePage = function ($file) {
+                while (($buffer = fgets($file)) !== false) {
+                    yield $buffer;
+                }
+            };
+            $start = ($page -1) * $perPage;
+            $end = $start + $perPage;
+            foreach ($readOnePage($fileHandler) as $key => $item) {
+                if ($key >= $start && $key < $end) {
+                    $fileLineValueArray[] = json_decode($item, true);
+                }
+            }
+        }
+        return $fileLineValueArray;
     }
 }
