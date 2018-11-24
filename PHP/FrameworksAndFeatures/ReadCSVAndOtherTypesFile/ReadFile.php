@@ -52,4 +52,9 @@ class ReadFile
         }
         return $fileLineValueArray;
     }
+
+    public function readIniFile($file)
+    {
+        return parse_ini_file($file);
+    }
 }

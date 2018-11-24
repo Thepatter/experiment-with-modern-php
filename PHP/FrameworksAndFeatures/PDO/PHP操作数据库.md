@@ -13,4 +13,8 @@ __官方文档建议操作 Mysql 数据库时，推荐首选 `mysqli`，其次�
 
 * PHP 中的配置项目 http://php.net/manual/zh/mysqli.configuration.php
 
+### PDO 操作数据库
+
+* `top` 和 `limit` 不支持预处理语句，必须拼接
+* `fetchAll(PDO::FETCH_ASSOC)`  获取关联数组结果集
 
