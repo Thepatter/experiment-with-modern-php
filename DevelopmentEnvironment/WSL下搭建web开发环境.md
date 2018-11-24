@@ -52,6 +52,9 @@
       fastcgi_buffering off;
   }
   ```
+### mysql 相关
+
+* 设置 `ppa` 源 `sudo add-apt-repository ppa:lars-tangvald/mysql-8.0` 使用 `apt` 安装 `mysql8`
 
 * 启动 MySQL 找不到主目录
 
@@ -75,6 +78,17 @@
   sudo usermod -d /var/lib/mysql/ mysql
   sudo service mysql start
   ```
+  
+* `caching_sha2_password` 兼容问题
+
+  1. 修改 `my.cnf` 使用原来的密码模块
+  ```config
+  [mysqld]
+  default_authentication_plugin=mysql_native_password
+  ```
+  2. 更新用户使用的密码模块
+  `ALTER USER 'username'@'ip_address' IDENTIFIED WITH mysql_native_password BY 'password';`
+  
 
 ### 服务脚本
 

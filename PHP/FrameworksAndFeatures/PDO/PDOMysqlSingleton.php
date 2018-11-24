@@ -14,9 +14,9 @@ interface DB
 
     const username = 'debian-sys-maint';
 
-    const password = 'zOlQgwKfn9nzMe6H';
+    const password = 'YICNg0T8YYkEzyBD';
 
-    const dbName = 'yzdata1';
+    const dbName = 'test';
 
     const weChatFansComparedTable = 'tx_wechat_fans_compared';
 }
@@ -25,7 +25,7 @@ class PDOMysqlSingleton
 {
    private static $link = null;
 
-   private static function getLink() {
+   public static function getLink() {
        if (self::$link) {
            return self::$link;
        }
@@ -40,9 +40,4 @@ class PDOMysqlSingleton
        $callback = [self::getLink(), $name];
        return call_user_func_array($callback, $arguments);
    }
-}
-
-class AnotherSingleton
-{
-
 }

@@ -110,3 +110,16 @@ signalAll(): Condition		// 唤醒所有等待线程
 ```
 
 一旦线程调用条件上的 `await()` ，线程就进入等待状态，等待恢复的信号。如果忘记对状态调用 `signal()` 或者 `signalAll()` 那么线程就永远等待下去。条件由 `Lock` 对象创建。为了调用它的方法，必须首先拥有锁。如果没有获取锁就调用这些方法。会抛出 `IllegalMonitorStateExceptuib` 异常
+
+#### 阻塞队列
+Java 合集框架提供了 `ArrayBlockingQueue`, `LinkedBlockingQueue`, `PriorityBlockingQueue`  来实现阻塞队列（向一个满队列添加元素或从空队列中删除元素时会线程阻塞）
+
+#### 信号量（对共享资源进行访问控制的对象）
+可以使用信号量来限制访问一个共享资源的线程数，在访问资源前，线程必须从信号量获取许可。在访问完资源后，这个线程将许可返回给信号量
+*java.util.concurrent.Semaphore.java*
+```javascript 1.8
+Semaphore(numberOfPermits: int)         // 创建一个具有指定数目的许可的信号量。公平策略为假
+Semaphore(nunberOfPermits: int, fair: boolean)          // 创建一个具有指定数目的许可及公平策略的信号量
+acquire(): void             // 从该信号量获取一个许可，如果许可不可用，线程会阻塞等待
+release(): void             // 释放一个许可返回给信号量
+```
