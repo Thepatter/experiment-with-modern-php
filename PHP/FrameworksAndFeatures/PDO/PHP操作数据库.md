@@ -13,6 +13,8 @@ __官方文档建议操作 Mysql 数据库时，推荐首选 `mysqli`，其次�
 
 * PHP 中的配置项目 http://php.net/manual/zh/mysqli.configuration.php
 
+* `mysqli` 使用预处理语句防止`sql`注入, `mysqli::query()`, 需要自行处理 sql 注入，转义参数。
+
 ### PDO 操作数据库
 
 * `top` 和 `limit` 不支持预处理语句，必须拼接

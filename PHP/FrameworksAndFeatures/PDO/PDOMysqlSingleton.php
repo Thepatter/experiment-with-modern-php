@@ -14,30 +14,53 @@ interface DB
 
     const username = 'debian-sys-maint';
 
-    const password = 'YICNg0T8YYkEzyBD';
+    const password = 'zOlQgwKfn9nzMe6H';
 
-    const dbName = 'test';
+    const dbName = 'yzdata1';
 
     const weChatFansComparedTable = 'tx_wechat_fans_compared';
 }
 
 class PDOMysqlSingleton
 {
-   private static $link = null;
+    private static $link = null;
 
-   public static function getLink() {
+    private function __construct()
+    {
+    }
+
+    public static function getLink() {
        if (self::$link) {
            return self::$link;
        }
        $dsn = 'mysql:dbname=' . DB::dbName . ';host=' . DB::host . ';port=' . DB::port  . ';charset=UTF8';
        self::$link = new PDO($dsn, DB::username, DB::password);
        return self::$link;
-   }
+    }
 
-   public static function __callStatic($name, $arguments)
-   {
+    public static function __callStatic($name, $arguments)
+    {
        // TODO: Implement __callStatic() method.
        $callback = [self::getLink(), $name];
        return call_user_func_array($callback, $arguments);
-   }
+    }
+}
+
+class MysqliSingleton
+{
+    private static $link;
+
+    private function __construct()
+    {
+    }
+
+    public static function getLink()
+    {
+        if (self::$link) {
+            return self::$link;
+        }
+        self::$link = new mysqli(DB::host, DB::username, DB::password, DB::dbName);
+        self::$link->set_charset('utf8');
+        return self::$link;
+    }
 }
