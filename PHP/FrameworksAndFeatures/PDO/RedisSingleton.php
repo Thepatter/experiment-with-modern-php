@@ -6,6 +6,13 @@
  * Time: 18:28
  */
 
+interface redisConfig
+{
+    const host = '127.0.0.1';
+    const db = 1;
+    const password = '';
+}
+
 class RedisSingleton
 {
     private static $link = null;
@@ -20,9 +27,9 @@ class RedisSingleton
             return self::$link;
         }
         self::$link = new \Redis();
-        self::$link->connect(DB::host);
-        self::$link->auth(DB::password);
-        self::$link->select(1);
+        self::$link->connect(redisConfig::host);
+        self::$link->auth(redisConfig::password);
+        self::$link->select(redisConfig::db);
         return self::$link;
     }
 }
