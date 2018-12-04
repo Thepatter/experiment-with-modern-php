@@ -287,6 +287,18 @@ int fstatat(int fd,const char *restrict pathname,struct stat *restrict buf, int 
 
 ![](文件9个权限位.png)
 
+9 个常量可分成 3 组
+
+```c
+S_IRWXU = S_IRUSR|S_IWUSR|S_IXUSR
+S_IRWXG = S_IRGRP|S_IWGRP|S_IXGRP
+S_IRWXO = S_IROTH|S_IWOTH|S_IXOTH
+```
+
+*文件权限位对文件和目录的影响*
+
+![文件权限对文件及目录影响](文件权限对文件及目录影响.png)
+
 **用户：** 指的是文件所有者 （owner）。`chmod` 命令用于修改这 9 个权限位。
 
 读写执行的访问权限以各种方式由不同的函数使用。使用方式如下：
@@ -483,11 +495,156 @@ int remove(const char *pathname);
 
 对于文件，`remove` 的功能与 `unlink` 相同，对于目录，`remove` 的功能与 `rmdir` 相同
 
+### 重命名文件或目录
+
+文件和目录可以用`rename` 函数或者 `renameat` 函数进行重命名
+
+```c
+#include <stdio.h>
+// 两个函数的返回值：若成功，返回 0；若出错，返回 -1
+int rename(const char *oldname, const char *newname);
+int renameat(int oldfd, const char *oldname, int newfd, const char *newname);
+```
+
+根据 `oldname` 是指文件、目录还是符合链接，有几种情况
+
+1. 如果 `oldname` 指的是一个文件而不是目录，那么为该文件或符合链接重命名。在这种情况下，如果 `newname` 已存在，则它不能引用一个目录。如果 `newname` 已存在，而且不是一个目录，则先将该目录项删除然后将 `oldname` 重命名为 `newname`。对包含 `oldname` 的目录以及包含 `newname` 的目录，调用进程必须具有写权限，因为将更改这两个目录
+2. 如果 `oldname` 指的是一个目录，那么为该目录重命名。如果 `newname` 已存在，则它必须引用一个目录，而且该目录应当是空目录。如果 `newname` 存在（而且是一个空目录），则先将其删除，然后将 `oldname` 重命名为`newname`。另外当为一个目录重命名时，`newname` 不能包含 `oldname` 作为其路径前缀。（因为旧名字是新名字的路径前缀，因而不能将其删除。
+3. 如果 `oldname` 或 `newname` 引用符号链接，则处理的是符号链接本身，而不是它所引用的文件
+4. 不能对 `.` 和 `..` 重命名。`.` 和 `..` 不能出现在 `oldname`和 `newname` 的最后部分。
+5. 如果 `oldname` 和 `newname` 引用同一文件，则函数不做任何更改而成功返回
+
+如若 `newname` 已经存在，则调用进程对它需要有写权限。调用进程将删除 `oldname` 目录项，并可能要创建 `newname` 目录项，所以它需要对包含 `oldname` 及包含 `newname` 的目录具有写和指向权限。
+
+除了当 `oldname` 或 `newname` 指向相对路径名时，其他情况下 `renameat` 函数与 `rename` 函数功能相同。如果 `oldname` 参数指定了相对路径，就相对于 `oldfd` 引用的目录来计算 `newname`。`oldfd` 或 `newfd` 参数（或两者）都能设置成 `AT_FDCWD`,此时相对于当前目录来计算相应的路径名。
+
+### 符号链接
+
+符号链接时对一个文件的简洁指针（硬链接直接指向文件的 i 节点）
+
+* 硬链接通常要求链接和文件位于同一文件系统中
+* 只有超级用户才能创建指向目录的硬链接（在底层文件系统支持的情况下）
+
+对符号链接以及它指向何种对象并无任何文件系统限制，任何用户都可以创建指向目录的符号链接/符号链接一般用于将一个文件或整个目录结构移到系统中另一个位置
+
+当使用以名字引用文件的函数时，应当了解该函数是否处理符号链接（即该函数是否跟随符号链接到达它所链接的文件）如果该函数具有符号链接的功能，则其路径名参数引用由符号链接指向的文件。否则，一个路径名参数引用链接本身，而不是由该链接指向的文件。
+
+*各函数对符号链接的支持*
+
+![各个函数对符号链接的处理](各个函数对符号链接的处理.png)
+
+### 创建和读取符号链接
+
+使用 `symlink` 或 `symlinkat` 函数创建一个符号链接
+
+```c
+#include <unistd.h>
+// 两个函数的返回值：若成功，返回 0；若出错，返回 -1
+int symlink(const char *actualpath, const char *sympath);
+int symlinkat(const char *actualpath, int fd, const char *sympath);
+```
+
+函数创建了一个指向 `actualpath` 的新目录项 `sympath` 。在创建此符号链接时，并不要求 `actualpath` 已经存在，也不要求 `actualpath` 和 `sympath` 并不需要位于同一文件系统中
+
+`symlinkat` 函数与 `symlink` 函数类似，但 `sympath` 参数根据相对于打开文件描述符引用的目录（由 `fd` 参数指定）进行计算。如果 `sympath` 参数指定的是绝对路径或 `fd` 参数设置了 `AT_FDCWD` 值，那么 `symlinkat` 就等同于 `symlink` 函数
+
+因为 `open` 函数跟随符号链接，所以需要有一种方法打开链接本身，并读该链接中的名字。`readlink` 和 `readlinkat` 函数提供了这种功能
+
+```c
+#include <unistd.h>
+// 两个函数的返回值：若成功，返回读取的字节数；若出错，返回 -1
+ssize_t readlink(const char *restrict pathname, char *restrict buf, size_t bufsize);
+ssize_t readlink(int fd, const char* restrict pathname, char *restrict buf, size_t bufsize);
+```
+
+两个函数组合了 `open` ，`read` 和 `close` 的所有操作。如果函数成功指向，则返回读入 `buf` 的字节数。在 `buf` 中返回的符号链接的内容不以 null 字节终止。
+
+当 `pathname` 参数指定的是绝对路径名或者 `fd` 参数的值为 `AT_FDCWD`, `readlinkat` 函数的行为与 `readlink` 相同。但是，如果 `fd` 参数是一个打开目录的有效文件描述符并且 `pathname` 参数是相对路径名，则 `readlinkat` 计算相对于由 `fd` 代表的打开目录的路径名
+
+### 文件的时间
+
+每个文件属性所保存的实际精度依赖于文件系统的实现。对于把时间戳记录在秒级的文件系统来说，纳秒这个字段就会被填充为 0。对于时间戳的记录精度高于秒级的文件系统来说，不足秒的值被转换成纳秒并记录在纳秒这个字段中
+
+*每个文件维护 3 个时间字段*
+
+![与每个文件相关的3个时间值](与每个文件相关的3个时间值.png)
+
+修改时间 `st_mtim` 是文件内容最后一次被修改的时间。状态更改时间是该文件 i 节点最后一次被修改的时间。
+
+### 修改文件时间
+
+一个文件的访问和修改时间可以用以下几个函数修改。`futimens` 和 `utimensat` 函数可以指定纳秒级精度的时间戳。用到的数据结构是与 `stat` 函数族相同的 `timespec` 结构
+
+```c
+#include <sys/stat.h>
+// 两个函数返回值：若成功，返回 0；若出错，返回 -1
+int futimens(int fd, const struct timespec times[2]);
+int utimensat(int fd, const char *path, const struct timespec times[2], int flag);
+```
+
+这两个函数的 `times` 数组参数的第一个元素包含访问时间，第二元素包含修改时间。这两个时间是日历时间，这是标准时间以来所经过的秒数
+
+时间戳可以按以下 4 种方式之一进行指定
+
+1. 如果 `times` 参数是一个空指针，则访问时间和修改时间两者都设置为当前时间
+
+2. 如果 `times` 参数是指向两个 `timespec` 结构的数组，任一数组元素的 `tv_nsec` 字段的值为 `UTIME_NOW` ，相应的时间戳就设置为当前时间，忽略相应的 `tv_sec` 字段
+
+3. 如果`times` 参数指向两个 `timespec` 结构的数组，任一数组元素的 `tv_nsec` 字段的值为 `UTIME_OMIT` ，相应的时间戳保持不变，忽略相应的 `tv_sec` 字段
+
+4. 如果 `times` 参数指向两个 `timespec` 结构的数组，且 `tv_nsec` 字段的值既不是 `UTIME_NOW` 也不是 `UTIME_OMIT`,在这种情况下，相应的时间戳设置为相应的 `tv_sec` 和 `tv_nsec` 字段的值
+
+   执行这些函数所要求的优先权取决于 `times` 参数的值
+
+   如果 `times` 是一个空指针，并且任一 `tv_nsec` 字段的值既不是 `UTIME_NOW` 也不是 `UTIME_OMIT`，则进程的有效用户 ID 必须等于该文件的所有者 ID，或者进程必须是一个超级用户进程。对文件只具有写权限是不够的
+
+   如果 `times` 是非空指针，并且两个 `tv_nsec` 字段的值都为 `UTIME_OMIT`, 就不执行任何的权限检查。
+
+`futimens` 函数需要打开文件来更改它的时间，`utimensat` 函数提供了一种使用文件名更改文件时间的方法。`pathname` 参数是相对于 `fd` 参数进行计算的，`fd` 要么是打开目录的文件描述符，要么设置为特殊值 `AT_FDCWD` （强制通过相对于调用进程的当前目录计算 `pathname`)。如果`pathname` 指定了绝对路径，那么 `fd` 参数被忽略
+
+`utimensat` 的 `flag` 参数可以进一步修改默认行为。如果设置了 `AT_SYMLINK_NOFOLLOW` 标志，则符号链接本身的时间就会被修改（如果路径名指向符号链接）。默认的行为是跟随符号链接，并把文件的时间改成符号链接的时间
+
+```c
+#include <sys/time.h>
+// 返回值，成功，返回 0；出错返回 -1
+int utimes(const char *pathname, const struct timeval times[2]);
+```
+
+`utimes` 函数对路径名进行操作。`times` 参数是指向包含两个时间戳（访问时间和修改时间）元素的数组的指针，两个时间戳是用秒和微秒表示的
+
+```c
+struct timeval {
+    time_t tv_sec;  /* seconds */
+    long tv_usec; 	/* microseconds */
+}
+```
+
+不能对状态更改时间 `st_ctim` (i 节点最近被修改的时间) 指定一个值，因为调用 `utimes` 函数时，此字段会被自动更新。
+
+## I/O
+
 ### 流和 FILE 对象
 
 对于 I/O 函数是围绕文件描述符的，当打开一个文件时，即返回一个文件描述符，然后该文件描述符就用于后续的 I/O 操作。而对于标准 I/O 库，它们的操作时围绕流（stream) 进行的。当用标准 I/O 库打开或创建一个文件时，就已使一个流与一个文件相关联。
 
 对于 ASCII 字符集，一个字符用一个字节表示。对于国际字符集，一个字符可用多个字节表示。标准 I/O 文件流可用于单字节或多字节字符集。流的定向决定了所读，写的字符是单字节还是多字节的。当一个流最初被创建时，它并没有定向。若在未定向的流上使用一个多字节 I/O 函数，则将该流定义设置未宽定向的。若在未定向的流上使用一个单字节 I/O 函数，则将该流的定向设未字节定向的。
+
+使用 `freopen` 函数清除一个流的定向；使用 `fwide` 函数设置流的定向
+
+```c
+#include <stdio.h>
+#include <wchar.h>
+// 返回值：若流是宽定向的，返回正值；若流是字节定向的，返回负值；若流未定向，返回 0；
+int fwide(FILE *fd, int mode);
+```
+
+根据 `mode` 参数的不同值，`fwide` 函数执行不同的工作。
+
+* 若 `mode` 参数值为负，`fwide` 将试图使指定的流是字节定向的
+* 若 `mode` 参数值为正，`fwide` 将试图使指定的流是宽定向的。
+* 若 `mode` 参数值为 0，`fwide` 将不试图设置流的定向，但返回表示该流定向的值
+
+`fwide` 并不改变已定向流的定向。且无出错返回。
 
 ### 缓冲
 
