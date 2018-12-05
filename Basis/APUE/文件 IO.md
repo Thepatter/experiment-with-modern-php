@@ -176,11 +176,11 @@ ssize_t write(int fd, const void *buf, size_t nbytes);
 
 进程对应的三张表之间的关系。（该进程有两个不同的打开文件，一个文件从标准输入打开，另一个从标准输出打开）
 
-![](打开文件的内核数据结构.png)
+![](./apueImages/打开文件的内核数据结构.png)
 
 两个独立进程各自打开了同一文件
 
-![](两个独立进程打开同一文件.png)
+![](./apueImages/两个独立进程打开同一文件.png)
 
 ### 复制现有的文件描述符
 
@@ -193,7 +193,7 @@ int dup2(int fd, int fd2);
 
 由 `dup` 返回的新文件描述符一定是当前可用文件描述符中的最小数值。对于 `dup2` ，可以用 `fd2` 参数指定新描述符的值。如果 `fd2` 已经打开，则先将其关闭。若 `fd` 等于 `fd2` ，则 `dup2` 返回 `fd2` ，而不关闭它。否则，`fd2` 的 `FD_CLOEXEC` 文件描述符标志就被清除，这样 `fd2` 在进程调用 `exec` 时时打开状态
 
-![](dup后的内核数据结构.png)
+![](./apueImages/dup后的内核数据结构.png)
 
 ### `sync`、`fsync`、`fdatasync` 
 
@@ -285,7 +285,7 @@ int fstatat(int fd,const char *restrict pathname,struct stat *restrict buf, int 
 
 每个文件都有 9 个访问权限位
 
-![](文件9个权限位.png)
+![](./apueImages/文件9个权限位.png)
 
 9 个常量可分成 3 组
 
@@ -297,7 +297,7 @@ S_IRWXO = S_IROTH|S_IWOTH|S_IXOTH
 
 *文件权限位对文件和目录的影响*
 
-![文件权限对文件及目录影响](文件权限对文件及目录影响.png)
+![文件权限对文件及目录影响](./apueImages/文件权限对文件及目录影响.png)
 
 **用户：** 指的是文件所有者 （owner）。`chmod` 命令用于修改这 9 个权限位。
 
@@ -404,7 +404,7 @@ int fchmodat(int fd, const char *pathname, mode_t mode, int flag);
 
 * 参数 `mode` 是下列常量的按位或
 
-  ![](chmod函数的mode常量.png)
+  ![](./apueImages/chmod函数的mode常量.png)
 
 ### 粘着位
 
@@ -437,11 +437,11 @@ i 节点是固定长度的记录项，它包含有关文件的大部分信息
 
 *磁盘，分区和文件系统*
 
-![](磁盘分区和文件系统.png)
+![](./apueImages/磁盘分区和文件系统.png)
 
 *柱面组的 i 节点和数据块*
 
-![](较详细的柱面组的i节点和数据块.png)
+![](./apueImages/较详细的柱面组的i节点和数据块.png)
 
 * 每个 i 节点中都有一个链接计数，其值是指向该 i 节点的目录项数。只有当链接计数减少至 0 时，才可删除该文件（释放该文件占用的数据块）。在 `stat` 结构中，链接计数包含在 `st_nlink` 成员中，其基本系统数据类型是 `nlink_t` 。这种链接类型称为**硬链接**
 * **符号链接**，符号链接文件的实际内容（在数据块中）包含了该符号链接所指向的文件的名字。该 i 节点中的文件类型是 `S_IFLNK` 
@@ -531,7 +531,7 @@ int renameat(int oldfd, const char *oldname, int newfd, const char *newname);
 
 *各函数对符号链接的支持*
 
-![各个函数对符号链接的处理](各个函数对符号链接的处理.png)
+![各个函数对符号链接的处理](./apueImages/各个函数对符号链接的处理.png)
 
 ### 创建和读取符号链接
 
@@ -567,7 +567,7 @@ ssize_t readlink(int fd, const char* restrict pathname, char *restrict buf, size
 
 *每个文件维护 3 个时间字段*
 
-![与每个文件相关的3个时间值](与每个文件相关的3个时间值.png)
+![与每个文件相关的3个时间值](./apueImages/与每个文件相关的3个时间值.png)
 
 修改时间 `st_mtim` 是文件内容最后一次被修改的时间。状态更改时间是该文件 i 节点最后一次被修改的时间。
 
@@ -683,7 +683,7 @@ int setvbuf(FILE *restrict fp, char *restrict buf, int mode, size_t size);
 
 *`setbuf`和`setvbuf`动作*
 
-![](setbuf和setvbuf函数.png)
+![](./apueImages/setbuf和setvbuf函数.png)
 
 如果在一个函数内分配一个自动变量类的标准 I/O  缓冲区，则从该函数返回之前，必须关闭该流。另外，其实现将缓冲区的一部分用户存放它自己的管理操作信息，所以可以存放在缓冲区中的实际数据字节数少于 `size` 。一般而言，应由系统选择缓冲区的长度，并自动分配缓冲区。在这种情况下关闭此流时，标准 I/O 库将自动释放缓冲区。
 
@@ -719,7 +719,7 @@ FILE *fdopen(int fd, const char *type);
 
 *type 参数指定对该 I/O 流的读、写方式*
 
-![](打开标准IO流的type参数.png)
+![](./apueImages/打开标准IO流的type参数.png)
 
 使用字符 b 作为 `type` 的一部分，这使得标准 I/O 系统可以区分文本文件和二进制文件。因为 UNIX 内核并不对这两种文件进行区分，所以在 UNIX 系统环境下指定字符 b 作为 `type ` 的一部分上并无作用。
 
@@ -734,7 +734,7 @@ FILE *fdopen(int fd, const char *type);
 
 *打开一个标准 I/O 流的 6 钟不同方式*
 
-![](打开一个标准IO流的6种方式.png)
+![](./apueImages/打开一个标准IO流的6种方式.png)
 
 在指定 `w` 或 `a` 类型创建一个新文件时，无法设置该文件的权限位。可调整 `umask`  值来限制这些权限
 
@@ -1026,7 +1026,7 @@ struct pollfd {
 
 *poll 的 events 和 revents 标志*
 
-![](poll的events和revents标志.png)
+![](./apueImages/poll的events和revents标志.png)
 
 当一个描述符被挂断后（`POLLHUP`) 后，就不能再写该描述符，但是有可能仍然可以从该描述符读取到数据。
 
