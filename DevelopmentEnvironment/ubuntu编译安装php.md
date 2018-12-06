@@ -1,5 +1,11 @@
 ### Ubuntu 开发环境配置
 
+#### 安装编译构建依赖
+
+```shelll
+sudo apt-get build-dep nginx
+```
+
 #### 操作环境：
 
 * ubuntu16.04
