@@ -1,144 +1,62 @@
-### Ubuntu 开发环境配置
+## Ubuntu 开发环境配置
 
-#### 安装编译构建依赖
+### 编译构建环境
 
-```shelll
-sudo apt-get build-dep nginx
-```
+* `ubuntu18.04`
 
-#### 操作环境：
+### 编译安装 `nginx`
 
-* ubuntu16.04
-* php7.2.6 http://cn2.php.net/distributions/php-7.2.6.tar.bz2
+* 获取 `nginx` 公钥并加入仓库：
 
-#### 安装编译软件库
-
-```
-  sudo apt-get install -y \
-  build-essential \
-  gcc \
-  g++ \
-  autoconf \
-  libiconv-hook-dev \
-  libmcrypt-dev \
-  libxml2-dev \
-  libmysqlclient-dev \
-  libcurl4-openssl-dev \
-  libjpeg8-dev \
-  libfreetype6-dev \
-  openssl \
-  curl \
-  libpng12-dev \
-  libjpeg-dev \
-  libcurl4-gnutls-dev \
-  libxml2 \
-  libssl-dev \
-```
-
-#### `configure --help` 编译配置参数详解：(with 指要依赖外部库,enable 指 php 功能开关)
-
-  ```
-  --prefix=/usr/local/php                      //指定 php 安装目录 
-  --with-apxs2=/usr/local/apache/bin/apxs      //整合apache，
-                            //apxs功能是使用mod_so中的LoadModule指令，
-                           //加载指定模块到 apache，要求 apache 要打开SO模块
-  --with-config-file-path=/usr/local/php/etc    //指定php.ini位置
-  --with-MySQL=/usr/local/mysql                 //mysql安装目录，对mysql的支持
-  --with-mysqli=/usr/local/mysql/bin/mysql_config //mysqli扩展技术不仅可以调用MySQL的存储过程、处理MySQL事务，还可以使访问数据库工作变得更加稳定。
-  --enable-safe-mode    //打开安全模式 
-  --enable-ftp          //打开ftp的支持 
-  --enable-zip          //打开对zip的支持 
-  --with-bz2            //打开对bz2文件的支持 
-  --with-jpeg-dir       //打开对jpeg图片的支持 
-  --with-png-dir        //打开对png图片的支持 
-  --with-freetype-dir   //打开对freetype字体库的支持 
-  --without-iconv       //关闭iconv函数，各种字符集间的转换 
-  --with-libXML-dir     //打开libxml2库的支持 
-  --with-XMLrpc         //打开xml-rpc的c语言 
-  --with-zlib-dir       //打开zlib库的支持 
-  --with-gd             //打开gd库的支持 
-  --enable-gd-native-ttf //支持TrueType字符串函数库 
-  --with-curl            //打开curl浏览工具的支持 
-  --with-curlwrappers    //运用curl工具打开url流 
-  --with-ttf             //打开freetype1.*的支持，可以不加了 
-  --with-xsl             //打开XSLT 文件支持，扩展了libXML2库 ，需要libxslt软件 
-  --with-gettext         //打开gnu 的gettext 支持，编码库用到 
-  --with-pear            //打开pear命令的支持，PHP扩展用的 
-  --enable-calendar      //打开日历扩展功能 
-  --enable-mbstring      //多字节，字符串的支持 
-  --enable-bcmath        //不损失精度的数据模块
-  --enable-sockets       //打开 sockets 支持
-  --enable-exif          //图片的元数据支持 
-  --enable-magic-quotes  //魔术引用的支持 
-  --disable-rpath        //关闭额外的运行库文件 
-  --disable-debug        //关闭调试模式 
-  --with-mime-magic=/usr/share/file/magic.mime  //魔术头文件位置
+  ```shell
+  wget http://nginx.org/keys/nginx_signing.key
+  sudo apt-key add nginx_signing.key
+  sudo apt update
   ```
 
-* CGI 安装参数
+* 自动构建依赖
 
-  ```
-  --enable-fpm                 //打上PHP-fpm 补丁后才有这个参数，CGI方式安装的启动程序
-  --enable-fastCGI             //支持fastcgi方式启动PHP
-  --enable-force-CGI-redirect  //重定向方式启动PHP
-  --with-ncurses         //支持ncurses 屏幕绘制以及基于文本终端的图形互动功能的动态库
-  --enable-pcntl         // 多进程支持
-  --with-mcrypt          //mcrypt算法的扩展
-  --with-mhash           //mhash算法的扩展
-  
-  //以上函数库需要安装
-  
-  --with-gmp                     //应该是支持一种规范
-  --enable-inline-optimization   
-  --with-openssl                 //openssl的支持，加密传输时用到的
-  --enable-dbase                 //建立DBA 作为共享模块
-  --with-pcre-dir=/usr/local/bin/pcre-config       //perl的正则库案安装位置
-  --disable-dmalloc
-  --with-gdbm            //dba的gdbm支持
-  --enable-sigchild
-  --enable-sysvsem
-  --enable-sysvshm
-  --enable-zend-multibyte  //支持zend的多字节
-  --enable-mbregex
-  --enable-wddx
-  --enable-shmop
-  --enable-soap
+  ```shell
+  sudo apt build-dep nginx
   ```
 
-  * 编译 `php` 的常用参数
-    ```
-    ./configure --prefix=/usr/local/php/7.1 \
-    --with-config-file-path=/etc/php/7.1 \
-    --enable-fpm \
-    --with-fpm-user=www-data \
-    --with-fpm-group=www-data \
-    --enable-bcmath \
-    --enable-mysqlnd \
-    --enable-opcache \
-    --enable-sockets \
-    --enable-sysvmsg \
-    --enable-sysvsem \
-    --enable-sysvshm \
-    --enable-shmop \
-    --enable-zip \
-    --enable-soap \
-    --enable-xml \
-    --enable-pcntl \
-    --enable-mbstring \
-    --with-mysql=mysqlnd \
-    --with-mysqli=mysqlnd \
-    --with-pcre-regex \
-    --with-iconv \
-    --with-zlib \
-    --with-mcrypt \
-    --with-gd \
-    --with-openssl \
-    --with-mhash \
-    --with-xmlrpc \
-    --with-curl \
-    --with-imap-ssl 
-    ```
-    
+* 下载源码
+
+  官网地址:  http://nginx.org
+
+  下载：`wget http://nginx.org/download/nginx-1.14.2.tar.gz`
+
+  目录结构：
+
+  `auto`  目录：编译相关
+
+  `conf`  目录：配置示例
+
+  `configure`   脚本：生成中间文件脚本
+
+  `contribe`   目录：提供 `vim` 语法高亮支持插件等 `cp -r contrib/vim/* ~/.vim/`
+
+  `html` 目录：提供欢迎及500html文件
+
+  `man` 目录：帮助文档
+
+  `src` 目录：源码目录
+
+* `configure`
+
+  执行脚本后，生成的中间文件存放在 `objs` 目录，`objs` 目录中的 `ngx_modules.c` 决定
+
+* 编译
+
+  `make`
+
+  编译完成后生成的二进制文件及中间文件在 `objs` 目录里
+
+* 安装
+
+  安装完成后生成的二进制运行时文件在 `sbin` 目录下，配置文件在 `conf` 目录下
+
+### 编译安装 PHP
 
 **配置报错备注**
 
