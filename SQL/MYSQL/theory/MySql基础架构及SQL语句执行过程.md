@@ -58,7 +58,7 @@
 
 #### Mysql 逻辑架构图
 
-![](Mysql逻辑架构图.png)
+![](./Images/Mysql逻辑架构图.png)
 
 ### 日志模块
 
@@ -91,4 +91,4 @@ mysql> update T set c=c+1 where ID=2;
 
 * 更新流程图
 
-  ![](更新语句执行流程.png)
+  ![](./Images/更新语句执行流程.png)
