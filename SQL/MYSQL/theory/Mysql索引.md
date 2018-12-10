@@ -33,7 +33,7 @@ insert into T values(100,1, 'aa'),(200,2,'bb'),(300,3,'cc'),(500,5,'ee'),(600,6,
 
 ```
 
-select * from T where k between 3 and 5，需要执行几次树的搜索操作，会扫描多少行？
+`select * from T where k between 3 and 5`，需要执行几次树的搜索操作，会扫描多少行？
 
 这条 SQL 查询语句的执行流程
 
