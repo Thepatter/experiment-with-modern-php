@@ -6,7 +6,7 @@
  * Time: 16:39
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedListData;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\ImplementFolder;
 
 
 class DoubleLinkedListNode extends LinkedListNode

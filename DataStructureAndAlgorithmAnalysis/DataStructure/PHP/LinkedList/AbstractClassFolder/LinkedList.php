@@ -6,7 +6,7 @@
  * Time: 16:24
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedList;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder;
 
 use Iterator;
 

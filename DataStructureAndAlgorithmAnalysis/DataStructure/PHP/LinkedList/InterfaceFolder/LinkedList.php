@@ -5,10 +5,9 @@
  * Date: 2018/12/15
  * Time: 17:57
  */
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedList\InterfaceFolder;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder;
 
 use Iterator;
-use DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedList\InterfaceFolder\LinkedListNode;
 
 interface LinkedList extends Iterator
 {

@@ -3,25 +3,20 @@
  * Created by IntelliJ IDEA.
  * User: company
  * Date: 2018/12/15
- * Time: 16:35
+ * Time: 16:36
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedListData;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\ImplementFolder;
 
 
-class SingleLinkedList
+class DoubleLinkedList extends LinkedList
 {
-    public function add($node): bool
+    public function add(LinkedListNode $node): bool
     {
         // TODO: Implement add() method.
-//        if (static::valid() && static::checkNode($node)) {
-//            $this->linkedListArray[$this->current()] = $node;
-//            $node->set
-//        }
-        return false;
     }
 
-    public function del($node): bool
+    public function del(LinkedListNode $node): bool
     {
         // TODO: Implement del() method.
     }
@@ -41,13 +36,8 @@ class SingleLinkedList
         // TODO: Implement getNode() method.
     }
 
-    public function search($node): int
+    public function search(LinkedListNode $node): int
     {
         // TODO: Implement search() method.
-    }
-
-    private function checkNode(LinkedListNode $node): bool
-    {
-        return $node instanceof SingleLinkedListNode;
     }
 }

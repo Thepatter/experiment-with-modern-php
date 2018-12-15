@@ -6,7 +6,7 @@
  * Time: 16:38
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedListData;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\ImplementFolder;
 
 
 class DoubleLoopLinkedList extends LinkedList

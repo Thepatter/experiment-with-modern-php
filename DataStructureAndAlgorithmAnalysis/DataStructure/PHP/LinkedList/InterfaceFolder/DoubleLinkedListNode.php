@@ -6,7 +6,7 @@
  * Time: 18:27
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedList\InterfaceFolder;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder;
 
 
 interface DoubleLinkedListNode extends LinkedListNode

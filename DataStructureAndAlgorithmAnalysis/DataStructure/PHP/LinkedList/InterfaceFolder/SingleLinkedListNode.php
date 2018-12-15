@@ -6,7 +6,7 @@
  * Time: 18:16
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedList\InterfaceFolder;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder;
 
 
 interface SingleLinkedListNode extends LinkedListNode

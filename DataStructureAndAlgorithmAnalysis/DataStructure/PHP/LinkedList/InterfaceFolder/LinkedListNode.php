@@ -6,7 +6,7 @@
  * Time: 17:58
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedList\InterfaceFolder;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder;
 
 
 interface LinkedListNode

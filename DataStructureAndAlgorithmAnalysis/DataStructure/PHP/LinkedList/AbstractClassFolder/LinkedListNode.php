@@ -6,7 +6,7 @@
  * Time: 16:31
  */
 
-namespace DataStructureAndAlgorithmAnalysis\PHPImplement\LinkedListData;
+namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder;
 
 abstract class LinkedListNode
 {
