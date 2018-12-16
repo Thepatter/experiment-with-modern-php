@@ -34,12 +34,28 @@ class SingleLinkedList extends LinkedList implements SingleLinkedListInterface
     public function del(SingleLinkedListNode $node): bool
     {
         // TODO: Implement del() method.
+        if (empty($this->linkedListArray)) {
+            return false;
+        }
 
     }
 
     public function delByIndex(int $index): bool
     {
         // TODO: Implement delByIndex() method.
+        if (isset($this->linkedListArray[$index])) {
+            if ($this->linkedListArray[$index]->getNext() === 1) {
+                $this->linkedListArray[$index]->setNext($index + 1);
+            } else if (is_null($this->linkedListArray[$index]->getNext())) {
+                $this->linkedListArray[$index -1]->setNext(null);
+            } else {
+                $this->linkedListArray[$index -1]->setNext($index + 1);
+            }
+            unset($this->linkedListArray[$index]);
+            $this->linkedListLength--;
+            return true;
+        }
+        return false;
     }
 
     public function add(SingleLinkedListNode $node): bool
@@ -79,6 +95,7 @@ class SingleLinkedList extends LinkedList implements SingleLinkedListInterface
     public function getNodeIndex(int $index): SingleLinkedListNode
     {
         // TODO: Implement getNodeIndex() method.
+        return $this->linkedListArray[$index] ?? null;
     }
 
 }
