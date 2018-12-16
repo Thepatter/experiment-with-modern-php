@@ -8,9 +8,9 @@
 
 namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder;
 
-use Iterator;
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\LinkedList as LinkedListInterface;
 
-abstract class LinkedList
+abstract class LinkedList implements LinkedListInterface
 {
     protected $linkedListLength;
 
@@ -18,7 +18,7 @@ abstract class LinkedList
 
     protected $linkedCurrentPoint = 0;
 
-    public function getLinkedListLength()
+    public function getLinkedListLength(): int
     {
         return $this->linkedListLength;
     }
@@ -56,9 +56,19 @@ abstract class LinkedList
     /**
      * @return array
      */
-    public function toArray() :array
+    public function toArray() :array  
     {
         return $this->linkedListArray;
+    }
+
+    public function delByIndex(int $index): bool
+    {
+        // TODO: Implement delByIndex() method.
+    }
+
+    public function rebuildLinkedList(): void
+    {
+        // TODO: Implement rebuildLinkedList() method.
     }
 
 

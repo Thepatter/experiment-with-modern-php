@@ -8,22 +8,25 @@
 
 namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\ImplementFolder;
 
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder\LinkedList;
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\DoubleLinkedList as DoubleLinkedListInterface;
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\DoubleLinkedListNode;
 
-class DoubleLinkedList extends LinkedList
+class DoubleLinkedList extends LinkedList implements DoubleLinkedListInterface
 {
-    public function add(LinkedListNode $node): bool
+    public function getNodeIndex(int $index): DoubleLinkedListNode
+    {
+        // TODO: Implement getNodeIndex() method.
+    }
+
+    public function add(DoubleLinkedListNode $node): bool
     {
         // TODO: Implement add() method.
     }
 
-    public function del(LinkedListNode $node): bool
+    public function del(DoubleLinkedListNode $node): bool
     {
         // TODO: Implement del() method.
-    }
-
-    public function delByIndex(int $index): bool
-    {
-        // TODO: Implement delByIndex() method.
     }
 
     public function rebuildLinkedList(): void
@@ -31,12 +34,7 @@ class DoubleLinkedList extends LinkedList
         // TODO: Implement rebuildLinkedList() method.
     }
 
-    public function getNode(int $index): LinkedListNode
-    {
-        // TODO: Implement getNode() method.
-    }
-
-    public function search(LinkedListNode $node): int
+    public function search(DoubleLinkedListNode $node): int
     {
         // TODO: Implement search() method.
     }

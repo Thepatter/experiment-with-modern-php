@@ -8,8 +8,10 @@
 
 namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\ImplementFolder;
 
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder\LinkedListNode;
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\SingleLinkedListNode as SingleLinkedListNodeInterface;
 
-class SingleLinkedListNode extends LinkedListNode
+class SingleLinkedListNode extends LinkedListNode implements SingleLinkedListNodeInterface
 {
     private $next;
 

@@ -8,8 +8,10 @@
 
 namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\ImplementFolder;
 
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder\LinkedListNode;
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\DoubleLinkedListNode as DoubleLinkedListNodeInterface;
 
-class DoubleLinkedListNode extends LinkedListNode
+class DoubleLinkedListNode extends LinkedListNode implements DoubleLinkedListNodeInterface
 {
     private $prev;
 

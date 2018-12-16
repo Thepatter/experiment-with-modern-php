@@ -8,11 +8,13 @@
 
 namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder;
 
-abstract class LinkedListNode
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\LinkedListNode as LinkedListNodeInterface;
+
+abstract class LinkedListNode implements LinkedListNodeInterface
 {
     protected $data;
 
-    public function setData($data)
+    public function setData($data): void
     {
         $this->data = $data;
     }

@@ -9,26 +9,21 @@
 namespace DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\ImplementFolder;
 
 
-class SingleLinkedList
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\AbstractClassFolder\LinkedList;
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\SingleLinkedList as SingleLinkedListInterface;
+use DataStructureAndAlgorithmAnalysis\DataStructure\PHP\LinkedList\InterfaceFolder\SingleLinkedListNode;
+
+class SingleLinkedList extends LinkedList implements SingleLinkedListInterface
 {
-    public function add($node): bool
-    {
-        // TODO: Implement add() method.
-//        if (static::valid() && static::checkNode($node)) {
-//            $this->linkedListArray[$this->current()] = $node;
-//            $node->set
-//        }
-        return false;
-    }
+    private $isExtends;
 
-    public function del($node): bool
-    {
-        // TODO: Implement del() method.
-    }
+    private $expansionFactor;
 
-    public function delByIndex(int $index): bool
+    public function __construct(int $linkedListLength = 10, bool $isExtends = false, float $expansionFactor = 0.75)
     {
-        // TODO: Implement delByIndex() method.
+        $this->linkedListLength = $linkedListLength;
+        $this->isExtends = $isExtends;
+        $this->expansionFactor = $expansionFactor;
     }
 
     public function rebuildLinkedList(): void
@@ -36,18 +31,54 @@ class SingleLinkedList
         // TODO: Implement rebuildLinkedList() method.
     }
 
-    public function getNode(int $index): LinkedListNode
+    public function del(SingleLinkedListNode $node): bool
     {
-        // TODO: Implement getNode() method.
+        // TODO: Implement del() method.
+
     }
 
-    public function search($node): int
+    public function delByIndex(int $index): bool
+    {
+        // TODO: Implement delByIndex() method.
+    }
+
+    public function add(SingleLinkedListNode $node): bool
+    {
+        // TODO: Implement add() method.
+        if ($this->isExtends === false) {
+            if ($this->linkedCurrentPoint < $this->linkedListLength) {
+                $this->linkedListArray[] = $node;
+                $node->setNext($this->linkedCurrentPoint + 1);
+                if ($this->linkedCurrentPoint === $this->linkedListLength - 1) {
+                    $node->setNext(null);
+                }
+                $this->linkedCurrentPoint++;
+                return true;
+            }
+            return false;
+        }
+        if ($this->linkedCurrentPoint <= $this->linkedListLength * $this->expansionFactor) {
+            $this->linkedListLength *= 2;
+            $newLinkedListArray = [];
+            foreach ($this->linkedListArray as $keyIndex => $nodeValue) {
+                $newLinkedListArray[$keyIndex] = $nodeValue;
+            }
+            $this->linkedListArray = $newLinkedListArray;
+        }
+        $this->linkedCurrentPoint++;
+        $this->linkedListArray[$this->linkedCurrentPoint] = $node;
+        return true;
+    }
+
+    public function search(SingleLinkedListNode $node): int
     {
         // TODO: Implement search() method.
+
     }
 
-    private function checkNode(LinkedListNode $node): bool
+    public function getNodeIndex(int $index): SingleLinkedListNode
     {
-        return $node instanceof SingleLinkedListNode;
+        // TODO: Implement getNodeIndex() method.
     }
+
 }
