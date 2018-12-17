@@ -11,6 +11,8 @@ use Iterator;
 
 interface LinkedList extends Iterator
 {
+    const ExpansionFactor = 2;
+
     public function delByIndex(int $index): bool ;
 
     public function rebuildLinkedList(): void ;

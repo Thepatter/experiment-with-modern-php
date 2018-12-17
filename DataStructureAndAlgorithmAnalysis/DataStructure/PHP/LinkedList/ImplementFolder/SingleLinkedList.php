@@ -37,7 +37,17 @@ class SingleLinkedList extends LinkedList implements SingleLinkedListInterface
         if (empty($this->linkedListArray)) {
             return false;
         }
-
+        $delKey = null;
+        foreach ($this->linkedListArray as $nodeKey => $nodeValue) {
+            if ($node->getData() == $nodeValue->getData()) {
+                $delKey = $nodeKey;
+                break;
+            }
+        }
+        if (is_null($delKey)) {
+            return false;
+        }
+        return $this->delByIndex($delKey);
     }
 
     public function delByIndex(int $index): bool
@@ -63,18 +73,18 @@ class SingleLinkedList extends LinkedList implements SingleLinkedListInterface
         // TODO: Implement add() method.
         if ($this->isExtends === false) {
             if ($this->linkedCurrentPoint < $this->linkedListLength) {
+                $this->linkedCurrentPoint++;
                 $this->linkedListArray[] = $node;
                 $node->setNext($this->linkedCurrentPoint + 1);
                 if ($this->linkedCurrentPoint === $this->linkedListLength - 1) {
                     $node->setNext(null);
                 }
-                $this->linkedCurrentPoint++;
                 return true;
             }
             return false;
         }
-        if ($this->linkedCurrentPoint <= $this->linkedListLength * $this->expansionFactor) {
-            $this->linkedListLength *= 2;
+        if ($this->linkedCurrentPoint >= $this->linkedListLength * $this->expansionFactor) {
+            $this->linkedListLength *= SingleLinkedListInterface::ExpansionFactor;
             $newLinkedListArray = [];
             foreach ($this->linkedListArray as $keyIndex => $nodeValue) {
                 $newLinkedListArray[$keyIndex] = $nodeValue;
@@ -82,6 +92,7 @@ class SingleLinkedList extends LinkedList implements SingleLinkedListInterface
             $this->linkedListArray = $newLinkedListArray;
         }
         $this->linkedCurrentPoint++;
+        $node->setNext($this->linkedCurrentPoint + 1);
         $this->linkedListArray[$this->linkedCurrentPoint] = $node;
         return true;
     }
@@ -89,7 +100,13 @@ class SingleLinkedList extends LinkedList implements SingleLinkedListInterface
     public function search(SingleLinkedListNode $node): int
     {
         // TODO: Implement search() method.
-
+        $index = null;
+        foreach ($this->linkedListArray as $key => $node) {
+            if ($node == $node) {
+                $index = $key;
+            }
+        }
+        return $index;
     }
 
     public function getNodeIndex(int $index): SingleLinkedListNode

@@ -14,4 +14,8 @@ interface DoubleLinkedListNode extends LinkedListNode
     public function setPrev(int $prev): void ;
 
     public function getPrev(): int;
+
+    public function setNext($next): void ;
+
+    public function getNext(): int;
 }

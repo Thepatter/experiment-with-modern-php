@@ -61,11 +61,6 @@ abstract class LinkedList implements LinkedListInterface
         return $this->linkedListArray;
     }
 
-    public function delByIndex(int $index): bool
-    {
-        // TODO: Implement delByIndex() method.
-    }
-
     public function rebuildLinkedList(): void
     {
         // TODO: Implement rebuildLinkedList() method.

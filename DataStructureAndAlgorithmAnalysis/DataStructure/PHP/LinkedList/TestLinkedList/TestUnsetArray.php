@@ -19,3 +19,9 @@ foreach ($originalArray as $key => $value) {
 }
 
 var_dump($newArray);
+
+$a = 0;
+
+var_dump(isset($a));
+
+var_dump(empty($a));
