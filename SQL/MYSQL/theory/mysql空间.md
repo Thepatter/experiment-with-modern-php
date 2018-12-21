@@ -31,7 +31,60 @@
 
 使用 `alter table A engine=InnoDB` 命令来重建表。在 MySQL 5.5 版本之前，这个命令的执行流程与上述一致，区别是这个临时表 B 不需要自己创建，MySQL 会自动完成转存数据、交换表名、删除旧表的操作。
 
-在往临时插入数据的过程中，有新的数据要写入到表 A 的话，就会造成数据丢失。因此在整个 DDL 过程中，表 A 中不能有更新。即这个 DDL 不是 Online 的
+在往临时插入数据的过程中，有新的数据要写入到表 A 的话，就会造成数据丢失。因此在整个 DDL 过程中，表 A 中不能有更新。即这个 `DDL` 不是 `Online` 的
 
+**`MySQL 5.6` 版本开始引入的 `Online DDL`**
 
+引入 `Online DDL` 之后，重建表的流程：
+
+*Online DDL流程*
+
+![](./Images/OnlineDDL过程.png)
+
+1. 建立一个临时文件，扫描表 A 主键的所有数据页
+2. 用数据页中表 A 的记录生成 B+ 树，存储到临时文件中
+3. 生成临时文件的过程中，将所有对 A 的操作记录在一个日志文件中（`row log`）中，对应的是上图中 `state2` 的状态
+4. 临时文件生成后，将日志文件中的操作应用到临时文件，得到一个逻辑数据上与表 A 相同的数据文件，对应上图中 `state3` 的状态
+5. 用临时文件替换表 A 的数据文件
+
+因为日志文件记录和重放操作这个功能的存在，这个方案在重建表的过程中，允许对表 A 做增删改操作。`alter` 语句在启动的时候需要获取 `MDL` 写锁，但是这个写锁在真正拷贝数据之前就退化成读锁了。（退化的原因是为了实现 `Online`，`MDL` 读锁不会阻塞增删改操作，但又不能直接解锁，需要确保其他线程对这个表同时做 `DDL`）对于一个大表来说，`Online DDL` 最耗时的过程就是拷贝数据到临时表的过程，这个步骤的执行期间可以接受增删改操作。所以，相对于整个 `DDL` 过程来说，锁的时间非常短。对业务员来说，就可以认为是 `Online` 的。
+
+重建会扫描原表数据和构建临时文件。对于很大的表来说，这个操作是很消耗 I/O 和 CPU 资源的。因此，对于线上服务，要很小心地控制操作时间，如果想要比较安全的操作，可以使用 `github` 开源的 `gh-ost` 来做。
+
+#### `Online` 和 `inplace`
+
+`Online DDL` 之前，重建表时，源表的数据导出来的存放位置是 `tmp_table` 。是一个临时表，是在 `server` 层创建的；而 `Online DDL` 根据源表重建处理的数据是放在 `tmp_file` 里的，这个临时文件是 `InnoDB` 在内部创建出来的，整个 `DDL` 过程都在 `InnoDB` 内部完成。对于 `sever` 层来说，没有把数据挪动到临时表，是一个 “原地” 操作，即是 `inplace` 。
+
+重建表语句 `alter table t engine=InnoDB` 隐含地意思是：
+
+```mysql
+alter table t engine=innodb, ALGORITHM=implace;
+```
+
+跟 `inplace` 对应的就是拷贝表的方式，用法是：
+
+```mysql
+alter table t engine=innodb, ALGORITHM=copy
+```
+
+当使用 `ALGORITHM=copy` 的时候，表示的是强制拷贝表，对应的流程非 `Online DDL` 的操作过程。
+
+如果要给 `InnoDB` 表的一个字段加全文索引，写法是：
+
+```mysql
+alter table add FULLTEXT(field_name);
+```
+
+这个过程是 `inplace` 的，但会阻塞增删改操作，是非 `Online` 的
+
+两者逻辑之间的关系是：
+
+* `DDL` 过程如果是 `Online` 的，就一定是 `inplace` 的
+* `inplace` 的 `DDL`，有可能不是 `Online` 的。到 8.0，添加全文索引和空间索引就是这种情况
+
+如果要收缩一个表，只是 `delete` 掉表里面不用的数据，表文件的大小是不会变的，需要通过 `alter table` 命令重建表，才能达到表文件变小的目的。5.6 版本的 `Online DDL` 方式可以在业务低峰期使用，而 5.5 及之前的版本，这个命令是会阻塞 `DML` 的。
+
+* `optimize table t` 等于 `recreate` + `analyze`
+* `alter table t engine = InnoDB` 即是 `recreate`
+* `analyze table t` 是对表的索引信息做重新统计，没有修改数据，这个过程中加了 `MDL` 读锁
 
