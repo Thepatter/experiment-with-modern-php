@@ -1,6 +1,4 @@
-## Java 数组 API
-
-### java.util.Arrays
+## java.util.Arrays
 
 * `static String toString(type[] a)` ：返回包含 a 中元素的字符串，这些数据元素被放在括号内，并用逗号分隔。
 
