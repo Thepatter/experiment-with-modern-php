@@ -1,22 +1,20 @@
-public class Employee {
-    private static int nextId = 1;
+import java.time.*;
 
+public class Employee
+{
     private String name;
 
     private double salary;
 
-    private int id;
+    private LocalDate hireDay;
 
-    public Employee()
+    public Employee(){}
+
+    public Employee(String name, double salary, int year, int month, int day)
     {
-
-    }
-
-    public Employee(String n, double s)
-    {
-        name = n;
-        salary = s;
-        id = 0;
+        this.name = name;
+        this.salary = salary;
+        hireDay = LocalDate.of(year, month, day);
     }
 
     public String getName()
@@ -29,25 +27,14 @@ public class Employee {
         return salary;
     }
 
-    public int getId()
+    public LocalDate getHireDay()
     {
-        return id;
+        return hireDay;
     }
 
-    public void setId()
+    public void raiseSalary(double byPercent)
     {
-        id = nextId;
-        nextId++;
-    }
-
-    public static int getNextId()
-    {
-        return nextId;
-    }
-
-    public static void main(String[] args)
-    {
-        Employee e = new Employee("Harry", 50000);
-        System.out.println(e.getName() + " " + e.getSalary());
+        double raise = salary * byPercent / 100;
+        salary += raise;
     }
 }
