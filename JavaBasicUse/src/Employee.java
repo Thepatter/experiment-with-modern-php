@@ -1,6 +1,5 @@
 import java.time.*;
-
-public class Employee
+public class Employee implements Comparable<Employee>, Cloneable
 {
     private String name;
 
@@ -37,4 +36,10 @@ public class Employee
         double raise = salary * byPercent / 100;
         salary += raise;
     }
+
+    public int compareTo(Employee other)
+    {
+        return Double.compare(salary, other.salary);
+    }
+
 }
