@@ -10,7 +10,7 @@
   select * from tradelog where tradeid=110717;
   ```
 
-  交易编号 `tradeid` 这个上，本来就有索引，但是 `explain` 结果却显示，这条语句需要走全表扫描。`tradeud` 的字段类型 `varchar(32)`，而输入的参数却是整型，所以需要做类型转换
+  交易编号 `tradeid` 这个上，本来就有索引，但是 `explain` 结果却显示，这条语句需要走全表扫描。`tradeid` 的字段类型 `varchar(32)`，而输入的参数却是整型，所以需要做类型转换
 
   可以使用 `select "10" > 9` 的结果来判断：
 
