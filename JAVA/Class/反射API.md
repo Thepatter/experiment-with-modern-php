@@ -10,6 +10,28 @@
 
   返回这个类的一个新实例
 
+* `T newInstance()`
+
+  返回无参数构造器构造的一个新实例
+
+* `T cast(Object obj)`
+
+  如果 obj 为 null 或有可能转换成类型 T，则返回 obj；否则抛出 `BadCastException` 异常
+
+* `T[]  getEnumConstants()`
+
+  如果 T 是枚举类型，则返回所有值组成的数组，否则返回 null
+
+* `Class<? super T> getSuperclass()`
+
+  返回这个类的超类。如果 T 不是一个类或 Object 类，则返回 null
+
+* `Constructor<T> getConstructor(Class... parameterTypes)`
+
+* `Constructor<T> getDeclaredConstructor(Class...parameterTypes)`
+
+  获得公有的构造器，或带有给定参数类型的构造器
+
 * `Field getField(String name)`
 
 * `Field[] getField()`
@@ -42,9 +64,33 @@
 
   返回包含 `Constructor` 对象的数组，其中包含了 `Class` 对象所描述的类的所有公有构造器（`getConstructors()`）或者所有构造器(`getDeclaredConstructors()`)
 
+* `TypeVariable[] getTypeParameters()`
+
+  如果这个类型被声明为泛型类型，则获得泛型类型变量，否则获得一个长度为0 的数组
+
+* `Type getGenericSuperclass()`
+
+  获得被声明为这一类型的超类的泛型类型；如果这个类型是 Object 或不是一个类类型，则返回 null
+
+* `Type[] getGenericInterfaces()`
+
+  获得被声明为这个类型的接口的泛型类型（以声明的次序），否则，如果这个类型没有实现接口，返回长度为0 的数组
+
 ### java.lang.reflect.Field
 
 ### java.lang.reflect.Method
+
+* `TypeVariable[] getTypeParameters()`
+
+  如果这个方法被声明为泛型方法，则获得泛型类型变量，否则返回长度为 0 的数组
+
+* `Type getGenericReturnType`
+
+  获得这个方法被声明的泛型返回类型
+
+* `Type[] getGenericParameterTypes()`
+
+  获得这个方法被声明的泛型参数类型。如果这个方法没有参数，返回长度为 0 的数组
 
 ### java.lang.reflect.Constructor
 
@@ -77,6 +123,10 @@
   构造一个这个构造器所属类的新实例
 
   参数：`args` 提供给构造器的参数
+
+* `T newInstance(Object...parameters)` （在 `Constructor` 类中）
+
+  返回用指定参数构造的新实例
 
 * `public Object invoke(Object implicitParameter, Object[] explicitParamenters)` （Method）
 
@@ -175,3 +225,43 @@
 * `static boolean isProxyClass(Class<?> cl)`
 
   如果 `cl` 是一个代理类则返回 true
+
+### java.lang.reflect.TypeVariable
+
+* `String getName()`
+
+  获得类型变量的名字
+
+* `Type[] getBounds()`
+
+  获得类型变量的子类限定，否则，如果该变量无限定，则返回长度为 0 的数组
+
+### java.lang.reflect.WildcardType
+
+* `Type[] getUpperBounds()`
+
+  获得这个类型变量的子类限定，否则，如果没有子类限定，则返回长度为 0 的数组
+
+* `Type[]  getLowerBounds()`
+
+  获得这个类型变量的超类限定，否则，如果没有超类限定，则返回长度为 0 的数组
+
+### java.lang.reflect.ParameterizedType
+
+* `Type getRawType()`
+
+  获得这个参数化类型的原始类型
+
+* `Type[] getActualTypeArguments()`
+
+  获得这个参数化类型声明时所使用的类型参数
+
+* `Type getOwnerType()`
+
+  如果是内部类型，则返回其外部类型，如果是一个顶级类型，则返回 null
+
+### java.lang.reflect.GenericArrayType
+
+* `Type getGenericComponentType()`
+
+  获得声明该数组类型的泛型组件类型
