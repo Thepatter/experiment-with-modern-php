@@ -1,5 +1,6 @@
+package common;
 
-import java.time.*;
+import java.time.LocalDate;
 
 public class Employee implements Comparable<Employee>, Cloneable
 {
@@ -10,6 +11,11 @@ public class Employee implements Comparable<Employee>, Cloneable
     private LocalDate hireDay;
 
     public Employee(){}
+
+    public Employee(String name)
+    {
+        this.name = name;
+    }
 
     public Employee(String name, double salary, int year, int month, int day)
     {
