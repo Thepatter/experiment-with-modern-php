@@ -6,7 +6,7 @@ Java内部支持多线程，在一个程序中允许同时允许多个任务。�
 ```java
 public class TaskClass implements Runnable {
     @Override
-    public function run(); // 线程执行才方法
+    public function run(); // 线程执行方法
 }
 // 构建任务
 TaskClass task = new TaskClass();

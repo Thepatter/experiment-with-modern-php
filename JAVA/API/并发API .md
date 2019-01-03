@@ -84,9 +84,76 @@
 
   标识该线程为守护线程或用户线程。这一方法必须在线程启动之前调用
 
+* `static void setDefaultUncaughtExceptionHandler(Thread.UncaughtExctpionHandler handler)`
+
+* `static Thread.UncaughtExceptionHandler getDefaultUncaughtExceptionHandler()`
+
+  设置或获取未捕获异常的默认处理器
+
+* `void setUncaughtExceptionHandler(Thread.UncaughtExceptionHandler handler)`
+
+* `Thread.UncaughtExceptionHandler getUncaughtExceptionHandler()`
+
+  设置或获取未捕获异常的处理器。如若没有安装处理器，则将线程组对象作为处理器。
+
 ### java.lang.Runnable
 
 * `void run()`
 
   必须覆盖这个方法方法，并在这个方法中提供所要执行的任务指令
 
+### java.lang.Thread.UncaughtExceptionHandler
+
+* `void uncaughtException(Thread t, Throwable e)`
+
+  当一个线程因未捕获异常而终止，按规定要将客户报告记录到日志中
+
+  t			由于未捕获异常而终止的线程
+
+  e			未捕获的异常对象
+
+### java.lang.ThreadGroup
+
+* `void uncaughtException(Thread t, Throwable e)`
+
+  如果有父线程组，调用父线程组的这一方法，或者，如果 `Thread` 类有默认处理器，调用该处理器，否则，输出栈轨迹到标准错误流上（如果  e 是一个 ThreadDeath 对象，栈轨迹是被禁用的。ThreadDeath 对象由 stop 方法产生，而该方法已经过时）
+
+### java.util.concurrent.locks.Lock
+
+* `void lock()`
+
+  获取这个锁；如果锁同时被另一个线程拥有则发生阻塞
+
+* `void unlock()`
+
+  释放这个锁
+
+### java.util.concurrent.locks.ReentrantLock
+
+* `ReetrantLock()`
+
+  构建一个可以被用来保护临界区的可重入锁
+
+* `ReetractLock(boolean fair)`
+
+  构建一个带有公平策略的锁。一个公平锁偏爱等待时间最长的线程。但是，这一公平的保证将大大降低性能。在默认情况下，锁没有被强制为公平的
+
+### java.util.concurrent.locks.Lock
+
+* `Condition newCondition()`
+
+  返回一个与该锁相关的条件对象
+
+### java.util.concurrent.locks.Condition
+
+* `void await()`
+
+  将该线程放到条件的等待集中
+
+* `void signalAll()`
+
+  解除该条件的等待集中的所有线程的阻塞状态
+
+* `void signal()`
+
+  从该条件的等待集中随机地选择一个线程，解除其阻塞状态

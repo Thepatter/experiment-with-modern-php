@@ -1,10 +1,14 @@
 ## java.util.Arrays
 
-* `static String toString(type[] a)` ：返回包含 a 中元素的字符串，这些数据元素被放在括号内，并用逗号分隔。
+* `static String toString(type[] a)`
+
+  返回包含 a 中元素的字符串，这些数据元素被放在括号内，并用逗号分隔。
 
   参数：a：类型为 `int`、`long`、`short`、`char`、`byte`、`boolean`、`float`、`double` 的数组
 
-* `static type copyOf(type[] a, int length)` 、`static type copyOfRange(type[] a, int start, int end)`：返回与 a 类型相同的一个数组，其长度为 `length` 或者 `end-start` ，数组元素为 a 的值
+* `static type copyOf(type[] a, int length)` 、`static type copyOfRange(type[] a, int start, int end)`
+
+   `返回与 a 类型相同的一个数组，其长度为 `length` 或者 `end-start` ，数组元素为 a 的值
 
   参数：
 
@@ -14,13 +18,17 @@
 
   ​	end：终止下标（不包含这个值）。这个值可能大于 `a.length`。在这种情况下，结果为 0 或 `false`
 
-  ​	length：拷贝的数据元素长度。如果 `length` 值大于 `a.length`，结果为 0 或 `false`；否则，数组中只有前面 `length` 个数据元素的拷贝值
+  ​	length：拷贝的数据元素长度。如果 `length` 值大于 `a.length`，结果为 0 或 `false`；否则，数组中只有	  前面 `length` 个数据元素的拷贝值
 
-* `static void sort(type[] a)` : 采用优化的快速排序算法对数组进行排序
+* `static void sort(type[] a)` 
 
-  参数：a：类型为 `int`、`long`、`short`、`char`、`byte`、`boolean`、`float`、`double` 的数组
+   采用优化的快速排序算法对数组进行排序
 
-* `static int binarySearch(type[] a, type v)`、`static int binarySerach(type[] a, int start, int end, type v)`：采用二分搜索算法查找值 v。如果查找成功，返回相同的下标值；否则，返回一个负数值 `r`。`-r-1` 是为保持 a 有序 v 应插入的位置
+​        参数：a：类型为 `int`、`long`、`short`、`char`、`byte`、`boolean`、`float`、`double` 的数组
+
+* `static int binarySearch(type[] a, type v)`、`static int binarySerach(type[] a, int start, int end, type v)`：
+
+  采用二分搜索算法查找值 v。如果查找成功，返回相同的下标值；否则，返回一个负数值 `r`。`-r-1` 是为保持 a 有序 v 应插入的位置
 
   参数：
 
@@ -32,7 +40,9 @@
 
   ​	v：同 a 的数据元素类型相同的值
 
-* `static void fill(type[] a, type v)` 将数组的所有数据元素值设置为 v
+* `static void fill(type[] a, type v)` 
+
+  将数组的所有数据元素值设置为 v
 
   参数：a：标量数组，v 与 a 数据元素相同的一个值
 
