@@ -12,5 +12,6 @@ public class EnumTest {
         if (size == Size.EXTRA_LARGE) {
             System.out.println("Good job-you paid attention to the _.");
         }
+
     }
 }

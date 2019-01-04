@@ -1,0 +1,18 @@
+## `java.lang.Enum<E>`
+
+* `static Enum valueOf(Class enumClass, String name)`             
+
+  返回指定名字、给定类的枚举常量
+
+* `String toString()`                           
+
+  返回枚举常量名
+
+* `int ordinal()`                                   
+
+  返回枚举常量在 `enum` 声明中的位置，位置从 0 开始计数
+
+* `int compareTo(E other)`                  
+
+  如果枚举常量出现在 `other` 之前，则返回一个负值，如果 `this == other` ，返回 0；否则，返回正值。枚举常量的出现次序在 `enum` 声明中给出
+
