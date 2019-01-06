@@ -12,9 +12,9 @@
 
   返回一个随机的 int 值
 
-* `int nextInt(n: int)`     
+* `int nextInt(int n)`     
 
-  返回一个 0 到 n (不包含n) 之间的随机 int 类型的值
+  返回一个 0 到 n - 1 之间的随机数
 
 * `long nextLong()`         
 

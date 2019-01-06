@@ -6,7 +6,7 @@
 
 * `BigDecimal multiply(BigDecimal other)`
 
-* `BigDecimal divide(BigBecimal other, RoundingMode mode)`
+* `BigDecimal divide(BigDecimal other, RoundingMode mode)`
 
   返回这个大实数与另一个大实数 other 的和，差，积，商。要想计算商，必须给出舍入方式。RoundingMode.HALF_UP 为四舍五入
 

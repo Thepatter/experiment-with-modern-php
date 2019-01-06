@@ -26,7 +26,7 @@
 
   `compareTo` 的忽略大小写版本
 
-* `IntStream codePoints().toArray()`  
+* `IntStream codePoints()`  
 
   将这个字符串的码点作为一个流返回。调用 `toArray` 将它们放在一个数组中
 

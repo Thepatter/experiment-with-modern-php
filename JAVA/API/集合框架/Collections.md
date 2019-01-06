@@ -154,4 +154,20 @@
 
 * `boolean disjoint(Collection<?> cl, Collection<?> c2)`
 
-  如果两个集合没有共同元素，返回 ture
+  如果两个集合没有共同元素，返回 true
+  
+* `static <E> Collection<E> synchronizedCollection(Collection<E> c)`
+
+* `static <E> List synchronizedList(List<E> c)`
+
+* `static <E> Set synchronizedSet(Set<E> c)`
+
+* `static <E> SortedSet synchronizedSortedSet(SortedSet<E> c)`
+
+* `static <K, V> Map <K, V> synchronizedMap(Map<K, V> c)`
+
+* `static <K, V> SortedMap<K, V> synchronizedSortedMap(SortedMap<K, V> c)`
+
+    构建集合视图，该集合的方法是同步的
+    
+    

@@ -20,6 +20,12 @@
 
     如果该 `Scanner` 还有更多数据，则返回 true
     
+* `boolean hasNextInt()`
+
+* `boolean hasNextDouble()`
+
+    检测是否还有表示整数或浮点数的下一个字符序列
+    
 - `String nextLine()`
 
   读取输入的下一行内容
@@ -48,6 +54,3 @@
 
     设置 `Scanner` 的分隔符，并且返回该 `scanner`
     
-- `boolean hasNextDouble()`
-
-  检测是否还有表示整数或浮点数的下一个字符串序列。

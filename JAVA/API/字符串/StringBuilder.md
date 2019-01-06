@@ -44,7 +44,7 @@ __StringBuffer 中修改缓冲区的方法是同步的，如果是多任务并�
 
 * `StringBuilder delete(startIndex: int, endIndex: int)`	
 
-  删除从 `startIndex` 到 `endIndex - 1` 的字符
+  删除从 `startIndex` 到 `endIndex - 1` 的字符并返回 this
 
 * `StringBuilder deleteCharAt(index: int)`: 	
 

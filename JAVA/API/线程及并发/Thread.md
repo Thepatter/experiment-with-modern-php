@@ -28,7 +28,7 @@
 
 * `boolean isInterrupted()`
 
-  测试线程是否被中资。不像静态的中断方法，这一调用不改变线程的中断状态
+  测试线程是否被中断。不像静态的中断方法，这一调用不改变线程的中断状态
 
 * `static Thread currentThread()`
 
@@ -44,7 +44,7 @@
 
 * `Thread.State getState()`
 
-  得到这一线程的状态：NEW，RUNNABLE，BLOCKED，WAITING，TIMED_WAITING 
+  得到这一线程的状态：NEW，RUNNABLE，BLOCKED，WAITING，TIMED_WAITING，TERMINATED 之一
 
 * `void stop()`
 
@@ -92,7 +92,7 @@
 
 * `Thread.UncaughtExceptionHandler getUncaughtExceptionHandler()`
 
-  设置或获取未捕获异常的处理器。如若没有安装处理器，则将线程组对象作为处理器。
+  设置或获取未捕获异常的处理器。如果没有安装处理器，则将线程组对象作为处理器。
 
 
 

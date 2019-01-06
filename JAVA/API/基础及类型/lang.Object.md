@@ -18,11 +18,11 @@
 
 - `void notify()`
 
-  随机选择一个在该对象上调用 `wait` 方法的线程，解除其阻塞状态。该方法只能再一个同步方法或同步快中调用。如果当前线程不是对象锁的持有至，该方法抛出一个 `IllegalMonitorStataException` 异常
+  随机选择一个在该对象上调用 `wait` 方法的线程，解除其阻塞状态。该方法只能再一个同步方法或同步块中调用。如果当前线程不是对象锁的持有者，该方法抛出一个 `IllegalMonitorStataException` 异常
 
 - `void wait()`
 
-  导致线程进入等待状态直到它被通知。该方法只能再一个同步方法中调用。如果当前线程不是对象锁的持有者，该方法抛出一个 `IllegalMonitorStateException` 异常
+  导致线程进入等待状态直到它被通知。该方法只能在一个同步方法中调用。如果当前线程不是对象锁的持有者，该方法抛出一个 `IllegalMonitorStateException` 异常
 
 - `void wait(long millis)`
 
@@ -30,6 +30,6 @@
 
   导致线程进入等待状态直到它被通知或者经过指定的时间。这些方法只能在一个同步方法中调用。如果当前线程不是对象锁持有者，该方法抛出一个 `IllegalMonitorStateException` 异常
 
-  `millis` 	毫秒数
+  `millis` 	        毫秒数
 
   `nanos`	        纳秒数， < 1000000
