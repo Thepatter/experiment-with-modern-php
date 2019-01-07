@@ -1,5 +1,13 @@
-## java.lang.Class
+## `java.lang.Class<T>`
 
+* `String getName()`				
+
+  返回这个类的名字
+
+* `Class getSupperclass()`                                                  
+
+  以 Class 对象的形式返回这个类的超类信息
+  
 * `static Class forName(String className)`
 
   返回描述类名为 `className` 的 `Class` 对象
@@ -28,19 +36,19 @@
 
 * `Constructor<T> getDeclaredConstructor(Class...parameterTypes)`
 
-  获得公有的构造器，或带有给定参数类型的构造器
+   获得公有的构造器，或带有给定参数类型的构造器
 
 * `Field getField(String name)`
 
 * `Field[] getField()`
 
-  返回指定名称的公有域，或包含所有域的数组
+   返回指定名称的公有域，或包含所有域的数组
 
 * `Field getDeclaredField(String name)`
 
   `Field[] getDeclaredFields()`
 
-  返回类中声明的给定名称的域，或者包含声明的全部域的数组
+   返回类中声明的给定名称的域，或者包含声明的全部域的数组
 
 * `Field[] getFields()`
 
@@ -54,22 +62,22 @@
 
 * `Method[] getDeclareMethods()`
 
-  返回包含 `Method` 对象的数组：`getMethods()` 将返回所有的公有方法，包括从超类继承来的公有方法；`getDeclaredMethods` 返回这个类或接口的全部方法，但不包括由超类继承了的方法
+   返回包含 `Method` 对象的数组：`getMethods()` 将返回所有的公有方法，包括从超类继承来的公有方法；`getDeclaredMethods` 返回这个类或接口的全部方法，但不包括由超类继承了的方法
 
 * `Constructor[] getConstructors()`
 
 * `Constructor[] getDeclaredConstructors()`
 
-  返回包含 `Constructor` 对象的数组，其中包含了 `Class` 对象所描述的类的所有公有构造器（`getConstructors()`）或者所有构造器(`getDeclaredConstructors()`)
+   返回包含 `Constructor` 对象的数组，其中包含了 `Class` 对象所描述的类的所有公有构造器（`getConstructors()`）或者所有构造器(`getDeclaredConstructors()`)
 
 * `TypeVariable[] getTypeParameters()`
 
-  如果这个类型被声明为泛型类型，则获得泛型类型变量，否则获得一个长度为0 的数组
+   如果这个类型被声明为泛型类型，则获得泛型类型变量，否则获得一个长度为0 的数组
 
 * `Type getGenericSuperclass()`
 
-  获得被声明为这一类型的超类的泛型类型；如果这个类型是 Object 或不是一个类类型，则返回 null
+   获得被声明为这一类型的超类的泛型类型；如果这个类型是 Object 或不是一个类类型，则返回 null
 
 * `Type[] getGenericInterfaces()`
 
-  获得被声明为这个类型的接口的泛型类型（以声明的次序），否则，如果这个类型没有实现接口，返回长度为0 的数组
+   获得被声明为这个类型的接口的泛型类型（以声明的次序），否则，如果这个类型没有实现接口，返回长度为0 的数组

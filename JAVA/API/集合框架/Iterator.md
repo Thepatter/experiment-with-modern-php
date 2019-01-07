@@ -1,4 +1,4 @@
-## java.util.Iterator
+## `java.util.Iterator<E>`
 
 * `boolean hasNext()`
 

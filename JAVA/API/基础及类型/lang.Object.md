@@ -33,3 +33,7 @@
   `millis` 	        毫秒数
 
   `nanos`	        纳秒数， < 1000000
+
+* `int hashCode()`
+
+    返回这个对象的散列码。散列码可以是任何整数，包括正数或负数。`equals` 和 `hashCode` 的定义必须兼容，即 `x.equals(y)` 为 true，`x.hashCode()` 必须等于 `y.hashCode()`

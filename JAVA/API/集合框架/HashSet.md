@@ -4,7 +4,7 @@
 
   构造一个空的散列表
 
-* `HashSet(Collection<? extends E> element)`
+* `HashSet(Collection<? extends E> elements)`
 
   构造一个散列集，并将集合中的所有元素添加到这个散列集中
 

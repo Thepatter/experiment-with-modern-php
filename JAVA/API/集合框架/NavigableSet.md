@@ -12,7 +12,7 @@
 
   返回大于等于 `value` 的最小元素或小于等于 `value` 的最大元素，如果没有这样的元素则返回 null
 
-* `E pollFIrst()`
+* `E pollFirst()`
 
 * `E pollLast()`
 

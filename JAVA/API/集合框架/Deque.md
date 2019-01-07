@@ -14,7 +14,7 @@
 
 * `E removeLast()`
 
-* `E pollFIrst()`
+* `E pollFirst()`
 
 * `E pollLast()`
 

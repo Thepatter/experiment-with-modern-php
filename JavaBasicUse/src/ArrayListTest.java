@@ -12,6 +12,7 @@ public class ArrayListTest {
         for (Employee e:staff) {
             System.out.println("name=" + e.getName() + ",salary=" + e.getSalary() + ",hireDay=" + e.getHireDay());
         }
-
+        int a = Integer.compare(322, 32);
+        System.out.println(a);
     }
 }

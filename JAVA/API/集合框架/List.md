@@ -1,4 +1,4 @@
-## `java.util.list<E>`
+## `java.util.List<E>`
 
 * `ListIterator<E> listIterator()`
 
@@ -19,6 +19,10 @@
 * `E remove(int i)`
 
   删除给定位置的元素并返回这个元素
+  
+* `E get(int i)`
+
+    获取给定位置的元素
 
 * `E set(int i, E element)`
 
@@ -39,3 +43,7 @@
 * `default void sort(Comparator<? super T> comparator)`
 
   使用给定比较器对列表排序
+  
+* `default void replaceAll(UnaryOperator<E> op)`
+
+  对这个列表的所有元素应用这个操作

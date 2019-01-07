@@ -23,3 +23,7 @@
 * `static Integer valueOf(String s, int radix)`
 
     返回用 s 表示的整型数值进行初始化后的一个新 `Integer` 对象，给定字符串表示的是十进制的整数（第一种），或者是 `radix` 参数进制的整数（第二种）
+    
+* `static void compare(int x, int y)`
+
+    如果 x < y 返回 -1，x == y 返回 0，x > y 返回 1

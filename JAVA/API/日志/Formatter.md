@@ -8,7 +8,7 @@
 
 * `String getTail(Handler h)`
 
-  返回应该出现在包含日志记录的文档的开通和结尾的字符串。超类 `Formatter` 定义了这些方法，它们只返回空字符串。如果必要的话，可以对它们进行覆盖
+  返回应该出现在包含日志记录的文档的开头和结尾的字符串。超类 `Formatter` 定义了这些方法，它们只返回空字符串。如果必要的话，可以对它们进行覆盖
 
 * `String formatMessage(LogRecord record)`
 

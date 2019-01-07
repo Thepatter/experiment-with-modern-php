@@ -169,5 +169,7 @@
 * `static <K, V> SortedMap<K, V> synchronizedSortedMap(SortedMap<K, V> c)`
 
     构建集合视图，该集合的方法是同步的
-    
-    
+
+* `static <T extends Comparable<? super T>> void sort(List<T> elements)`
+
+    使用稳定的排序算法，对列表中的元素进行排序。这个算法的时间复杂度是 `O(n logn)`    

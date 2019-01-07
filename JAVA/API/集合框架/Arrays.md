@@ -22,11 +22,9 @@
 
 ​        否则，数组中只有前面 `length` 个数据元素的拷贝值
 
-* `static void sort(type[] a)` 
+* `static void sort(Object[] a)` 
 
-   采用优化的快速排序算法对数组进行排序
-
-​   参数：a：类型为 `int`、`long`、`short`、`char`、`byte`、`boolean`、`float`、`double` 的数组
+   使用 `mergesort` 算法对数组 a 中的元素进行排序。要求数组中的元素必须属于实现了 `Comparable` 接口的类，并且元素之间必须是可比较的
 
 * `static int binarySearch(type[] a, type v)`
 

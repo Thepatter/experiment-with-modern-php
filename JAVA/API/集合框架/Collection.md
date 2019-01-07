@@ -1,12 +1,8 @@
-## java.util.Collection
+## `java.util.Collection<E>`
 
-* `boolean add(o: E)`                 
+* `boolean add(Object element)`                 
 
-  添加一个新的元素 0 到集合中
-
-* `boolean add(o: E)` 		    	  
-
-  添加一个新的元素 o 到合集中
+  将一个元素添加到集合中。如果由于这个调用改变了集合，返回 true
 
 * `boolean addAll(Collection<? extends E> other)`
 
@@ -34,7 +30,7 @@
 
 * `boolean isEmpty()`                   		
 
-  如果该合集没有包含元素，则返回 true
+  如果该合集没有元素，则返回 true
 
 * `boolean remove(Object obj)`
 
@@ -43,6 +39,10 @@
 * `boolean removeAll(Collection<?> other)`
 
   从这个集合中删除 other 集合中存在的所有元素。如果由于这个调用改变了集合，返回 true
+  
+* `default boolean removeIf(Predicate<? super E> filter)`
+
+    从这个集合删除 `filter` 返回 true 的所有元素。如果这个调用改变了集合，则返回 true
   
 * `default void replaceAll(UnaryOperator<E> op)`
 
@@ -68,9 +68,9 @@
 
   返回这个集合的对象数组
 
-* `iterator(): Iterator<E>`		
+* `Iterator<E> iterator()`		
 
-  为该集合中的元素返回一个迭代器
+  返回一个用于访问集合中每个元素的迭代器
 
 * `<T> T[] toArray(T[] arrayToFill)`
 

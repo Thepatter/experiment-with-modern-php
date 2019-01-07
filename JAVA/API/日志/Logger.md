@@ -4,11 +4,11 @@
 
 * `Logger getLogger(String loggerName, String bundleName)`
 
-  获得给定名字的日志记录器。如果这个日志记录器不存在，创建一个日志记录器
+   获得给定名字的日志记录器。如果这个日志记录器不存在，创建一个日志记录器
 
-  参数：`loggerName`    具有层次结构的日志记录器名。例如：`com.mycompany.myapp`
+   参数：`loggerName`    具有层次结构的日志记录器名。例如：`com.mycompany.myapp`
 
-  ​	   `bundleName`     用来查看本地消息的资源包名
+  ​	    `bundleName`     用来查看本地消息的资源包名
 
 * `void servere(String message)`
 
@@ -24,7 +24,7 @@
 
 * `void finest(String message)`
 
-  记录一个由方法名和给定消息指示级别的日志记录
+   记录一个由方法名和给定消息指示级别的日志记录
 
 * `void entering(String className, String methodName)`
 
@@ -70,7 +70,7 @@
 
 * `void logrb(Level level, String className, String methodName, String bundleName, String message, Throwable t)`
 
-  记录一个给定级别、准备的调用者信息、资源包名和消息的日志记录，其中可以包括对象或可抛出对象
+  记录一个给定级别、准确的调用者信息、资源包名和消息的日志记录，其中可以包括对象或可抛出对象
 
 * `Level getLevel()`
 

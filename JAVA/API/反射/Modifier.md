@@ -2,7 +2,7 @@
 
 * `static String toString(int modifiers)`
 
-  返回对应 `modifiers` 中位置的修饰符的字符串表示
+   返回对应 `modifiers` 中位置的修饰符的字符串表示
 
 * `static boolean isAbstract(int modifiers)`
 
@@ -26,4 +26,4 @@
 
 * `static boolean isVolatile(int modifiers)`
 
-  这些方法将检测方法名中对应的修饰符在 `modifiers` 值中的位
+   这些方法将检测方法名中对应的修饰符在 `modifiers` 值中的位

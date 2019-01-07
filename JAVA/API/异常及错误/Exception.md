@@ -4,4 +4,4 @@
 
 * `Exception(String message, Throwable cause)`
 
-  用给定的原因构造一个异常对象
+  用给定的“原因”构造一个异常对象
