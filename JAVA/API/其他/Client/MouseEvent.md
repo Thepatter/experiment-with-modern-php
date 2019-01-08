@@ -11,3 +11,7 @@
 * `int getClickCount()`
 
     返回与事件关联的鼠标连击次数
+    
+* `boolean isPopupTrigger()`
+
+    如果鼠标事件是弹出菜单触发器，则返回 true

@@ -18,6 +18,10 @@
 
     移到并重新设置组件的大小
     
+    x, y 组件新的左上角位置
+    
+    width, height   组件新的尺寸
+    
 * `Dimension getSize()`
 
 * `void setSize(Dimension d)`
