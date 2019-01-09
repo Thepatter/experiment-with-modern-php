@@ -75,3 +75,9 @@
 * `<T> T[] toArray(T[] arrayToFill)`
 
   返回这个集合的对象数组。如果 `arrayToFill` 足够大，就将集合中的元素填入这个数组中。剩余空间填补 null；否则，分配一个新数组，其成员类型与 `arrayToFill` 的成员类型相同，其长度等于集合的大小，并填充集合元素
+  
+* `default Stream<E> stream()`
+
+* `default Stream<E> parallelStream()`
+
+    产生当前集合中所有元素的顺序流或并行流

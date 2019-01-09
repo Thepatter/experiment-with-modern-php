@@ -12,15 +12,16 @@ public class CountLongWords {
     private static final int  wordLength = 12;
 
     public static void main(String[] args) throws IOException {
-        String contents = new String(Files.readAllBytes(Paths.get("alice30.txt")), StandardCharsets.UTF_8);
-        List<String> words = Arrays.asList(contents.split(" "));
+        List<String> words = getContents();
         useIterator(words);
         useStream(words);
     }
 
-    private static List<String> getContents(String fileName) throws IOException
+    private static List<String> getContents() throws IOException
     {
-        String contents = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+//        String contents = new String(Files.readAllBytes(Paths.get("core_Java_second/src/streams/alice30.txt")), StandardCharsets.UTF_8);
+        String contents = Files.readString(Paths.get("core_Java_second/src/streams/alice30.txt"));
+
         return Arrays.asList(contents.split(" "));
     }
 

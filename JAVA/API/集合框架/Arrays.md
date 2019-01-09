@@ -59,3 +59,7 @@
 * `static int hashCode(type[] a)`
 
     计算数组 a 的散列码。组成这个数组的元素类型可以是对象和标量
+    
+* `static <T> Stream<T> stream(T[] array, int startInclusive, int endExclusive)`
+
+    产生一个流，它的元素是由数组中指定范围内的元素构成的
