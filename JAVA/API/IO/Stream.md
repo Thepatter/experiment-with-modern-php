@@ -81,3 +81,17 @@
 * `boolean noneMatch(Predicate<? super T> predicate)`
 
     分别在这个流中任意元素、所有元素和没有任何元素匹配给定断言时返回 `true`。这些操作都是终结操作
+    
+* `void forEach(Consumer<? super T> action)`
+
+    在流的每个元素上调用 action。这是一种终结操作
+    
+* `Object[] toArray()`
+
+* `<A> A[] toArray(IntFunction<A[]> generator)`
+
+    产生一个对象数组，或者在将引用 `A[]::new` 传递给构造器时，返回一个 A 类型的数组。这些操作都是终结操作
+    
+* `<R, A> R collection(Collector<? super T,A,R> collector)`
+
+    使用给定的收集器来收集当前流中的元素。`Collectors` 类有用于多种收集器的工厂方法

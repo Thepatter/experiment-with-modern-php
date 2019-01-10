@@ -1,2 +1,2 @@
 hello world project convention simple AlgorithmAnalysis dataStructure development environment
-FileNotFoundException IdeaProjects ProcessLists coreJavaSecond
+FileNotFoundException IdeaProjects ProcessLists coreJavaSecond [aeiouAEIOU]
