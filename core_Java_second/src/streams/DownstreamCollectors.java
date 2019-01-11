@@ -9,30 +9,31 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.*;
 
 public class DownstreamCollectors {
+
     private static class City
     {
         private String name;
         private String state;
         private int population;
 
-        public City(String name, String state, int population)
+        City(String name, String state, int population)
         {
             this.name = name;
             this.state = state;
             this.population = population;
         }
 
-        public String getName()
+        String getName()
         {
             return name;
         }
 
-        public String getState()
+        String getState()
         {
             return state;
         }
 
-        public int getPopulation()
+        int getPopulation()
         {
             return population;
         }
@@ -54,11 +55,11 @@ public class DownstreamCollectors {
         Map<String, Long> countryToLocaleCounts = locales.collect(groupingBy(Locale::getCountry, counting()));
         System.out.println("countryToLocaleCounts: " + countryToLocaleCounts);
 
-        Stream<City> cites = readCities("cities.txt");
+        Stream<City> cites = readCities("core_Java_second/src/streams/cities.txt");
         Map<String, Integer> stateToCityPopulation = cites.collect(groupingBy(City::getState, summingInt(City::getPopulation)));
         System.out.println("stateToCityPopulation: " + stateToCityPopulation);
 
-        cites = readCities("cities.txt");
+        cites = readCities("core_Java_second/src/streams/cities.txt");
         Map<String, Optional<String>> stateToLongestCityName = cites.collect(groupingBy(City::getState, mapping(City::getName, maxBy(Comparator.comparing(String::length)))));
         System.out.println("stateToLongestCityName: " + stateToLongestCityName);
 
@@ -66,13 +67,13 @@ public class DownstreamCollectors {
         Map<String, Set<String>> countryToLanguages = locales.collect(groupingBy(Locale::getDisplayCountry, mapping(Locale::getDisplayLanguage, toSet())));
         System.out.println("countryToLanguage: " + countryToLanguages);
 
-        cites = readCities("cities.txt");
+        cites = readCities("core_Java_second/src/streams/cities.txt");
         Map<String, IntSummaryStatistics> stateToCityPopulationSummary = cites.collect(groupingBy(City::getState, summarizingInt(City::getPopulation)));
         System.out.println(stateToCityPopulationSummary.get("NY"));
 
-        cites = readCities("cites.txt");
+        cites = readCities("core_Java_second/src/streams/cities.txt");
         Map<String, String> stateToCityNames = cites.collect(groupingBy(City::getState, reducing("", City::getName, (s,t )->s.length() == 0 ? t: s + ", " + t)));
-        cites = readCities("cites.txt");
+        cites = readCities("core_Java_second/src/streams/cities.txt");
         stateToCityNames = cites.collect(groupingBy(City::getState, mapping(City::getName, joining(", "))));
         System.out.println("stateToCityNames: " + stateToCityNames);
     }

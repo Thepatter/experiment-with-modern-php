@@ -15,3 +15,4 @@
 * `int getMin()`
 
     产生汇总后的元素的最大值和最小值，或者在没有任何元素时，产生 `Integer.(MAX|MIN)_VALUE`
+
