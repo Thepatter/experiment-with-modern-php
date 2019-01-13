@@ -8,4 +8,7 @@
     
 * `FileInputStream(String filename)`
 
-    从一个文件名创建一个 `FileInputStream` 如果试图为一个不存在的文件创建 FileInputStream 对象，将会发生 java.io.FileNotFoundException 异常
+    从一个文件名创建一个 `FileInputStream` 如果试图为一个不存在的文件创建 FileInputStream 对象，将会发生 java.io.FileNotFoundException 异常。非绝对的路径名将按照相对于 VM 启动时所设置的工作目录来解析
+
+    
+

@@ -2,18 +2,12 @@
 
 * `FileOutputStream` 类继承自 `OutputSteam` 类，用于向文件写入字节
 
+* `FileOutputStream(String name)`
+
+* `FileOutputStream(String name, boolean append)`
+
 * `FileOutputStream(File file)`
 
-    从一个 `File` 对象构建一个 `FileOutputStream`
-    
-* `FileOutputStream(String filename)`
-
-    从一个文件名创建一个 `FileOutputStream`
-    
 * `FileOutputStream(File file, boolean append)`
 
-    如果 `append` 为 `true`, 将数据追加到已存在的文件中
-    
-* `FileOutputStream(String filename, boolean append)`
-
-    如果 `append` 为 `true`, 将数据追加到已存在的文件中
+    使用由 `name` 字符串或 `file` 对象指定路径名的文件创建一个新的文件输出流。如果 `append` 参数为 `true`，那么数据将被添加到文件尾，而具有相同名字的已有文件不会被删除；否则，这个方法会删除所有具有相同名字的已有文件
