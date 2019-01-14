@@ -6,6 +6,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @author zyw
+ */
 public class CollectingIntoMaps {
     private static class Person
     {
@@ -25,9 +28,7 @@ public class CollectingIntoMaps {
             return name;
         }
 
-        /**
-         * @Override
-         */
+        @Override
         public String toString()
         {
             return getClass().getName() + "{id=" + id + ",name=" + name +"}";

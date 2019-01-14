@@ -1,4 +1,4 @@
-package InputOutput;
+package input.output;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -7,7 +7,8 @@ import java.io.IOException;
 /**
  * @author zyw
  */
-class DataIO {
+class DataFileInputOutput {
+
     static String readFixedString(int size, DataInput in) throws IOException
     {
         StringBuilder b = new StringBuilder(size);

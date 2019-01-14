@@ -6,18 +6,20 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @author zyw
+ */
 public class CreatingStreams {
 
-    private static final String fileName = "core_Java_second/src/streams/alice30.txt";
+    private static final String FILENAME = "core_Java_second/src/streams/alice30.txt";
 
     public static void main(String[] args) throws IOException {
-        Path path = Paths.get(fileName);
+        Path path = Paths.get(FILENAME);
         String contents = Files.readString(path);
         Stream<String> words = Stream.of(contents.split(" "));
         show("words", words);
@@ -39,14 +41,14 @@ public class CreatingStreams {
     }
 
     private static<T> void show(String title, Stream<T> stream) {
-        final int SIZE = 10;
-        List<T> firstElements = stream.limit(SIZE + 1).collect(Collectors.toList());
+        final int size = 10;
+        List<T> firstElements = stream.limit(size + 1).collect(Collectors.toList());
         System.out.print(title + ": ");
         for (int i = 0; i < firstElements.size(); i++) {
             if (i > 0) {
                 System.out.print(", ");
             }
-            if (i < SIZE) {
+            if (i < size) {
                 System.out.print(firstElements.get(i));
             } else {
                 System.out.print("...");

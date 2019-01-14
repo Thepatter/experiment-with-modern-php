@@ -1,11 +1,12 @@
-package InputOutput;
+package input.output;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 /**
  * @author zyw
  */
-class Employee {
+class Employee implements Serializable {
 
     static final int NAME_SIZE = 40;
     static final int RECORD_SIZE = 2 * NAME_SIZE + 8 + 4 + 4 + 4;
@@ -47,9 +48,7 @@ class Employee {
         salary += raise;
     }
 
-    /**
-     * @Override
-     */
+    @Override
     public String toString()
     {
         return getClass().getName() + "[name=" + name + ",salary=" + salary + ",hireDay=" + hireDay + "]";

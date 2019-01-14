@@ -8,6 +8,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
 
+/**
+ * @author zyw
+ */
 public class DownstreamCollectors {
 
     private static class City

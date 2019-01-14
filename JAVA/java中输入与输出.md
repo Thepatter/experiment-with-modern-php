@@ -145,3 +145,64 @@ RandomAccessFile inOut = new RandomAccessFile("employee.dat", "rw");
 ZIP 文档通常以压缩格式存储了一个或多个文件，每个 ZIP 文档都有一个头，包含诸如每个文件名字和所使用的压缩方法等信息。Java 中，可以使用 `ZipInputStream` 来读入 ZIP 文档。`getNextEntry` 方法可以返回一个描述这些项的 `ZipEntry` 类型的对象。向 `ZipInputStream` 的 `getInputStream` 方法传递该项可以获取用于读取该项的输入流。然后调用 `closeEntry` 来读入下一项。
 
 要写出到 ZIP 文件，可以使用 `ZipOutputStream` ，而对于希望放入到 ZIP 文件中的每一项，都应该创建一个 `ZipEntry` 对象，并将文件名传递给 `ZipEntry` 的构造器，它将设置其他诸如文件日期和解压缩方法等参数。使用 `ZipOutputStream` 的 `putNextEntry` 方法来开始写出新文件，并将文件数据发送到 ZIP 输出流中。当完成时，需要调用 `closeEntry`
+
+### 对象输入输出流与序列化
+
+#### 保存和加载序列化对象
+
+为了保存对象数据，首先需要打开一个 `ObjectOutputStream` 对象
+
+```java
+// 对象写入
+ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("employee.dat"));
+Manager boss = new Manager("Carl Cracker", 80000, 1987, 12, 15);
+// 对象读入,以这些对象被写出时的顺序获得它们
+ObjectInputStream in = new ObjectInputStream(new FileInputStream("employee.dat"));
+Manager e1 = in.readObject();
+```
+
+对希望在对象输出流中存储或从对象输入流中恢复的所有类都应进行一下修改，这些类必须实现 `Serializable` 接口。`Serializable` 接口没有任何方法
+
+只有在写出对象时才能用 `writeObject/readObject` 方法，对于基本类型值，需要使用诸如 `writeInt/readInt` 或 `writeDouble/readDouble` 这样的方法（对象流泪都实现了 `DataInput/DataOutput` 接口）
+
+在底层是 `ObjectOutputStream` 在浏览对象的所有域，并存储它们的内容。当写出一个 Employee 对象时，其名字、日期和薪水域都会被写出到输出流中。但是，当一个对象被多个对象共享，作为它们各自状态的一部分时，当对象被重新加载时，它可能占据的是与原来完全不同的内存地址
+
+每个对象都是用一个序列号保存的，这就是这种机制，其算法是
+
+* 对遇到的每一个对象引用都关联一个序列号
+* 对于每个对象，当第一次遇到时，保存其对象数据到输出流中
+* 如果某个对象之前已经被保存过，那么只写出“与之前保存过的序列号为 x 的对象相同”
+
+读回对象时，整个过程是反过来的
+
+* 对于对象输入流中的对象，在第一次遇到其序列号时，构建它，并使用流中数据来初始化它，然后记录这个顺序号和新对象之间的关联
+* 当遇到“与之前保存过的序列号为 x 的对象相同” 标记时，获取这个顺序号相关联的对象引用
+
+序列化将对象保存到磁盘文件中，并按照它们被存储的样子获取它们。序列化的另一种非常重要的应用是通过网络将对象集合传送到另一台计算机上。
+
+对象序列化是以特殊的文件格式存储对象数据的。每个文件都是以 `AC ED` 这两个字节的魔幻数字开始的。后面紧跟着对象序列化格式的版本号，目前是 `00 05`
+
+#### 修改默认的序列化机制
+
+某些数据域是不可以序列化的（只对本地方法有意义的存储文件句柄或窗口句柄的整数值，这种信息在稍后重新加载对象或将其传送到其他机器上时都是没有用处的）Java 拥有一种很简单的机制来防止这种域被序列化，将它们标记成是 `transient` 的。如果这些域属于不可序列化的类，也需要将它们标记成 `transient` 的。瞬时的域在对象被序列化时总是被跳过的。
+
+序列化机制为单个类提供了一种方式，去向默认的读写行为添加验证或任何其他想要的行为。可序列化的类可以定义具有下列签名的方法
+
+```java
+private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException;
+private void writeObject(ObjectOutputStream out) throws IOException;
+```
+
+定义该方法后，数据域就再也不会被自动序列化，取而代之的是调用这些方法。`readObject` 和 `writeObject` 方法只需要保存和加载它们的数据域，而不需要关心超类数据和任何其他类的信息。
+
+除了让序列化机制来保存和恢复对象数据，类还可以定义它自己的机制。为了做到这一点，这个类必须实现 `Exterbakuzable` 接口，需要定义两个方法
+
+```java
+public void readExternal(ObjectInputStream in) throws IOException, ClassNotFoundException;
+public void writeExtenal(ObjectOutputStream out) throws IOException
+```
+
+这些方法对包括超类数据在内的整个对象的存储和恢复负全责。在写出对象时，序列化机制在输出流中仅仅只是记录该对象所属的类。在读入可外部化的类时，对象输入流将用无参构造器创建一个对象，然后调用 `readExternal` 方法。
+
+`readObject` 和 `writeObject` 方法是私有的，并且只能被序列化机制调用。`readExternal`  和 `writeExternale` 方法是公共的，`readExternal` 还潜在地允许修改现有对象的状态
+

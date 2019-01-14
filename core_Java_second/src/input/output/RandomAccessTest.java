@@ -1,4 +1,4 @@
-package InputOutput;
+package input.output;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -39,7 +39,7 @@ public class RandomAccessTest {
 
     private static void writeData(DataOutput out, Employee e) throws IOException
     {
-        DataIO.writeFixedString(e.getName(), Employee.NAME_SIZE, out);
+        DataFileInputOutput.writeFixedString(e.getName(), Employee.NAME_SIZE, out);
         out.writeDouble(e.getSalary());
         LocalDate hireDay = e.getHireDay();
         out.writeInt(hireDay.getYear());
@@ -49,7 +49,7 @@ public class RandomAccessTest {
 
     private static Employee readData(DataInput in) throws IOException
     {
-        String name = DataIO.readFixedString(Employee.NAME_SIZE, in);
+        String name = DataFileInputOutput.readFixedString(Employee.NAME_SIZE, in);
         double salary = in.readDouble();
         int y = in.readInt();
         int m = in.readInt();
