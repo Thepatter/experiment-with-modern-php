@@ -1,7 +1,7 @@
 ## java.io.File
 
 * `File(String pathname)`
-   
+  
    为一个指定的路径名创建一个 File 对象，路径名可能是一个目录或者一个文件
 
 * `File(String parent, String child)`
@@ -25,9 +25,9 @@
    `File` 对象代表的文件和目录存在，返回 `true`
   
 * `boolean delete()`
-    
+  
     删除 `File` 对象代表的文件或目录，如果删除成功，返回 `true`
-     
+    
 * `String getName()`
 
     返回 `File` 对象的文件名
@@ -88,3 +88,7 @@
 
     和 `mkdir()` 相同，除开在父目录不存在的情况下，将和父目录一起创建
     
+
+* `Path toPath()`
+
+  从该文件中创建一个 `Path` 对象

@@ -1,4 +1,4 @@
-package input.output;
+package iostream;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -6,7 +6,7 @@ import java.time.LocalDate;
 /**
  * @author zyw
  */
-class Employee implements Serializable {
+class Employee extends SerialCloneable implements Serializable {
 
     static final int NAME_SIZE = 40;
     static final int RECORD_SIZE = 2 * NAME_SIZE + 8 + 4 + 4 + 4;

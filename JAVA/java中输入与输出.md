@@ -206,3 +206,257 @@ public void writeExtenal(ObjectOutputStream out) throws IOException
 
 `readObject` 和 `writeObject` 方法是私有的，并且只能被序列化机制调用。`readExternal`  和 `writeExternale` 方法是公共的，`readExternal` 还潜在地允许修改现有对象的状态
 
+#### 为克隆使用序列化
+
+序列化机制提供了一种克隆对象的简便途径，只要对应的类是可序列化的即可。直接将对象序列化到输出流中，然后将其读回。这样产生的新对象是对现有对象的一个深拷贝。在此过程中，不必将对象写出到文件中，可以用 `ByteArrayOutputStream` 将数据保存到字节数据中
+
+### 操作文件
+
+#### Path
+
+`Path` 表示的是一个目录名序列，其后还可以跟着一个文件名。路径中的第一个部件可以是跟部件（`/` 或 `C:\`），或允许访问的根部件取决于文件系统。以根部件开始的路径是绝对路径；否则，就是相对路径。
+
+静态的 `Paths.get` 方法接受一个或多个字符串，并将它们用默认文件系统的路径分隔符连接起立，然后解析连接起来的结果，如果其表示的不是给定文件系统中的合法路径，那么就抛出 `InvalidPathException` 异常。这个连接起来的结果就是一个 `Path` 对象。`get` 方法可以获取包含多个部件构成的单个字符串。
+
+路径不必对应着某个实际存在的文件，仅仅只是一个抽象的名字序列，当要创建文件时，首先要创建一个路径，然后才调用方法去创建对应的文件
+
+组合或解析路径调用 `p.resolve(q)` 将按照下列规则返回一个路径
+
+* 如果 q 是绝对路径，则结果就是 q
+* 否则，根据文件系统的规则，将 P 后面跟着 q 作为结果
+
+`resolve` 可以接收路径和字符串。`resolveSibling`  通过解析指定路径的父路径产生其兄弟路径。`resolve` 的对立面是 `relativize` ，调用 `p.relativize(r)` 将产生路径 q，而对 q 进行解析的结果是 `r`
+
+`normalize` 方法将移除所有冗余的 `.` 和 `..` 部件（或者文件系统认为冗余的所有部件）
+
+`toAbsolutePath` 方法将产生给定路径的绝对路径，该绝对路径从根部件开始
+
+`Path` 类有许多有用的方法用来将路径断开。`getParent()`，`getFileName()`，`getRoot()`
+
+与遗留系统的 `API` 交互，使用的是 `File` 类而不是 `Path` 接口。`Path` 接口有一个 `toFile` 方法，而 `File` 类有一个 `toPath` 方法
+
+#### 读写文件
+
+`Files` 类可以使得普通文件操作变得快捷。
+
+```java
+// 读取文件的所有内容
+byte[] bytes = Files.readAllBytes(path);
+// 将文件当作字符串读入
+String content = new String(bytes, charset);
+// 将文件当作序列读入
+List<String> lines = Files.readAllLines(Path, charset);
+// 写出一个字符串到文件中
+Files.write(path, content.getBytes(charset));
+// 向指定文件追加内容
+Files.write(path, content.getBytes(charset), StandardOpenOption.APPEND);
+// 将一个行的集合写出到文件中
+File.write(path, lines);
+```
+
+#### 创建文件和目录
+
+```java
+// 创建新目录，路径中除最后一个部件外，其他部分都必须是已存在的
+Files.createDirectory(path);
+// 创建路径中的中间目录
+Files.createDirectories(path);
+// 创建一个空文件, 如果文件已经存在，那么这个调用就会抛出异常。检查文件是否存在和创建文件是原子性的，如果文件不存在，该文件就会被创建，并且其他程序在此过程中是无法执行文件创建操作的
+Files.createFile(path);
+// 创建临时文件或临时目录：dir 是 path 对象，prefix 和 suffix 是可以为 null 的字符串
+Path newPath = Files.createTempFile(dir, prefix, suffix);
+Path newPaht = Files.createTempFile(prefix, suffix);
+Path newPath1 = Files.createTempFileDirectory(dir, prefix);
+Path newPath2 = Files.createTempDirectory(prefix);
+```
+
+#### 复制移动删除文件
+
+```java
+// 将文件从一个位置复制到另一个位置
+Files.copy(FromPath, toPath);
+// 移动文件（复制并删除原文件）,如果目录路径已经存在，复制或移动将失败。
+Files.move(fromPath, toPath);
+// 移动并覆盖，复制所有的文件属性
+Files.copy(fromPath, toPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+// 原子性移动
+Files.move(fromPath, toPath, StandardCopyOption.ATOMIC_MOVE)
+// 输入流复制到 Path 中
+Files.copy(inputStream, toPath);
+// 将 Path 复制到输出流中
+Files.copy(fromPath, outputStream);
+// 删除文件
+Files.delete(path);
+// 删除可能为空文件
+boolean deleted = Files.deleteIfExists(path);
+```
+
+用于文件操作的标准选项
+
+`StandardOption`；与 `newBufferedWriter`，`newInputStream`，`newOutputStream`，`write` 一起使用
+
+* `READ`			用于读取而打开
+* `WRITE`	                用于写入而打开
+* `APPEND`                  如果用于写入而打开，那么在文件末尾追加
+* `TRUNCATE_EXISTING`                          如果用于写入而打开，那么移除已有内容
+* `CREATE_NEW`                                         创建新文件并且在文件已存在的情况下会创建失败
+* `CREATE`                                                 自动在文件不存在的情况下创建文件
+* `DELETE_ON_CLOSE`                              当文件被关闭时，尽可能地删除文件
+* `SPARSE`                                                 给文件系统一个提示，表示该文件是稀疏的
+* `DSYN|SYN`                                             要求对文件数据|数据和元数据的每次更新都必须同步地写入到存储设备中
+
+`StandardCopyOption`；与 `copy`，`move` 一起使用
+
+* `ATOMIC_MOVE`                                              原子性地移动文件
+
+* `COPY_ATTRIBUTES`				       复制文件的属性
+* `REPLACE_EXISTING`                                    如果目标已存在，则替换它
+
+`LinkOption` 与上面所有方法以及 `exists`，`isDirectroy`，`isRegularFile` 等一起使用
+
+* `NOFOLLOW_LINKS`                                               不要跟踪符号链接
+
+`FileVisitOption`; 与 `find`，`walk`，`walkFileTree` 一起使用
+
+* `FOLLOW_LINKS`                                               跟踪符号链接
+
+#### 获取文件信息
+
+下面的静态方法都将返回一个 `boolean` 值，表示检查路径的某个属性的结果
+
+* `exists`
+* `isHidden`
+* `isReadable`, `isWritable`, `isExecutable`
+* `isRegularFile`，`isDirectory`，`isSymbolicLink`
+
+* `size` 方法返回文件的字节数 
+
+```java
+long fileSize = Files.size(path);
+```
+
+* `getOwner()` 方法将文件的拥有者作为 `java.nio.file.attrubute.UserPrincipal` 的一个实例返回
+
+  所有的文件系统都会报告一个基本属性集，它们被封装在 `BasicFileAttrubutes` 接口中，这些属性与上述信息有部分重叠。基本文件属性包括：
+
+  创建文件，最后一次访问以及最后一次修改文件的时间，这些时间都表示成 `java.nio.file.attribute.FileTime`
+
+  文件是常规文件，目录还是符号链接，或者都不是
+
+  文件尺寸
+
+  文件主键，这是某种类的对象，具体所属类与文件系统相关，有可能是文件唯一标识符，也可能不是
+
+  要获取这些属性，可以调用
+
+  ```java
+  BasicFileAttributes attributes = Files.readAttributes(path, BasicFileAttributes.class)
+  ```
+
+  如果文件系统兼容 `POSIX`，可以获取一个 `PosixFileAttributes`
+
+  ```java
+  PosixFileAttributes attributes = Files.readAttributes(path, PosixFileAttributes.class)
+  ```
+
+#### 访问目录中的项
+
+静态的 `Files.list` 方法会返回一个可以读取目录中各个项的 `Stream<Path>` 对象。目录是被惰性读取的，这样处理具有大量项的目录可以变得更高效。`list` 方法不会进入子目录。为了处理目录中的所有子目录，需要使用 `File.walk` 方法
+
+可以通过调用 `File.walk(pathToRoot, depth)` 来限制想要访问的树的深度。两种 `walk` 方法都具有 `FileVisitOption...` 的可变长参数，但是只能提供一种选项 `FOLLOW_LINKS` 
+
+如果要过滤 `walk` 返回的路径，并且过滤标准涉及与目录存储相关的文件属性，应该使用 `find` 方法来替代 `walk` 方法。
+
+#### 使用目录流
+
+`Files.walk` 方法会产生一个可以遍历目录中所有子孙的 `Stream<Path>` 对象。有时，需要对遍历过程进行更加细粒度的控制。在这种情况下，应该使用 `File.newFirectoryStream` 对象，它会产生一个 `DirectoryStream` 它是专门用于目录遍历的接口。
+
+```java
+try (DirectoryStream<Path> entries = Files.newDirectoryStream(dir))
+{
+    for (Path entry: entries) {
+        
+    }
+}
+```
+
+可以使用 `glob` 模式来过滤文件
+
+`try (DirectoryStream<Path> entries = Files.newDirectoryStream(dir, "*.java"))`
+
+![](./Images/目录流glob模式.png)
+
+如果想要访问某个目录的所有子孙成员，可以转而调用 `walkFileTree` 方法，并向其传递一个 `FileVisitor` 类型的对象，这个对象会得到下列通知：
+
+* 在遇到一个文件或目录时：
+
+  ```java
+  FileVisitResult visitFile(T path, BasicFileAttributes attrs)
+  ```
+
+* 在一个目录被处理前：
+
+  ```java
+  FileVisitResult preVisitDirectory(T dir, IOException ex)
+  ```
+
+* 在一个目录被处理后：
+
+  ```java
+  FileVisitResult postVisitDirectory(T dir, IOException ex)
+  ```
+
+* 在试图访问文件或目录时发生错误，例如没有权限打开目录：
+
+  ```java
+  FileVisitResult visitFileFailed(path, IOException)
+  ```
+
+对于上述每种情况，都可以指定是否希望执行下面的操作
+
+* 继续访问下一个文件
+
+  `FileVisitResult.CONTINUE`
+
+* 继续访问，但是不再访问这个目录下的任何项
+
+  `FileVisitResult.SKIP_SUBTREE`
+
+* 继续访问，但是不再访问这个文件的兄弟文件
+
+  `FileVisitResult.SKIP_SIBLINGS`
+
+* 终止访问
+
+  `FileVisitResult.TERMINATE`
+
+当有任何方法抛出异常时，就会终止访问，而这个异常会从 `walkFileTree` 方法中抛出
+
+#### ZIP 文件系统
+
+`Paths` 类会在默认文件系统中查找路径，即在用户本地磁盘中的文件。
+
+```java
+// 建立一个文件系统，包含 ZIP 文档中的所有文件
+FileSystem fs = FileSystems.newFileSystem(Paths.get(zipname), null)
+// 根据文件名，从 ZIP 文档中复制出这个文件
+Files.copy(fs.getPath(sourceName), targetPath);
+```
+
+#### 内存映射文件
+
+`java.nio` 包使用内存映射变得十分简单，首先从文件中获得一个通道 `channel`，用于磁盘文件的一种抽象，使可以访问访问诸如内存映射，文件加锁机制以及文件间快速数据传递等操作系统特性
+
+```java
+FileChannel channel = FileChannel.open(path, options);
+```
+
+通过调用 `FileChannel` 类的 `map` 方法从这个通道中获得一个 `ByteBuffer`。
+
+* `FileChannel.MapMode.READ_ONLY`: 产生的缓冲区是只读的，任何对该缓冲区写入的尝试都会导致 `ReadOnlyBufferException` 异常
+
+* `FileChannel.MapMode.READWRITE`：所产生的缓冲区是可写的，任何修改都会在某个时刻写回到文件中。其他映射同一个文件的程序可能不能立即看到这些修改，多个程序同时进行文件映射的确切行为是依赖于操作系统的
+
+* `FileChannel.MapMode.PRIVATE`：产生的缓冲区是可写的，但是任何修改对这个缓冲区来说都是私有的，不会传播到文件中
+
+  一旦有了缓冲区，就可以使用 `ByteBuffer` 类和 `Buffer` 超类的方法读写数据。缓冲区支持顺序和随机数据访问，有一个可以通过 `get` 和 `put` 操作来移动的位置。

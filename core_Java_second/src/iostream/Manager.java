@@ -1,4 +1,4 @@
-package input.output;
+package iostream;
 
 /**
  * @author zyw

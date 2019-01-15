@@ -134,7 +134,7 @@ mysql> update T set c=c+1 where ID=2;
 * `redo log` 用于保证 `crash-safe` 能力。`innodb_flush_log_at_trx_commit` 这个参数设置成 1 的时候，表示每次事务的 `redo log` 都直接持久化到磁盘。这样可以保证 MySQL 异常重启之后数据不丢失；
 * `sync_binlog` 这个参数设置成 1 的时候，表示每次事务的 `binlog` 都持久化到磁盘。这个参数设置成 1 的时候，可以保证 MySQL 异常重启之后的 `binlog` 不丢失。
 
-### `InnoDB`Flush相关
+### `InnoDB Flush`相关
 
 #### `SQL` 语句为什么会间歇性变慢
 
@@ -146,7 +146,7 @@ mysql> update T set c=c+1 where ID=2;
 
 平时执行很快的更新操作，其实就是在写内存和日志，而 MySQL 偶尔抖一下的那个瞬间，可能是在刷脏页（`flush`）
 
-* 当 `redo log` 写满了，要 `flush` 脏页，这种情况是 `InnoDB` 要尽量避免的，因为出现这种情况的时候，整个系统就不能再接受更新了，所有的更新都必须堵住。这时候更新数会跌为 0.
+* 当 `redo log` 写满了，要 `flush` 脏页，这种情况是 `InnoDB` 要尽量避免的，因为出现这种情况的时候，整个系统就不能再接受更新了，所有的更新都必须堵住。这时候更新数会下跌为 0.
 
 * 当内存不足时，要先将脏页写到磁盘。这种情况是比较常见的，**InnoDB 用缓冲池 `buffer pool` 管理内存，缓冲池中的内存页有三种状态：**
 
@@ -178,7 +178,7 @@ fio -filename=$filename -direct=1 -iodepth 1 -thread -rw=randrw -ioengine=psync 
 
 参数 `innodb_max_dirty_pages_pct` 是脏页比例上限，默认值是 75%。`InnoDB` 会根据当前的脏页比例（假定为 M），算出一个范围在 0 到 100 之间的数字。`InnoDB` 每次写入的日志都有一个序号，当前写入的序号跟 `checkpoint` 对应的序号之间的差值，假设为 N。`InnoDB` 会根据这个 N 算出一个范围在 0 到 100 之间的数字，这个计算公式可以记为 F2(N)。N 越大，算出来的值越大。**根据上述算得的F1(M)和F2(N)两个值，取其中较大的值记为R，之后引擎就可以按照 innodb_io_capacity 定义的能力乘以 R% 来控制刷脏页的速度**
 
-脏页比例是通过 `Innodb_buffer_pool_pages_dirty/Innodb_buffer_pool_pages_total` 得到的
+脏页比例是通过 `Innodb_buffer_pool_pages_dirty/Innodb_buffer_pool_pages_total` 得到的，要多关注脏页比例，不要让它经常接近 75 %。
 
 ```mysql
 select VARIABLE_VALUE into @a from global_status where VARIABLE_NAME = 'Innodb_buffer_pool_pages_dirty';

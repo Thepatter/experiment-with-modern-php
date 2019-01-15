@@ -1,4 +1,4 @@
-## java.util.stream.Stream<T>
+## `java.util.stream.Stream<T>`
 
 * `Stream<T> filter(Predicate<? super T> p)`
 

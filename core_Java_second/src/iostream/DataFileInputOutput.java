@@ -1,4 +1,4 @@
-package input.output;
+package iostream;
 
 import java.io.DataInput;
 import java.io.DataOutput;
