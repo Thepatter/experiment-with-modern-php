@@ -63,3 +63,9 @@
 * `void write(b: byte[], off: int, len: int)`
 
   从偏移量 off 开始，从指定的字节数组中写 len 个字节到该文件中
+
+* `FileChannel getChannel()`
+
+  返回用于访问这个文件的通道
+
+  

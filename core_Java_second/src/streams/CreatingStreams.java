@@ -33,7 +33,8 @@ public class CreatingStreams {
         show("randoms", randoms);
         Stream<BigInteger> integers = Stream.iterate(BigInteger.ONE, n -> n.add(BigInteger.ONE));
         show("integers", integers);
-        Stream<String> wordsAnotherWay = Pattern.compile(" ").splitAsStream(contents);
+        String pattern = " ";
+        Stream<String> wordsAnotherWay = Pattern.compile(pattern).splitAsStream(contents);
         show("wordsAnotherWay", wordsAnotherWay);
         try (Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)) {
             show("lines", lines);
