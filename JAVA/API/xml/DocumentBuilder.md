@@ -15,3 +15,9 @@
 * `void setErrorHandler(ErrorHandler handler)`
 
   设置用来报告在解析过程中出现的错误和警告的处理器
+
+* `Document newDocument()`
+
+  返回一个空文档
+
+  

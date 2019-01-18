@@ -24,10 +24,10 @@
 
 #### 仅将 Elasticsearch 端口绑定到内网专有 IP 地址
 
-* 将 `elastic search.yml` 中的配置更改为仅绑定到私有IP地址或将单个节点实例绑定到环回接口
+* 将 `elasticsearch.yml` 中的配置更改为仅绑定到私有IP地址或将单个节点实例绑定到环回接口
 
   ```yaml
-  network.bind_host: 127.0.0.1  // 或内网地址
+  network.host: 127.0.0.1  // 或内网地址
   ```
 
 #### 在 Elasticsearch 和客户端服务之间添加专用网络

@@ -133,3 +133,138 @@ String unit = element.getAttributes("unit");
 
 处理器必须覆盖这些方法，让它们执行在解析文件时我们想要让它们执行的动作。
 
+#### 使用 StAX 解析器
+
+`StAX` 解析器是一种，拉解析器，与安装事件处理器不同，只需使用下面这样的基本循环来迭代所有的事件
+
+```java
+InputStream in = url.openStream();
+XMLInputFactory = XMLInputFactory.newInstance();
+XMLStreamReader parser = factory.createXMLStreamReader(in);
+while (parser.hasNext()) {
+    int event = parser.next();
+   
+}
+```
+
+### 生成 XML 文档
+
+#### 不带命名空间的文档
+
+要建立一个 DOM 树，可以从一个空的文档开始。通过调用 `DocumentBuilder` 类的 `newDocument` 方法可以得到一个空文档
+
+```java
+Document doc = builder.newDocument();
+```
+
+`Document` 类的 `createElement` 方法可以构建文档里的元素
+
+```java
+Element rootElement = doc.createElement(rootName);
+Element childElement = doc.createElement(childName);
+```
+
+使用 `createTextNode` 方法构建文本节点
+
+```java
+Text textNode = doc.createTextNode(textContents);
+```
+
+`appendChild` 添加子节点和根元素
+
+```java
+doc.appendChild(rootElement);
+rootElement.appendChild(childElement);
+childElement.appendChild(textNode);
+```
+
+设置元素属性`Element` 类的 `setAttribute` 
+
+```java
+rootElement.setAttribute(name, value);
+```
+
+#### 带命名空间的文档
+
+将生成器工厂设置为是命名空间感知的，然后再创建生成器
+
+```java
+DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+factory.setNamespaceAware(true);
+builder = factory.newDocumentBuiler();
+```
+
+使用 `createElementNS` 而不是 `createElement` 来创建所有节点
+
+```java
+String namespace = "http://www.w3.org/2000/svg";
+Element rootElement = doc.createElementNS(namespace, "svg");
+```
+
+如果节点具有带命名空间前缀的限定名，那么所有必须的带有 `xmlns` 前缀的属性都会被自动创建。
+
+```java
+Element svgElement = doc.createElement(namespace, "svg:svg");
+```
+
+当该元素被写入 XML 文件时，会转变为
+
+```xml
+<svg:svg xmlns:svg="http://www.w3.org/2000/svg">
+```
+
+使用 `Element` 类的 `setAttributeNS` 方法设置属性的名字位于命名空间中
+
+```java
+rootElement.setAttributeNS(namespace, qualifiedName, value);
+```
+
+#### 输出文档
+
+```java
+Transformer t = TransformerFactory.newInstance().newTransformer();
+t.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, systemIdentifier);
+t.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, publicIdentifier);
+t.setOutputProperty(OutputKeys.INDENT, "yes");
+t.setOutputProperty(OutputKeys.METHOD, "xml");
+t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+t.transform(new DOMSource(doc), new StreamResult(new FileOutputStream(file)));
+```
+
+使用 `LSSerializer` 接口
+
+```java
+DOMImplementation impl = doc.getImplementation();
+DOMImplementationLS implLS = (DOMImplementationLS) impl.getFeature("LS", "3.0");
+LSSerializer ser = implLS.createLSSerializer();
+// 将文档转换为字符串
+String str = ser.writeToString(doc);
+// 直接写入到文件中
+LSOutput out = implLS.createLSOutput();
+out.setEncoding("UTF-8");
+out.setByteStream("Files.newOutputStream(path)");
+ser.write(doc, out);
+```
+
+#### 使用 StAX 写出 XML 文档
+
+`StAX` API 可以直接将 XML 树写出，这需要从某个 `OutputStream` 中构建一个 `XMLStreamWriter`
+
+```java
+XMLOutputFactory factory = XMLOutputFactory.newInstance();
+XMLStreamWriter writer = factory.createXMLStreamWriter(out);
+// 生成 XML 文件头
+writer.writeStartDocument();
+writer.writeStartElement(name);
+// 添加属性
+writer.writeAttribute(name, value);
+// 添加新的子节点
+writer.writeCharacters(text);
+// 关闭元素
+writer.writeEndElement();
+// 写出没有子节点的元素
+writer.writeEmptyElement(name);
+// 关闭所有打开的元素
+writer.writeEndDocument();
+```
+

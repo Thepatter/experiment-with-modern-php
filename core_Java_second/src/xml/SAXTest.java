@@ -8,12 +8,15 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.InputStream;
 import java.net.URL;
 
+/**
+ * @author zyw
+ */
 public class SAXTest {
     public static void main(String[] args) throws Exception
     {
         String url;
         if (args.length == 0) {
-            url = "http://www.w3c.org";
+            url = "http://php.net";
             System.out.println("Using " + url);
         } else {
             url = args[0];
