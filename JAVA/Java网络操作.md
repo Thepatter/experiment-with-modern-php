@@ -140,7 +140,7 @@ OutputStream outStream = Channels.newOutputStream(channel);
 
 当线程正在执行打开、读取或写入操作时，如果线程发生中断，那么这些操作将不会陷入阻塞，而是以抛出异常的方式结束
 
-### 获取 Web 数
+### 获取 Web 数据
 
 #### URL 和 URI
 
@@ -225,5 +225,87 @@ Scanner in = new Scanner(inStream, StandardCharsets.UTF_8);
 connection.setDoOutput(true);
 ```
 
-`setRequestProperty` 可以用来设置对特定协议起作用的任何“键值对”。
+`setRequestProperty` 可以用来设置对特定协议起作用的任何“键值对”。为了简便，Java 提供了6个方法用以访问最常用的消息头类型的值，并在需要时将它们转换成数字类型。
+
+#### 提交表单数据
+
+在向 `Web` 服务器发送信息时，在使用 `GET` 时，只需要将参数附在 `URL` 的结尾处即可。其中每个参数都具有 “名字=值” 的形式，这些参数之间用 `&` 字符分隔开。参数值将遵循下面的规则，使用 URL 编码模式进行编码
+
+* 保留字符 A 到 Z，a 到 z，0 到 9，以及 `.-~_`
+* 用 `+` 字符替换所有空格
+* 将其他所有字符编码为 `UTF-8`，并将每个字节都编码为 `%` 后面紧跟一个两位的十六进制数字
+
+这种编码方式使得在任何中间程序中都不会混入空格，并且也不需要对其他特殊字符进行转换
+
+POST 请求经常用来处理具有大量数据的表单。在 POST 请求中，不会再 URL 上附着参数，而是从 `URLConnection` 中获得输出流，并将 “键值对”写入到该输出流中。仍然需要对这些值进行 URL 编码，并用 & 字符将它们隔开。
+
+在提交数据给服务端程序之前，首先需要创建一个 `URLConnection` 对象。
+
+```java
+URL url = new URL("http://host/path");
+URLConnection connection = url.openConnection();
+```
+
+然后，调用 `setDoOutput` 方法建立一个用于输出的连接
+
+```java
+connection.setDoOutput(true);
+```
+
+接着，调用 `getOutputStream` 方法获得一个流，可以通过这个流向服务器发送数据。如果要想服务器发送文本信息，可以将流包装在 `PrintWriter` 对象中
+
+```java
+PrintWriter out = new PrintWriter(connection.getOutputStream(), "UTF-8");
+```
+
+现在，可以向服务器发送数据了
+
+```java
+out.print(name1 + "=" + URLEncoder.encode(value1, "UTF-8") + "&");
+out.print(name2 + "=" + URLEncoder.encode(value2, "UTF-8"));
+```
+
+关闭输出流
+
+```java
+out.close();
+```
+
+最后，调用 `getInputStream` 方法读取服务器的响应
+
+再读取响应过程中会碰到一个问题。如果服务端出现错误，那么调用 `connection.getInputStream()` 时就会抛出一个 `FileNotFoundException` 异常。但是，此时服务器仍然会向浏览器返回一个错误页面。为了捕捉这个错误页，可以调用 `getErrorStream` 方法
+
+`getErrorStream` 方法属于 `URLConnection` 类的子类 `HttpURLConnection`。如果要创建以 `http://` 或 `https://` 开头的 URL，那么可以将所产生的连接对象强制转型为 `HttpURLConnection`
+
+在将 POST 数据发送给服务器时，服务器端程序产生的响应可能是 `redirect` ，后面跟着一个完全不同的 URL，该 URL 应该被调用以获取实际的信息。服务器可以这么做，因为这些信息位于他处，或者提供了一个可以作为书签标记的 URL。`HttpURLConnection` 类在大多数情况下可以处理这种重定向
+
+如果 `cookie` 需要在重定向中从一个站点发送给另一个站点，那么可以如下配置一个全局的 `cookie` 处理器
+
+```java
+CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
+```
+
+人工实现重定向。在连接到服务器之前，将自动重定向关闭
+
+```java
+connection.setInstanceFllowRedirects(false);
+```
+
+在发送请求之后，获取响应码
+
+```java
+int responseCode = connection.getResponseCode();
+```
+
+坚持是否是下列值之一
+
+```java
+HttpURLConnection.HTTP_MOVED_PERM
+HttpURLConnection.HTTP_MOVED_TEMP
+httpURLConnection.HTTP_SEE_OTHER
+```
+
+如果是这些值之一，那么获取 `Localtion` 响应头，以获得重定向的 URL。然后，断开连接，并创建到新的 URL 的连接
+
+
 
