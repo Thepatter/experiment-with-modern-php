@@ -34,4 +34,35 @@
 
   `concurrency`	`ResultSet` 接口中的下列常量之一：`CONCUR_READ_ONLY`、`CONCUR_UPDATABLE`
 
-  
+* `DatabaseMetaData getMetaData()`
+
+  返回一个 `DatabaseMetaData` 对象，该对象封装了有关数据库连接的元数据
+
+* `boolean getAutoCommit()`
+
+* `void setAutoCommit(boolean b)`
+
+  获取该连接中的自动提交模式，或将其设置为 b。如果自动更新为 `true`，那么所有语句将在执行结束后立刻被提交
+
+* `void commit()`
+
+  提交自上次提交以来所有执行过的语句
+
+* `void rollback()`
+
+  撤销自上次提交以来所有执行过的语句所产生的影响
+
+* `Savepoint setSavepoint()`
+
+* `Savepoint setSavepoint(String name)`
+
+  设置一个匿名或具名的保存点
+
+* `void rollback(Savepoint svpt)`
+
+  回滚到给定保存点
+
+* `void releaseSavepoint(Savepoint svpt)`
+
+  释放给定的保存点
+

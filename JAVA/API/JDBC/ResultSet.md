@@ -120,5 +120,7 @@
 
   撤销对当前行的更新
 
+* `ResultSetMetaData getMetaData()`
 
+  返回与当前 `ResultSet` 对象中的列相关的元数据
 
