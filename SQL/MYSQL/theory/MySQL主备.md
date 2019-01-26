@@ -309,3 +309,104 @@ mysqlbinlog master.000001  --start-position=2738 --stop-position=2973 | mysql -h
 当然，对于“表上没主键”和“外键约束”的场景，`WRITESET` 策略也是没法并行的，也会暂时退化为单线程
 
 官方 MySQL 5.7.22 版本新增的并行策略，修改了 `binlog` 的内容，即 `binlog` 协议并不是向上兼容的，在主备切换，版本升级的时候需要把这个因素也考虑进去
+
+### 如何判断一个数据库是不是出问题了
+
+在一主一备的双M架构里，主备切换只需要把客户端流量切到备库；而在一主多从架构里，主备切换除了要把客户端流量切到备库外，还需要把从库接到新主库上。主备切换有两种场景，一种是主动切换，一种是被动切换。而其中被动切换，往往是因为主库出问题了，由 HA 系统发起的。怎么判断一个主库出问题了
+
+#### SELECT 1 判断
+
+实际上，`select 1` 成功返回，只能说明这个库的进程还在，并不能说明主库没问题。
+
+`innodb_thread_concurrency` 参数的目的是，控制 `InnoDB` 的并发线程上限。即，一旦并发线程数达到这个值，`InnoDB` 在接收到新请求的时候，就会进入等待状态，直到有线程退出。在 `InnoDb` 中，`innodb_thread_concurrency` 这个参数的默认值是 0，表示不限制并发线程数量。但是，不限制并发线程数肯定不行，因为，一个机器的 CPU 核数有限，线程全冲进来，上下文切换的成本就会太高。
+
+所以，通常情况下，建议把 `innodb_thread_concurrency` 设置为 64-128 之间的值。
+
+**并发连接和并发查询**：并发连接和并发查询，并不是同一个概念。`show processlist` 的结果里，看到的连接，指的是并发连接。而 “当前正在执行” 的语句，才是并发查询。并发连接数达到几千个影响并不大，就是多占一些内存而已。应该关注的是并发查询，因为并发查询太高才是 CPU 杀手。这也是设置 `innodb_thread_concurrency` 参数的原因
+
+在线程进入锁等待以后，并发线程的计数会减一，即等行锁（包括间隙锁）的线程不算在 `innodb_thread_concurrency` 里。虽然在等待的线程不算在并发线程计数里，但如果它在真正地执行查询，如（`select sleep(100) from t`），还是要算进并发线程的计数的
+
+#### 查表判断
+
+为了能够检测 `InnoDB` 并发线程数过多导致的系统不可用的情况，我们需要找一个访问 `InnoDB` 的场景。一般的做法是，在系统库（`mysql`库）里创建一个表，如 `health_check`，里面只放一行数据，然后定期执行
+
+```mysql
+select * from mysql.health_check;
+```
+
+使用这个方法，可以检测出由于并发线程过多导致的数据库不可用的情况。但，空间满了后，这种方法又会变得不好用。
+
+更新事务要写 `binlog`，而一旦 `binlog` 所在磁盘的空间占用率达到 100 %，那么所有的更新语句和事务提交的 `commit` 语句就都会被堵住。但是，系统这时候还是可以正常读数据的
+
+#### 更新判断
+
+常见做法是放一个 `timestamp` 字段，用来表示最后一次执行检测的时间。这个更新语句类似于
+
+```mysql
+update mysql.health_check set t_modified=now();
+```
+
+节点可用性的检测都应该包含主库和备库。如果用更新来检测主库的话，那么备库也要进行更新检测。但，备库的检测也是要写 `binlog` 的。（双M结构下，在备库上执行的检测命令，也要发回主库 A）。但是如果主库 A 和备库 B 都用相同的更新命令，就可能出现冲突，也就是可能会导致主备同步停止。
+
+为了让主备之间的更新不产生冲突，可以在 `mysql.health_check` 表上存入多行数据，并用 `A、B` 的 `server_id` 做主键
+
+更新语句，如果失败或超时，就可以发起主备切换了，但要考虑判定慢的问题。
+
+#### 判定慢问题
+
+判定慢的问题，涉及到的是服务器IO资源分配的问题
+
+首先，所有检查逻辑都需要一个超时时间 N。执行一条 `update` 语句，超过 N  秒后还不返回，就认为系统不可用。
+
+假定一个日志盘的 IO 利用率已经是 100% 的场景。这时候，整个系统响应非常慢，已经需要做主备切换了。
+
+IO 利用率 100% 表示系统的 IO 是在正在工作的，每个请求都有机会获得 IO 资源，执行自己的任务。而检测使用的 `update` 命令，需要的资源很少，所以可能在拿到 IO 资源的时候就可以提交成功，并且在超时时间 N 秒未到达之前就返回给了检测系统。
+
+此时，`update` 命令没有超时，此时更新检测会得到“系统正常”的结论、实际上，此时业务系统上正常的 SQL 语句已经执行得很慢了。
+
+出现判定慢的情况，在于上述方法都是基于外部检测的。外部检测天然有一个问题，就是随机性。因为外部检测都需要定时轮询，所以系统可能已经出问题了，但是却需要等到下一个检测发起执行语句的时候，才可能发现问题。而且可能第一次轮询还不能发现，因此会导致切换慢。
+
+#### 内部统计
+
+MySQL 5.6 版本以后提供的 `performance_schema` 库，就在 `file_summary_by_event_name` 表里统计了每次 IO 请求的时间。
+
+`file_summary_by_event_name` 表里有很多行数据。
+
+![](./Images/file_summary_by_event_name表.png)
+
+`event_name = wait/io/file/innodb/innodb_log_file` 这一行表示统计的是 `redo log` 的写入时间，第一列 `EVENT_NAME` 表示统计的类型。下面的三组数据，显示的是 `redo log` 操作的时间统计
+
+第一组五列，是所有 IO 类型的统计。其中 `COUNT_STAR` 是所有 IO 的总次数，接下来 4 列是具体的统计项目，单位是皮秒；前缀 SUM、MIN、AVG、MAX、指的是总和、最小值、平均值、最大值
+
+第二组六列，是读操作的统计。最后一列 `SUM_NUMBER_OF_BYTES_READ` 统计的是，总共从 `redo log` 里读了多少字节
+
+第三组六列，统计的是写操作。
+
+最后的第四组数据，是对其他类型数据的统计。在 `redo log` 里，可以认为是对 `fsync` 的统计。
+
+在 `performance_schema` 库的 `file_summary_by_event_name` 表里，`binlog` 对应的是 `event_name='wait/io/file/sql/binlog'` 这一行。各个字段的统计逻辑，与 `redo log` 的各个字段完全相同。
+
+我们每一次操作数据库，`performance_schema` 都需要额外地统计这些信息，所以打开这个统计功能是有性能损耗的。如果打开所有的 `performance_schema` 项，性能大概会下降 10% 左右。
+
+可以按需打开统计。如果要打开 `redo log` 的时间监控，可以执行
+
+```sql
+mysql> update setup_instruments set ENABLED='YES', Timed='YES' where name like '%wait/io/file/innodb/innodb_log_file%'
+```
+
+如果已经开启了 `redo log` 和 `binlog` 这两项统计信息，就可以通过 `MAX_TIMER` 的值来判断数据库是否出问题了。可以设定阈值，单词 `IO` 请求时间超过 200 毫秒属于异常
+
+```mysql
+// 检测逻辑
+mysql> select event_name,MAX_TIMER_WAIT  FROM performance_schema.file_summary_by_event_name where event_name in ('wait/io/file/innodb/innodb_log_file','wait/io/file/sql/binlog') and MAX_TIMER_WAIT>200*1000000000;
+```
+
+发现异常后，取到需要的信息，再通过下面这条语句
+
+```mysql
+mysql> truncate table performance_schema.file_summary_by_event_name;
+```
+
+把之前的统计信息清空。这样如果后面的监控中，再次出现这个异常，就可以加入监控累积值了。
+
+​         
