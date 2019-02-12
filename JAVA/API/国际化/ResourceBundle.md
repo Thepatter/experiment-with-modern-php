@@ -25,3 +25,4 @@
 * `Object handleGetObject(String key)`
 
   如果要定义自己的资源查找机制，那么这个方法就需要被覆写，用来查找与给定的键相关联的资源的值
+

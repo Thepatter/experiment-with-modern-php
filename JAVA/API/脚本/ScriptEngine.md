@@ -19,3 +19,9 @@
 * `Bindings createBindings()`
 
   创建一个适合该引擎的空 `Bindings` 对象
+
+* `ScriptContext getContext()`
+
+  获得该引擎的默认的脚本上下文
+
+  
