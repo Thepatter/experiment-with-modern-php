@@ -94,6 +94,14 @@
 
   设置或获取未捕获异常的处理器。如果没有安装处理器，则将线程组对象作为处理器。
 
+* `ClassLoader getContextClassLoader()`
+
+  获取类加载器，该线程的创建者将其指定为执行该线程时最适合使用的类加载器
+
+* `void setContextClassLoader(ClassLoader loader)`
+
+  为该线程中的代码设置一个类加载器，以获取要加载的类。如果在启动一个线程时没有显式地设置上下文类加载器，则使用父线程的上下文加载器
+
 
 
 

@@ -7,7 +7,7 @@
 * `Class getSupperclass()`                                                  
 
   以 Class 对象的形式返回这个类的超类信息
-  
+
 * `static Class forName(String className)`
 
   返回描述类名为 `className` 的 `Class` 对象
@@ -81,3 +81,11 @@
 * `Type[] getGenericInterfaces()`
 
    获得被声明为这个类型的接口的泛型类型（以声明的次序），否则，如果这个类型没有实现接口，返回长度为0 的数组
+
+* `ClassLoader getClassLoader()`
+
+   获取加载该类的类加载器
+
+* `ProtectionDomain getProtectionDomain()`
+
+   获取该类的保护域，如果该类被加载时没有保护域，则返回 null
