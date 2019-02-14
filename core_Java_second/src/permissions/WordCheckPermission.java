@@ -1,4 +1,4 @@
-package Permissions;
+package permissions;
 
 import java.security.Permission;
 import java.util.Arrays;
