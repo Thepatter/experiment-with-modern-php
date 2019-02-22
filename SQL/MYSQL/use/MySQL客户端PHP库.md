@@ -26,6 +26,14 @@ mysqli 扩展支持持久数据库连接，这是一种特殊的池连接。默�
 
 mysqli 扩展支持持久连接的两种解释：状态持久化，以及重用前的状态重置。默认值已重置。在重用持久连接之前，mysqli 扩展隐式调用 `mysqli_change_user()` 来重置状态。持久连接对用户来说就像刚刚打开一样。
 
+mysqli 没有提供一个特殊的方法用于打开持久化连接。 需要打开一个持久化连接时，你必须在 连接时在主机名前增加*p:*。
+
+使用持久化连接也会存在一些风险， 因为在缓存中的连接可能处于一种不可预测的状态。 例如，如果客户端未能正常关闭连接， 可能在这个连接上残留了对库表的锁， 那么当这个连接被其他请求重用的时候，这个连接还是处于 有锁的状态。 所以，如果要很好的使用持久化连接，那么要求代码在和数据库进行交互的时候， 确保做好清理工作，保证被缓存的连接是一个干净的，没有残留的状态
+
+mysqli 扩展的持久化连接提供了内建的清理处理代码。mysqli 所做的清理包括：回滚活动事务，释放表锁，重置会话变量，关闭预处理SQL 语句，关闭处理程序，释放 `GET_LOCK()` 获得的锁。这确保了将连接返回到连接池的时候，处于干净状态，可以被其他客户端进程使用。
+
+自动清理的优点是程序员不再需要担心附加的清理代码，它们会自动调用。缺点是性能会慢一点，因为每次从连接池返回一个连接都需要执行这些清理代码，可以通过在编译是定义 `MYSQLI_NO_CHANGE_USER_ON_PCONNECT` 来关闭
+
 #### 执行语句
 
 语句执行结果可以立即检索，由客户端缓冲或逐行读取。客户端结果集缓冲允许服务器尽可能早地释放与语句结果相关联的资源。一般来说，客户端是慢速消耗结果集。`mysqli_query()` 结合了语句执行和结果集缓冲。如果客户端内存是紧缺资源并且不需要尽可能早地释放服务器资源以保持服务器负载的低，则可以使用无缓冲的结果。在读取所有行之前，无法滚动浏览无缓冲的结果 
@@ -255,8 +263,30 @@ $res = $stmt->result_metadata();
 $res->fetch_fields();
 ```
 
-### MySQL 8
+#### MySQL 8
 
 在 7.1.16 之前的 PHP 或 7.2.4 之前的 php7.2，需要将 MySQL 8 Server 的默认密码插件设置为 `mysql_native_password`，否则会报客户端未知的服务器请求的身份验证方法 [caching_sha2_password] 的错误，即使在 `caching_sha2_password` 未使用是也如此
 
 MySQL 8 默认使用 `caching_sha2_password`，这是一个旧的 PHP （mysqlnd）版本无法识别的插件。在 `my.cnf` 设置 `default_authentication_plugin = mysql_native_password` 来修改。该 `caching_sha2_password` 插件将在未来 PHP 版本中支持。`mysql_xdevapi` 扩展支持它
+
+#### 配置参数
+
+`php.ini` 中的配置
+
+* `mysqli.allow_local_infile` 整型，从 PHP 的角度来看，允许使用 LOAD DATA 语句访问本地文件
+* `mysqli.allow_persistent` 整型，启用 `mysqli_connect()` 创建持久连接的功能
+* `mysqli.max_persistent` 整型，可以建立的最大持久连接数。设置 0 表示无限制
+* `mysqli.max_links` 整数，每个进程的最大 MySQL 连接数
+* `mysqli.default_port` 整数，如果未指定其他端口，则在连接数据库服务器时使用的默认 TCP 端口号。如果未指定 `default`，将从 `MYSQL_TCP_PORT` 环境变量，`/etc/services` 中的 `mysql-tcp` 条目或编译时 `MYSQL_PORT` 常量中获取该端口。win32 将只使用 MYSQL_PORT 常量
+* `mysqli.default_socket` 字符串，如果未指定其他套接字名字，则在连接到本地数据库服务器时使用的默认套接字名称，不适用安全模式
+* `mysqli.default_host` 字符串，如果未指定其他主机，则在连接到数据库服务器时使用的默认用户名。不适用安全模式
+* `mysqli.default_pw` 字符串，如果未指定其他密码，则在连接到数据库服务器时使用的默认密码，不适用安全模式
+* `mysqli.reconnect` 整数，如果连接丢失，则自动重新连接（mysqlnd 驱动程序会忽略此 php.ini 设置）
+* `mysqli.rollback_on_cached_plink` 布尔，如果启用此选项，则关闭持久连接将回滚此连接的任何事务，然后再将其放回到持久连接池中。否则，只有在重用连接或实际关闭连接时，才会回滚挂起的事务
+
+用户无法通过 API 调用或运行时配置设置来设置 `MYSQL_OPT_READ_TIMEOUT`。
+
+### PDO 数据对象扩展
+
+PDO 数据对象为 PHP 访问数据库定义了一个轻量级的一致接口。PDO 扩展自身并不能实现任何数据库功能：必须使用一个具体数据库 PDO 驱动来访问数据库服务。PDO 不提供数据库抽象层，不会重新 SQL，也不会模拟缺失的特性。 
+

@@ -43,7 +43,7 @@ sudo apt-get -y install oracle-java8-installer
    ```
    [Service]        // 修改service 配置
    Restart=always
-   ``` 
+   ```
    `systemctl daemon-reload`   
 
 * 启动及停止命令
