@@ -10,6 +10,9 @@
 ```shell
 wget http://nginx.org/keys/nginx_signing.key
 sudo apt-key add nginx_signing.key
+// 修改 /etc/apt/sources.list
+deb http://nginx.org/packages/ubuntu/  bionic nginx
+deb-src http://nginx.org/packages/ubuntu/ bionic nginx
 sudo apt update
 sudo apt install nginx
 ```
@@ -35,7 +38,7 @@ sudo apt install mysql-server mysql-common mysql-client
 ```shell
 sudo add-apt-repository ppa:ondrej/php
 sudo apt update
-sudo apt install php7.2-fpm php-pdo-mysql php-mysqli
+sudo apt install php7.3-fpm php-pdo php-pdo-mysql php-mysqli php-mbstring 
 ```
 
 ### 服务启动

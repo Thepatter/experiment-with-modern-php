@@ -16,6 +16,8 @@ select * from t1 inner join t2 on (t1.a=t2.a);
 
 #### 能使用被驱动表索引
 
+##### Index Nested-Loop Join
+
 使用 `straight_join` 让 `MySQL` 使用固定的连接方式执行查询，这样优化器只会按照我们指定的方式去 `join`。
 
 ```mysql
@@ -83,9 +85,11 @@ select * from t1 straight_join t2 on (t1.a=t2.a)
 select * from t1 straight_join t2 on (t1.a=t2.b)
 ```
 
-由于表 t2 的字段 b 上没有索引，因此每次到 t2 去匹配的时候，就要做一次全表扫描。
+##### Simple Nested-Loop Join
 
-Block Nested-Loop Join 算法
+由于表 t2 的字段 b 上没有索引，因此再用`Index Nested-Loop Join` 的执行流程时，每次到 t2 去匹配的时候，就要做一次全表扫描。如果只看结果的话，能得到正确的算法。但是这个 SQL 请求就要扫描表 t2 多达 100 次，总共扫描 100 * 1000 = 10 万行。
+
+##### Block Nested-Loop Join 算法
 
 这时候，被驱动表上没有可用的索引，算法的流程是这样的：
 
@@ -130,6 +134,24 @@ Block Nested-Loop Join 算法
 显然，内存判断次数是不受选择哪个表作为驱动表影响的。而考虑到扫描行数，在 M 和 N 大小确定的情况下，N 小一些，整个算式的结果会更小。即，应该让小表当驱动表
 
 如果 `join` 语句很慢，就把 `join_buffer_size` 改大。
+
+#### Simple Nested Loop Join 的性能问题
+
+虽然 BNL 算法和 Simple Nestd Loop Join 算法都是要判断 M * N 次（M 和 N 分别是 join 的两个表的行数），但是 Simple Nested Loop Join 算法的每轮判断都要走全表扫描，因此性能上 BNL 算法执行会好很多
+
+BNL 算法的执行逻辑是：
+
+1.首先，将驱动表的数据全部读入内存 `join_buffer` 中，这里 `join_buffer` 是无序数组；
+
+2.然后，顺序遍历被驱动表的所有行，每一行数据都跟 `join_buffer` 中的数据进行匹配，匹配成功则作为结果集的一部分返回
+
+`Simple Nested Loop Join` 算法的执行逻辑是：顺序取出驱动表中的每一行数据，到被驱动表去做全表扫描匹配，匹配成功则作为结果集的一部分返回。
+
+性能差异原因在：
+
+1.在对被驱动表做全表扫描的时候，如果数据没有在 Buffer Pool 中，就需要等待这部分数据从磁盘读入（从磁盘读入数据到内存中，会影响正常业务的 Buffer Pool 命中率，而且这个算法天然会对被驱动表的数据做多次访问，更容易将这些数据页放到 Buffer Pool 的头部）
+
+2.即使被驱动表数据都在内存中，每次查找“下一个记录的操作”，都是类似指针操作。而 `join_buffer` 中是数组，遍历的成本更低。
 
 #### join语句使用场景判断
 
@@ -297,4 +319,67 @@ select * from t1 join temp_t on (t1.b=temp_t.b);
 3.基于临时表的改进方案，对于能够提前过滤出小数据的 `join` 语句来说，效果还是很好的
 
 4.MySQL 目前的版本还不支持 `hash join`，但是可以在应用端自己模拟，理论上效果好于临时表的方案
+
+###  join 的写法
+
+#### left join 
+
+如果用 left join 的话，左边的表一定是驱动表吗？
+
+如果两个表的 join 包含多个条件的等值匹配，是都要写到 on 里面呢，还是只把一个条件写到 on 里面，其他条件写到 where 部分？
+
+构建测试表
+
+```mysql
+create table a(f1 int, f2 int, index(f1))engine=innodb;
+create table b(f1 int, f2 int) engine=innodb;
+insert into a values(1,1),(2,2),(3,3),(4,4),(5,5),(6,6);
+insert into b values(3,3),(4,4),(5,5),(6,6),(7,7),(8,8);
+```
+
+表 a 和 b 都有两个字段 f1 和 f2，不同的是表 a 的字段 f1 上有索引。然后，往两个表中都插入了 6 条记录，其中在表 a 和 b 中同时存在的数据有 4 行
+
+上面第二个问题，其实就是下面这两种写法的区别
+
+```mysql
+select * from a left join b on(a.f1=b.f1) and (a.f2=b.f2);  /*Q1*/
+select * from a left join b on(a.f1=b.f1) where (a.f2=b.f2);  /*Q2*/
+```
+
+这两个 left join 语句的语义逻辑并不相同。
+
+![](./Images/leftjoin使用on与where的结果.png)
+
+* 语句 Q1 返回的数据集是 6 行，表 a 中即使没有满足匹配条件的记录，查询结果也会返回一行，并将表 b 的各个字段值填成 NULL
+* 语句 Q2 返回的是 4 行。最后的两行，由于表 b 中没有匹配的字段，结果集里面 b.f2 的值为空，不满足 where 部分的条件判断，因此不能作为结果集的一部分
+
+*left join 多条件 on 的 explain 分析*
+
+![](./Images/leftjoin多条件on的explain.png)
+
+分析结果为：驱动表是表 a，被驱动表是表 b；由于表 b 的 f1 字段上没有索引，所以使用 Block Nexted Loop Join 算法，因此这条语句的执行流程是：
+
+1.把表 a 的内容读入 `join_buffer` 中。因为是 `select *` ，所以字段 f1 和 f2 都被放入 `join_buffer` 了。
+
+2.顺序扫描表 b，对于每一行数据，判断 join 条件（a.f1 = b.f1 and a.f2=b.f2）是否满足，满足条件的记录，作为结果集的一行返回。如果语句中有 where 子句，需要先判断 where 部分满足条件后，再返回
+
+3.表 b 扫描完成后，对于没有被匹配的表 a 的行，把剩余的字段补上 NULL，再放入结果集中
+
+*left join -BNL 算法流程图*
+
+![](./Images/left_join_Block_Nexted_Loop算法流程图.png)
+
+即，这条语句确实是以表 a 为驱动表，而且从执行效果看，也和使用 `straight_join` 是一样的
+
+![](./Images/left_join的多条件等值匹配where分析.png)
+
+这条语句是以表 b 为驱动表的。而如果一条 join 语句的 Extra 字段什么都没写的话，就表示使用的是 `Index Nested-Loop Join` 算法。因此，语句 Q2 的执行流程是：顺序扫描表 b，每一行用 b.f1 到表 a 中去查，匹配到记录后判断 a.f2=b.f2 是否满足，满足条件的话就作为结果集的一部分返回。
+
+Q1 和 Q2 这两个查询的执行流程差距是因为优化器基于 Q2 这个查询的语义做了优化。语句 Q2 里面 `where a.f2=b.f2` 就表示，查询结果里面不会包含 b.f2 是 null 的行，这样这个 left join 的语义就是：找到这两个表里面，f1，f2 对应相同的行，对于表 a 中存在，而表 b 中匹配不到的行，就放弃。因此，这条语句虽然用的是 `left join`，但是语义跟 join 是一致的。优化器把这条语句的 `left join` 改写成了 `join`，然后因为表 a 的 f1 上有索引，就把表 b 作为驱动表，这样就可以用上 NLJ 算法。在执行 `explain` 之后，可以执行`show warnings` 查看这个改写的结果
+
+*优化器优化left join结果*
+
+![](./Images/优化器优化leftjoin为join查询.png)
+
+即，使用 `left join` 时，左边的表不一定是驱动表。**如果需要 left join 的语义，就不能把被驱动表的字段放在 where 条件里面做等值判断或不等值判断，必须都写在 on 里面。join 将判断条件是否全部放在 on 部分没有区别**
 

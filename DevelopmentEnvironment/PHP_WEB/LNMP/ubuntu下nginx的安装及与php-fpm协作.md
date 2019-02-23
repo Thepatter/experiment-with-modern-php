@@ -12,9 +12,9 @@
 
 * 添加 deb 配置到 `/etc/apt/sources.list`
 
-  `deb http://nginx.org/packages/debian/  codename nginx`
+  `deb http://nginx.org/packages/ubuntu/  codename nginx`
 
-  `deb-src http://nginx.org/packages/debian/ codename nginx`
+  `deb-src http://nginx.org/packages/ubuntu/ codename nginx`
 
   将 `codename` 替换为 `lsb_release -a`  的 `codename`
 
