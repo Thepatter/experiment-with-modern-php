@@ -34,7 +34,17 @@ class RequestParams
 
     private function restParams() :array
     {
-        $keyParams = explode(' ', file_get_contents('php://input'));
+        $input = (file_get_contents('php://input'));
+        if ($_SERVER['HTTP_CONTENT_TYPE'] === 'application/x-www-form-urlencoded') {
+            $inputParamsArray = explode('&', $input);
+            $requestParams = [];
+            foreach ($inputParamsArray as $inputParam) {
+                $tmpInputKeyAndValue = explode('=', $inputParam);
+                $requestParams[$tmpInputKeyAndValue[0]] = htmlspecialchars($tmpInputKeyAndValue[1]);
+            }
+            return $requestParams;
+        }
+        $keyParams = explode(' ', $input);
         $requestParams = [];
         foreach ($keyParams as $keyParam) {
             if (preg_match('/^name/', $keyParam)) {
@@ -47,7 +57,7 @@ class RequestParams
                     if (preg_match('/^name=/', $item)) {
                         $key = trim(explode('=', $item)[1], '"');
                     }
-                    $requestParams[$key] = $item;
+                    $requestParams[$key] = htmlspecialchars($item);
                 }
             }
         }
