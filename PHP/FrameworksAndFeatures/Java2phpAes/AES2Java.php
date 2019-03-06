@@ -1,11 +1,16 @@
 <?php
 /**
- * Created by PhpStorm.
+ * Created by IntelliJ IDEA.
  * User: company
  * Date: 2019/3/6
- * Time: 10:20
+ * Time: 11:32
  */
-class RequestApi
+
+/**
+ * 与 java aes ecb pkcs5padding 交互
+ * Class AES2Java
+ */
+class AES2Java
 {
     const APP_ID = '4f30e5156a404dd2b7f5d86eccedeac4';
 
@@ -18,29 +23,12 @@ class RequestApi
 
     }
 
-    public function getCrypt(array $origin)
-    {
-        return $this->encrypt(json_encode($origin));
-    }
     public function setRequestParam(array $origin)
     {
         $request['appId'] = static::APP_ID;
         $request['data'] = $this->encrypt(json_encode($origin));
         $this->requestParam = http_build_query($request);
         return $this;
-    }
-
-    public function setRequestParamByOpenssl(array $origin)
-    {
-        $jsonData = json_encode($origin);
-        $pkcs5padding = $this->pkcs5_pad(json_encode($origin), 32);
-//        return bin2hex(openssl_encrypt($pkcs5padding, 'AES-128-ECB', static::KEY, 3));
-        return bin2hex(openssl_encrypt($jsonData, 'AES-128-ECB', static::KEY, OPENSSL_RAW_DATA));
-    }
-
-    public function decryptOpenssl($crypt)
-    {
-        return openssl_decrypt($this->hexToStr($crypt),'AES-128-ECB', static::KEY, 1);
     }
 
     public function requestApi($url)
@@ -69,7 +57,7 @@ class RequestApi
         curl_close($curl);
 
         if ($err) {
-            var_dump($err);exit;
+            throw new Exception('请求错误');
         }
         return $response;
 
@@ -97,7 +85,7 @@ class RequestApi
         $decrypted= mcrypt_decrypt(
             MCRYPT_RIJNDAEL_128,
             static::KEY,
-            $this->hexToStr($sStr),
+            base64_decode($sStr),
             MCRYPT_MODE_ECB
         );
         $dec_s = strlen($decrypted);
@@ -105,46 +93,4 @@ class RequestApi
         $decrypted = substr($decrypted, 0, -$padding);
         return $decrypted;
     }
-
-    private function hexToStr($hex) {
-        $string="";
-        for($i=0;$i<strlen($hex)-1;$i+=2)
-            $string.=chr(hexdec($hex[$i].$hex[$i+1]));
-        return  $string;
-    }
-
-    public function pkcs7En($arr)
-    {
-        $data = json_encode($arr);
-        $pkcs7 = $this->aes256Padding($data);
-        return bin2hex(openssl_encrypt($pkcs7, 'AES-128-ECB', static::KEY, OPENSSL_NO_PADDING));
-    }
-
-    private function aes256Padding($data, $blockSize = 32)
-    {
-        $pad = $blockSize - (strlen($data) % $blockSize);
-        return $data . str_repeat(chr($pad), $pad);
-    }
 }
-$request = new RequestApi();
-$data = ['mobile' => '17313109511'];
-echo json_encode([
-        'ssl' => $request->setRequestParamByOpenssl($data),
-        'pk7' => $request->pkcs7En($data),
-        'mcy' => $request->getCrypt($data),
-        'dem' => $request->decrypt($request->pkcs7En($data)),
-        'des' => $request->decryptOpenssl($request->getCrypt($data)),
-    ]
-);
-exit;
-//if (extension_loaded('mbstring')) {
-//    phpversion('curl');
-//} else {
-//    echo 1;
-//}
-$request = new RequestApi;
-
-$response = $request->setRequestParam(['mobile' => '17313109531'])->requestApi('https://zxgztest.fxnotary.com/onlineNotary/api/common/register');
-
-echo $response;
-exit;
