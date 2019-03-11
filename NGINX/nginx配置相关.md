@@ -37,9 +37,37 @@ server {
 
 ### nginx 反向代理服务器配置
 
+#### 负载均衡概述
+
+应用的负载均衡是在应用的 server 中进行配置的，支持多种负载，`proxy_pass`，`fastcgi_pass`，`uwsgi_pass`，`scgi_pass`，`memcached_pass`，`grpc_pass` 。
+
 upstream 负载均衡开始，通过 `upstream` 指定了一个负载均衡器的名称为 `local`，这个名称是自定义的，在后面 `server` 模块中 `proxy_pass` 直接调用
 
 `proxy_next_upstream` 参数用来定义故障转移策略，当后端服务器节点返回 500，502 和执行超时等错误时，自动将请求转发到 `upstream` 负载均衡器中的另一台服务器，实现故障转移
+
+#### fastcgi_pass 负载
+
+*sites-available/default*
+
+```nginx
+upstream php_pool {
+    server unix:/var/run/php/php7.1-fpm.sock;
+    server unix:/var/run/php/php7.2-fpm.sock;
+    server unix:/var/run/php/php7.3-fpm.sock;
+}
+server {
+    listen 80;
+    server_name www.local.test;
+    location ~\.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass php_pool;
+    }
+}
+```
+
+#### 多后端站点负载
+
+*sites-available/default*
 
 ```nginx
 // 上游服务器设置，命名为 local
