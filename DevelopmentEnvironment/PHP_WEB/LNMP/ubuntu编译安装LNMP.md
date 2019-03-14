@@ -309,7 +309,7 @@ php -h 获取帮助
 * 添加 `apt` 仓库源
 
   ```shell
-  sudo add-apt-repository ppa:ondrej/php			// php 仓库源
+  sudo add-apt-repository ppa:ondrej/php-qa
   sudo add-apt-repository ppa:ondrej/php5-compat			// php5.5 仓库
   sudo apt update && sudo apt upgrade
   sudo apt install php-fpm php-common php-dev php-mbstring php-gd php-mysqli php-pdo-mysqli php-curl

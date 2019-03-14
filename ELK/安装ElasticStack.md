@@ -12,6 +12,18 @@ echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-
 echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections
 sudo apt-get -y install oracle-java8-installer
 ```
+### 安装 JDK-11
+
+```shell
+sudo add-apt-repository ppa:linuxuprising/java
+sudo apt update
+// 自动接收 11 lincense
+echo oracle-java11-installer shared/accepted-oracle-license-v1-2 select true | sudo /usr/bin/debconf-set-selections
+sudo apt install oracle-java11-installer
+// 设置 Java 11 为默认值
+sudo apt install oracle-java11-set-default
+```
+
 ### 安装 ElasticSearch
 
 #### 安装 ElasticSearch
