@@ -97,7 +97,9 @@
 
   `select note_text from productnotes where match(note_text) against('anvils' with query expansion)`
 
-#### 布尔文本搜索, MySQL支持全文本搜索的另外一种形式.布尔方式提供下面的细节:
+#### 布尔文本搜索
+
+支持全文本搜索的另外一种形式.布尔方式提供下面的细节:
 
 * 要匹配的词
 
@@ -112,31 +114,31 @@
 
 | 布尔操作符 |                             说明                             |
 | :--------: | :----------------------------------------------------------: |
-|     +      |                       包含,词必须存在                        |
-|     -      |                      排除,词必须不出现                       |
-|     >      |                     包含,而且增加等级值                      |
-|     <      |                      包含,且减少等级值                       |
+|     +      |                       包含，词必须存在                       |
+|     -      |                      排除，词必须不出现                      |
+|     >      |                     包含，而且增加等级值                     |
+|     <      |                      包含，且减少等级值                      |
 |     ()     | 把词组成子表达式(允许这些子表达式作为一个组被包含,排除,排列等) |
 |     ~      |                       取消一个词的排序                       |
 |     *      |                         词尾的通配符                         |
-|     ""     | 定义一个短语(与单个词的列表不一样,它匹配整个短语以便包含或排除这个短语) |
+|     ""     | 定义一个短语(与单个词的列表不一样，它匹配整个短语以便包含或排除这个短语) |
 
 `where match(note_text) against('+rabbit +bait' IN BOOLEAN MODE)` 搜索匹配包含词 `rabbit` 和 `bait`的行
 
-`where match(note_text) against('rabbit bait' in boolean mode)` 搜索匹配包含 `rabbit` 和 `bait` 中至少一个词的行
+`where match(note_text) against('rabbit bait' IN BOOLEAN MODE)` 搜索匹配包含 `rabbit` 和 `bait` 中至少一个词的行
 
 `where match(note_text) against('"rabbit bait"' IN BOOLEAN MODE)` 搜索匹配短语 `rabbit bait` 而不是两个词
 
-`where match(note_text) against('>rabbit <carrot' in boolean mode)` 匹配 `rabbit` 和 `carrot` ,增加前者的等级,降低后者的等级
+`where match(note_text) against('>rabbit <carrot' in boolean mode)` 匹配 `rabbit` 和 `carrot` ，增加前者的等级，降低后者的等级
 
-`where match(note_text) against('+safe +(<combination)' IN BOOLEAN MODE)` 搜索匹配词 `safe` 和 `combination`, 降低后者的等级
+`where match(note_text) against('+safe +(<combination)' IN BOOLEAN MODE)` 搜索匹配词 `safe` 和 `combination`，降低后者的等级
 
-* 在布尔方式中,不按等级值降序排序返回的行
+* 在布尔方式中，不按等级值降序排序返回的行
 
-* 在索引全文本数据时,短词被忽略且从索引中排除.短词定义为那些具有3个或3个字符的词(如果需要,这个数目可以更改)
-* MySQL 带有一个内建的非用词(stopword) 列表,这些词在索引全文本数据时总是被忽略.如果需要,可以覆盖这个列表
-* 许多次出现的频率很高,搜索它们没有用处,因此,MySQL规定了一条50%规则,如果一个词出现在50%以上的行中,则将它作为一个非用词忽略.50%规则不用于`in boolean mode`
-* 如果表中的行少于3行,则全文本搜索不返回结果(因为每个词或者不出现,或者至少出现在50%的行中)
+* 在索引全文本数据时，短词被忽略且从索引中排除，短词定义为那些具有3个或3个字符的词(如果需要，这个数目可以更改)
+* `MySQL` 带有一个内建的非用词(`stopword`) 列表，这些词在索引全文本数据时总是被忽略，如果需要，可以覆盖这个列表
+* 许多词出现的频率很高，搜索它们没有用处，因此`MySQL`规定了一条50%规则，如果一个词出现在50%以上的行中，则将它作为一个非用词忽略。50%规则不用于`in boolean mode`
+* 如果表中的行少于3行，则全文本搜索不返回结果(因为每个词或者不出现,或者至少出现在50%的行中)
 * 忽略词中的单引号
 * 不具有词分隔符(包括日语和汉语)的语言不能恰当地返回全文本搜索结果
 * 仅在 `MyISAM` 数据库引擎中支持全文本搜索
