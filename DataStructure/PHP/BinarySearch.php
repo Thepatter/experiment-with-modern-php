@@ -10,22 +10,44 @@ class BinarySearch
 {
     public static function main()
     {
-        var_dump(self::binSearch(24, [1, 2, 3, 5, 7, 11, 23, 24, 25, 35, 38], 0, 9));
+        $sortArray = range(11, 33);
+        if (self::binarySearchInRecursive(24, $sortArray, 0, count($sortArray) - 1) == self::binarySearchInLoop(24, $sortArray)) {
+            echo "相等";
+        } else {
+            echo "不等";
+        }
     }
 
-    public static function binSearch($key, $array, $start, $end)
+    public static function binarySearchInRecursive($key, $array, $start, $end)
     {
         if ($start > $end) {
             return -1;
         }
         $mid = (int) ($end - $start) / 2 + $start;
         if ($key > $array[$mid]) {
-            return self::binSearch($key, $array, $mid + 1, $end);
+            return self::binarySearchInRecursive($key, $array, $mid + 1, $end);
         } elseif ($key < $array[$mid]) {
-            return self::binSearch($key, $array, $start, $mid -1);
+            return self::binarySearchInRecursive($key, $array, $start, $mid -1);
         } else {
             return $mid;
         }
+    }
+
+    public static function binarySearchInLoop($key, $array)
+    {
+        $start = 0;
+        $end = count($array) - 1;
+        while ($start <= $end) {
+            $mid = ($end - $start) / 2 + $start;
+            if ($key > $array[$mid]) {
+                $start = $mid + 1;
+            } elseif ($key < $array[$mid]) {
+                $end = $mid - 1;
+            } else {
+                return $mid;
+            }
+        }
+        return -1;
     }
 }
 
