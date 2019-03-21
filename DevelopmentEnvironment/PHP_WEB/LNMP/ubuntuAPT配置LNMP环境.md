@@ -33,6 +33,19 @@ sudo apt update
 sudo apt install mysql-server mysql-common mysql-client
 ```
 
+备注：如果使用 MySQL 8.0，而 `php-mysqli` 和 `pdo-mysql` 并没有实现8.0 的连接协议（auth with caching_sha2_password)。此时要使用连接数据库，需要将 MySQL 配置为以 `mysql_native_password` 模式运行
+
+```cnf
+[mysqld]
+default_authentication_plugin=mysql_native_password
+```
+
+或者使用 SQL 修改用户连接
+
+```mysql
+ALTER USER 'mysqlUsername'@'localhost' IDENTIFIED WITH mysql_native_password BY 'mysqlUsernamePassword'
+```
+
 ###  `apt` 安装 `php`
 
 ```shell
