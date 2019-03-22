@@ -8,7 +8,7 @@ public class TwoSum {
         int[] twoSumIntKey = (new TwoSum()).sum(sourceArray, target);
         for (int i: twoSumIntKey
              ) {
-            System.out.println("source key" + i + "source value " + sourceArray[i]);
+            System.out.println("source key: " + i + " , source value: " + sourceArray[i]);
         }
 
     }
@@ -17,13 +17,11 @@ public class TwoSum {
     {
         int[] twoSum = new int[2];
         for (int i = 0; i < source.length; i++) {
-            if (source[i] + source[source.length - i] == target) {
-                twoSum[0] = i;
-                twoSum[1] = source.length - 1;
-                break;
-            }
-            if (i == source.length - i) {
-                break;
+            for (int l = 1; l < source.length; l++) {
+                if (source[l] != source[i] && source[i] + source[l] == target) {
+                    twoSum[0] = i;
+                    twoSum[1] = l;
+                }
             }
         }
         return twoSum;
