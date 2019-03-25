@@ -16,6 +16,9 @@ class BinarySearch
         } else {
             echo "不等";
         }
+        echo PHP_EOL;
+        echo self::binarySearchInLoop(44, [11, 44, 77]);
+        echo self::binarySearchInRecursive(44, [11, 44, 77], 0, 3);
     }
 
     public static function binarySearchInRecursive($key, $array, $start, $end)
@@ -23,7 +26,7 @@ class BinarySearch
         if ($start > $end) {
             return -1;
         }
-        $mid = (int) ($end - $start) / 2 + $start;
+        $mid = (int) (($end - $start) / 2 + $start);
         if ($key > $array[$mid]) {
             return self::binarySearchInRecursive($key, $array, $mid + 1, $end);
         } elseif ($key < $array[$mid]) {

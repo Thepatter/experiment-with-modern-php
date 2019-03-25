@@ -1,6 +1,7 @@
 package array;
 
 public class Array {
+
     private int[] data;
 
     private int currentCount = 0;
@@ -24,11 +25,12 @@ public class Array {
     }
 
     public int add(int value) {
-        if (++currentCount > count) {
+        if (currentCount >= count) {
             return -1;
         }
-        data[currentCount - 1] = value;
-        return currentCount;
+        data[currentCount] = value;
+        ++currentCount;
+        return currentCount - 1;
     }
 
     public boolean del(int index) {
@@ -89,6 +91,7 @@ public class Array {
             }
         }
     }
+
     public void print() {
         for (int i = 0; i < count; i++) {
             System.out.print(data[i] + " ");
@@ -96,6 +99,19 @@ public class Array {
         System.out.println();
     }
 
+    public void insertSort() {
+        for (int i = 1; i < data.length; i++) {
+            int tmp = data[i];
+            int j = i - 1;
+            while (j >= 0) {
+                if (data[j] > tmp) {
+                    data[j + 1] = data[j];
+                    j--;
+                }
+            }
+            data[j + 1] = tmp;
+        }
+    }
     public static void main(String[] args) {
         Array array = new Array(5);
         System.out.println(array.add(31));
@@ -108,6 +124,7 @@ public class Array {
         array.sort("desc");
         array.print();
         array.bubbleSort();
+        array.insertSort();
         array.print();
     }
 }
