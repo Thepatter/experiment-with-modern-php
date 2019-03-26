@@ -113,8 +113,8 @@ class ArrayInt
         foreach ($arrayInt->each() as $it) {
             echo $it . PHP_EOL;
         }
-        print_r($arrayInt->get(33));
-        print_r($arrayInt->binarySearch(1100));
+        echo $arrayInt->get(33) . PHP_EOL;
+        echo $arrayInt->binarySearch(44) . PHP_EOL;
     }
 }
 
