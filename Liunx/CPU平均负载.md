@@ -46,3 +46,19 @@ grep 'model name' /proc/cpuinfo | wc -l
 * 平均负载高并不一定代表 CPU 使用率高，还有可能时 I/O 更繁忙了
 * 当发现负载高的时候，可以使用 `mpstat`，`pidstat`  等工具，辅助分析负载的来源
 
+一般采用 `mpstat` 来监控 CPU
+
+如：`mpstat -P ALL 5` 监控所有 CPU，间隔 5 秒输出一组数据
+
+*mpstat监控CPU数据*
+
+![](./Images/mpstat监控CPU数据.png)
+
+查看到 CPU 使用率之后，可以使用 `pidstat` 来查询是哪个进程和命令导致的
+
+如：`pidstat -u 5 20` 间隔五秒输出一组数据，输出 20 次
+
+*pidstat监测进程使用CPU情况*
+
+![](./Images/pidstat监测进程使用CPU情况.png)
+
