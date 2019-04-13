@@ -1,20 +1,20 @@
 Linux 下开发机配置
 
-安装更新软件安装显卡驱动
+### 安装更新软件安装显卡驱动
 
-sudo apt update && sudo apt upgrade
+* sudo apt update && sudo apt upgrade
 
-sudo ubuntu-drivers autoinstall
+* sudo ubuntu-drivers autoinstall
 
-Nvidia 显卡安装连接 https://linuxconfig.org/how-to-install-the-nvidia-drivers-on-ubuntu-18-04-bionic-beaver-linux
+* Nvidia 显卡安装连接 https://linuxconfig.org/how-to-install-the-nvidia-drivers-on-ubuntu-18-04-bionic-beaver-linux
 
-科学上网
+### 科学上网
 
-sudo apt install python-pip
+* sudo apt install python-pip
 
-sudo pip install shadowsocks
+* sudo pip install shadowsocks
 
-配置上网
+* 配置上网
 
 - 浏览器上网需要在 设置--网络--网络代理--手动--Socks主机 127.0.0.1 1080
 - 终端上网
@@ -32,25 +32,65 @@ sudo pip install shadowsocks
 
 - phpstorm
 
-    # 下载 phpstorm.tar.gz 并解压缩
-    # 进入解压目录允许 
-    ./phpstorm.sh
+    
 
-- zsh oh_my_zsh
+### 下载 phpstorm.tar.gz 并解压缩
 
-    sudo apt-get install zsh
-    sudo wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | sh
-    chsh -s /bin/zsh
+### 进入解压目录允许 
 
-- fish
+./phpstorm.sh
 
-    sudo apt install fish
-    # oh my fish
-    curl -L https://get.oh-my.fish | fish
-    cat /etc/shells
-    chsh -s /usr/bin/fish
+### bash
 
-美化
+#### zsh 
+
+* 安装
+
+  sudo apt-get install zsh
+  sudo wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | sh
+  chsh -s /bin/zsh
+
+* 自动补全插件
+
+  `cd /home/y/.oh-my-zsh/plugins`
+
+  `git clone https://github.com/zsh-users/zsh-autosuggestions.git`
+
+  `vim .zshrc` 的 `plugins=(zsh-autosuggestions)`
+
+* 语法纠错插件
+
+  `git https://github.com/zsh-users/zsh-syntax-highlighting.git`
+
+  语法纠错插件必须放在所有插件之后即
+
+  `plugins=(其他插件 zsh-autosuggestions)`
+
+* 自动补全插件
+
+  ```shell
+  cd ~/.oh-my-zsh/plugins/
+  mkdir incr
+  cd incr
+  wget wget http://mimosa-pudica.net/src/incr-0.2.zsh
+  source incr*.zsh
+  vim ~/.zshrc 在末尾添加
+  source ~/.oh-my-zsh/plugins/incr/incr*.zsh
+  ```
+
+### fish
+
+* 安装
+
+  sudo apt install fish
+
+  oh my fish
+
+  curl -L https://get.oh-my.fish | fish
+  cat /etc/shells
+  chsh -s /usr/bin/fish
+
+### 美化
 
 https://zhuanlan.zhihu.com/p/36200924
 
@@ -58,11 +98,13 @@ https://zhuanlan.zhihu.com/p/36265103
 
 https://zhuanlan.zhihu.com/p/36470249
 
-#### 更换中国源
+### 更换中国源
+
 `cp /etc/apt/sources.list /etc/apt/sources.list.backup`
 `vim /etc/api/sources.list`
 阿里云源
-```
+
+```shell
 deb http://mirrors.aliyun.com/ubuntu/ bionic main restricted universe multiverse
 deb http://mirrors.aliyun.com/ubuntu/ bionic-security main restricted universe multiverse
 deb http://mirrors.aliyun.com/ubuntu/ bionic-updates main restricted universe multiverse
@@ -74,3 +116,6 @@ deb-src http://mirrors.aliyun.com/ubuntu/ bionic-updates main restricted univers
 deb-src http://mirrors.aliyun.com/ubuntu/ bionic-proposed main restricted universe multiverse
 deb-src http://mirrors.aliyun.com/ubuntu/ bionic-backports main restricted universe multiverse
 ```
+
+
+
