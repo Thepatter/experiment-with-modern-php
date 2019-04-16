@@ -193,7 +193,7 @@ if ($mysqli->query("SET $msg = ''") & $mysqli->query("CALL p(@msg")) {
 if ($mysqli->multi_query("CALL p()")) {
     do {
         if ($res = $mysqli->store_result()) {
-            var_dump($res->fetch_all());
+            var_dump($res->fetch_all(MYSQL_ASSOC));
             $res->free();
         }
     } while ($mysqli->more_results() && $mysqli->next_result());

@@ -109,9 +109,8 @@ GTID=source_id:transaction_id
 
 在 `GTID` 模式下，每个事务都会跟一个 `GTID` 一一对应。这个 `GTID` 有两种生成方式，而使用哪种取决于 `session` 变量 `gtid_next` 的值
 
-1.如果 `gtid_next=automatic`，代表使用默认值。此时，`MySQL` 就会把 `server_uuid:gno` 分配给这个事务。记录 `binlog` 的时候，先记录一行 `SET @@SESSION.GTID_NEXT='server_uuid:gno'`；把这个 `GTID` 加入本实例 `GTID` 集合
-
-2.如果 `gtid_next` 是一个指定的 `GTID` 的值，如果通过 `set gtid_next='current_gtid'` 指定为 `current_gtid`，那么就有两种可能：如果 `current_gtid` 已经存在于实例的 `GTID` 集合中，接下来执行的这个事务会直接被系统忽略；如果 `current_gtid` 没有存在于实例的 `GTID` 集合中，就将这个 `current_gtid` 分配给接下来要执行的事务，也就是说系统不需要给这个事务生成新的 `GTID` ，因此 `gno` 也不用加 1
+* 如果 `gtid_next=automatic`，代表使用默认值。此时，`MySQL` 就会把 `server_uuid:gno` 分配给这个事务。记录 `binlog` 的时候，先记录一行 `SET @@SESSION.GTID_NEXT='server_uuid:gno'`；把这个 `GTID` 加入本实例 `GTID` 集合
+* 如果 `gtid_next` 是一个指定的 `GTID` 的值，如果通过 `set gtid_next='current_gtid'` 指定为 `current_gtid`，那么就有两种可能：如果 `current_gtid` 已经存在于实例的 `GTID` 集合中，接下来执行的这个事务会直接被系统忽略；如果 `current_gtid` 没有存在于实例的 `GTID` 集合中，就将这个 `current_gtid` 分配给接下来要执行的事务，也就是说系统不需要给这个事务生成新的 `GTID` ，因此 `gno` 也不用加 1
 
 一个 `current_gtid` 只能给一个事务使用。这个事务提交后，如果要执行下一个事务，就要执行 `set` 命令，把 `gtid_next` 设置成另外一个 `gtid` 或者 `automatic`
 
@@ -152,7 +151,7 @@ b.如果确认全部包含 `A'` 从自己的 `binlog` 文件里面，找出第�
 
 引入 `GTID` 后，一主多从的切换场景下，主备切换实现：
 
-由于不需要找位点，所以从库 B、C、D 只需要分别执行 `change master` 命令指向实例 `A'` 即可。严格意义上，主备切换不是不找位点，而是找位点这个工作，在主库实例 `A'` 内部已经完成了。但这个工作是自动完成的。之后这个系统就由新主库 `A'` 写入，主库 `A'` 的自己生成的 `binlog` 中的 `GTID` 	集合格式是：`server_uuid_of_A':1-m` 如果之前从库 B 的 `GTID` 集合格式是 `server_uuid_of_A:1-n`，则切换之后 `GTID` 集合的格式就变成了 `server_uuid_of_A:1-N, server_uuid_of_A':1-m`。主库 `A'` 之前也是 A 的备库，因此主库 `A'` 和从库 B 的 `GTID` 集合是一样的。
+由于不需要找位点，所以从库 B、C、D 只需要分别执行 `change master` 命令指向实例 `A'` 即可。严格意义上，主备切换不是不找位点，而是找位点这个工作，在主库实例 `A'` 内部已经完成了。但这个工作是自动完成的。之后这个系统就由新主库 `A'` 写入，主库 `A'` 的自己生成的 `binlog` 中的 `GTID` 集合格式是：`server_uuid_of_A':1-m` 如果之前从库 B 的 `GTID` 集合格式是 `server_uuid_of_A:1-n`，则切换之后 `GTID` 集合的格式就变成了 `server_uuid_of_A:1-N, server_uuid_of_A':1-m`。主库 `A'` 之前也是 A 的备库，因此主库 `A'` 和从库 B 的 `GTID` 集合是一样的。
 
 ### GTID 和在线 DDL
 
@@ -251,7 +250,7 @@ b.如果确认全部包含 `A'` 从自己的 `binlog` 文件里面，找出第�
 
 1.主库执行完成，写入 `binlog`，并反馈给客户度
 
-2.`binlog` 被从库发送给备库，备库收到
+2.`binlog` 被主库发送给备库，备库收到
 
 3.在备库执行 `binlog` 完成
 
