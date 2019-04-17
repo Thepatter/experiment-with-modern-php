@@ -74,3 +74,12 @@ git clone url [-b 分支] 克隆选择分支
 
 `git update-index --assume-unchanged <files>`, 这样即使已经更改了文件，用 `git status` 也不会看见文件已经更改,取消 `git update-index --no-assume-unchanged <files>`
 
+#### 使用代理来加速克隆
+
+```
+git config --global http.proxy 'socks5://127.0.0.1:1080'
+git config --global https.proxy 'sock5://127.0.0.1:1080'
+```
+* 加速配置
+ 
+`git config --global http.postBuffer 524288000`

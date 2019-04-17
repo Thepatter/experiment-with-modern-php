@@ -10,33 +10,52 @@ Linux 下开发机配置
 
 ### 科学上网
 
+#### 安装 shadowsocks
+
+
 * sudo apt install python-pip
 
 * sudo pip install shadowsocks
 
-* 配置上网
+* 配置 `shadowsocks`
+  
+  */etc/shadowsocks.json*
+  
+  ```json
+  {
+  	"server": "ss-server-ip",
+	"server_port": "ss-server-port",
+	"local_address": "127.0.0.1".
+	"local_port": 1080,
+	"password": "ss-server-password",
+	"timeout": 300,
+	"method": "aes-256-cfb"
+  }
+  ```
+* 运行
+	
+  `nohup sslocal -c /etc/shadowsocks.json > /dev/null 2>%1 &`
 
-- 浏览器上网需要在 设置--网络--网络代理--手动--Socks主机 127.0.0.1 1080
-- 终端上网
-  当前终端有效
+* 解决 `shadowssock-2.8.2` 不兼容高版本 `openssl` 无法启动问题
+
+  根据启动 `sslocal` 错误日志来找到 `crypto/openssl.py` 所在文位置，替换该文件中的
+  `libcrypto.EVP_CIPHER_CTX_cleanup.argtypes` 函数为 `libcrypto.EVP_CIPHER_CTX_reset`
+
+* 开机启动
+
+  ```shell
+  sudo su
+  echo "nohup sslocal -c /etc/shadowsocks.json /dev/null 2>&1 &" >> /etc/rc.local
+  ```
+
+* 浏览器上网需要在 设置--网络--网络代理--手动--Socks主机 127.0.0.1 1080
+
+* 终端上网
+ 
+ 当前终端有效
   export http_proxy="socks5://127.0.0.1:1080"
   export https_proxy="socks5://127.0.0.1:1080"
   https://blog.fazero.me/2015/09/15/%E8%AE%A9%E7%BB%88%E7%AB%AF%E8%B5%B0%E4%BB%A3%E7%90%86%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95/
-
-- 安装软件
-
-    - chrome
-
-      wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-      sudo dpkg -i *.deb
-
-    - phpstorm
-
-      下载 phpstorm.tar.gz 并解压缩
-
-      进入解压目录允许 
-
-      ./phpstorm.sh
 
 ### bash
 
@@ -91,7 +110,32 @@ Linux 下开发机配置
   chsh -s /usr/bin/fish
   ```
 
-  `fish` 语法部分不兼容 `bash`   
+  `fish` 语法部分不兼容 `bash`
+### `vim` 插件安装
+
+#### 安装管理运行时 `vim-pathogen`
+
+* 安装
+  
+  ```shell
+  mkdir -p ~/.vim/autoload ~/.vim/bundle && \
+  curl -LSso -/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
+  ```
+* 运行时路径操作
+  
+  ```shell
+  vim ~/.vimrc
+  execute pathogen#infect()
+  syntax on
+  filetype plugin indent on
+  ```
+* 安装 vim 插件
+
+  ```shell
+  cd ~/.vim/bundle && \
+  git clone https://github.com/tpope/vim-sensible.git
+  ```
+
 
 ### 更换中国源
 
