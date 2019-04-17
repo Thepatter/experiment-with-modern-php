@@ -35,7 +35,7 @@ include /etc/nginx/modules-enabled/*.conf;
         // 设置worker进程最大连接数
         worker_connections 1024;
         // 设置网络连接序列化，默认为 on
-		accept_mutex on;   
+	    accept_mutex on;   
         // 设置一个进程是否同时接受多个网络连接，默认为 off
         multi_accept on;
         // 事件驱动模型 select|poll|kqueue|epoll|resig

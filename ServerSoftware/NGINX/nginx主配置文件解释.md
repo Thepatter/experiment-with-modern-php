@@ -7,12 +7,10 @@
 user  www-data;
 // 工作子进程数量，auto 为 cpu 核心数
 worker_processes  auto;
-
 // 错误日志及级别
 error_log  /var/log/nginx/error.log warn;
 // 进程文件位置
 pid /var/run/nginx.pid;
-
 // 事件模块
 events {
     // 设置网络连接序列化，防止惊群现象发生，默认为 on

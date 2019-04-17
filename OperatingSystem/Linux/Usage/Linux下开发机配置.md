@@ -13,27 +13,33 @@ Linux 下开发机配置
 #### 安装 shadowsocks
 
 
-* sudo apt install python-pip
+* 安装
 
-* sudo pip install shadowsocks
+  ```shell
+  # 安装 pip 
+  sudo apt install  python-pip
+  # 安装 shadowsocks
+  sudo pip install shadowsocks
+  ```
 
 * 配置 `shadowsocks`
-  
+
   */etc/shadowsocks.json*
-  
+
   ```json
   {
   	"server": "ss-server-ip",
-	"server_port": "ss-server-port",
-	"local_address": "127.0.0.1".
-	"local_port": 1080,
-	"password": "ss-server-password",
-	"timeout": 300,
-	"method": "aes-256-cfb"
+  	"server_port": "ss-server-port",
+  	"local_address": "127.0.0.1".
+  	"local_port": 1080,
+  	"password": "ss-server-password",
+  	"timeout": 300,
+  	"method": "aes-256-cfb"
   }
   ```
+
 * 运行
-	
+
   `nohup sslocal -c /etc/shadowsocks.json > /dev/null 2>%1 &`
 
 * 解决 `shadowssock-2.8.2` 不兼容高版本 `openssl` 无法启动问题
@@ -50,12 +56,15 @@ Linux 下开发机配置
 
 * 浏览器上网需要在 设置--网络--网络代理--手动--Socks主机 127.0.0.1 1080
 
-* 终端上网
- 
- 当前终端有效
-  export http_proxy="socks5://127.0.0.1:1080"
-  export https_proxy="socks5://127.0.0.1:1080"
-  https://blog.fazero.me/2015/09/15/%E8%AE%A9%E7%BB%88%E7%AB%AF%E8%B5%B0%E4%BB%A3%E7%90%86%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95/
+* 终端上网代理
+
+  ```shell
+   当前终端有效
+    export http_proxy="socks5://127.0.0.1:1080"
+    export https_proxy="socks5://127.0.0.1:1080"
+  ```
+
+    https://blog.fazero.me/2015/09/15/%E8%AE%A9%E7%BB%88%E7%AB%AF%E8%B5%B0%E4%BB%A3%E7%90%86%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95/
 
 ### bash
 
@@ -116,13 +125,13 @@ Linux 下开发机配置
 #### 安装管理运行时 `vim-pathogen`
 
 * 安装
-  
+
   ```shell
   mkdir -p ~/.vim/autoload ~/.vim/bundle && \
   curl -LSso -/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
   ```
 * 运行时路径操作
-  
+
   ```shell
   vim ~/.vimrc
   execute pathogen#infect()
@@ -146,21 +155,46 @@ Linux 下开发机配置
   vim /etc/api/sources.list
   ```
 
-* 清华源
 
-  ```text
-  # 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic main restricted universe multiverse
-  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic main restricted universe multiverse
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-updates main restricted universe multiverse
-  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-updates main restricted universe multiverse
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-backports main restricted universe multiverse
-  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-backports main restricted universe multiverse
-  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-security main restricted universe multiverse
-  # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-security main restricted universe multiverse
+### 固定 ip
+
+* Ubuntu 16.04 及以前使用 `ifupdown` 配置 
+
+  ```shell
+  # 配置文件
+  vim /et	c/network/interfaces
+  # 内容
+  iface ens160 inet static
+  address 210.72.92.25
+  gateway 210.72.92.1
+  netmask 255.255.255.222.0
+  dns-nameservers 8.8.8.8
+  # 重启
+  sudo service network restart
   ```
 
-### UbuntuGUI美化
+* Ubuntu 18.04 使用 `netplan`
+
+  ```shell
+  # 配置文件
+  vim /etc/netplan/50-cloud-init.yml
+  # 内容
+  network:
+     	ethernets:
+     	    ens33:
+     		# 使用 dhcp 分配 dhcp: true
+     	    addresses:
+     	      - 192.168.1.106
+     	    gateway4: 192.168.1.1
+     	    nameservers:
+     	      addresses:
+     	        - 8.8.8.8
+  version: 2
+  # 应用
+  sudo netplan apply
+  ```
+
+UbuntuGUI美化
 
 * https://zhuanlan.zhihu.com/p/36200924
 

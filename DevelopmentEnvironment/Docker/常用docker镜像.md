@@ -120,6 +120,49 @@ services:
 
 运行 `docker stack deploy -c stack.yml mysql` 或 `docker-compose -f stack.yml up`，等待初始化完成后，访问 `http://swarm-ip:8080`，`http://localhost:8080`，`http://host-ip:8080`
 
+### Nginx
+
+#### `Dockerfile`
+
+```dockerfile
+FROM nginx
+ADD app/ /app
+ADD nginx.conf /etc/nginx/nginx.conf
+```
+
+#### 打包
+
+```shell
+docker build --tag=nginx:0.0.1 .
+```
+
+#### 应用
+
+```shell
+docker run --name nginx -itd -p 80:80 nginx:0.0.1
+```
+
+### PHP-FPM
+
+#### Dockerfile
+
+```dockerfile
+FROM bitnami/php-fpm
+ADD app/ /app
+```
+
+#### 打包
+
+```
+docker build --tag=php-fpm:0.0.1 .
+```
+
+#### 运行
+
+```php
+docekr run --name phpfpm -itd --network container:nginx php-fpm:0.0.1
+```
+
 
 
 
