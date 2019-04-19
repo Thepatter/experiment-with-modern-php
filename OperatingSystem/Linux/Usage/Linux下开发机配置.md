@@ -184,7 +184,7 @@ Linux 下开发机配置
      	    ens33:
      		# 使用 dhcp 分配 dhcp: true
      	    addresses:
-     	      - 192.168.1.106
+     	      - 192.168.1.106/24 # IP 与 主机号
      	    gateway4: 192.168.1.1
      	    nameservers:
      	      addresses:
@@ -193,6 +193,9 @@ Linux 下开发机配置
   # 应用
   sudo netplan apply
   ```
+* 获取网关
+
+  可以使用 `route -n`、`traceroute`、`ip route show` 命令获取
 
 UbuntuGUI美化
 
