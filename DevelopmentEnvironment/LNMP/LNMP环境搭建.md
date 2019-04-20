@@ -86,9 +86,47 @@
   ./configure --prefix=/usr/share/nginx
   # 编译，编译完成后生成的中间文件存在 objs 目录
   make
-  # 安装，安装完成后生成的二进制运行文件在 `sbin` 目录下。配置文件在 `conf` 目录下
+  # 安装会将编译生成的objs中的目录拷贝到 prefix 的目录
   make install
   ```
+
+* 设置
+
+  ```shell
+  sudo systemctl daemon-reload
+  sudo systemctl enable nginx.service
+  ```
+
+  <https://www.nginx.com/resources/wiki/start/topics/examples/systemd/>
+
+  以 `systemd` 为例子
+
+  1. `vim /lib/systemd/system/nginx.service`
+
+     ```shell
+     [Unit]
+     Description=The NGINX HTTP and reverse proxy server
+     After=syslog.target network.target remote-fs.target nss-lookup.target
+     
+     [Service]
+     Type=forking
+     PIDFile=/run/nginx.pid
+     ExecStartPre=/usr/sbin/nginx -t
+     ExecStart=/usr/sbin/nginx
+     ExecReload=/usr/sbin/nginx -s reload
+     ExecStop=/bin/kill -s QUIT $MAINPID
+     PrivateTmp=true
+     
+     [Install]
+     WantedBy=multi-user.target
+     ```
+
+  2. 配置
+
+     ```shell
+     sudo systemctl daemon-reload
+     sudo systemctl enable nginx.service
+     ```
 
 #### PHP
 
@@ -144,18 +182,26 @@
   # configure 配置 swoole configure 常用参数，`phpize` ， `php` , `php-config` ，三个文件版本要一致
   ./configure --with-php-config=/usr/local/php/5.6/bin/php-config --enable-swoole-debug --enable-sockets --enable-async-redis --enable-openssl --enable-http2 --enable-mysqlnd --with-openssl-dir=/usr/local/openssl098`
   # 安装
-    ```
-    cd swoole-src-swoole-2.2.0-stable/
-    phpize
-    ./configure
-    sudo make
-    sudo make install
-    ```
+  ```
+
+* 编译 `swoole`
+
+  ```shell
+  cd swoole-src-swoole-2.2.0-stable/
+  phpize
+  ./configure --help
+  sudo make
+  sudo make install
+  ```
+
+* 添加扩展
+
+  ```shell
   # 在 php.ini 中添加扩展 so
     extension=swoole.so
   ```
 
-  __解决编译时opensll库不兼容__
+* 解决编译时opensll库不兼容
 
   ```shell
   # 查看当前 `openssl` 版本
@@ -177,7 +223,7 @@
   ./configure --with-openssl=/usr/local/openssl098
   ```
 
-  __解决编译 php 时，`easy.h should be in <--dir>includ/dir` 错误__
+  解决编译 php 时，`easy.h should be in <--dir>includ/dir` 错误
 
   ```shell
   # 在 /usr/include 创建符号连接
@@ -185,7 +231,19 @@
   sudo ln -s x86_64-linux-gnu/curl
   ```
 
+* 配置 daemon
+
+  ```shell
+  # 从编译文件夹 sapi 中拷贝对应 .serivce 文件
+  sudo cp /make/path/php-fpm.service /lib/systemd/system/php-fpm.service
+  # 配置
+  sudo systemctl daemon-reload
+  sudo systemctl enable php-fpm.service
+  ```
+
   
+
+
 
 
 

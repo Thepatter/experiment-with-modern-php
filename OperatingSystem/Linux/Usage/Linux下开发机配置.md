@@ -1,4 +1,4 @@
-Linux 下开发机配置
+## Linux 下开发机配置
 
 ### 安装更新软件安装显卡驱动
 
@@ -193,11 +193,12 @@ Linux 下开发机配置
   # 应用
   sudo netplan apply
   ```
+  
 * 获取网关
 
   可以使用 `route -n`、`traceroute`、`ip route show` 命令获取
 
-UbuntuGUI美化
+### UbuntuGUI美化
 
 * https://zhuanlan.zhihu.com/p/36200924
 
