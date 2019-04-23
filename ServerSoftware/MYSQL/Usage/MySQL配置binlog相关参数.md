@@ -42,7 +42,7 @@
 
   同步写入磁盘，为 0 时仅仅将数据写入 `binlog` 文件，但不执行 `fsync` ，为正整数时候，即提交几次失误后进行 `fsync`
 
-###mysql 中操作 binlog 相关
+### mysql 中操作 binlog 相关
 
 *  `show binary logs`
 
