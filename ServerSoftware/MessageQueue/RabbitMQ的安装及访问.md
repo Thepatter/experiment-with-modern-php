@@ -1,6 +1,8 @@
-#### RabbitMQ 的安装及访问
+## RabbitMQ base usage 
 
-#### 安装 Erlang
+### RabbitMQ install and access
+
+#### Install Erlang
 
 * 添加 `/etc/apt/preferences.d/erlang` 更新策略来确定 rabbitmq 的 erlang 版本
 
@@ -37,27 +39,27 @@
   sudo apt-get update && sudo apt-get install erlang
   ```
 
-#### 安装 rabbitmq-server
+#### Install rabbitmq-server
 
 * 添加对应版本代码库 `lsb_release -a` 对应版本
 
-  ```
+  ```shell
   echo "deb https://dl.bintray.com/rabbitmq/debian {lsb_release -a} main" | sudo tee /etc/apt/sources.list.d/bintray.rabbitmq.list
   ```
 
 * 添加公钥
 
-  ```
+  ```shell
   wget -O- https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | sudo apt-key add -
   ```
 
 * 安装
 
-  ```
+  ```shell
   sudo apt-get update && sudo apt-get install rabbitmq-server
   ```
 
-#### 常用配置
+#### Nomarl config
 
 * 添加配置文件 `/etc/rabbitmq/rabbitmq.config`
 
@@ -69,11 +71,11 @@
 
   `/usr/sbin/rabbitmq-plugins enable rabbitmq_management`
 
-#### 启动及查看状态重启
+#### Start
 
 `sudo systemctl rabbitmq-server.service` 或 `sudo service rabbitmq-server status`
 
- #### 访问 rabbitmq
+#### Access rabbitmq
 
 * 命令行访问
 
@@ -83,7 +85,7 @@
 
   http://ip:15672 			# 使用 guest,guest 登陆
 
-#### RabbitMQ 用户角色及权限控制
+#### RabbitMQ use control and roles
 
 * RabbitMQ 的用户角色分类:
 

@@ -205,11 +205,11 @@
 
   ```shell
   # 查看当前 `openssl` 版本
-  openssl verions -a
+  openssl version -a
   # 编译安装 php 版本对应 openssl `php7.0` 及以下支持0.9.8  `php7.1` 及以上支持1.0.1 
   wget https://www.openssl.org/source/old/0.9.x/openssl-0.9.8zh.tar.gz
   tar -xf openssl-0.9.8zh.tar.gz
-  ./config --prefix=/usr/local/openssl098 shared zlib
+  ./config--prefix=/usr/local/openssl098 shared zlib
   ln -s /usr/local/openssl098/bin/openssl /usr/bin/openssl
   # 要兼容新/旧版则不执行该指令
   ln -s /usr/local/openssl098/include/openssl /usr/include/openssl
