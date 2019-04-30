@@ -152,3 +152,4 @@ mysqld --init-file=/path/to/mysql-init &
 当数据表中权限数据跟内存中的权限数据不一致的时候，`flush privileges` 语句可以用来重建内存数据，达到一致状态
 
 这种不一致往往是由不规则的操作导致的，比如直接用 DML 语句操作系统权限表。
+
