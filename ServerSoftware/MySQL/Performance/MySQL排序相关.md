@@ -6,7 +6,7 @@
 
 `explain select city, name, age from T where city='杭州' order by name limit 1000`
 
-*explain分享带排序查询语句*
+*explain分析带排序查询语句*
 
 ![](../Images/Performance/explain分析带排序查询语句.png)
 
