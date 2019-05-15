@@ -43,11 +43,11 @@ if (bytesAvailable > 0) {
 
 *java输入输出流家族*
 
-![](./Images/java输入输出流家族.png)
+![](../Images/java输入输出流家族.png)
 
 对 `Unicode` 文本，可以使用抽象类 `Reader` 和 `Writer` 的子类
 
-![](./Images/reader和writer的层次结构.png)
+![](../Images/reader和writer的层次结构.png)
 
 还有 4 个附加的接口：`Closeable`、`Flushable`、`Readable`、`Appendable` 前两个接口非常简单，分别拥有下面的方法
 
@@ -58,7 +58,7 @@ void flush()
 
 `InputStream` 、`OutputStream` 、`Reader` 、`Writer` 都实现了 `Closeable` 接口。`java.io.Closeable` 接口扩展了 `java.lang.AutoCloseable` 接口。对任何 `Closeable` 进行操作时，都可以使用 `try-with-resource` 语句。`Closeable` 接口的 `close` 方法只抛出 `IOException`，而 `AutoCloseable.close` 方法可以抛出任何异常
 
-![](./Images/CloseableFlushable接口.png)
+![](../Images/CloseableFlushable接口.png)
 
 而 `OutputStream` 和 `Writer` 还实现了 `Flushable` 接口。
 
@@ -384,7 +384,7 @@ try (DirectoryStream<Path> entries = Files.newDirectoryStream(dir))
 
 `try (DirectoryStream<Path> entries = Files.newDirectoryStream(dir, "*.java"))`
 
-![](./Images/目录流glob模式.png)
+![](../Images/目录流glob模式.png)
 
 如果想要访问某个目录的所有子孙成员，可以转而调用 `walkFileTree` 方法，并向其传递一个 `FileVisitor` 类型的对象，这个对象会得到下列通知：
 
@@ -471,7 +471,7 @@ FileChannel channel = FileChannel.open(path, options);
 
 ​    *缓冲区的典型结构*
 
-​    ![](./Images/buffer缓冲区结构.png)
+​    ![](../Images/buffer缓冲区结构.png)
 
 * 一个容量，它永远不能改变
 * 一个读写位置，下一个值将在此进行读写

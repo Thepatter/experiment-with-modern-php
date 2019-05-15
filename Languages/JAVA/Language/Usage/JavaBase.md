@@ -8,14 +8,14 @@
 
     *java整型*
 
-![](./Images/Java整型.png)
+![](../Images/Java整型.png)
 
 * 浮点型
 
     *浮点类型*
     
 
-![](./Images/Java浮点类型.png)
+![](../Images/Java浮点类型.png)
 
 所有的浮点数值计算都遵循 IEEE 754 规范。下面是用于表示溢出和出错情况的三个特殊的浮点数值
 
@@ -49,9 +49,9 @@ char 类型的字面量要用单引号括起来。可以用十六进程值（范
 
 *运算符优先级*
 
-![](./Images/运算符优先级.png)
+![](../Images/运算符优先级.png)
 
-![](./Images/Java运算符优先级.png)
+![](../Images/Java运算符优先级.png)
 
 ### 格式化输出
 
@@ -59,7 +59,7 @@ char 类型的字面量要用单引号括起来。可以用十六进程值（范
 
 *用于 printf 的转换符*
 
-![](./Images/printf的转换符.png)
+![](../Images/printf的转换符.png)
 
 ### 块级作用域
 

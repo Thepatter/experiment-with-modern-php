@@ -29,7 +29,7 @@ long millis = timeElapsed.toMillis();
 
 ​			*用于时间的Instant和Duration的算术运算*
 
-![](./Images/用于时间的Instant和Duration运算.png)
+![](../Images/用于时间的Instant和Duration运算.png)
 
 `Instant` 和 `Duration` 类都是不可修改的类，所以 `multipliedBy` 和 `minus` 这样的方法都会返回一个新的实例
 
@@ -47,7 +47,7 @@ alonzosBirthday = LocalDate.of(1903, Month.JUNE, 14);
 
 ​		*LocalDate的方法*
 
-​		![](./Images/LocalDate的方法.png)
+​		![](../Images/LocalDate的方法.png)
 
 ### 日期调整器
 
@@ -62,7 +62,7 @@ LocalDate firstTuesday = LocalDate.of(year, month, 1).with(TemporaAdjusters.next
 
 ​	*TemporalAdjusters类中的日期调整器*
 
-​	![](./Images/TemporalAdjusters类中的日期调整器.png)
+​	![](../Images/TemporalAdjusters类中的日期调整器.png)
 
 还可以通过实现 `TemporalAdjuster` 接口来创建自己的调整器。
 
@@ -102,7 +102,7 @@ TemporalAdjuster Next_WORKDAY = TemporalAdjusters.ofDateAdjuster(w -> {
 
 ​		*LocalTime的方法*
 
-​		![](./Images/LocalTime的方法.png)
+​		![](../Images/LocalTime的方法.png)
 
 还有一个表示日期和时间的 `LocalDateTime` 类。这个类适合存储固定时区的时间点。
 
@@ -122,7 +122,7 @@ ZonedDateTime apollolllaunch = ZonedDateTime.of(1969, 7, 16, 9, 32, 0, 0, ZonedI
 
 ​		*ZonedDateTime的方法*
 
-​		![](./Images/ZonedDateTime的方法.png)
+​		![](../Images/ZonedDateTime的方法.png)
 
 当夏令时开始时，时钟要向前一个小时。当构建的时间对象正好落入了跳过去的一个小时内。
 
@@ -140,7 +140,7 @@ ZonedDateTime apollolllaunch = ZonedDateTime.of(1969, 7, 16, 9, 32, 0, 0, ZonedI
 
   ​                   *预定义的格式器*
 
-  ![](./Images/预定义的格式器.png)
+  ![](../Images/预定义的格式器.png)
 
 要使用标准的格式器，可以直接调用其 `format` 方法
 
@@ -152,7 +152,7 @@ String formatted = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(apollolllaunch)
 
 ​	*Locale* 相关的格式化风格
 
-​	![](./Images/Locale相关的格式化风格.png)
+​	![](../Images/Locale相关的格式化风格.png)
 
 静态方法 `ofLocalizedDate`、`ofLocalizedTime` 、`ofLocalizedDateTime` 可以创建这种格式器
 
@@ -187,7 +187,7 @@ formatter = DateTimeFormatter.ofPattern("E yyyy-MM-dd HH:mm");
 
 ​	*常用的日期、时间格式的格式化符号*
 
-​	![](./Images/日期时间格式化符号.png)
+​	![](../Images/日期时间格式化符号.png)
 
 为了解析字符串中的日期、时间值，可以使用众多的静态 `parse` 方法之一。
 
@@ -210,5 +210,5 @@ ZonedDateTime apollolllaunch = ZonedDateTime.parse("1969-07-16 03:32:00-0400", D
 
 ​	*java.time类与遗留类之间的转换*
 
-​	![](./Images/time类与遗留类之间的转换.png)
+​	![](../Images/time类与遗留类之间的转换.png)
 

@@ -1,6 +1,6 @@
 ## 一些问题的记录
 
-### restfull 接口 options 嗅探请求或 patch 等浏览器异常终止 405 错误
+### restful 接口 options 嗅探请求或 patch 等浏览器异常终止 405 错误
 
 #### 出现原因：
 
