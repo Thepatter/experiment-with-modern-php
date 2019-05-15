@@ -76,6 +76,12 @@ git clone user@server:project.git
 git clone --bare my_project my_project.git
 ```
 
+或者新建裸仓库
+
+```shell
+git init --bare sample.git
+```
+
 把裸仓库放到服务器上
 
 ```shell
@@ -116,12 +122,12 @@ ssh-keygen
 
 为 git 用户配置服务器端的 `ssh` 访问
 
-```ssh
+```shell
 sudo adduser git
 su git
 cd 
 mkdir .ssh && chmod 700 .ssh
-touch .ssh/authorized_key
+touch .ssh/authorized_keys && chmod 600 .ssh/authorized_keys
 ```
 
 导入需要访问仓库的用户的公钥
