@@ -158,4 +158,3 @@ key_len 列显示了在索引字段中可能的最大长度，而不是表中数
 * `Range checked for each record(index map: N)`
 
    意味没好用的索引，新的索引将在联接的每一行上重新估算。N 是显示在 possible_keys 列中索引的位图，并且是冗余的
-
