@@ -1,5 +1,21 @@
 ## shell 基础使用相关
 
+#### 环境变量
+
+* 查看当前环境变量
+
+  `echo $PATH`
+
+* 添加 PATH
+
+  `export PATH=$PATH:<PATH1>:<PATH2>`
+
+  ```shell
+  vim .bash_profile # /etc/profile
+  export PATH=$PATH:/usr/bin:/usr/sbin
+  source .bash_profile
+  ```
+
 ### 命令行历史
 
 - `history`
