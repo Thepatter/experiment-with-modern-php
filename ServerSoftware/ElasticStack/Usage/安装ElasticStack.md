@@ -1,18 +1,19 @@
 ## 安装 Elastic Stack
 
-环境：
+### 安装 Elasticsearch Kibana
 
-ubuntu >= 16.04, jdk8
+#### 安装依赖
 
-### 安装 JDK-8
-```
+* 安装 JDK-8
+
+```shell l
 sudo add-apt-repository -y ppa:webupd8team/java
 sudo apt-get update
 echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
 echo debconf shared/accepted-oracle-license-v1-1 seen true | sudo debconf-set-selections
 sudo apt-get -y install oracle-java8-installer
 ```
-### 安装 JDK-11
+* 安装 JDK-11
 
 ```shell
 sudo add-apt-repository ppa:linuxuprising/java
@@ -24,56 +25,54 @@ sudo apt install oracle-java11-installer
 sudo apt install oracle-java11-set-default
 ```
 
-### 安装 ElasticSearch
+#### 安装 ElasticSearc Kibana
 
-#### 安装 ElasticSearch
+##### APT 库安装
 
-* 导入 Elasticsearch PGP key
+```shell
+# 导入 ELasticsearch PGP key
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+# install apt-transport-https
+sudo apt install apt-transport-https
+# 存储 repository
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+# 安装
+sudo apt update && sudo apt install elasticsearch kibana
+```
 
-  `wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -`
+##### 配置
 
-* 从 APT 存储库安装
+```shell
+# 允许自动创建 X-PACK 索引，* 允许自动创建所有索引的值
+vim elasticsearch.yml
+action.auto_create_index: .monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*
+```
 
-  `sudo apt-get install apt-transport-https`
+##### Systemd 下服务及运行
 
-  `echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-6.x.list`
+```shell
+# 服务自启动
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl enable elasticsearch.service
+# 自动重启
+sudo systemctl edit elasticsearch.service
+[Service]
+Restart=always
+sudo systemctl daemon-reload
+# 服务启动
+sudo systemctl start elasticsearch.service
+```
 
-  `sudo apt-get update && sudo apt-get install elasticsearch`
+##### 安装插件
 
-#### 配置 ElasticSearch
+```shell
+# 中文分词
+./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.2.4/elasticsearch-analysis-ik-6.2.4.zip
+```
 
-* 开机自启动
+##### 软件目录
 
-  `sudo /bin/systemctl daemon-reload`
-
-  `sudo  /bin/systemctl enable elasticsearch.service`
-
-* 设置 elasticsearch 自动重启
-
-   `sudo systemctl edit elasticsearch.service` (先设置默认编辑器为 vim)
-   ```
-   [Service]        // 修改service 配置
-   Restart=always
-   ```
-   `systemctl daemon-reload`   
-
-* 启动及停止命令
-
-  `sudo systemctl start elasticsearch.service`
-
-  `sudo systemctl stop elasticsearch.service`
-
-* 设置 `jvm` 运行内存
-
-   `/etc/elasticseach/jvm.options` 文件的 `-Xms4g` 和 `-Xmx4g`
-
-* 设置 `elasticsearch` 参照 https://www.elastic.co/guide/en/elasticsearch/reference/6.2/important-settings.html，默认开箱即用
-
-#### 安装 ElasticSearch 中文分词工具
-
-`./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.2.4/elasticsearch-analysis-ik-6.2.4.zip`
-
-#### ElasticSearch 软件位置
+* ElasticSearch 软件位置
 
 |  type   |                         description                          |          default location          |     setting      |
 | :-----: | :----------------------------------------------------------: | :--------------------------------: | :--------------: |
@@ -86,32 +85,7 @@ sudo apt install oracle-java11-set-default
 | plugins | Plugin files location. Each plugin will be contained in a subdirectory | `/usr/share/elasticsearch/plugins` |                  |
 |  repo   | Shared file system repository locations. Can hold multiple locations. A file system repository can be placed in to any subdirectory of any directory specified here. |           Not configured           |   `path.repo`    |
 
-#### 安装 X-PACK  (6.4) 及以后不再需要安装该工具，已整合
-
-* 安装 X-PACK `sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install x-pack`
-* 配置（默认配置）
-
-### 安装 kibana
-
-#### 安装 kibana
-
-* 如果安装 elastic search  时候添加了 key 与 APT 存储库，则直接 `sudo apt-get update && sudo apt-get install kibana`
-
-#### 配置并运行 kibana
-
-* 开机自启动
-
-  `sudo /bin/systemctl daemon-reload`
-
-  `sudo /bin/systemctl enable kibana.service`
-
-* 启动及关闭 kibana
-
-  `sudo systemctl start kibana.service`
-
-  `sudo systemctl stop kibana.service`
-
-#### kibana 目录
+* kibana 目录
 
 |     type     |                         description                          |       default location       |   setting   |
 | :----------: | :----------------------------------------------------------: | :--------------------------: | :---------: |
@@ -122,15 +96,7 @@ sudo apt install oracle-java11-set-default
 | **optimize** | Transpiled source code. Certain administrative actions (e.g. plugin install) result in the source code being retranspiled on the fly. | `/usr/share/kibana/optimize` |             |
 | **plugins**  | Plugin files location. Each plugin will be contained in a subdirectory | `/usr/share/kibana/plugins`  |             |
 
-#### 配置
-
-https://www.elastic.co/guide/en/kibana/6.2/settings.html
-
-#### 安装 X-PACK
-
-`/usr/share/kibana/bin/kibana-plugin install x-pack`
-
-#### 安装 Logstash
+### 安装 Logstash
 
 #### 安装 Logstash
 
