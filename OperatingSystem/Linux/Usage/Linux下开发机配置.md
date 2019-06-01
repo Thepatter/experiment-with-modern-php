@@ -231,7 +231,7 @@
 
 ### UbuntuGUI美化
 
-* https://zhuanlan.zhihu.com/p/36200924
+*  https://zhuanlan.zhihu.com/p/36200924
 
 * https://zhuanlan.zhihu.com/p/36265103
 
