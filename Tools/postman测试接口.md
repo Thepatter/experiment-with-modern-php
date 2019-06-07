@@ -1,6 +1,6 @@
 ### POSTMAN 第三方黑盒测试
 
-postman 提供了 `pm.test` 方法，相当于一个测试用例，第一个参数是执行正确后的提示文字，第二个参数是个闭包，执行我们的断言。
+postman 提供了 `pm.test` 方法，相当于一个测试用例，第一个参数是执行正确后的提示文字，第二个参数是个闭包，执行我们的断言
 
 文档：https://www.getpostman.com/docs/v6/postman/scripts/test_examples
 
