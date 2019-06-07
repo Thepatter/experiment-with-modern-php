@@ -173,7 +173,7 @@
   sudo service network restart
   ```
 
-* Ubuntu 18.04 使用 `netplan`
+* Ubuntu 18.04 使用 `netp
 
   ```shell
   # 配置文件
@@ -183,12 +183,12 @@
      	ethernets:
      	    ens33:
      		# 使用 dhcp 分配 dhcp: true
-     	    addresses:
-     	      - 192.168.1.106/24 # IP 与 主机号
-     	    gateway4: 192.168.1.1
-     	    nameservers:
      	      addresses:
-     	        - 8.8.8.8
+     	        - 192.168.1.106/24 # IP 与 主机号
+     	      gateway4: 192.168.1.1
+     	      nameservers:
+     	        addresses:
+     	          - 8.8.8.8
   version: 2
   # 应用
   sudo netplan apply
