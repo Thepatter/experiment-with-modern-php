@@ -13,7 +13,7 @@ __使用 `java.util.Scanner` 类从文件中读取文本数据，使用 `java.io
 
 * `printWriter` 写数据 `java.io.printwriter` 可以用来创建一个文件并向文本文件写入数据。
 
-* 使用 `try（声明和创建资源）{ 使用资源处理文件 }` 来处理文件，会自动调用 close 方法
+* 使用 `try（声明和创建资源）{ 使用资源处理文件 }` 来处理文件，会自动调用 close 关闭资源
 
 
 #### 从 web 上读取数据
