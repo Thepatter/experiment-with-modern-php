@@ -10,7 +10,9 @@
 
 * 视图用 `create view` 语句来创建
 
-  `create view productcustomers as select cust_name, cust_contact, prod_id from customers, orders, orderitems where customers.cust_id = orders.cust_id and orderitems.order_null = orders.order_num`
+  ```mysql
+  create view productcustomers as select cust_name, cust_contact, prod_id from customers, orders, orderitems where customers.cust_id = orders.cust_id and orderitems.order_null = orders.order_num
+  ```
 
 ### 字符集和校对顺序
 
@@ -20,28 +22,43 @@
 
 #### 使用字符集和校对
 
-* 查看所支持字符集的完整列表： `SHOW CHARACTER SET`
+* 查看所支持字符集的完整列表
 
-* 查看校对的完整列表：`SHOW COLLATION` 有的字符具有不止一种校对，而且许多校对出现两次，一次区分大小写（由`_cs` 表示）一次不区分大小写（由 `_ci` 表示）
+  ```mysql
+  show character set
+  ```
+
+* 查看校对的完整列表
+
+  ```mysql
+  show collation
+  ```
+
+  有的字符具有不止一种校对，而且许多校对出现两次，依次区分大小写（由`_cs` 表示），依次不区分大小写（由 `_ci` 表示）
 
 * 通常系统管理在安装时定义一个默认的字符集和校对。此外，也可以在创建数据库时，指定默认的字符集和校对。查看字符集和校对
 
-  `SHOW VARIABLES LIKE 'character%'`
-
-  `SHOW VARIBLES LIKNE 'collation%'`
+  ```mysql
+  # 查看字符集
+  show variables like 'character%';
+  # 查看校对集
+  show variables like 'collation%';
+  ```
 
 * 给表和列指定字符集和校对
 
   ```mysql
   CREATE TABLE table_name(
-  	column_name int,
-  	column_nam1 char(10),
+  	  column_name int,
+  	  column_nam1 char(10),
       column_name2 varchar(10) CHARACTER SET latin1 COLLATE latin1_general_ci
   ) DEFAULT CHARACTER SET hebrew COLLACTE hebrew_general_ci;
   ```
 
 * 如果指定 `CHARACTER SET` 和 `COLLATE` 两者，则使用这些值
+
 * 如果只指定 `CHAEACTER SET` ，则使用此字符集及其默认的校对（`SHOW CHARACTER SET`)
+
 * 如果未指定 `CHARACTER SET` 也未指定 `COLLATE` ，则使用数据库默认
 
 * 查询时使用不同的校对(`SELECT,GROUP BY, HAVING，聚合参数，别名`)中使用
@@ -52,39 +69,6 @@
 
 * 串可以在字符集之间进行转换，使用 `Cast()` 或 `Convert()` 函数
 
-  特定的列；
-
-  特定的存储过程
-
-  |           权限            |                             说明                             |
-  | :-----------------------: | :----------------------------------------------------------: |
-  |            ALL            |                 除 `GRANT OPTION` 外所有权限                 |
-  |           ALTER           |                      使用 `ALTER TABLE`                      |
-  |           ALTER           |          使用 `ALTER PROCEDURE` 和 `DROP PROCEDURE`          |
-  |          CREATE           |                     使用 `CREATE TABLE`                      |
-  |      CREATE ROUTIME       |                   使用 `CREATE PROCEDURE`                    |
-  | `CREATE TEMPORARY TABLES` |                使用 `CREATE TEMPORARY TABLE`                 |
-  |        CREATE USER        | 使用`CREATE USER, DROP USER, RENAME USER 和 REVOKE ALL PRIVILEGES` |
-  |       `CREATE VIEW`       |                      使用 `CREATE VIEW`                      |
-  |         `DELETE`          |                        使用 `DELETE`                         |
-  |          `DROP`           |                      使用 `DROP TABLE`                       |
-  |         `EXECUTE`         |                    使用 `CALL` 和存储过程                    |
-  |          `FILE`           |         使用 `SELECT INTO OUTFILE LOAD DATA INFILE`          |
-  |       GRANT OPTION        |                     使用 `GRANT REVOKE`                      |
-  |          `INDEX`          |             使用 `CREATE INDEX` 和 `DROP INDEX`              |
-  |         `INSERT`          |                         使用 INSERT                          |
-  |        LOCK TABLES        |                       使用 LOCK TABLES                       |
-  |          PROCESS          |                 使用 `SHOW FULL PROCESSLIST`                 |
-  |          RELOAD           |                         使用 `FLUSH`                         |
-  |    REPLICATION CLIENT     |                        服务器位置查询                        |
-  |     REPLICATION SLAVE     |                        由复制从属使用                        |
-  |          SELECT           |                         使用 SELECT                          |
-  |      SHOW DATABASES       |                    使用 `SHOW DATABASES`                     |
-  |         SHOW VIEW         |                    使用 SHOW CREATE VIEW                     |
-  |         SHUTDOWN          |           使用 `mysqladmin  shotdown`(关闭 Mysql)            |
-  |           SUPER           | 使用 `CHANGE MASTER KILL LOGS PURGE MASTER SET GLOBAL` 还允许 mysqladmin 登陆 |
-  |          UPDATE           |                         使用 UPDATE                          |
-  |           USAGE           |                          无访问权限                          |
 
 #### 数据备份
 

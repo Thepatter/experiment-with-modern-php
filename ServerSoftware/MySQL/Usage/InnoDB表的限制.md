@@ -75,17 +75,17 @@
 
 * `Analyze table` 后查看 `show index` 这些统计只是估算
 
-* `show table status` 在 `InnoDB` 中国，除了表保留的物理大小外，rows 是估算
+* `show table status` 在 `InnoDB` 中，除了表保留的物理大小外，rows 是估算
 
 * `InnoDB` 不保留表中的内部行数，因为并发事务可能同时”看到“不同数量的行，因此 `SELECT COUNT(*)` 语句只计算当前事务可见的行
 
-* 在Windows上，`InnoDB`始终以小写形式在内部存储数据库和表名。要以二进制格式将数据库从Unix移动到Windows或从Windows移动到Unix，请使用小写名称创建所有数据库和表
+* 在Windows上，`InnoDB` 始终以小写形式在内部存储数据库和表名。要以二进制格式将数据库从Unix移动到Windows或从Windows移动到Unix，请使用小写名称创建所有数据库和表
 
-* 必须将AUTO_INCREMENT列ai_col定义为索引的一部分，以便可以在表上执行等效的索引SELECT MAX（ai_col）查找以获取最大列值。 通常，这是通过使列成为某些表索引的第一列来实现的。
+* 必须将 `AUTO_INCREMENT` 列ai_col定义为索引的一部分，以便可以在表上执行等效的索引SELECT MAX（ai_col）查找以获取最大列值。 通常，这是通过使列成为某些表索引的第一列来实现的。
 
-* InnoDB在与AUTO_INCREMENT列关联的索引末尾设置独占锁，同时初始化表上的先前指定的AUTO_INCREMENT列。
+* `InnoDB` 在与 `AUTO_INCREMENT` 列关联的索引末尾设置独占锁，同时初始化表上的先前指定的`AUTO_INCREMENT` 列。
 
-  在innodb_autoinc_lock_mode = 0的情况下，InnoDB使用特殊的AUTO-INC表锁模式，其中获取锁并在访问自动增量计数器时保持到当前SQL语句的末尾。 在保持AUTO-INC表锁时，其他客户端无法插入表中。 使用innodb_autoinc_lock_mode = 1的“批量插入”也会出现相同的行为。 表级别AUTO-INC锁不与innodb_autoinc_lock_mode = 2一起使用。
+  在` innodb_autoinc_lock_mode = 0` 的情况下，`InnoDB` 使用特殊的 `AUTO-INC` 表锁模式，其中获取锁并在访问自动增量计数器时保持到当前SQL语句的末尾。 在保持`AUTO-INC`表锁时，其他客户端无法插入表中。 使用`innodb_autoinc_lock_mode = 1`的“批量插入”也会出现相同的行为。 表级别`AUTO-INC`锁不与`innodb_autoinc_lock_mode = 2`一起使用。
 
 * 当`AUTO_INCREMENT`整数列用完值时，后续`INSERT` 操作将返回重复键错误。这是一般的MySQL行为。
 
@@ -97,11 +97,11 @@
 
 ### 锁
 
-* [`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)如果`innodb_table_locks=1`（默认值），则在每个表上获取两个锁 。除了MySQL层上的表锁之外，它还获取`InnoDB`表锁。4.1.2之前的MySQL版本没有获取 `InnoDB`表锁; 可以通过设置选择旧行为 `innodb_table_locks=0`。如果未 `InnoDB`获取表锁，[`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)即使某些表的记录被其他事务锁定， 也会完成。
+* [`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)如果`innodb_table_locks=1`（默认值），则在每个表上获取两个锁 。除了MySQL层上的表锁之外，它还获取`InnoDB`表锁。4.1.2之前的MySQL版本没有获取 `InnoDB`表锁；可以通过设置选择旧行为 `innodb_table_locks=0`。如果未在 `InnoDB` 获取表锁，[`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)即使某些表的记录被其他事务锁定， 也会完成。
 
   在MySQL 8.0中， [`innodb_table_locks=0`](https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_table_locks)对于显式锁定的表没有任何影响 [`LOCK TABLES ... WRITE`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)。它对通过[`LOCK TABLES ... WRITE`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)隐式（例如，通过触发器）或通过隐藏（例如，通过触发器）锁定读取或写入的表有效 [`LOCK TABLES ... READ`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)。
 
-* `InnoDB`事务提交或中止时，将释放事务持有的 所有锁。因此，它并没有多大意义，调用 [`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)上 `InnoDB`表中 [`autocommit=1`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)模式，因为所获得的`InnoDB`表锁将被立即释放。
+* `InnoDB` 事务提交或中止时，将释放事务持有的所有锁。因此，它并没有多大意义，调用 [`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)上 `InnoDB`表中 [`autocommit=1`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_autocommit)模式，因为所获得的`InnoDB`表锁将被立即释放。
 
 * 无法在事务中锁定其他表，因为[`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)执行隐式 [`COMMIT`](https://dev.mysql.com/doc/refman/8.0/en/commit.html)和 [`UNLOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)。
 

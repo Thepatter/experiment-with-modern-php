@@ -14,7 +14,7 @@ mysqld --init-file=/path/to/mysql-init &
 ### 升级数据库后需要升级数据结构
 `mysql_upgrade -u root -p`
 
-### 管理用户
+### 用户管理
 
 * 查看用户
 
@@ -65,7 +65,39 @@ mysqld --init-file=/path/to/mysql-init &
 
   2.如果用户 ua 已经存在，就将密码修改成 pa
 
-### 管理访问权限
+### 权限管理
+
+*权限说明*
+
+|           权限            |                             说明                             |
+| :-----------------------: | :----------------------------------------------------------: |
+|            ALL            |                 除 `GRANT OPTION` 外所有权限                 |
+|           ALTER           |                      使用 `ALTER TABLE`                      |
+|           ALTER           |          使用 `ALTER PROCEDURE` 和 `DROP PROCEDURE`          |
+|          CREATE           |                     使用 `CREATE TABLE`                      |
+|      CREATE ROUTIME       |                   使用 `CREATE PROCEDURE`                    |
+| `CREATE TEMPORARY TABLES` |                使用 `CREATE TEMPORARY TABLE`                 |
+|        CREATE USER        | 使用`CREATE USER, DROP USER, RENAME USER 和 REVOKE ALL PRIVILEGES` |
+|       `CREATE VIEW`       |                      使用 `CREATE VIEW`                      |
+|         `DELETE`          |                        使用 `DELETE`                         |
+|          `DROP`           |                      使用 `DROP TABLE`                       |
+|         `EXECUTE`         |                    使用 `CALL` 和存储过程                    |
+|          `FILE`           |         使用 `SELECT INTO OUTFILE LOAD DATA INFILE`          |
+|       GRANT OPTION        |                     使用 `GRANT REVOKE`                      |
+|          `INDEX`          |             使用 `CREATE INDEX` 和 `DROP INDEX`              |
+|         `INSERT`          |                         使用 INSERT                          |
+|        LOCK TABLES        |                       使用 LOCK TABLES                       |
+|          PROCESS          |                 使用 `SHOW FULL PROCESSLIST`                 |
+|          RELOAD           |                         使用 `FLUSH`                         |
+|    REPLICATION CLIENT     |                        服务器位置查询                        |
+|     REPLICATION SLAVE     |                        由复制从属使用                        |
+|          SELECT           |                         使用 SELECT                          |
+|      SHOW DATABASES       |                    使用 `SHOW DATABASES`                     |
+|         SHOW VIEW         |                    使用 SHOW CREATE VIEW                     |
+|         SHUTDOWN          |           使用 `mysqladmin  shotdown`(关闭 Mysql)            |
+|           SUPER           | 使用 `CHANGE MASTER KILL LOGS PURGE MASTER SET GLOBAL` 还允许 mysqladmin 登陆 |
+|          UPDATE           |                         使用 UPDATE                          |
+|           USAGE           |                          无访问权限                          |
 
 * 查看用户权限
 
@@ -85,7 +117,7 @@ mysqld --init-file=/path/to/mysql-init &
   REVOKE SELECT ON database_name.* TO FROM user_name
   ```
 
-  #### GRANT 和 REVOKE 控制权限层次
+#### GRANT 和 REVOKE 控制权限层次
 
 * 使用 `,` 分割权限可一次授予多种权限 
 
