@@ -80,7 +80,7 @@ create table `tuser` (
 
 *name，age 索引图*
 
-![联合索引示意图](./Images/联合索引示意图.png)
+![联合索引示意图](../Images/Performance/联合索引示意图.png)
 
  可以看到，索引项时按照索引定义里面出现的字段属性排序的。
 
