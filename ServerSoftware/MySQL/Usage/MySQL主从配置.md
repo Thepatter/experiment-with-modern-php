@@ -29,7 +29,7 @@ server-id = 1
 
 ```mysql
 master>create user repl_user;
-master>grant replication slave on *.* tp repl_user identified by 'secret'
+master>grant replication slave on *.* TO repl_user identified by 'secret'
 ```
 
 拥有 `replication slave` 权限的用户能够获取 `master` 上的二进制日志。执行 `flush` 命令需要 `reload` 权限。执行 `show master status` 和 `show slave status` 命令需要 `super` 和 `replication client` 权限。执行 `change master to` 需要 `super` 权限
