@@ -34,3 +34,35 @@ SQL 在 Oracle 中执行流程：
 
   
 
+#### SQL92 中是如何使用连接的
+
+* 笛卡尔积
+
+  笛卡尔积是两个积合的所有可能组合。即交叉连接，`CROSS JOIN`，它的作用是可以把任意表进行连接，即使这两张表不相关。
+
+* 等值连接
+
+  两张表的等值连接就是用两张表中都存在的列进行连接。也可以对多张表进行等值连接
+
+* 非等值连接
+
+  当进行多表查询的时候，如果连接多个表的条件是非等号时，即非等值连接
+
+* 外连接
+
+  除了查询满足条件的记录外，外连接还可以查询某一方不满足条件的记录。两张表的外连接，会有一张表是主表，另一张表是从表。如果是多张表的外连接，那么第一张表是主表，即显式全部的行，而剩下的表则显式对应连接的信息。**左外连接**：左边的表是主表，需要显示左边表的全部行，而右侧的表是从表`(+)` 表示哪个是从表。**右外连接**：右边的表是主表，显示右边表的全部行，而左侧的表是从表。`LEFT JOIN` 和 `RIGHT JOIN` 只存在于 SQL99 标准，在 SQL 92 中只能使用 `(+)` 标识从表
+
+  ```sql
+  # 左连接SQL92
+  select * from player, team where player.team_id = team.team_id(+);
+  # 右连接SQL92
+  select * from player, team where player.team_id(+) = team.team_id;
+  # 左连接SQL99
+  select * from player left join team on player.team_id = team.team_id;
+  # 右连接SQL99
+  select * from player right join team on player.team_id = team.team_id;
+  ```
+
+* 自连接
+
+  自连接可以对多个表进行操作，也可以对同一个表进行操作。即查询条件使用了当前表的字段
