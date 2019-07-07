@@ -1,0 +1,84 @@
+## Tomcat 安装
+
+### 下载和配置 Tomcat
+
+* 下载并解压
+* `bin` 目录，启动和终止 Tomcat 的程序；`webapps` 应用程序目录；`conf` 配置文件目录，包括 `server.xml` 和 `tomcat-users.xml`；`lib` 目录包含编译 `servlets` 和定制标签所需的 `Servlet` 和 `JSP API`
+* 将 `JAVA_HOME` 环境变量设为 JDK 安装目录
+
+### 启动
+
+* `startup.bat` 、`shutdown.bat`
+
+### 定义上下文
+
+要将 Servlet/JSP 应用程序部署到 Tomcat 时，需要显式或隐式定义一个 Tomcat 上下文。在 Tomcat 中，每一个 Tomcat 上下文都表示一个 Web 应用程序
+
+显式定义 Tomcat 上下文：
+
+* 在 Tomcat 的 `conf/Catalina/localhost` 目录下创建一个 XML 文件
+* 在 Tomcat 的 `conf/server.xml` 文件中添加一个 `Context` 元素
+
+如果决定给每一个上下文都创建一个 XML 文件，那么这个文件名就很重要，因为上下文路径式从文件名衍生得到的。如把 `commerce.xml` 文件放在 `conf/Catalina/localhost` 目录下，那么应用程序的上下文路径就是 `commmerce`，并且可以利用 URL 访问一个资源 `http://localhost:8080/commerce/resourceName`；
+
+上下文文件中必须包含一个 `Context` 元素，作为它的根元素。这个元素大多没有子元素，它是该文件中唯一的元素。
+
+```xml
+<Context docBase="C:/apps/commerce" reloadable="true"/>
+```
+
+唯一必须的属性是 `docBase` ，它用来定义应用程序的位置。`reloadable` 属性是可选的，但是如果存在，并且它的值为 `true`，那么一旦应用程序中 Java 类文件或其他资源有任何增加、减少或更新，Tomcat 都会侦测到，并且一旦侦测到这些变化，Tomcat 就会重新加载应用程序。在部署期间，建议将 `reoloadable` 值设为 `true`，生产期间不设置该属性。当把上下文文件添加到指定目录时，Tomcat 就会自动加载应用程序。当删除这个文件时，Tomcat 就会自动卸载应用程序
+
+定义上下文的另一种方法是在 `conf/server.xml` 文件中添加一个 `Context` 元素。在 `Host` 元素下创建一个 `Context` 元素。此处定义上下文需要给上下文路径定义 `path` 属性
+
+```xml
+<Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+		<Context path="/commerce" docBase="C:/apps/commerce" reloadable="true"/>
+</Host>
+```
+
+一般不建议通过 `server.xml` 文件来管理上下文，只有重启 Tomcat 后，更新才生效
+
+隐式定义：
+
+* 通过将一个 WAR 文件或者整个应用程序复制到 `Tomcat` 的 `webapps` 目录下可以隐式部署
+
+### 定义资源
+
+定义一个 JNDI 资源，应用程序便可以在 Tomcat 上下文定义中使用。资源用 `Context` 元素目录下的 `Resource` 元素表示
+
+```xml
+<Context path="/appName" docBase="/your/app/path">
+		<Resource name="jdbc/dataSourceName" auth="Container" type="javax.sql.DataSource"
+				username="yourname"
+				password="yourpasswd"
+				driverClassName="com.mysql.jdbc.Driver"
+				url="..."
+				/>
+</Context>
+```
+
+### SSL 证书
+
+将证书导入 `keystore` 后，复制放在服务区某个位置下的 `keystore`，并对 `Tomcat` 进行配置即可。打开 `conf/server.xml` 文件，在 `<service>` 下添加 `Connector` 元素
+
+```xml
+<Connector port="443" 
+    minSpareThreads="5" 
+    maxSpareThreads="75" 
+    enableLookups="true"
+    disableUploadTimeout="true"
+    acceptCount="100"
+    maxThreads="200"
+    # ssl 配置
+    cheme="https"
+    secure="true"
+    SSLEnabled="true"
+    keystoreFile="/path/to/keystore"
+    keyAlias="example.com"
+    keystorePass="password"
+    clientAuth="false"
+    sslProtocol="TLS"
+/>
+```
+
