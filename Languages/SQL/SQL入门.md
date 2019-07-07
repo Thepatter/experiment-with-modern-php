@@ -66,3 +66,59 @@ SQL 在 Oracle 中执行流程：
 * 自连接
 
   自连接可以对多个表进行操作，也可以对同一个表进行操作。即查询条件使用了当前表的字段
+
+### SQL 99 标准中的连接查询
+
+*SQL中连接*
+
+![](./Images/SQL中连接.png)
+
+#### 交叉连接
+
+交叉连接实际上就是 SQL 92 中的笛卡尔积，使用 `CROSS JOIN`
+
+#### 自然连接
+
+自然连接为 SQL 92 中的等值连接，如果把 `player` 表和 `team` 表进行等值连接，相同的字段是 `term_id`
+
+```SQL
+# SQL 92
+SELECT player_id, a.team_id, player_name, height, team_name FROM player as a, team as b where a.team_id = b.team_id
+# SQL 99
+SELECT player_id, team_id, player_name,height,team_name FROM player NATURAL JOIN team
+```
+
+在 SQL 99 中使用 NATURAL JOIN 替代了 WHERE player.team_id = team.team_id
+
+#### ON 连接
+
+ON 连接用来指定想要的条件。一般来说在 SQL 99 中，需要连接的表会采用 JOIN 进行连接，ON 指定了连接条件，后面可以是等值连接，也可以是非等值连接
+
+```SQL
+SELECT player_id, player.team_id,player_name, height, team_name FROM player JOIN team ON player.team_id = team.team_id
+```
+
+#### USING 连接
+
+进行连接时，可以用 USING 指定数据表里的同名字段进行等值连接
+
+```sql
+SELECT player_id, team_id, player_name, height, team_name FROM player JOIN team USING(team_id)
+```
+
+与自然连接不同的是，USING 指定了具体的相同字段名称，需要在 USING 的括号 `()` 中填入要指定的同名字段。使用 JOIN USING 可以简化 JOIN ON 的等值连接
+
+#### 外连接
+
+SQL 99 的外连接包括三种形式：
+
+* 左外连接：LEFT JOIN 或 LEFT OUTER JOIN
+* 右外连接：RIGHT JOIN 或 RIGHT OUTER JOIN
+* 全外连接：FULL JOIN 或 FULL OUTER JOIN
+
+全外连接是左外连接和右外连接的结合。（MySQL 不支持全外连接）全外连接 = 左右表匹配的数据 + 左表没有匹配的数据 + 右表没有匹配的数据
+
+#### 自连接
+
+自连接是通过已知的自身数据表进行条件判断，因此在大部分 DBMS 中都对自连接处理进行了优化
+
