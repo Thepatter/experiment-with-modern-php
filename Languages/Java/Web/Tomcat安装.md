@@ -1,9 +1,31 @@
 ## Tomcat 安装
 
-### 下载和配置 Tomcat
+### 配置 Tomcat
 
-* 下载并解压
-* `bin` 目录，启动和终止 Tomcat 的程序；`webapps` 应用程序目录；`conf` 配置文件目录，包括 `server.xml` 和 `tomcat-users.xml`；`lib` 目录包含编译 `servlets` 和定制标签所需的 `Servlet` 和 `JSP API`
+*目录结构*
+
+![](./Images/tomcat目录结构.png)
+
+* `bin` 目录，启动和终止 Tomcat 的程序
+
+* `webapps` Tomcat 的 Web 应用目录，默认情况下把 Web 应用放在这个目录
+
+* `conf` 配置文件目录，包括 `server.xml` 和 `tomcat-users.xml`；
+
+* `lib` 存放 Tomcat 及所有 Web 应用都可以访问的 JAR 文件
+
+* `logs` 存放 Tomcat 执行时产生的日志文件
+
+  `catalina.Y-m-d.log`：记录 Tomcat 启动过程的信息，可以看到启动的 JVM 参数及操作系统等日志
+
+  `localhost.Y-m-d.log`：记录 Web 应用在初始化过程中遇到的未处理的异常，会被 Tomcat 捕获输出到这个日志文件
+
+  `localhost_access_log`：Tomcat 的请求日志，包括 IP 地址，请求路径，事件，协议及状态码
+
+  `manager/host-manager`：Tomcat 自带的 manager 项目日志信息
+
+* `work` 存放 JSP 编译后产生的 Class 文件
+
 * 将 `JAVA_HOME` 环境变量设为 JDK 安装目录
 
 ### 启动

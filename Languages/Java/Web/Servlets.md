@@ -42,7 +42,39 @@ ServletConfig getServletConfig()
 * `getServletInfo`，这个方法会返回 `Servlet` 的描述。可以返回任何有用的字符串或 null
 * `getServletConfig`，这个方法会返回由 `Servlet` 容器传给 `init` 方法的 `ServletConfig`。但是，为了让 `getServletConfig` 返回一个非 null 值，必须将传给 `init` 方法的 `ServletConfig` 赋给一个类级变量，除非它们是只读的，或者是 `java.util.concurrent.atomic` 包的成员
 
-### 基础的 Servlet 应用程序
+Servlet 规范提供了 GenericServlet 抽象类，可以通过扩展它来实现 Servlet。虽然 Servlet 规范并不在乎通信协议，但大多数的 Servlet 都是在 HTTP 环境中处理的，因此 Servlet 规范还提供了 `HttpServlet ` 来继承 `GenericServlet` ，并且加入了 HTTP 特性。这样可以通过继承 `HTTPServlet` 类来实现自己的 Servlet，只需要重写两个方法：`doGet` 和 `doPost`
 
+### Servlet 容器
 
+为了解耦，HTTP 服务器不直接调用 Servlet，而是把请求交给 Servlet 容器来处理
+
+#### 工作流程
+
+当客户端请求某个资源时，HTTP 服务器会用一个 `ServletRequest` 对象把客户的请求信息封装起来，然后调用 `Servlet` 容器的 `service` 方法，`Servlet` 容器拿到请求后，根据请求的 URL 和 Servlet 的映射关心，找到相应的 Servlet，如果 Servlet 还没有被加载，就用反射机制创建这个 Servlet，并调用 Servlet 的 `init` 方法来完成初始化，接着调用 Servlet 的`service` 方法来处理请求，把 `ServletResponse` 对象返回给 HTTP 服务器，HTTP 服务器会把响应发送给客户端。
+
+*servlet工作流程*
+
+![](./Images/servlet工作流程.jpg)
+
+#### Web应用
+
+Servlet 容器会实例化和调用 Servlet，一般采用 Web 应用程序的方式来部署 Servlet 的，而根据 Servlet 规范，Web 应用程序有一定的目录结构，在这个目录下分别放置了 Servlet 的类文件、配置文件以及静态资源，Servlet容器通过读取配置文件，就能找到并加载 Servlet
+
+*Web应用目录结构*
+
+![](./Images/Web应用目录结构.png)
+
+Servlet 规范里定义了 ServletContext 接口来对应一个 Web 应用。Web 应用部署好后，Servlet 容器在启动时会加载 Web 应用，并为每个 Web 应用创建唯一的 ServletContext 对象。可以将 ServletContext 看成一个全局对象，一个 Web 应用可能有多个 Servlet，这些 Servlet 可以通过全局的 ServletContext 来共享数据，这些数据包括 Web 应用的初始化参数、Web 应用目录下的文件资源等。由于 ServletContext 持有所有的 Servlet 实例，还可以通过它实现 Servlet 请求的转发
+
+### 扩展机制
+
+引入了 `Servlet` 规范后，不需要关心 `Socket` 网络通信，不需要关心 HTTP 协议，也不需要关心业务类如如何被实例化和调用的，因为这些被 Servlet 规范标准化，**Servlet 规范提供了两种扩展机制 `Filter` 和 `Listener`。Filter 是干预过程的，它是过程的一部分，是基于过程行为的；Listener 是基于状态的，任何行为改变同一个状态，触发的事件是一致的**
+
+##### Filter 过滤器
+
+这个接口允许对请求和响应做一些统一的定制化处理（根据请求的频率来限制访问）。Web 应用部署完成之后，Servlet 容器需要实例化 Filter 并不 Filter 链接成一个 FilterChain，当请求进来时，获取第一个 Filter 并调用 `doFilter` 方法，`doFilter` 方法负责调用这个 `FilterChain` 中的下一个 `Filter`
+
+##### Listener 监听器
+
+当 Web 应用在 `Servlet` 容器中运行时，Servlet 容器内部会不断的发生各种事件，如 `Web` 应用的启动和停止、用户请求到达等。当事件发生时，`Servlet` 容器会负责调用监听器的方法。
 

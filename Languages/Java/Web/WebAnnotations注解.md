@@ -93,3 +93,112 @@ public class MyInitializer implements ServletContainerInitializer {
 
 #### WebFilter
 
+用于标注一个Filter
+
+* `asyncSupported` 
+
+  是否支持异步处理
+
+* `description`
+
+  描述信息
+
+* `dispatcherTypes`
+
+  指定过滤器的转发模式。具体取值包括：`ASYNC`、`ERROR`、`FORWARD`、`INCLUDE`、`REQUEST`
+
+* `displayName`
+
+  显示名
+
+* `filterName`
+
+  名称
+
+* `initParams`
+
+  初始化参数
+
+* `largeIcon`
+
+  大图
+
+* `ServletNames`
+
+  指定过滤器将应用于那些 Servlet 取值是 `@WebServlet` 中的 `name` 属性的取值或者是 `web.xml` 中 `<servlet-name>` 的取值
+
+* `smallIcon`
+
+  小图
+
+* `urlPatterns`
+
+  URL匹配模式
+
+* `value`
+
+  URL匹配模式，与 `urlPatterns` 不能同时使用
+
+#### WebInitParam
+
+用于传递初始化参数到一个 `Servlet` 或过滤器。
+
+* description
+
+  参数描述
+
+* name
+
+  初始化参数名
+
+* value
+
+  初始化参数值
+
+#### WebListener
+
+标注一个 Listener，唯一属性为 value 是可选的，包括该 Listener 的描述
+
+#### WebServlet
+
+标注一个 Servlet
+
+* `asyncSupported`
+
+  是否支持异步处理
+
+* `descriptiion`
+
+  描述信息
+
+* `displayName`
+
+  显示名
+
+* `initParams`
+
+  初始化参数组
+
+* `largeIcon`
+
+  大图
+
+* `loadOnStartup`
+
+  加载顺序
+
+* `name`
+
+  名称
+
+* `smallIcon`
+
+  小图
+
+* `urlPatterns`
+
+  URL 匹配模式
+
+* `Value`
+
+  URL匹配模式，与 `urlPatterns` 不能同时使用
