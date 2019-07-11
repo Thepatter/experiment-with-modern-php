@@ -78,3 +78,36 @@ Servlet 规范里定义了 ServletContext 接口来对应一个 Web 应用。Web
 
 当 Web 应用在 `Servlet` 容器中运行时，Servlet 容器内部会不断的发生各种事件，如 `Web` 应用的启动和停止、用户请求到达等。当事件发生时，`Servlet` 容器会负责调用监听器的方法。
 
+### ServletRequest
+
+对于每个 HTTP 请求，Servlet 容器都会创建一个 ServletRequest 实例，并将它传给 Servlet 的 Service 方法。ServletRequest 封装了关于这个请求的信息
+
+```java
+# 返回请求主体的字节数。失败 -1
+public int getContentLength()
+# 返回请求主题的 MIME 类型，失败 null
+public String getConteneType()
+# 返回指定请求参数的值，失败 null
+public String getParameter(String name)()
+# 返回 HTTP 协议名称和版本
+public String getProtocol()
+```
+
+### ServletResponse
+
+`javax.servlet.ServletResponse` 接口表示一个 Servlet 响应，在调用 Servlet 的 Service 方法前，Servlet 容器首先创建一个 ServletResponse，并将它作为第二个参数传给 Service 方法。ServletResponse 隐藏了向浏览器发送响应的复杂过程。
+
+在 ServletResponse 中的 `getWriter` 方法，返回了一个可以向客户端发送文本的 `java.io.PrintWriter`，默认情况下，`PrintWriter` 对象使用 ISO-8859-1 编码；`getOutputStream` ，但这个方法是用于发送二进制数据的，因此，大多数情况使用的是 `getWriter` ，而不是 `getOutputStream`；
+
+在发送任何 HTML 标签前，应该先调用 `setContentType` 方法，设置响应的内容类型。
+
+### ServletConfig
+
+当 Servlet 容器初始化 Servlet 时，Servlet 容器会给 Servlet 的 `init` 方法传入一个 `ServletConfig` 。`ServletConfig` 封装可以通过 `@WebServlet` 或者部署描述符传给 `Servlet` 的配置信息。这样传入的每一条信息就叫一个初始参数，一个初参数有 Key 和 value
+
+为了从 Servlet 内部获取到初始参数的值，要在 Servlet 容器传给 Servlet 的 init 方法的 ServletConfig 中调用 `getInitParameter` 方法。
+
+
+
+
+
