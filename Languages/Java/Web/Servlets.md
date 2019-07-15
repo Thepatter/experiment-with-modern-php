@@ -6,14 +6,12 @@ Servlet API 有 4 个 Java 包：
 
 * `javax.servlet` ，其中包含定义 `Servlet` 和 `Servlet` 容器之间契约的类和接口
 * `javax.servlet.http`，其中包含定义 `HTTP Servlet` 和 `Servlet` 容器之间契约的类和接口
-* `javax.servlet.annotation`，其中包含标注 `Servlet`，`Filter`，`Listener` 的标注。它还为被标注元件定义元数据
+* `javax.servlet.annotation`，其中包含 `Servlet`，`Filter`，`Listener` 的注解。它还为被注解元件定义元数据
 * `javax.servlet.descriptor`，其中包含提供程序化登录 web 应用程序的配置信息的类型
 
-Servlet 技术的核心是 Servlet，它是所有 Servlet 类必须直接或间接实现的一个接口。在编写 `Servlet` 和 `Servlet` 类时，直接实现它。在扩展实现这个接口的类时，间接实现它。
+Servlet 技术的核心是 `Servlet` 接口，它是所有 Servlet 类必须直接或间接实现的一个接口。在编写 `Servlet` 和 `Servlet` 类时，直接实现它。在扩展实现这个接口的类时，间接实现它。`Servlet` 接口定义了 `Servle`t 与 Servlet 容器之间的契约：Servlet 容器将 `Servlet` 类载入内存，并在 `Servlet` 实例上调用具体的方法。在一个应用程序中，每种 `Servlet` 类型只能有一个实例。
 
-Servlet 接口定义了 Servlet 与 Servlet 容器之间的契约：Servlet 容器将 Servlet 类载入内存，并在 Servlet 实例上调用具体的方法。在一个应用程序中，每种 Servlet 类型只能有一个实例。
-
-* 用户请求致使 Servlet 容器调用 Servlet 的 service 方法，并传入一个 `ServletRequest` 实例和一个 `ServletResponse` 实例。
+* 用户请求使 Servlet 容器调用 `Servlet` 的 `service` 方法，并传入一个 `ServletRequest` 实例和一个 `ServletResponse` 实例。
 * `ServletRequest` 中封装了当前的 HTTP 请求，因此，Servlet 开发人员不必解析和操作原始的 HTTP 数据。
 * `ServletResponse` 表示当前用户的 HTTP 响应。
 * 对于每一个应用程序，`Servlet` 容器还会创建一个 `ServletContext` 实例。这个对象中封装了上下文（应用程序）的环境详情。每个上下文只有一个 `ServletContext` 。
@@ -42,7 +40,7 @@ ServletConfig getServletConfig()
 * `getServletInfo`，这个方法会返回 `Servlet` 的描述。可以返回任何有用的字符串或 null
 * `getServletConfig`，这个方法会返回由 `Servlet` 容器传给 `init` 方法的 `ServletConfig`。但是，为了让 `getServletConfig` 返回一个非 null 值，必须将传给 `init` 方法的 `ServletConfig` 赋给一个类级变量，除非它们是只读的，或者是 `java.util.concurrent.atomic` 包的成员
 
-Servlet 规范提供了 GenericServlet 抽象类，可以通过扩展它来实现 Servlet。虽然 Servlet 规范并不在乎通信协议，但大多数的 Servlet 都是在 HTTP 环境中处理的，因此 Servlet 规范还提供了 `HttpServlet ` 来继承 `GenericServlet` ，并且加入了 HTTP 特性。这样可以通过继承 `HTTPServlet` 类来实现自己的 Servlet，只需要重写两个方法：`doGet` 和 `doPost`
+Servlet 规范提供了 `GenericServlet` 抽象类，可以通过扩展它来实现 Servlet。虽然 Servlet 规范并不在乎通信协议，但大多数的 Servlet 都是在 HTTP 环境中处理的，因此 Servlet 规范还提供了 `HttpServlet ` 来继承 `GenericServlet` ，并且加入了 HTTP 特性。这样可以通过继承 `HTTPServlet` 类来实现自己的 Servlet，不需要实现 `service` 方法，只需实现对应的 HTTP 方法
 
 ### Servlet 容器
 
@@ -50,7 +48,7 @@ Servlet 规范提供了 GenericServlet 抽象类，可以通过扩展它来实�
 
 #### 工作流程
 
-当客户端请求某个资源时，HTTP 服务器会用一个 `ServletRequest` 对象把客户的请求信息封装起来，然后调用 `Servlet` 容器的 `service` 方法，`Servlet` 容器拿到请求后，根据请求的 URL 和 Servlet 的映射关心，找到相应的 Servlet，如果 Servlet 还没有被加载，就用反射机制创建这个 Servlet，并调用 Servlet 的 `init` 方法来完成初始化，接着调用 Servlet 的`service` 方法来处理请求，把 `ServletResponse` 对象返回给 HTTP 服务器，HTTP 服务器会把响应发送给客户端。
+当客户端请求某个资源时，HTTP 服务器会用一个 `ServletRequest` 对象把客户的请求信息封装起来，然后调用 Servlet 容器的 `service` 方法，Servlet 容器拿到请求后，根据请求的 URL 和 Servlet 的映射关系，找到相应的 Servlet，如果 Servlet 还没有被加载，就用反射机制创建这个 Servlet，并调用 Servlet 的 `init` 方法来完成初始化，接着调用 Servlet 的`service` 方法来处理请求，把 `ServletResponse` 对象返回给 HTTP 服务器，HTTP 服务器会把响应发送给客户端。
 
 *servlet工作流程*
 
@@ -64,7 +62,7 @@ Servlet 容器会实例化和调用 Servlet，一般采用 Web 应用程序的�
 
 ![](./Images/Web应用目录结构.png)
 
-Servlet 规范里定义了 ServletContext 接口来对应一个 Web 应用。Web 应用部署好后，Servlet 容器在启动时会加载 Web 应用，并为每个 Web 应用创建唯一的 ServletContext 对象。可以将 ServletContext 看成一个全局对象，一个 Web 应用可能有多个 Servlet，这些 Servlet 可以通过全局的 ServletContext 来共享数据，这些数据包括 Web 应用的初始化参数、Web 应用目录下的文件资源等。由于 ServletContext 持有所有的 Servlet 实例，还可以通过它实现 Servlet 请求的转发
+Servlet 规范里定义了 `ServletContext` 接口来对应一个 Web 应用。Web 应用部署好后，Servlet 容器在启动时会加载 Web 应用，并为每个 Web 应用创建唯一的 `ServletContext` 对象。可以将 `ServletContext` 看成一个全局对象，一个 Web 应用可能有多个 Servlet，这些 Servlet 可以通过全局的 `ServletContext` 来共享数据，这些数据包括 Web 应用的初始化参数、Web 应用目录下的文件资源等。由于 `ServletContext` 持有所有的 Servlet 实例，还可以通过它实现 Servlet 请求的转发
 
 ### 扩展机制
 
@@ -72,7 +70,7 @@ Servlet 规范里定义了 ServletContext 接口来对应一个 Web 应用。Web
 
 ##### Filter 过滤器
 
-这个接口允许对请求和响应做一些统一的定制化处理（根据请求的频率来限制访问）。Web 应用部署完成之后，Servlet 容器需要实例化 Filter 并不 Filter 链接成一个 FilterChain，当请求进来时，获取第一个 Filter 并调用 `doFilter` 方法，`doFilter` 方法负责调用这个 `FilterChain` 中的下一个 `Filter`
+这个接口允许对请求和响应做一些统一的定制化处理（如根据请求的频率来限制访问）。Web 应用部署完成之后，Servlet 容器需要实例化 Filter 并把 Filter 链接成一个 `FilterChain`，当请求进来时，获取第一个 Filter 并调用 `doFilter` 方法，`doFilter` 方法负责调用这个 `FilterChain` 中的下一个 `Filter`
 
 ##### Listener 监听器
 
@@ -80,7 +78,7 @@ Servlet 规范里定义了 ServletContext 接口来对应一个 Web 应用。Web
 
 ### ServletRequest
 
-对于每个 HTTP 请求，Servlet 容器都会创建一个 ServletRequest 实例，并将它传给 Servlet 的 Service 方法。ServletRequest 封装了关于这个请求的信息
+对于每个 HTTP 请求，Servlet 容器都会创建一个 `ServletRequest` 实例，并将它传给 Servlet 的 `Service` 方法。`ServletRequest` 封装了关于这个请求的信息
 
 ```java
 # 返回请求主体的字节数。失败 -1
@@ -95,9 +93,9 @@ public String getProtocol()
 
 ### ServletResponse
 
-`javax.servlet.ServletResponse` 接口表示一个 Servlet 响应，在调用 Servlet 的 Service 方法前，Servlet 容器首先创建一个 ServletResponse，并将它作为第二个参数传给 Service 方法。ServletResponse 隐藏了向浏览器发送响应的复杂过程。
+`javax.servlet.ServletResponse` 接口表示一个 Servlet 响应，在调用 Servlet 的 `service` 方法前，Servlet 容器首先创建一个 `ServletResponse`，并将它作为第二个参数传给 `service` 方法。`ServletResponse` 隐藏了向浏览器发送响应的复杂过程。
 
-在 ServletResponse 中的 `getWriter` 方法，返回了一个可以向客户端发送文本的 `java.io.PrintWriter`，默认情况下，`PrintWriter` 对象使用 ISO-8859-1 编码；`getOutputStream` ，但这个方法是用于发送二进制数据的，因此，大多数情况使用的是 `getWriter` ，而不是 `getOutputStream`；
+在 `ServletResponse` 中的 `getWriter` 方法，返回了一个可以向客户端发送文本的 `java.io.PrintWriter`，默认情况下，`PrintWriter` 对象使用 ISO-8859-1 编码；`getOutputStream` ，但这个方法是用于发送二进制数据的，因此，大多数情况使用的是 `getWriter` ，而不是 `getOutputStream`；
 
 在发送任何 HTML 标签前，应该先调用 `setContentType` 方法，设置响应的内容类型。
 
@@ -116,16 +114,16 @@ ServletContext getServletContext()
 
 ### ServletContext
 
-`ServletContext` 表示 Servlet 应用程序。每个 Web 应用程序只有一个上下文。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，就可以共享从应用程序中的所有资料处访问到的信息，并且可以动态注册 Web 对象。`ServletContext` 将对象保存再 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
+`ServletContext` 表示 Servlet 应用程序。每个 Web 应用程序只有一个上下文。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，就可以共享从应用程序中的所有资料处访问到的信息，并且可以动态注册 Web 对象。`ServletContext` 将对象保存在 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
 
 * `ServletContext` 中的下列方法负责处理属性
 
-```java
-java.lang.Object getAttribute(java.lang.String name)
-java.util.Enumeration<java.lang.String> getAttributeNames()
-void setAttribute(java.lang.String name, java.lang.Object object)
-void removeAttribute(java.lang.String name)
-```
+  ```java
+  java.lang.Object getAttribute(java.lang.String name)
+  java.util.Enumeration<java.lang.String> getAttributeNames()
+  void setAttribute(java.lang.String name, java.lang.Object object)
+  void removeAttribute(java.lang.String name)
+  ```
 
 ### GenericServlet
 
@@ -158,11 +156,10 @@ public void init(ServletConfig servletConfig) throws ServletException {
 
 ```java
 protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, java.io.IOException {}
-
 /**
  * 原始的 Service 方法将 Servlet 容器的 request 和 response 对象转换成
  * HttpServletRequest 和 HttpServletResponse，并调用新的 Service 方法。
- * 在调用 Servlet 的 Service 方法时，Servlet 容器总会传入一个 HttpServletRequest 和 HttpServletResponse，预备使用 HTTP。
+ * 在调用 Servlet 的 Service 方法时，Servlet 容器总会传入一个 HttpServletRequest 和 	    HttpServletResponse，预备使用 HTTP。
 */
 public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
     HttpServletRequest request;
@@ -177,4 +174,47 @@ public void service(ServletRequest req, ServletResponse res) throws ServletExcep
 }
 ```
 
-`HttpServlet` 中的 Service
+`HttpServlet` 中的 `Service` 方法会检验用来发送请求的 HTTP 方法（通过调用 `request.getMethod`)，并调用 : `doGet`、`doPost`、`doHead`、`doPut`、`doTrace`、`doOptions`、`doDelete`；每一种方法表示一个 HTTP 方法。因此不再需要覆盖 `Service` 方法。只需要覆盖对应的 HTTP 方法即可。
+
+#### HttpServletRequest
+
+HttpServletRequest 表示 HTTP 环境中的 Servlet 请求。扩展了 `ServletRequest` 接口，并新增了：
+
+```java
+// 返回请求上下文的请求 URI 部分
+java.lang.String getContextPath()
+// 返回一个 Cookie 对象数组
+Cookie[] getCookie()
+// 返回方法名
+java.lang.String getMethod()
+// 返回指定 header
+java.lang.String getHeader(java.lang.String name)
+// 返回请求 URL 中的查询字符串
+java.lang.String getQueryString()
+// 返回session对象，如果没有，将创建一个新的session对象
+HttpSession getSession()
+// 返回会话对象。如果create为true，将创建一个新的会话对象
+HttpSession getSession(boolean create)
+```
+
+#### HttpServletResponse
+
+`HttpServletResponse` 表示 HTTP 环境中的 Servlet 响应
+
+```java
+// 为响应对象添加 cookie
+void addCookie(Cookie cookie)
+// 为响应对象添加一个 header
+void addHeader(java.lang.String name, java.lang.String value)
+// 将浏览器跳转到指定的位置
+void sendRedirect(java.lang.String location)
+```
+
+#### 部署描述符
+
+* 可以设置 `@WebServlet` 中没有对等元素的元素，如使用 load-on-startup 使得 servlet 在程序启动时加载，而不是第一次调用时加载
+
+* 如果需要修改配置值，不需要重新编译 Servlet 类
+
+* Servlet 上的 `WebServlet` 标注如果同时也在部署描述符中进行声明，依照部署描述符。
+
