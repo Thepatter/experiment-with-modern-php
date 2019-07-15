@@ -105,9 +105,76 @@ public String getProtocol()
 
 当 Servlet 容器初始化 Servlet 时，Servlet 容器会给 Servlet 的 `init` 方法传入一个 `ServletConfig` 。`ServletConfig` 封装可以通过 `@WebServlet` 或者部署描述符传给 `Servlet` 的配置信息。这样传入的每一条信息就叫一个初始参数，一个初参数有 Key 和 value
 
-为了从 Servlet 内部获取到初始参数的值，要在 Servlet 容器传给 Servlet 的 init 方法的 ServletConfig 中调用 `getInitParameter` 方法。
+```java
+# 获取参数值
+java.lang.String getInitParameter(java.lang.String name)
+# 所有初始参数名称的 Enumeration
+java.util.Enumeration<java.lang.String> getInitParameterNames()
+# 从 Servlet 内部获取 ServletContext
+ServletContext getServletContext()
+```
 
+### ServletContext
 
+`ServletContext` 表示 Servlet 应用程序。每个 Web 应用程序只有一个上下文。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，就可以共享从应用程序中的所有资料处访问到的信息，并且可以动态注册 Web 对象。`ServletContext` 将对象保存再 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
 
+* `ServletContext` 中的下列方法负责处理属性
 
+```java
+java.lang.Object getAttribute(java.lang.String name)
+java.util.Enumeration<java.lang.String> getAttributeNames()
+void setAttribute(java.lang.String name, java.lang.Object object)
+void removeAttribute(java.lang.String name)
+```
 
+### GenericServlet
+
+`GenericServlet` 抽象类实现了 `Servlet` 和 `ServletConfig` 接口：
+
+* 将 `init` 方法中的 `ServletConfig` 赋给一个类级变量，以便可以通过调用 `getServletConfig` 获取
+
+* 为 `Servlet` 接口中的所有方法提供默认的实现
+
+* 提供方法，包装 `ServletConfig` 中的方法
+
+`GenericServlet` 通过将 `ServletConfig` 赋给 `init` 方法中的类级变量 `servletConfig`，来保存 `ServletConfig`
+
+```java
+public void init(ServletConfig servletConfig) throws ServletException {
+    this.servletConfig = servletConfig;
+    this.init();
+}
+```
+
+### Http Servlets
+
+`javax.servlet.http` 包是 `Servlet API` 中的第二个包，包含了用于编写 `Servlet` 应用程序的类和接口。`javax.servlet.http` 中的许多类型都覆盖了 `javax.servlet` 中的类型
+
+![](./Images/javax_servlet_http中的主要类型.png)
+
+#### HttpServlet
+
+`HttpServlet` 类覆盖了 `java.servlet.GenericServlet` 类。使用 `HttpServlet` 时，还要使用代表 `Servlet` 请求和 `Servlet` 响应的 `HttpServletRequest` 和 `HttpServletResponse` 对象。`HttpServletRequest` 扩展了 `javax.servlet.ServletRequest`，`HttpServletResponse` 扩展了 `javax.servlet.ServletResponse`。`HttpServlet` 覆盖 `GenericServlet` 中的 `Service` 方法：
+
+```java
+protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, java.io.IOException {}
+
+/**
+ * 原始的 Service 方法将 Servlet 容器的 request 和 response 对象转换成
+ * HttpServletRequest 和 HttpServletResponse，并调用新的 Service 方法。
+ * 在调用 Servlet 的 Service 方法时，Servlet 容器总会传入一个 HttpServletRequest 和 HttpServletResponse，预备使用 HTTP。
+*/
+public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+    HttpServletRequest request;
+    HttpServletResponse response;
+    try {
+        request = (HttpServletRequest) req;
+        response = (HttpServletResponse) res;
+    } catch (ClassCastException e) {
+        throw new ServletException("non-HTTP request or response");
+    }
+    service(request, response);
+}
+```
+
+`HttpServlet` 中的 Service
