@@ -173,7 +173,7 @@
   sudo service network restart
   ```
 
-* Ubuntu 18.04 使用 `netp
+* Ubuntu 18.04 使用 `netplan`
 
   ```shell
   # 配置文件
