@@ -218,3 +218,52 @@ void sendRedirect(java.lang.String location)
 
 * Servlet 上的 `WebServlet` 标注如果同时也在部署描述符中进行声明，依照部署描述符。
 
+#### 会话管理
+
+##### Cookie
+
+Cookies 时一个很少的信息片段，可自动在浏览器和 Web 服务器间交互，因此 cookies 可存储多个页面间传递的信息。Cookie 作为 HTTP header 的一部分，其传输由 HTTP 协议控制。
+
+* `javax.servlet.http.Cookie`
+
+  ```java
+  # 创建 cookie
+  Cookie cookie = new Cookie(name, value);
+  # 设置过期时间
+  cookie.maxAge(0);
+  # 将 cookie 发送到浏览器
+  httpServletResponse.addCookie(cookie);
+  # 获取所有 cookie
+  httpServletResponse.getCookies();
+  ```
+
+##### Session
+
+HttpSession 对象在用户第一次访问网站的时候自动被创建，可以通过调用 `HttpServletRequest` 的 `getSession` 方法获取对象
+
+```java
+HttpSession getSession()
+HttpSession getSession(bool create)
+```
+
+没有参数的 `getSession` 方法会返回当前的 `HttpSession`，若当前没有，则创建一个返回。`getSession(false`) 返回当前的 `HttpSession`，如当前存在，则返回 null，`getSession(true)` 返回当前 `HttpSession`，若当前没有，则创建一个返回
+
+```java
+# 设置 session 值，存在则覆盖
+void setAttribute(String name, Object value);
+# 获取 session 值
+Object getAttribute(String name);
+# 获取所有 session 值
+Enumeration<String> getAttributeNames();
+# 获取会话标识
+String getId();
+# 强制会话过期，并清空保存的对象
+void invalidate();
+# 获取会话过期时间
+int getMaxInactiveInterval();
+# 设置超时时间，为 0 则永不过期，直到应用重载或容器关闭
+void setMaxInactiveInterval(int seconds);
+```
+
+放到 HttpSession 的值不限于 String 类型，可以是任意实现 `java.io.Serializable` 的 java 对象。如果将不支持序列化的对象放入 HttpSession，当 Servlet 容器视图序列化的时候会失败并报错。Servlet 容器为每个 HttpSerssion 生成唯一的标识，并将该标识发送给浏览器，或创建一个名为 `JSESSIONID` 的 `cookie`，或者在URL后附加一个名为 `jsessionid` 的参数。在后续的请求中，浏览器会将标识提交给服务端，这样服务器就可以识别发起请求的用户。Servlet 容器会自动选择一种方式传递会话标识。
+
