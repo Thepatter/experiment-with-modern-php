@@ -267,3 +267,7 @@ void setMaxInactiveInterval(int seconds);
 
 放到 HttpSession 的值不限于 String 类型，可以是任意实现 `java.io.Serializable` 的 java 对象。如果将不支持序列化的对象放入 HttpSession，当 Servlet 容器视图序列化的时候会失败并报错。Servlet 容器为每个 HttpSerssion 生成唯一的标识，并将该标识发送给浏览器，或创建一个名为 `JSESSIONID` 的 `cookie`，或者在URL后附加一个名为 `jsessionid` 的参数。在后续的请求中，浏览器会将标识提交给服务端，这样服务器就可以识别发起请求的用户。Servlet 容器会自动选择一种方式传递会话标识。
 
+#### Servlet 缺点
+
+* 写在 Servlet 中的所有 HTML 标签必须包含 Java 字符串
+* 所有的文本和 HTML 标签是硬编码，导致即使是表现层的微小变化，也需要重新编译
