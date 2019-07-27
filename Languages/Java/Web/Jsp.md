@@ -182,3 +182,95 @@ forward 将当前页面转向到其他资源
 
 JSP 提供良好的错误处理能力，除了在 Java 代码中使用 try 语句，还可以指定一个特殊页面。当页面遇到未捕获的异常时，将显示该页面。使用 page 指令的 `isErrorPage` 属性（属性值必须为 True）来标识一个 JSP 页面是错误页面。其他需要防止未捕获的异常的页面使用 page 指令的 errorPage 属性来指向错误处理页面
 
+### 表达式语言
+
+JSP 2.0 支持表达式语言（EL），JSP 用户可以用它来访问应用程序数据。EL 可以轻松地编写免脚本的 JSP 页面，即页面不使用任何 JSP 声明、表达式或 scriptlets。
+
+#### 表达式语言语法
+
+EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们的取值将是从左到右进行，计算结果的类型为 String，并且连接在一起。如果在定制标签的属性值中使用 EL 表达式，那么该表达式的取值结果字符串将会强制变成该属性需要的类型。
+
+* 表达式关键字
+
+   `and`, `eq`, `gt`, `true`, `instanceof`, `or`, `ne`, `le`, `false`, `empty`, `not`, `lt`, `ge`, `null` `div`, `mod`
+
+* `[]` 和 `.` 运算符
+
+  EL 表达式可以返回任意类型的值。如果 EL 表达式的结果是一个带有属性的对象，则可以利用 `[]` 或者 `.` 运算符来访问该属性，如果 `propertyName` 不是有效的 Java 变量名，只能使用 `[]` 运算符。如果对象的属性是带有属性的另一个对象，则既也可用 `[]` 或 `.` 来访问对象属性对象的属性。
+
+#### 表达式取值规则
+
+  EL 表达式的取值是从左到右进行的。对于 `expr-a[expr-b]` 形式的表达式，其 EL 表达式的取值方法如下： 
+  
+  * 先计算 `expr-a` 得到 `value-a`
+  
+  * 如果 `value-a` 为 `null`，则返回 `null`，
+  
+  * 然后计算 `expr-b` 得到 `value-b`
+  
+  * 如果 `value-b` 为 `null`，则返回 `null`
+  
+  * 如果 `value-a` 为 `java.util.Map`，则会查看 `value-b` 是否为 `Map` 中的一个 `key`。若是，则返`value-a.get(value-b)`，若不是，则返回 `null`；
+  
+  * 如果 `value-a` 为 `java.util.List`，或者假如它是一个 `array`，则进行如下处理：
+
+    强制 `value-b` 为 `int`，如果强制失败，则抛出异常
+
+    如果 `value-a.get（value-b)` 抛出 `IndexOutOfBoundsException`，或者抛出 `ArrayIndexOutOfBoundsException`，则返回 null
+
+    如 `value-a` 是一个 List，则返回 `value-a.get(value-b)`，若 `value-a` 是一个 `array`，则返回 `Array.get(value-a, value-b)`
+
+  * 如果 `value-a` 不是一个 `Map`, `List` 或 `Array`，则 `value-a` 必须是一个 `JavaBean`。此时，必须强制 `value-b` 为 `String`。如果 `value-b` 是 `value-a` 的一个可读属性，则要调用该属性的 `getter` 方法，从中返回值。如果 `getter` 方法抛出异常，该表达式就是无效的，否则，该表达式有效
+
+#### 访问 JavaBean
+
+  使用 `.` 或 `[]` 来访问 bean 属性及属性对象的属性
+
+#### EL 隐式对象
+
+  在 JSP 页面中，可以利用 JSP 脚本来访问 JSP 隐式对象。但是，在免脚本的 JSP 页面中，则不可能访问这些隐式对象。EL 允许通过提供一组它自己的隐式对象来访问不同的对象
+
+  * pageContent
+
+    当前 JSP 的 `javax.servlet.jsp.PageContext`
+
+  * initParam
+
+    包含所有环境初始化参数，并用参数名作为 key 的 Map
+
+  * param
+
+    包含所有请求参数，并用参数名作为 `key` 的 Map。每个 `key` 的值就是指定名称的第一个参数值。如果两个请求参数同名，则只有第一个能够利用 `param` 取值。用 `params()` 访问同名参数的所有参数值
+
+  * paramValues
+
+    包含所有请求参数，并用参数名作为 `key` 的 Map。每个 `key` 的值就是一个字符串数组，其中包含了指定参数名称的所有参数值。
+
+  * header
+
+    包含请求标题，并用标题名作为 key 的 Map，每个 key 的值就是指定标题名称的第一个标题。如果一个标题的值不止一个，则只返回第一个值。获得多个值的标题，需用 `headerValues` 对象替代
+
+  * headerValues
+
+    包含请求标题，并用标题名作为 key 的 Map。每个 key 的值就是一个字符串数组，其中包含了指定标题名称的所有参数值
+
+  * cookie
+
+    包含当前请求对象中所有 Cookie 对象的 Map。Cookie 名称就是 key 名称，并且每个 key 都映射到一个 Cookie 对象
+
+  * applicationScope
+
+    包含 ServletContext 对象中所有属性的 Map，并用属性名称作为 key
+
+  * sessionScope
+
+    包含 HttpSession 对象中所有属性的 Map，并用属性名称作为 key
+
+  * requestScope
+
+    包含了当前 HttpServletRequest 对象中的所有属性，属性名为 key 的 Map
+
+  * pageScope
+
+    包含全页面范围内的所有属性，属性名称为 key 的 Map
+
