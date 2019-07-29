@@ -198,6 +198,22 @@ EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们�
 
   EL 表达式可以返回任意类型的值。如果 EL 表达式的结果是一个带有属性的对象，则可以利用 `[]` 或者 `.` 运算符来访问该属性，如果 `propertyName` 不是有效的 Java 变量名，只能使用 `[]` 运算符。如果对象的属性是带有属性的另一个对象，则既也可用 `[]` 或 `.` 来访问对象属性对象的属性。
 
+* 算术运算符
+ 
+  加（`+`）减（`-`）、乘（`*`）、除（`/` 或 `div`）、取模（`%` 或 `mod`）
+
+* 逻辑运算符
+
+  `&&`、`and`、`||`、`or`、`!`、`not`
+
+* 关系运算符
+
+  等于（`==` 或 `eq`）、不等于（`!=` 或 `ne`）、大于（`>` 或 `gt`)、大于等于（`>=` 或 `ge`）、小于（`<` 或 `lt`）、小于等于（`<=` 或 `le`）
+
+* empty 运算符
+
+  empty 运算符用来检查某一个值是否为 null 或者 empty：`${empty x}` 如果 X 为 null，或者 x 是一个长度为 0 的字符串，该表达式返回 true。x 是一个空 Map、空数组或者空集合、返回 true，否则返回 false
+
 #### 表达式取值规则
 
   EL 表达式的取值是从左到右进行的。对于 `expr-a[expr-b]` 形式的表达式，其 EL 表达式的取值方法如下： 
@@ -230,33 +246,52 @@ EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们�
 
   在 JSP 页面中，可以利用 JSP 脚本来访问 JSP 隐式对象。但是，在免脚本的 JSP 页面中，则不可能访问这些隐式对象。EL 允许通过提供一组它自己的隐式对象来访问不同的对象
 
-  * pageContent
+##### pageContent
 
-    当前 JSP 的 `javax.servlet.jsp.PageContext`
+  pageContext 对象表示当前 JSP 页面的 `javax.servlet.jsp.PageContext`。包含所有其他 JSP 隐式对象，JSP 隐式对象对应 EL 中类型
 
-  * initParam
+  * request 对应 javax.servlet.http.HttpServlet
 
-    包含所有环境初始化参数，并用参数名作为 key 的 Map
+  * response 对应 javax.servlet.http.HttpServletResponse
 
-  * param
+  * Out 对应 javax.servlet.jsp.JspWriter
 
-    包含所有请求参数，并用参数名作为 `key` 的 Map。每个 `key` 的值就是指定名称的第一个参数值。如果两个请求参数同名，则只有第一个能够利用 `param` 取值。用 `params()` 访问同名参数的所有参数值
+  * session 对应 javax.servlet.http.HttpSession
 
-  * paramValues
+  * application 对应 javax.servlet.ServletContext
 
-    包含所有请求参数，并用参数名作为 `key` 的 Map。每个 `key` 的值就是一个字符串数组，其中包含了指定参数名称的所有参数值。
+  * config 对应 javax.servlet.Servlet.Config
 
-  * header
+  * PageContext 对应 javax.servlet.jsp.PageContext
 
-    包含请求标题，并用标题名作为 key 的 Map，每个 key 的值就是指定标题名称的第一个标题。如果一个标题的值不止一个，则只返回第一个值。获得多个值的标题，需用 `headerValues` 对象替代
+  * page 对应 javax.servlet.jsp.HttpJspPage
 
-  * headerValues
+  * exception 对应 java.lang.Throwable
+
+##### initParam
+
+    隐式对象 initParam 用户获取上下文参数的值，包含所有环境初始化参数，并用参数名作为 key 的 Map
+
+##### param
+
+    隐式对象 `param` 用户获取请求参数值。包含所有请求参数的 Map，并用参数名作为 `key` 的 Map。每个 `key` 的值就是指定名称的第一个参数值。如果两个请求参数同名，则只有第一个能够利用 `param` 取值。用 `params()` 访问同名参数的所有参数值
+
+##### paramValues
+
+    获取所有请求参数的所有值的 Map，参数名称为 key，值为字符串数组，包含对应 key 的所有值，如果该 key 对应只有一个 值，返回一个元素的数组
+
+##### header
+
+    包含请求 header，并用 header 名作为 key 的 Map，每个 key 的值就是指定标题名称的第一个标题。如果一个标题的值不止一个，则只返回第一个值。获得多个值的标题，需用 `headerValues` 对象替代
+
+##### headerValues
 
     包含请求标题，并用标题名作为 key 的 Map。每个 key 的值就是一个字符串数组，其中包含了指定标题名称的所有参数值
 
-  * cookie
+##### cookie
 
-    包含当前请求对象中所有 Cookie 对象的 Map。Cookie 名称就是 key 名称，并且每个 key 都映射到一个 Cookie 对象
+    包含当前 HttpServletRequest 中所有 Cookie 对象的 Map。Cookie 名称就是 key 名称，并且每个 key 都映射到一个 Cookie 对象。 `${cookie.jsessionid.value}`
+##### applicationScope、sessionScope、requestScope、pageScope
 
   * applicationScope
 
