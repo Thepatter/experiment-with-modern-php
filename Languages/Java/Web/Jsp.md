@@ -309,3 +309,165 @@ EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们�
 
     包含全页面范围内的所有属性，属性名称为 key 的 Map
 
+#### 配置 EL
+
+##### 免脚本的 JSP 页面
+
+要关闭 JSP 页面中的脚本元素，要使用 `jsp-property-group` 元素以及 `url-pattern` 和 `scripting-invalid` 两哥子元素，`url-pattern` 元素定义禁用脚本要应用的 URL 样式
+
+```xml
+// 将应用程序中所有 JSP 页面的脚本关闭
+<jsp-config>
+    <jsp-property-group>
+        <url-pattern>*.jsp</url-pattern>
+        <scripting-invalid>true</scripting-invalid>
+    </jsp-property-group>
+</jsp-config>    
+```
+
+在部署描述符中只能有一个 `jsp-config` 元素。如果已经为禁用 EL 而定义了一个 `jsp-property-group`，就必须在同一个 `jsp-config` 元素下，为禁用脚本而编写 `jsp-property-group`
+
+##### 禁用 EL 计算
+
+当需要在 JSP 2.0 及其更高版本的容器中部署 JSP1.2 应用程序时，可能需要禁用 JSP 页面中的 EL 计算。此时，一旦出现 EL 架构，就不会作为一个 EL 表达式进行计算。目前有两种方式可以禁用 JSP 中的 EL 计算。
+
+* 将 page 指令的 `isELlgnored` 属性设为 true
+
+  ```jsp
+  <%@ page isELIgnored="true" %>
+  ```
+
+  `isELIgnored` 属性的默认值为 false，如果想在一个或者几个 JSP 页面中关闭 EL 表达式计算，建议使用 `isELIgnored` 属性
+
+* 在部署描述符中使用 `jsp-property-group` 元素，`jsp-property-group` 元素时 `jsp-config` 元素的子元素。利用 `jsp-property-group` 可以将某些设置应用到应用程序中的一组 JSP 页面中，为了利用 `jsp-property-group` 元素禁用 EL 计算，还必须有 `url-pattern` 和 `el-ignored` 两个子元素。`url-pattern` 元素用于定义 EL 禁用要应用的 URL 样式。`el-ignored` 元素必须设为 true
+
+  ```xml
+  <jsp-config>
+      <jsp-property-group>
+          <url-pattern>*.jsp</url-pattern>
+          <el-ignored>true</el-ignored>
+      </jsp-property-group>
+  </jsp-config>
+  ```
+
+无论是将其 page 指令的 `isELIgnored` 属性设为 true，还是将其 URL 与子元素 `el-ignored` 设为 true 的 `jsp-property-group` 元素中的模式相匹配，都将禁用 JSP 页面中的 EL 计算。如果将一个 JSP 页面中的 page 指令的 `isELIgnored` 属性设为 false，但其 URL 与在部署描述符中禁用了 EL 计算的 JSP 页面的模式匹配，那么该页面的 EL 计算也将被禁用。如果使用的是与 Servlet2.3 及其更低版本兼容的部署描述符，那么 EL 计算已经默认关闭，即便使用的是 JSP 2.0 及其更高版本容器。
+
+### JSTL
+
+#### JSP 标准标签库（JavaServer Pages Standard Tag Library)
+
+JSTL 是一个定制标签库的集合，用来解决类似遍历 Map 或集合、条件测试、XML 处理，数据库访问和数据操作等。JSTL 是通过多个标签库来暴露其行为的。
+
+*JSTL标签库*
+
+![](./Images/JSTL标签库.png)
+
+在 JSP 页面中使用 JSTL 库，格式：
+
+```jsp
+<% taglib uri="uri" prefix="prefix" %>
+// 使用 core 库
+<% taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+```
+
+JSTL 标签的 body content 可以为 empty, JSP, tagdependent
+
+#### 一般行为
+
+Core 库中用来操作有界变量的 3 哥一般行为：out，set，remove
+
+##### out 标签
+
+out 标签在运算表达式时，是将结果输出到当前的 `JspWriter`，out 的语法有两种形式，即有 `body content` 和没有 `body content`
+
+```jsp
+<% tablib uri="http://java.sun.com/jsp/jstl/core", prefix="c" %>
+<c:out value="value" [escapeXml="{true|false}"][default="defaultValue"]/>
+<c:out value="value" [escapeXml="{true|false}"]>
+    default value
+</c:out>
+```
+
+在标签语法中，`[]` 表示可选的属性。如果值带下划线，则表示为默认值。`out` 的 `body content` 为 JSP。out 标签属性：
+
+* value*+
+
+  对象，要计算的表达式
+
+* escapeXml+
+
+  布尔，表示结果中的字符 `<`、`>`、`'`、`"`、`&` 将被转化成相应的实体码，`&lt;`、`&gt;`、`&#039;`、`&#034`、`&amp;`
+
+* default+
+
+  对象，默认值
+
+如果包含一个或多个特殊字符的字符串没有进行 XML 转义，它的值就无法在浏览器中正常显示。没有通过转义的特殊字符，会使网站易于遭受交叉网站的脚本攻击；
+
+out 中的 default 属性可以赋一个默认值，当赋予其 value 属性的 EL 表达式返回 null 时，就会显示默认值。default 属性可以赋动态值，如果这个动态值返回 null，out 就会显示一个空的字符串
+
+##### set 属性
+
+使用 set 标签，可以完成：
+
+* 创建一个字符串和一个引用该字符串的有界变量
+
+* 创建一个引用现存有界对象的有界变量
+
+* 设置有界对象的属性
+
+如果用 set 创建有界变量，那么，在该标签出现后的整个 JSP　页面中都可以使用该变量。set　标签的语法有 4 种格式。
+
+* 用于创建一个有界变量，并用　`value`　属性在其中定义一个要创建的字符串或者现存有界对象
+
+```jsp
+<c:set value="value" var="varName" [scope="{page|request|session|application}"]>
+```
+
+* 要创建的字符串或者要引用的有界对象是作为 body content 赋值的
+
+```jsp
+<c:set var="varName" [scope="{page|request|session|application}"]>
+    body content
+</c:set>
+```
+
+* 设置有界对象的属性值。target 属性定义有界对象，以及有界对象的 property 属性，对该属性的赋值是通过 value 的属性进行的
+
+```jsp
+<c:set target="target" property="propertyName" value"value"/>
+// 将字符串 Tokyo 赋予有界对象 address 的 city 属性
+<c:set target="${address}" property="city" value="Tokyo"/>
+```
+
+* 赋值时作为 body content 完成的
+
+```jsp
+<c:set target="target" property="propertyName">
+    body content
+</c:set>
+// 将 Beijing 赋予有界对象 address 的 city 属性
+<c:set targett="${address}" property="city">Beijing</c:set>
+```
+
+set 标签的属性
+
+* value+
+
+  对象：要创建的字符串，或者要引用的有界对象，或者新的属性值
+
+* var
+
+  字符串：要创建的有界变量
+
+* scope
+
+  字符串：新创建的有界变量的范围
+
+* target+
+
+  对象：其属性要被赋新值的有界对象；这必须时一个 JavaBeans 实例或 java.util.Map 对象
+
+* property+
+
+  字符串：要被赋新值的属性名称
