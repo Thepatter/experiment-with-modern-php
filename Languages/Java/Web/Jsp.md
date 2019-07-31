@@ -471,3 +471,397 @@ set 标签的属性
 * property+
 
   字符串：要被赋新值的属性名称
+
+##### remove 标签
+
+`remove` 标签用于删除有界变量，有界变量引用的对象不能删除，如果另一个有界对象也引用同一个对象，仍然可以通过另一个有界变量访问该对象
+
+```jsp
+<c:remove var="varName" [scope="{page|request|session|application}"]>
+```
+
+`remove` 标签的属性
+
+* var
+
+  字符串：要删除的有界变量的名称
+
+* scope
+
+  字符串：要删除有界变量的范围
+
+```jsp
+// 删除页面范围的变量 job
+<c:remove var="job" scope="page">
+```
+
+#### 条件行为
+
+条件行为用于处理页面输出取决于特定输入值的情况，在 Java 中是利用 `if`、`if-else`、`switch` 声明处理的，JSTL 中执行条件行为的有 4 个标签，`if`、`choose`、`when`、`otherwise`。
+
+##### if 标签
+
+if 标签是对某一个条件进行测试，假如结果为 true，就处理它的 body content，测试结果保存在 Boolean 对象中，并创建有界变量来引用这个 boolean 对象。利用 var 属性和 scope 属性分别定义有界变量的名称和范围。if 的语法有两种形式
+
+* 没有 body content，这种情况下，var定义的有界对象一般是通过其他标签在同一个 JSP 的后续阶段再进行测试
+
+  ```jsp
+  <c:if test="testCondition" var="varName" [scope="{page|request|session|application}"]/>
+  ```
+
+* 使用 body content，body content 是 JSP，当测试条件的结果为 True 时，就会得到处理
+
+  ```jsp
+  <c:if test="testCondition [var="varName"] [scope="{page|request|session|application}"]>
+      body content
+  </c:if>
+  ```
+
+if 标签的属性
+
+* test+
+
+  布尔：决定是否处理任何现有 body content 的测试条件
+
+* var
+  
+  字符串：引用测试条件值的有界变量名称：var 的类型为 Boolean
+
+* scope
+
+  字符串：var 定义的有界变量的范围
+
+##### choose、when、otherwise 标签
+
+choose 和 when 标签的作用与 java 中关键字 switch 和 case 类似。它们是为互斥条件执行提供上下文的。choose 标签中必须嵌有一个或多个 when 标签，并且每个 when 标签都表示一种可以计算和处理的情况，otherwise 标签则用于默认的条件块，假如没有任何一个 when 标签的测试条件结果为 true，它就会得到处理，这种情况下，otherwise 必须放在最后一个 when 后。choose 和 otherwise 标签没有属性。when 标签必须带有定义测试条件的 test 属性，用来决定是否应该处理 body content
+
+#### 遍历行为
+
+当需要遍历一个对象集合时，JSTL 提供了 forEach 和 forTokens 两个执行遍历行为的标签
+
+##### forEach 标签
+
+forEach 标签会无数次地反复遍历 `body content` 或者对象集合。可以被遍历的对象包括 `java.util.Collection` 和 `java.util.Map` 的所有实现，以及对象数组或主类型。也可以遍历 `java.util.Iterator` 和 `java.util.Enumeration`，但不应该在多个行为中使用 `Iterator` 或 `Enumeration`，因为无法重置 `Iterator` 或 `Enumeration`。forEach 标签的语法有两种形式：
+
+* 固定次数地重复 body content
+
+  ```jsp
+  <c:forEach [var="varName"] begin="begin" end="end" step="step">
+      body content
+  </c:forEach>
+  ```
+
+* 遍历对象集合
+
+  ```jsp
+  <c:forEach items="collection" [var="varName"] [varStatus="varStatusName"] [begin="begin"] [end="end"] [step="step"]>
+      body content
+  </c:forEach>
+  ```
+
+body content 是 JSP，forEach 标签属性：
+
+* var
+
+  字符串：引用遍历的当前项目的有界变量名称
+
+* items+
+
+  支持的任意类型：遍历的对象集合
+
+* varStatus
+
+  字符串：保存遍历状态的有界变量名称。类型值为 `javax.servlet.jsp.jstl.core.LoopTagStatus`
+
+* begin+
+
+  整数：如果指定 items，遍历将从指定索引处的项目开始。如果没有指定 items，遍历将从设定的索引值开始。如果指定，begin 的值必须大于等于 0
+
+* end+
+
+  整数：如果指定 items，遍历将在包含指定索引处的项目结束。如果没有指定items，遍历将在索引到达指定值时结束
+
+* step+
+
+  整数：遍历将只处理间隔指定 step 的项目，从第一个项目开始，在这种情况下 step 的值必须大于或等于 1
+
+对于每一次遍历，`forEach` 标签都将创建一个有界变量，变量名称通过 var 属性定义，这个有界变量只存在于开始和关闭的 `forEach` 标签之间，一到关闭的 `forEach` 标签钱，它就会被删除。forEach 标签有一个类型为 `javax.servlet.jsp.jstl.core.LoopTagStatus` 的变量 `varStatus`。`LoopTagStatus` 接口带有 `count` 属性，它返回当前遍历的次数。第一次遍历时，`status.count` 值为 1；依次累加
+
+##### forTokens
+
+forTokens 标签用于遍历以特定分隔符隔开的令牌：
+
+```jsp
+<c:forTokens items="stringOfTokens" delims="delimiters" [var="varName"] [varStatus="varStatusName"] [begin="begin"] [end="end"] [step="step"]>
+    body content
+</c:forTokens>
+```
+
+body content 是 JSP，forTokens 标签的属性：
+
+* var
+
+  字符串：引用遍历的当前项目的有界变量名称
+
+* items+
+
+  支持的任意类型：要遍历的 token 字符集
+
+* varStatus
+
+  字符串：保存遍历状态的有界变量名称。类型值为 javax.servlet.jsp.jstl.core.LoopTagStatus
+
+* begin+
+
+  整数：遍历的起始索引，此处索引是从 0 开始的。如有指定，begin 的值必须大于或等于 0
+
+* end+
+
+  整数：遍历的终止索引，此处索引是从 0 开始的
+
+* step+
+
+  整数：遍历将只处理间隔指定 step 的 token，从第一个 token 开始。如有指定，step 的值必须大于或等于 1
+
+* delims+
+
+  字符串：一组分隔符
+
+#### 格式化行为
+
+JSTL 提供了格式化和解析数字与日期的标签：`formatNumber`、`formatDate`、`timeZone`、`setTimeZone`、`parsetNumber`、`parseDate`
+
+##### formatNumber 标签
+
+formatNumber 用于格式化数字，可以根据需要利用它的各种属性来获取自己想要的格式。`formatNumber` 的语法有两种形式：
+
+* 没有 body content
+
+```jsp
+<fmt: formatNumber value="numericValue" [type="{number|currency|percent}"][pattern="customPattern"] [currencySymbol="currencySymbol"][groupingUsed="{true|false}"][maxIntegerDigits="maxIntegerDigits"]
+[minIntegerDigits="minIntegerDigits"][maxFractionDigits="maxFractionDigits"][minFractionDigits="minFractionDigits"]
+[var="varName"][scope="{page|request|session|application}"]>
+```
+
+* 有 body content，body content 是 JSP
+
+formatNumber 属性：
+
+* value+
+
+  字符串或数字：要格式化的数字化值
+
+* type+
+
+  字符串：说明该值是要被格式化成数字、货币、还是百分比，这个属性值有 `number`、`currency`、`percent`
+
+* pattern+
+
+  字符串：定制格式化样式
+
+* currencyCode+
+
+  字符串：ISO 4217 码，货币代码
+
+  加拿大元 CAD，人民币 CNY，欧元 EUR，日元 JPY，英镑 GBP，美元 USD
+
+* CurrencySymbol+
+
+  字符串：货币符号
+
+* groupingUsed+
+
+  布尔：说明输出结果中是否包含组分隔符
+
+* maxIntegerDigits+
+
+  整数：规定输出结果的整数部分最多几位数字
+
+* minIntegerDigits+
+
+  整数：规定输出结果的整数部分最少几位数字
+
+* maxFractionDigits+
+
+  整数：规定输出结果的小数部分最多几位数字
+
+* minFractionDigits+
+
+  整数：规定输出结果的小数部分最少几位数字
+
+* var
+
+  字符串：将输出结果存为字符串的有界变量名称
+
+* scope
+
+  字符串：var 的范围，如果有 scope 属性，则必须指定 var 属性
+
+##### formatDate 标签
+
+formatDate 标签用于格式化日期，语法：
+
+```jsp
+<fmt:formatDate value="date" [type="{time|date|both}"] [dateStyle="{default|short|medium|long|full}"] [timeStyle="{default|short|medium|long|full|}"][pattern="customPattern"][timeZone="timeZone"][var="varName"][scope="{page|request|session|application}"]>
+```
+
+formatDate标签的属性:
+
+* value+
+
+  java.util.Date：要格式化的日期或时间
+
+* type+
+
+  字符串：要格式化的时间，日期，还是时间与日期元件
+
+* dataStyle+
+
+  字符串：预定义时间的格式化样式，遵循 `java.text.DateFormat` 中定义的语义
+
+* timeStyle+
+
+  字符串：预定义时间的格式化样式，遵循 `java.text.DateFormat` 中定义的语义
+
+* pattern+
+
+  字符串：定制格式化样式
+
+* timezone+
+
+  字符串或 java.util.TimeZone：定义用于显示时间的时区
+
+* var
+
+  字符串：将输出结果存为字符串的有界变量名称
+
+* scope
+
+  字符串：var 的范围
+
+##### timeZone 标签
+
+timeZone 标签用于定义时区，使其 body content 中的时间信息按指定时区进行格式化或者解析，语法是：
+
+```jsp
+<fmt:timeZone value="timeZone">
+    body content
+</fmt:timeZone>
+
+body content 是 JSP。属性值可以是类型为 String 或 java.util.TimeZone 的动态值。如果 value 属性为 null 或者 empty，使用 GMT 时区
+
+##### setTimeZone 标签
+
+setTimeZone 标签用于将指定时区保存在一个有界变量或时间配置变量中。语法：
+
+```jsp
+<fmt:setTimeZone value="timeZone" [var="varName"][scope="{page|request|session|application}"]>
+```
+
+setTimeZone 标签属性
+
+* value+
+
+  字符串或 java.util.TimeZone 时区：时区
+
+* var
+
+  字符串：保存类型为 java.util.TimeZone 的时区有界变量
+
+* scope
+
+  字符串：var 的范围或时区配置变量
+
+##### parsetNumber 标签
+
+parseNumber 标签用于将以字符串表示的数字、货币或者百分比解析成数字：语法
+
+```jsp
+<fmt:parsetNumber value="numericValue" [type="{number|currentcy|percent}"][pattern="customPattern"][parsetLocale="parsetLocale"][integerOnly="{true|false}"][var="varName"][scope="{page|request|session|application}"]>
+```
+
+支持有 body content 和没有 body content 格式，body content 是 JSP，标签属性:
+
+* value+
+
+  字符串或数字：要解析的字符串
+
+* type+
+
+  字符串：说明该字符串是要被解析成数字、货币、还是百分比
+
+* pattern+
+
+  字符串：定制格式化样式，决定 value 属性中的字符串要如何解析
+
+* parseLocale+
+
+  字符串或者 java.util.Locale： 定义locale，在解析操作期间将其默认为格式化样式，或将 pattern 属性定义的样式应用其中
+
+* integerOnly+
+
+  布尔：说明是否只解析指定值的整数部分
+
+* var
+
+  字符串：保存输出结果的有界变量名称
+
+* scope
+
+  字符串：var的范围
+
+##### parseDate 标签
+
+parseDate 标签以区分地狱的格式解析以字符串表示的日期和时间，语法支持有 body content(jsp) 或没有 body content 格式如下：
+
+```jsp
+<fmt:parsetDate value="dateString"[type="{time|date|both}"][dateStyle="{default|short|medium|long|full}"][timeStyle="{default|short|medium|long|full}"][pattern="customPattern"][timeZone="timeZone"][parseLocale="parseLocale"][var="varName"][scope="{page|request|session|application}"]>
+```
+
+parseDate 标签属性：
+
+* value+
+
+  字符串：要解析的字符串
+
+* type+
+
+  字符串：要解析的字符串中是否包含日期，时间或二者均有
+
+* dateStyle+
+
+  字符串：日期的格式化样式
+
+* timeStyle_
+
+  字符串：时间的格式化样式
+
+* pattern+
+
+  字符串：定制格式化样式，决定要如何解析该字符串
+
+* timeZone+
+
+  字符串或 java.util.TimeZone：定义时区，使日期字符串中的时间信息均根据它来解析
+
+* parseLocale+
+
+  字符串或 java.util.Locale：定义 locale，在解析操作期间用其默认为格式化样式，或将 pattern 属性定义的样式应用其中
+
+* var
+
+  字符串：保存输出结果的有界变量名称
+
+* scope
+
+  字符串：var 的范围
+
+#### 函数
+
+JSTL 1.1 和 JSTL 1.2 定义了一套在 EL 表达式中使用的标准函数。使用这些函数，必须在 JSP 签名使用 taglib 指令：
+
+```jsp
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+// 调用函数
+${fn:functionName}
+```

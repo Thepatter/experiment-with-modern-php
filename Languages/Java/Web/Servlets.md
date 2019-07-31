@@ -271,3 +271,72 @@ void setMaxInactiveInterval(int seconds);
 
 * 写在 Servlet 中的所有 HTML 标签必须包含 Java 字符串
 * 所有的文本和 HTML 标签是硬编码，导致即使是表现层的微小变化，也需要重新编译
+
+### 监听器
+
+Servlet API 提供了一系列的事件和事件监听接口。上层的 `servlet/JSP` 应用能够通过调用这些 API 进行事件驱动的开发。监听的所有事件都继承自 `java.util.Event` 对象。监听器接口可以分为三类：`ServletContext`、`HttpSession`、`ServletRequest`，Servlet 3.0 中出现的新监听器接口 `javax.servlet.AsyncListener`
+
+#### 监听器接口和注册
+
+监听器接口主要在 `javax.servlet` 和 `javax.servlet.http` 包名下，接口如下：
+
+* `javax.servlet.ServletContextListener`
+
+  响应 `ServletContext` 生命周期事件，提供了 ServletContext 创建之后和 ServletContext 关闭之前的会被调用的方法
+
+* `javax.servlet.ServletContextAttributeListener`
+
+  响应 ServletContext 范围的属性添加、删除、替换事件
+
+* `javax.servlet.http.HttpSessionListener`
+
+  能够响应 HttpSession 的创建、超时、失效事件
+
+* `javax.servlet.http.HttpSessionAttributeListener`
+
+  响应 HttpSession 范围的属性添加、删除、替换事件
+
+* `javax.servlet.http.HttpSessionActivationListener`
+
+  在一个 HttpSession 激活或失效时被调用
+
+* `javax.servlet.http.HttpSessionBindingListener`
+
+  实现这个接口来保存 HttpSession 范围的属性，当有属性从 HttpSession 添加或删除时，HttpSessionBindingListener 接口能够做出响应
+
+* `javax.servlet.ServletRequestListener`
+
+  能够响应一个 ServletRequest 的创建或删除
+
+* `javax.servlet.ServletRequestAttributeListener`
+
+  响应 ServletRequest 范围的属性值添加、删除、修改事件
+
+* `javax.servlet.AsyncListener`
+
+  异步操作的监听器
+
+编写一个监听器，只需要写一个 Java 类来实现对应的监听器接口就可以了。在 Servlet3.0 和 Servlet3.1 中提供了两种注册监听器的方法，可以在一个应用中添加多个监听器，这些监听器是同步工作的
+
+* 使用 `WebListener` 注解
+
+  ```jsp
+  @WebListener
+  public class ListenerClass implements ListenerInterface
+  ```
+
+* 在部署描述文档中增加一个 listener 元素
+
+  ```xml
+  <listener>
+        <listener-class>fully-qualified listener class</listener-class>
+  </listener>
+  ```
+
+  #### Servlet Context 监听器
+
+  ServletContext 的监听器接口有两个：`ServletContextListener` 和 `ServletContextAttributeListener`
+
+  ##### ServletContextListener
+
+  `ServletContextListener`
