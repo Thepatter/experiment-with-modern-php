@@ -333,10 +333,127 @@ Servlet API 提供了一系列的事件和事件监听接口。上层的 `servle
   </listener>
   ```
 
-  #### Servlet Context 监听器
+#### Servlet Context 监听器
 
   ServletContext 的监听器接口有两个：`ServletContextListener` 和 `ServletContextAttributeListener`
 
-  ##### ServletContextListener
+##### ServletContextListener
 
-  `ServletContextListener`
+`ServletContextListener` 能对 `ServletContext` 的创建和销毁做出响应。当 `ServletContext` 初始化时，容器会调用所有注册的 `ServletContextListeners` 的 `contextInitialized` 方法，当 `ServletContext` 将要销毁时，容器会调用所有注册的 `ServletContextListeners` 的 `contextDestroyed` 方法
+
+`contextInitialized` 和 `contextDestroyed` 方法都会从容器获取到一个 `ServletContextEvent`，`javax.servlet.ServletContextEvent` 是一个 `java.util.EventObject` 的子类，定义了访问 `ServletContext` 的 `getServletContext` 方法用来获取 `ServletContext`
+
+##### ServletContextAttributeListener
+
+当一个 `ServletContext` 范围的属性被添加、删除、替换时，`ServletContextAttributeListener` 接口的实现列会接收到消息，这个接口定义了如下三个方法：
+
+```java
+// ServletContext 范围属性被添加时被容器调用
+void attributeAdded(ServletContextAttributeEvent event)
+// ServletContext 范围属性被删除时被容器调用
+void attributeRemoved(ServletContextAttributeEvent event)
+// ServletContext 范围属性被新的替换时被容器调用
+void attributeReplaced(ServletContextAttributeEvent event)
+```
+
+`ServletContextAttributeEvent` 类继承自 `ServletContextAttribute`，并且增加了获取属性的名称和值的方法
+
+```java
+java.lang.String getName()
+java.lang.Object getValue()
+```
+
+#### Session Listeners
+
+`javax.servlet.http` 包提供了四个 `HttpSession` 相关的监听器接口：`HttpSessionListener`、`HttpSessionActivationListener`、`HttpSessionAttributeListener`、`HttpSessionBindingListener`
+
+##### HttpSessionListener
+
+当一个 HttpSession 创建或销毁时，容器都会通知所有的 HttpSessionListener 监听器，HttpSessionListener 接口有两个方法：`sessionCreated` 和 `sessionDestroyed`，这两个方法
+
+```java
+void sessionCreated(HttpSessionEvent event);
+void sessionDestroyed(HttpSessionEvent event);
+```
+
+这两个方法可以接收到一个继承于 `java.util.Event` 的 `HttpSessionEvent` 对象。可以通过调用 `HttpSessionEvent` 对象的 `getSession` 方法来获取当前的 `HttpSession`
+
+##### HttpSessionAttributeListener
+
+`HttpSessionAttributeListener` 接口和 `ServletContextAttributeListener` 类似，响应的是 `HttpSession` 范围属性的添加、删除和替换，`HttpSessionAttrubuteListener` 接口有以下方法：
+
+```
+// HttpSession 范围属性被添加时被容器调用
+void attributeAdded(HttpSessionBindingEvent event);
+// HttpSession 范围属性被删除时被容器调用
+void attributeRemoved(HttpSessionBindingEvent evnet);
+// HttpSession 范围属性被新的替换时被容器调用
+void attributeReplaced(HttpSessionBindingEvent event);
+```
+
+##### HttpSessionActivationListener
+
+在分布式环境下，会用多个容器来进行负载均衡，有可能需要将 session 保存起来，在容器之间传递。这时，容器就会通知所有 `HttpSessionActivationListener` 接口的实现类
+
+```java
+void sessionDidActivate(HttpSessionEvent event);
+void sessionWillPassivate(HttpSessionEvent event);
+```
+
+当 HttpSession 被转移到其他容器之后，`sessionDidActivate` 方法会被调用。容器将一个 `HttpSessionEvent` 方法传递到方法里，可以从这个对象获得 `HttpSession`，当一个 HttpSession 将要失效时，容器会调用 `sessionWillPassivate` 方法。容器将一个 `HttpSessionEvent` 方法传递到方法里，可以通过这个对象获得 HttpSession
+
+##### HttpSessionBindingListener
+
+当有属性绑定或者解绑到 HttpSession 上时，`HttpSessionBindingListener` 监听器会被调用。
+
+```java
+void valueBound(HttpSessionBindingEvent event);
+void valueUnbound(HttpSessionBindingEvent event);
+```
+
+#### ServletRequestListeners
+
+ServletRequest 范围的监听器接口有三个：`ServletRequestListener`、`ServletRequestAttributeListener`、`AsyncListener`
+
+##### ServletRequestListener
+
+ServletRequestListener 监听器会对 ServletRequest 的创建和销毁事件进行响应。容器会通过一个池来存放并重复利用多个 ServletRequest，ServletRequest 的创建是从容器池里被分配出来的时刻开始，而它的销毁时刻时放回容器池的时间。ServletRequestListener 接口有两个方法 `requestInitialized` 和 `requestDestroyed`:
+
+```java
+// 创建时调用
+void requestInitialized(ServletRequestEvent event);
+// 销毁时调用
+void requestDestroyed(ServletRequestEvent event);
+```
+
+##### ServletRequestAttributeListener
+
+当一个 ServletRequest 范围的属性被添加、删除、替换时，ServletRequestAttributeListener 接口会被调用。ServletRequestAttributeListener 接口提供了三个方法：`atttributeAdded`、`attributeReplaced`、`attributeRemoved`
+
+```java
+void attributeAdded(ServletRequestAttributeEvent event);
+void attributeRemoved(ServletRequestAttributeEvent event);
+void attributeReplaced(ServletRequestAttributeEvent evnet);
+```
+
+通过 `ServletRequestAttributeEvent` 类提供的 `getName` 和 `getValue` 方法可以访问到属性的名称和值
+
+### Filters
+
+Filter 是拦截 Request 请求的对象：在用户的请求访问资源前处理 `ServletRequest` 以及 `ServletResponse`，可以勇敢 `Filter` 拦截处理某个资源或者某些资源，`Filter` 的配置可以通过 `Annotation` 或者部署描述符来完成，当一个资源或者某些资源需要被多个 Filter 所使用到，且ta的触发顺序很重要时，只能通过部署描述符来配置
+
+#### Filter API
+
+Filter 的实现必须继承 `javax.servlet.Filter` 接口。这个接口包含了 Filter 的 3 个生命周期：`init`、`doFilter`、`destroy`。Servlet 容器初始化 Filter 时，会触发Filter的 init 方法，一般在应用开始时。init 方法并不是在该 Filter 相关的资源使用到时才初始化的，而且这个方法只调用一次，用于初始化 Filter。
+
+```java
+// FilterConfig 实例是由 Servlet 容器传入 init 方法中的
+void init(FilterCOnfig filterConfig);
+```
+
+当 Servlet 容器每次处理 Filter 相关资源时，都会调用该 Filter 实例的 doFilter 方法。Filter 的 doFilter 方法包含 ServletRequest、ServletResponse、FilterChain
+
+```java
+// 在 Filter 的 doFilter 的实现中，最后一行需要调用 FilterChain 中的 doChain 方法。
+void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain);
+```
