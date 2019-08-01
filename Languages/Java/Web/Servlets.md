@@ -448,12 +448,113 @@ Filter 的实现必须继承 `javax.servlet.Filter` 接口。这个接口包含�
 
 ```java
 // FilterConfig 实例是由 Servlet 容器传入 init 方法中的
-void init(FilterCOnfig filterConfig);
+void init(FilterConfig filterConfig);
 ```
 
 当 Servlet 容器每次处理 Filter 相关资源时，都会调用该 Filter 实例的 doFilter 方法。Filter 的 doFilter 方法包含 ServletRequest、ServletResponse、FilterChain
 
 ```java
-// 在 Filter 的 doFilter 的实现中，最后一行需要调用 FilterChain 中的 doChain 方法。
+// 在 Filter 的 doFilter 的实现中，最后一行需要调用 FilterChain 中的 doChain 方法。filterChain.doFilter()
 void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain);
+// Servlet 容器要销毁 Filter 时触发，一般在应用停止时进行调用
+void destroy()
 ```
+
+一个资源可能需要被多个 Filter 关联到，这时 `Filter.doFilter()` 的方法将触发 `Filter` 链条中下一个 `Filter`。只有在 Filter 链条中最后一个 Filter 里调用 `FilterChain.doFilter()`才会触发处理资源的方法，如果在 `Filter.doFilter()` 的实现中，没有在结尾处调用 `FilterChain.doFilter()` 的方法，那么该 Request 请求中止，后续处理中断。除非 Filter 在部署描述中被多次定义到，否则 Servlet 窗口只会为每个 Filter 创建单一实例。由于 Servlet/JSP 的应用通常要处理用户并发请求，此时 Filter 实例需要同时被多个线程所关联到，因此需要多线程问题
+
+#### Filter 配置
+
+当完成 Filter 的实现后，就可以开始配置 Filter 了，Filter 的配置需要：
+
+* 确认那些资源需要使用这个 Filter 拦截处理
+
+* 配置Filter的初始化参数值，这些参数可以在 Filter 的 init 方法中读取到
+
+* 给 Filter 取一个名称。可以用来识别 Filter
+
+`FilterConfig` 接口允许通过它的 `getServletContext` 的方法来访问 `ServletContext`
+
+```java
+// FilterConfig
+ServletContext getServletContext()
+// 获取Filter名字
+String getFilterName()
+// 获取初始化参数,返回Filter参数名称的Enumeration对象
+Enumeration<String> getInitParameterNames()
+// 根据key获取参数
+java.lang.String getInitParameter(String parameterName)
+```
+
+有两种参数可以配置 Filter：一种是通过 `@WebFilter` 的 Annotation 来配置 Filter，另一种是通过部署描述符来注册。
+
+##### WebFilter 注解属性
+
+* asyncSupported
+
+  Filter 是否支持异步操作
+
+* description
+
+  Filter 的描述
+
+* dispatcerTypes
+
+  Filter 生效范围
+
+* displayName
+
+  Filter 的显示名
+
+* filterName
+
+  Filter 的名称
+
+* initParams
+
+  Filter 的初始化参数
+
+* largeIcon
+
+  Filter 的大图名称
+
+* servletName
+
+  Filter所生效的Servlet名称
+
+* smallIcon
+
+  Filter 的 icon名称
+
+* urlPatterns
+
+  Filter 所生效的 URL 路径
+
+* value
+
+  Filter 所生效的 URL 路径
+
+
+```java
+@WebFilter(filterName = "Security Filter", urlPatterns = "{ "/ *"}, initParams = {@WebInitParam(name = "frequency" , value = "1909")})
+```
+
+##### 部署描述符定义
+
+```xml
+<filter>
+    <filter-name>Security Filter</filter-name>
+    <filter-class>FilterClass<filter-class>
+    <init-param>
+        <param-name>frequency</param-name>
+        <param-value>1909</param-value>
+    <init-param>
+</filter>
+<filter-mapping>
+    <filter-name>FilterName</filter-name>
+    <url-pattern>/ *</url-pattern>
+</filter-mapping>
+```
+
+#### Filter 顺序
+
+如果多个 Filter 应用于同一个资源，Filter 的触发顺序将变得非常重要，此时需要使用部署描述符来管理 Filter：指定那个 Filter 先被触发。Filter 会依照部署描述符中 Filter 配置顺序从上往下执行。每个 Filter 仅有一个实现，如果需要保持或改变 Filter 实现中的状态，需要考虑线程安全问题
