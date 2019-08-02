@@ -558,3 +558,53 @@ java.lang.String getInitParameter(String parameterName)
 #### Filter 顺序
 
 如果多个 Filter 应用于同一个资源，Filter 的触发顺序将变得非常重要，此时需要使用部署描述符来管理 Filter：指定那个 Filter 先被触发。Filter 会依照部署描述符中 Filter 配置顺序从上往下执行。每个 Filter 仅有一个实现，如果需要保持或改变 Filter 实现中的状态，需要考虑线程安全问题
+
+### 异步处理
+
+Servlet3.0 引入了异步处理。Servlet 或过滤器占有请求处理线程直到它完成任务。当用户并发请求数目超过线程数时，容器可能会发生无可用线程的风险。如果发生这种情况，Tomcat 会堆叠请求，如果有更多的请求进来，它们将被拒绝，直到有空闲资源来处理。异步处理可以节约容器线程，会释放正在等待完成的线程，使该线程被另一请求所使用。
+
+#### 异步 servlet 和 filter
+
+`WebServlet` 和 `WebFilter` 注解类型包含新的 `asyncSupport` 属性，将其设置为 true 使其支持异步，也可以在部署文件里面指定这个描述符
+
+```xml
+<servlet>
+    <servlet-name>AsyncServlet</servlet-name>
+    <servlet-class>servletClass</servlet-class>
+    <async-supported>true</async-supported>
+</servlet>
+```
+
+`servlet` 或过滤器要支持异步处理，可以通过调用 `ServletRequest` 的 `startAsync` 方法来启动新线程。`startAsync` 重复调用将返回相同的 `asyncContext`。若一个 Servlet 或过滤器调用 `startAsync` 时不支持异步处理，将抛出 `java.lang.illegalstateException`。`asyncContext` 的 `start` 方法时非阻塞的，所以下一行代码仍将执行，即使还未调度线程启动
+
+```java
+AsyncContext startAsync() throws IllegalStateException;
+AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException;
+```
+
+##### 编写异步 Servlet
+
+在异步 Servlet 或过滤器类中操作步骤：
+
+* 调用 `ServletRequest` 中的 `startAsync` 方法，返回一个 `AsyncContext`
+
+* 嗲用 `AsyncContext` 的 `setTimeout()`，传递容器等待任务完成的超时时间的毫秒数。可选项，如果不设置超时，容器将使用默认的超时时间，如   果任务未能在指定的超时时间内完成，将会抛出一个超时异常
+
+* 调用 `asyncContext.start`，传递一个 `Runnable` 来执行一个长时间运行的任务
+
+* 调用 `Runnable` 的 `asyncContext.complete` 或 `asyncContext.dispatch` 方法来完成任务
+
+#### 异步监听器
+
+Servlet3.0 增加了 `asyncListener` 接口用于接收异步处理过程中发生事件的通知。AsyncListener 接口定义
+
+```java
+// 异步操作启动完毕后调用该方法
+void onStartAsync(AsyncEvent event);
+// 操作完成后调用
+void onComplete(AsyncEvent evnet);
+// 失败时调用
+void onError(AsyncEvent evnet);
+// 超时后调用
+void onTimeout(AsyncEvent event);
+```

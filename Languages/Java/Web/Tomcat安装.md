@@ -102,3 +102,18 @@
 />
 ```
 
+#### 配置用户和角色
+
+编辑 `conf` 目录中的 `Tomcat-user.xml` 来创建用户和角色。role 元素定义角色，user 元素定义用户。
+
+*tomcat-users.xml*
+
+```xml
+<?xml version='1.0' encoding='utf-8'>
+<tomcat-users>
+    <role rolename="manager"/>
+    <role rolename="member"/>
+    <user username="tom" password="secret" roles="manager,member"/>
+    <user username="jerry" password="secret" roles="member"/>
+</tomcat-users>
+```
