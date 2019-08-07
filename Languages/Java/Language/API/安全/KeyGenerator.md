@@ -9,3 +9,4 @@ void init(int keySize, SecureRandom random);
 // 生成密钥
 SecretKey generateKey();
 ```
+

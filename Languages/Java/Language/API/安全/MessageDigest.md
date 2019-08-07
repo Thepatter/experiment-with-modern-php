@@ -12,3 +12,4 @@ byte[] digest();
 // 重置摘要
 void reset();
 ```
+
