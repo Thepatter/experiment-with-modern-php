@@ -137,5 +137,230 @@ public CompactDisc sgtPeppers() {
 
 #### 通过 XML 装配 bean
 
-##### 声明
+##### 声明一个简单的 <bean>
+
+要在基于 XML 的 Spring  配置中声明一个 bean，使用 spring-beans 模式中的另外一个元素 `<bean>`，`<bean>` 元素类似于 JavaConfig 中的 `@Bean` 注解
+
+```xml
+<bean class="soubdsystem.SgtPeppers" />
+```
+
+声明一个很简单的 bean，创建这个 bean 的类通过 class 属性来指定的，并且要使用全限定的类名。因为没有明确给定 ID，所以这个 bean 将会根据全限定类名来进行命名。上面声明中，bean 的 ID 将会是 `soundsystem.SgtPeppers#0`。其中，`#0` 是一个计数的形式，用来区分相同类型的其他 bean。或者指定 id 属性
+
+```xml
+<bean id="compactDisc" class="soundsystem.SgtPeppers" />
+```
+
+#### 使用XML注入配置
+
+在 Spring XML 配置中，只有一种声明 bean 的方式：使用 `<bean>` 元素并指定 class 属性。Spring 会从这里获取必要的信息来创建 bean。但在 XML 中声明 DI 时，会有多种可选的配置方案
+
+##### 构造器注入
+
+* `<constructor-arg>` 元素
+* 使用 Spring3.0 所引入的 c- 命名空间
+
+两者的区别在很大程度就是是否冗长及实现。
+
+* 构造器注入 bean 引用，在 XML 中声明 bean 并通过 ID 引用
+
+  ```xml
+  <bean id="cdPlayer" class="soundsystem.CDPlayer">
+  	<constructor-arg ref="compactDisc" />
+  </bean>
+  ```
+
+  或 c- 命名空间
+
+  ```xml
+  <?xml version="1.0" encoding="UTF-8" ?>
+  <beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:c="http://www.springframework.org/schema/c"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans"
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+  </beans>
+  <bean id="cdPlayer" class="soundsystem.CDPlayer" c:cd-ref="compactDisc" />
+  ```
+
+  装配字面量
+
+  ```xml
+  <bean id="compactDisc" class="soundsystem.CDPlay">
+  	<constructor-arg value="The Params" />
+  </bean>
+  ```
+
+  ```xml
+  <bean id="compactDisc" class="soundsystem.BlankDisc" 
+        // 构造器参数名称
+        c:_title="Sgt.Pepper's Lonely Hearts Club Band"
+        c:_artis="The Beatles"/>
+  ```
+
+  装配集合
+
+  使用 c- 命名空间无法装配集合，只能使用 `<constructor-arg>` 装配集合
+
+  ```xml
+  <bean id="compactDisc" class="soundsystem.BlankDisc">
+  	<constructor-arg value="Sgt.Pepper's"/>
+      <constructor-arg value="The Beatles"/>
+      <constructor-arg>
+          <set>
+              <value>hello</value>
+              <value>world</value>
+          </set>
+      </constructor-arg>
+  </bean>
+  ```
+
+##### 属性注入
+
+* `<property>` 元素属性注入
+* p- 命名空间注入
+
+`<property>` 元素为属性的 Setter 方法提供注入。使用 `p-` 空间注入必须先声明
+
+```xml
+<bean id="cdPlayer" class="soundsystem.CDPlayer">
+	<property name="compactDisc" ref="compactDisc"/>
+</bean>
+```
+
+```xml
+<bean id="cdPlayer" class="soundsystem.CDPlayer" p:compactDisc-ref="compactDisc" />
+```
+
+*p-命名空间*
+
+![](./Images/SpringXML配置p命名空间.png)
+
+属性的名字使用了 `p:` 前缀，表明这是一个属性。属性名以 `-ref` 结尾，表示引用，而不是字面量
+
+属性字面量注入
+
+使用 `<property>` 元素的 value 属性实现。或 p- 命名空间
+
+#### 导入和混合配置
+
+在 Spring 中，这些配置方案不是互斥的。可以将 JavaConfig 的组件扫描和自动装配和 XML 配置混合在一起。
+
+##### 在 JavaConfig 中引用 XML 配置
+
+* 使用 `@Import` 注解导入 Java 配置。
+
+  ```java
+  @Configuration
+  @Import({CDPlayerConfig.class, CDConfig.class})
+  public class SoundSystemConfig {}
+  ```
+
+* 使用 @ImportResource 注解导入 xml 配置，假定 `cd-config.xml` 文件位于根类路径下
+
+  ```java
+  @Configuration
+  @Import(CDPlayerConfig.class)
+  @ImportResource("classpath:cd-config.xml")
+  public class SoundSystemConfig {}
+  ```
+
+##### 在 XML 配置中引用 JavaConfig
+
+在 XML 中，可以使用 import 元素来拆分 XML 配置，但无法导入 JavaConfig 类。可以使用 `<bean>` 元素
+
+```xml
+<bean class="soundsystem.CDConfig" />
+<bean id="cdPlayer">
+	
+</bean>
+```
+
+### 高级装配
+
+#### 配置 profile bean
+
+Spring 为环境相关的 bean 所提供的解决方案其实与构建时的方案没有太大的差别。在这个过程中需要根据环境决定该创建那个 bean 和不创建那个 bean。不过 Spring 并不是在构建的时候做出这样的决策，而是等到运行时再来决定。这样的结果就是同一个部署单元（可能会是 WAR 文件）能够适用于所有的环境，没有必要进行重新构建。
+
+在 3.1 版本中，Spring 引入了 bean profile 的功能。要使用 profile，首先要将所有不同的 bean 定义整理到一个或多个 profile 之中，在将应用部署到每个环境时，要确保对应的 profile 处理激活状态。在 Java 配置中，可以使用 `@Profile` 注解指定某个 bean 属于哪一个 profile。
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+
+@Configuration
+@Profile("dev")
+public class DevelopmentProfileConfig {
+    @Bean(destroyMethod="shutdown")
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+            .setType(EmbeddedDatabaseType.H2)
+            .addScript("classpath:schema.sql")
+            .addScript("classpath:test-data.sql")
+            .build();
+    }
+}
+```
+
+上面 `@Profile` 注解应用了类级别上。即告诉 Spring 这个配置类中的 bean 只有在 dev profile 激活时才会创建。如果 dev profile 没有激活，那么带有 @Bean 注解的方法都会被忽略掉
+
+在 Spring 3.1 中，只能在类级别上使用 @Profile  注解。不过，从 Spring 3.2 开始，可以在方法级别上使用 @Profile 注解，与  @Bean 注解一同使用。这样可以将这两个 bean 的声明放到同一个配置类中
+
+```java
+import javax.activation.DataSource;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.jndi.JndiObjectFactoryBean;
+
+@Configuration
+public class DataSourceConfig {
+    @Bean(destroyMethod="shutdown")
+    @Profile("dev")
+    public DataSource embeddedDataSource() {
+        return new EmbeddedDatabaseBuilder()
+            .setType(EmbeddedDatabaseType.H2)
+            .addScript("classpath:schema.sql")
+            .addScript("classpath:test-data.sql")
+            .build();
+    }
+    @Bean
+    @Profile("prod")
+    public DataSource jndiDataSource() {
+        JndiObjectFactoryBean jndiObjectFactoryBean = new JndiObjectFactoryBean();
+        jndiObjectFactoryBean.setJndiName("jdbc/myDS");
+        jndiObjectFactoryBean.setResourceRef(true);
+        jndiObjectFactoryBean.setProxyInterface(javax.sql.DataSource.class);
+        return (DataSource) jndiObjectFactoryBean.getObject();
+    }
+```
+
+没有指定 profile 的 bean 始终都会被创建，与激活那个 profile 没有关系
+
+#### 在 XML 中配置 profile
+
+可以通过 `<bean>` 元素的 profile 属性，在 XML 中配置 profile bean。
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+  xsi:schemaLocation="
+    http://www.springframework.org/schema/jdbc
+    http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd"
+  profile="dev">
+  <jdbc:embedded-database id="dataSource">
+     <jdbc:script location="classpath:schema.sql" />
+     <jdbc:script location="classpath:test-data.sql" />
+  </jdbc:embedded-database>
+</beans>
+```
 

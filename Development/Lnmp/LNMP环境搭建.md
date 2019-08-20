@@ -201,7 +201,7 @@
     extension=swoole.so
   ```
 
-* 解决编译时opensll库不兼容
+* 解决编译时 openssl 库不兼容
 
   ```shell
   # 查看当前 `openssl` 版本
