@@ -537,6 +537,96 @@ public @interface Cold {}
 public class IceCream implements Dessert {}
 ```
 
+#### Bean 作用域
+
+在默认情况下，Spring 应用上下文中所有 bean 都是作为单例（singleton）的形式创建的。即不管给定的一个 bean 被注入到其他 bean 多少次，每次所注入的都是同一个实例。Spring 定义了多种作用域，可以基于这些作用域创建 bean，包括：
+
+* 单例（Singleton）
+
+  在整个应用中，只创建 bean 的一个实例
+
+* 原型（Prototype）
+
+  每次注入或者通过 Spring 应用上下文获取的时候，都会创建一个新的 bean 实例
+
+* 会话（Session）
+
+  在 Web 应用中，为每个会话创建一个 bean 实例
+
+* 请求（Request）
+
+  在 Web 应用中，为每个请求创建一个 bean 实例
+
+bean 默认作用域时单例，如果要选择其他的作用域，要使用 @Scope 注解，它可以与 @Component 或 @Bean 一起使用。
+
+```java
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class Notepad {}
+@Bean
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public Notepad notepad() {
+	  return new Notepad();
+}
+```
+
+使用 `ConfigurableBeanFactory.SCOPE_PROTOTYPE` 或直接使用 `"prototype"` ，使用常量更安全。或使用 XML 来配置 bean
+
+```xml
+<bean id="notepad" class="com.myapp.Notepad" scope="prototype"/>
+```
+
+##### 会话与请求作用域
+
+将会话或请求作用域的 bean 注入到单例 bean 时，需要配置代理，代理真正需要注入的 bean，因为被注入 bean  会在应用上下文加载时候创建，当它创建时，Spring 会试图将要注入的会话或请求 bean 注入，但由于此时请求或会话还未创建，因此注入的 bean 还不存在，Spring 此时会注入一个类或接口的代理，代理会暴露与注入 bean 相同的方法，当需要调用注入 bean 时，代理会对其进行懒解析并将调用委托给会话作用域内真正的 bean。
+
+使用 @Scope 的 `proxyMode` 属性声明代理模式是接口还是类
+
+![](./Images/作用域代理延迟注入请求和会话作用域的bean.png)
+
+*代理模式为接口*（理想情况）
+
+```java
+@Componet
+@Scope(value=WebApplicationContext.SCOPE_SESSION,proxyMode=ScopedProxyMode.INTERFACES） 
+public ShoppingCart cart() {}
+```
+
+*代理模式目标类扩展方式创建代理*
+
+```java
+@Componet
+@Scope(value=WebApplicationContext.SCOPE_SESSION, proxyMode=ScopedProxyMode.TARGET_CLASS)
+public ShoppingCart cart() {}
+```
+
+在 XML 声明会话或请求作用域的 bean，需要使用 Spring aop 命名空间的一个新元素 `<aop:scoped-proxy>`，它作用类似 @Scope 注解的 proxyMode 属性，它会告诉 Spring 为 bean 创建一个作用域代理。默认情况下，会使用 CGLib 创建目标类的代理。也可以将 proxy-target-class 属性设置为 false，要求它生成基于接口的代理
+
+*基于 CGLib 创建目标类的代理*
+
+```xml
+<bean id="cart" class="com.myapp.ShoppingCart" scope="session">
+  	<aop:scoped-proxy/>
+</bean>
+```
+
+基于接口的代理
+
+```xml
+<bean id="cart" class="com.myapp.ShoppingCart" scope="session">
+		<aop:scoped-proxy proxy-target-calss="false"/>
+</bean>
+```
+
+要s你用 `<aop:scopd-proxy>` 元素，需要在 XML 配置中声明 Spring 的 aop 命名空间
+
+```xml
+<beans xmlns:aop="http://www.springframework.org/schema/aop">
+</beans>
+```
+
+
+
 
 
 
