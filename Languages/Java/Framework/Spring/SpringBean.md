@@ -364,3 +364,180 @@ public class DataSourceConfig {
 </beans>
 ```
 
+#### 激活 profile
+
+Spring 在确定那个 profile 处于激活状态时，需要依赖两个独立的属性：`spring.profiles.active` 和 `spring.profiles.default` 如果设置了 `spring.profiles.active` 属性，那么它的值就会用来确定那个 profile 是激活的。如果没有设置 `spring.profiles.active` 属性，那么 Spring 将会查找 `spring.profiles.default` 的值。如果 `spring.profiles.active` 和 `spring.profiles.default` 均未设置，即没有激活的 profile，只会创建那些没有定义在 profile 中 bean
+
+可使用以下方式设置 `spring.profiles.active` 和 `spring.profiles.default` 属性：
+
+* 作为 DispatcherServlet 的初始化参数
+* 作为 Web 应用的上下文参数
+* 作为 JNDI 条目
+* 作为环境变量
+* 作为 JVM 的系统属性
+* 在集成测试类上，使用 @ActiveProfiles 注解设置
+
+*在 web.xml 文件中设置默认的 profile*
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<web-app version="2.5"
+  xmlns="http://java.sun.com/xml/ns/javaee"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+      http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  <context-param></context-param>
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>/WEB-INF/spring/root-context.xml</param-value>
+  </context-param>
+  <context-param>
+    <param-name>spring.profiles.default</param-name> // 为上下文配置默认 profile
+    <param-value>dev</param-value>
+  </context-param>
+  <listener>
+    <listener-class>
+      org.springframework.web.context.ContextLoaderListener
+    </listener-class>
+  </listener>
+  <servlet>
+    <servlet-name>appServlet</servlet-name>
+    <servlet-class>
+      org.springframework.web.servlet.DispatcherServlet
+    </servlet-class>
+    <init-param>
+      <param-name>spring.profiles.default</param-name> // 为 Servlet 配置默认 profile
+      <param-value>dev</param-value>
+    </init-param>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>appServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+</web-app>
+```
+
+Spring 提供了 @ActiveProfiles 注解，可以使用它来指定运行测试时要激活那个 profile。
+
+```java
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes={PersisenceTestConfig.class})
+@ActiveProfiles("dev")
+public class PersistenceTest {}
+```
+
+#### 条件化的 bean
+
+Spring 4.0 提供了一种更为通用的机制来实现条件化的 bean 定义，@Conditional 注解。它可以用到带有 @Bean 注解的方法上。如果给定的条件计算结果为 true，就会创建这个 bean，否则的化，这个 bean 会被忽略。
+
+```java
+@Bean
+@Conditional(MagicExistsCondition.class)
+public MagicBean magicBean () {
+    return new MigicBean();
+}
+```
+
+@Conditional 中给定了一个 Class，它指明了条件。@Conidtional 将会通过 Condition 接口进行条件对比
+
+ ```java
+public interface Condition {
+	boolean matches(ConditionContext ctxt, AnnotatedTypeMetadata metadata);
+}
+ ```
+
+设置给 @Conditional 的类可以是任意实现了 Condition 接口的类型。需提供 `matches()` 方法的实现即可。如果 `matches()` 方法返回 true，那么将会创建带有 @Conditional 注解的 bean。如果  `matches()` 方法返回 false，将不会创建这些 bean。
+
+*ConditionContext 接口*
+
+```java
+public interface ConditionContext {
+    // 检查 bean 定义
+    BeanDefinitionRegistry getRegistry();
+    // 检查 bean 是否存在，探查 bean 属性
+    ConfigurableListableBeanFactory getBeanFactory();
+    // 返回的 Environment 检查环境变量是否存在及获取值
+    Environment getEnvironment();
+    // ClassLoader 检查类是否存在
+    ClassLoader getClassLoader();
+}
+```
+
+*AnnotatedTypeMetadata*
+
+```java
+public interface AnnotatedTypeMetadata {
+    // 判断带有 @Bean 注解的方法是否还有其他特定注解
+    boolean isAnnotated(String annotationType);
+    Map<String, Object> getAnnotationAttributes(String annotationType);
+    Map<String, Object> getAnnotationAttributes(String annotationType, boolean classValuesAsString);
+    MultiValueMap<String, Object> getAllAnnotationAttributes(String annotationType);
+    MultiValueMap<String, Object> getAllAnnotationAttributes(String annotationType, boolean classValuesAsString);
+}
+```
+
+#### 自动装配歧义性
+
+使用自动装配让Spring完全负责将bean引用注入到构造参数和属性中。仅有一个 bean 匹配所需的结果时，自动装配才是有效的。如果不仅有一个 bean 能够匹配结果，这种歧义性会阻碍 Spring 自动装配属性、构造器参数、方法参数并抛出 `NoUniqueBeanDefinitionException` 
+
+##### 标示首选 bean
+
+在声明 bean 的时候，通过将其中一个可选的 bean 设置为首选（primary）bean 能够避免自动装配时的歧义性。当遇到歧义性的时候，Spring 将会使用首选的 bean，而不是其他可选的 bean。使用 `@Primary` 注解或在 XML 配置 bean 时，将 primary 属性设置为 true
+
+```xml
+<bean id="iceCream" class="com.dessertreater.IceCream" primary="true"/>
+```
+
+Spring 无法从多个首选的 bean 中做出选择。
+
+##### 限定自动装配的 bean
+
+Spring 的限定符号能够在所有可选的 bean 上进行缩小范围的操作，最终能够达到只有一个 bean 满足所规定的限制条件。如果将所有的限定符都用上后依然存在歧义性，可以继续使用更多的限定符来缩小选择范围。`@Qualifier` 注解是使用限定符的主要方式。它可以与 `@Autowired` 和 `@Inject` 协同使用，在注入的时候指定想要注入进去的是那个 bean。
+
+```java
+@Autowired
+@Qualifier("iceCream")
+public void setDessert(Dessert dessert) {
+	this.dessert = dessert;
+}
+```
+
+`@Qualifier("iceCream")` 所引用的 bean 要具有 String 类型的 "iceCream" 作为限定符。如果没有指定其他的限定符，所有的 bean 都会给定一个默认的限定符，这个限定符与 bean 的 ID 相同。因此，框架会将具有 “iceCream" 限定符的 bean 注入到 setDessert() 方法中。这恰好是 ID 为 iceCream 的 bean，它是 IceCream 类在组件扫描的时候创建的。以上使用会使 `setDessert()` 方法上所指定的限定符与要注入的 bean 的名称是紧耦合的。对类的名称的任意改动都会导致限定符失效。可以为 bean 设置自己的限定符，而不是依赖于将 bean ID 作为限定符。
+
+```java
+@Component
+@Qualifier("cold") // 指定 cold 作为 IceCream bean 的限定符
+public class IceCream implements Desset {}
+```
+
+当通过 Java 配置显式定义 bean 的时候，@Qualifier 也可以与 @Bean 注解一起使用
+
+```java
+@Bean
+@Qualifier("cold")
+public Dessert icrCream() {
+	return new IceCream();
+}
+```
+
+Java 不允许在同一个条目上重复出现相同类型的多个注解（Java 8 允许出现重复的注解，只要这个注解本身在定义的时候带有 @Repeatable 注解就可以），可以使用 @Qualifier 注解来标注自定义注解，可以使用多个限定符，不会再有 Java 编译器的限制，与此同事，相对于使用原始的 @Qualifier 并借助 String 类型来指定限定符，自定义的注解也更为类型安全
+
+```java
+@Target(ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD, ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface Cold {}
+```
+
+使用自定义 @Cold 注解
+
+```java
+@Component
+@Cold
+public class IceCream implements Dessert {}
+```
+
+
+
+
+
