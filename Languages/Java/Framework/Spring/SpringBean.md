@@ -618,14 +618,92 @@ public ShoppingCart cart() {}
 </bean>
 ```
 
-要s你用 `<aop:scopd-proxy>` 元素，需要在 XML 配置中声明 Spring 的 aop 命名空间
+要使用 `<aop:scopd-proxy>` 元素，需要在 XML 配置中声明 Spring 的 aop 命名空间
 
 ```xml
 <beans xmlns:aop="http://www.springframework.org/schema/aop">
 </beans>
 ```
 
+#### 运行时值注入
 
+当需要运行时求值进行注入时，Spring 提供了两种方式：
+
+* 属性占位符（Property placeholder）
+* Spring 表达式语言（SpEL）
+
+##### 注入外部的值
+
+在 Spring 中，处理外部值的最简单方式就是声明属性源并通过 Spring 的 Environment 来检索属性。使用 @PropertySource 注解和 Environment
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+
+@Configuration
+@PropertySource("classpath:/com/soundsystem/app.properties") // 声明属性源
+public class ExpressiveConfig {
+    @Autowired
+    Environment env;
+    
+    @Bean
+    public BlankDisc disc() {
+        return new BlankDisc {
+            // 检索属性值
+            env.getProperty("disc.title");
+            env.getProperty("disc.artist");
+        }
+    }
+}
+```
+
+这个属性文件会加载到 Spring 的 Environment 中，运行时从这里检索属性。`Environment` 的 `getProperty()` 方法重载
+
+```java
+String getProperty(String key);
+String getProperty(String key, String defaultValue);
+T getProperty(String key, Class<T> type);
+T getProperty(String key, Class<T> type, T defaultValue);
+```
+
+* 如果使用 `getProperty()` 方法的时候没有指定默认值，并且这个属性没有定义，则获得的值是 null。如果希望这个值必须要定义，使用 `getRequiredProperty()`，未定义会抛出 `IllegalStateException` 异常。检查属性是否存在可以调用 `containsProperty()` 方法。将属性解析为类 `getPropertyAsClass()` 。
+* 返回激活 `profile` 名称的数组 `getActiveProfiles()`，返回默认 `profile` 名称的数组 `getDefaultProfiles()` ，如果 environment 支持给定 profile ，返回 true
+
+在 Spring 装配中，占位符的形式 `${}` 包装的属性名称
+
+```xml
+<bean id="sgtPeppers" class="soundsystem.BlankDisc" c:_title="${disc.title}" c:_artis="${disc.artist}" />
+```
+
+如果依赖于组件扫描和自动装配来创建和初始化应用组件，则没有指定占位符的配置文件或类了。在这种情况下，可以使用 @Value 注解
+
+```java
+public BlankDisc(@Value("$(disc.title)") String title, @Value("$(disc.artist)") String artist) {
+    this.title = title;
+    this.artist = artist;
+}
+```
+
+使用占位符，必须要配置一个 `PropertyPlaceholderConfigurer` bean 或 `PropertySourcesPlaceholderConfigurer` bean。推荐使用 `PropertySourcesPlaceholderConfigurer` ，它能基于 Spring  Environment 及其属性源来解析占位符
+
+##### 使用 Spring 表达式语言进行装配
+
+Spring 3 引入了 Spring 表达式语言，它能以一种强大和简洁的方式将值装配到 bean 属性和构造器参数中，在这个过程中所使用的表达式会在运行时计算得到值。SpEL 拥有很多特性：
+
+* 使用 bean 的 ID 来引用 bean
+
+* 调用方法和访问对象的属性
+
+* 对值进行算术、关系和逻辑运算
+
+* 正则表达式匹配
+
+* 集合操作
+
+  
 
 
 
