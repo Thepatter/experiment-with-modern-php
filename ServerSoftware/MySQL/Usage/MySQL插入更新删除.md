@@ -11,16 +11,20 @@
 
 #### 更新数据
 
-**update 语句非常容易使用,基本的 update 语句由 3 部分组成,要更新的表,列名和它们的新值,确定要更新行的过滤条件**
+**update 语句非常容易使用，基本的 update 语句由 3 部分组成，要更新的表，列名和它们的新值，确定要更新行的过滤条件**
 
-`update table_name set table_filed = field_value where `
+```sql
+update table_name set table_filed = field_value where 
+```
 
 * 如果用 `update` 语句更新多行,并且在更新这些行中的一行或多行时出现一个错误,则整个 `update` 操作被取消(错误发生前更新的所有行被恢复到它们原来的值),如果指定即使发生错误,也继续进行更新,使用 `ignore` 关键字 `update ignore customers`
 * 为了删除某个列的值,可设置它为 `null` 
 
 #### 删除数据
 
-`delete from table_name where`
+```sql
+delete from table_name where
+```
 
 * 更快的删除,如果想从表中删除所有行,使用 `truncate table` 更快
 
