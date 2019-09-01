@@ -52,6 +52,94 @@
 
   3.执行器执行查询流程：无索引则逐行扫描第一行直到最后一行，有索引则取满足条件的第一行，将所有满足条件的行组成记录集返回给客户端
 
+##### 查询优化器
+
+![](../Images/Performance/查询优化器.png)
+
+查询优化器的目标是找到执行 SQL 查询的最佳执行计划，执行计划就是查询树，它由一系列物理操作符组成，这些操作符按照一定的运算关系组成查询的执行计划。在查询优化器中，可以分为逻辑查询优化阶段和物理查询优化阶段。查询重写属于代数级、语法级的优化是逻辑范围内的优化，而基于代价的估算模型是从连接路径中选择代价最小的路径，属于物理层面的优化
+
+* 逻辑查询优化就是通过改变 SQL 语句的内容来使得 SQL 查询更高效，同时为物理查询优化提供更多的候选执行计划。通常采用的方式是对 SQL 语句进行等价交换，对查询进行重写（查询重写的数据基础是关系代数。对条件表达式进行等价谓词重写、条件简化，对视图进行重写，对子查询进行优化，对连接语义进行了外连接消除、嵌套连接消除等。）
+* 逻辑查询优化是基于关系代数进行的查询重写，而关系代数的每一步都对应着物理计算，这些物理计算往往存在多种算法，因此需要计算各种物理路径的代价，从中选择代价最小的作为执行计划。在这个阶段里，对于单表和多表连接的操作，需要高效地使用索引，提升查询效率
+
+查询优化器的生成最佳执行计划的策略通常有两种方式：
+
+* 基于规则的优化器（RBO，Rule-Based Optimizer）。
+
+  规则是人们以为的经历，或者是采用已被证明是有效的方式。通过在优化器里面嵌入规则。来判断 SQL 查询符合那种规则，就按照相应的规则来制定执行计划，同时采用启发式规则去掉明显不好的存储路径
+
+* 基于代价的优化器（CBO，Cost-Based Optimizer）。
+
+  这会根据代价评估模型，计算每条可能的执行计划的代价，COST，从中选择代价最小的作为执行计划。相比于 RBO，CBO 对数据更敏感，因为它会利用数据表中的统计信息来做判断，针对不同的数据表，查询得到的执行计划可能是不同的，因此制定出来的执行计划也更符号数据表的实际情况
+
+大部分 RDBMS 都支持基于代价的优化器，在 MySQL 中的 COST Model（优化器用来统计各种步骤的代价模型）在 5.7.10 版本之后，MySQL 会引入两张数据表，里面规定了各种步骤预估的代价（Cost Value），可以从 `mysql.server_cost` 和 `mysql.engine_cost` 这两张表获得这些步骤的代价。
+
+*mysql的server_cost表*
+
+![](../Images/Performance/mysql的server_cost表.png)
+
+Server_cost 数据表在 Server 层统计的代价：
+
+* disk_temptable_create_cost
+
+  表示磁盘临时表文件（MyISAM 或 InnoDB）的创建代价
+
+* disk_temptable_row_cost
+
+  磁盘临时表文件（MyISAM 或 InnoDB）的行代价，默认值 0.5
+
+* key_compare_cost
+
+  键比较的代价。键比较的次数越多，这项的代价就越大，默认值是 0.05
+
+* memory_temptable_create_cost
+
+  内存临时表的创建代价，默认 0.1
+
+* memory_temptable_row_cost
+
+  内存临时表的行代价，默认值 0.1
+
+* row_evaluate_cost
+
+  统计符合条件的行代价，如果符合条件的行数越多，那么这一项的代价就越大，默认值 0.1
+
+*mysql的engine_cost表*
+
+![](../Images/Performance/mysql的engine_cost表.png)
+
+Engine_cost 主要统计了页加载的代价，一个页的加载根据页所在位置的不同，读取的位置页不同，可以从磁盘 I/O 中获取，也可以从内存中读取。因此在 engine_cost 数据表中对这两个读取的代价进行了定义：
+
+* io_block_read_cost
+
+  从磁盘中读取一页数据的代价，默认是 1
+
+* Memory_block_read_cost
+
+  从内存中读取一页数据的代价，默认是 0.25
+
+MySQL 将这些代价参数以数据表的形式存储，可以根据实际情况去修改这些参数。来优化 MySQL 的 CBO 计算
+
+```mysql
+# 增加磁盘扫描成本
+UPDATE mysql.engine_cost SET cost_value = 2.0 WHERE cost_name = 'io_block_read_cost';
+FLUSH OPTIMIZER_COSTS;
+# 针对 Innodb 存储引擎设置 io_block_read_cost
+INSERT INTO mysql.engine_cost(engine_name, device_type, cost_name, cost_value, last_update, comment)
+  VALUES ('InnoDB', 0, 'io_block_read_cost', 2,
+  CURRENT_TIMESTAMP, 'Using a slower disk for InnoDB');
+FLUSH OPTIMIZER_COSTS;
+```
+
+*总的代价计算模型*
+
+![](../Images/Performance/CBO总的代价计算模型.png)
+
+总的执行代价等于 I/O 执行代价 + CPU 代价。PAGE FETCH 即 I/O 代价（数据页和索引页加载），W * (RSI CALLS) 即 CPU 代价，W 为权重因子，表示 CPU 到 I/O 之间转化的相关系数，RSI CALLS 代表了 CPU 的代价估算，包括了键比较（compare key）及行估算（row evaluating）的代价
+
+5.7 版本之后，代价模型进行了优化，加入了内存计算和远程操作的代价统计：
+
+总代价 = I/O 代价 + CPU 代价 + 内存代价 + 远程代价
+
 #### 存储引擎层
 
 **负责数据的存储和提取。架构模式是插件式的，支持 InnoDB、 MyISAM、Memory 等多个存储引擎，5.5开始默认存储引擎是 InnoDB**
