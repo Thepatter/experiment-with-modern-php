@@ -4,7 +4,9 @@
 
 #### 全字段排序
 
-`explain select city, name, age from T where city='杭州' order by name limit 1000`
+```mysql
+explain select city, name, age from T where city='杭州' order by name limit 1000
+```
 
 *explain分析带排序查询语句*
 
