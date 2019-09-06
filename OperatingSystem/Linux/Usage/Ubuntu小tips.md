@@ -16,6 +16,5 @@ cron.* /var/log/cron.log
 sudo service rsyslog restart
 # 重启 crontab
 sudo service cron restart
-
 ```
 
