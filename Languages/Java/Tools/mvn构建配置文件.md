@@ -72,7 +72,7 @@
 	<mirror>
         <id>alimaven</id>
         <name>aliyun maven mirror</name>
-        <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        <url>https://maven.aliyun.com/repository/central</url>
         <mirrorOf>central</mirrorOf>
     </mirror>
 </mirrors>
@@ -87,7 +87,7 @@
     <repository>
         <id>alimaven</id>
         <name>aliyun maven</name>
-        <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        <url>https://maven.aliyun.com/repository/central</url>
     </repository>
 </repositories>
 ```
