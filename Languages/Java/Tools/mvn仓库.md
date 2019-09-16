@@ -49,11 +49,11 @@
 </project>
 ```
 
-在 repositories 元素下，可以使用 repository 子元素声明一个或多个远程仓库。任何一个仓库声明的 id 必须是唯一的。maven 自带的中央仓库 id 为 central，如果其他的仓库声明也使用该 id，就会覆盖中央仓库的配置。releases 和 snapshots 元素用来控制 maven 对于发布版构件和快照版构件的下载。除了 enabled，还包含两个子元素 updatePolicy（配置 maven 从远程仓库检查更新的频率，默认值是 daily 每天，可用值：never 从不，always 每次构建，interval：x 每隔 x 分钟检查一次） 和 checksumPolicy（配置 maven 检查检验和文件的策略。当构件被部署到 maven 仓库中时，会同时部署对应的校验和文件。在下载构件的时候，maven 会验证校验和文件，当值为默认的 warn 时，maven 会在执行构建时输出警告信息，fail 遇到校验和错误就构建失败，i gnore 使 maven 完全忽略校验和错误）。layout 元素值表示仓库的布局是 maven2 或 maven3 的默认布局，而不是 maven1 的布局。
+在 repositories 元素下，可以使用 repository 子元素声明一个或多个远程仓库。任何一个仓库声明的 id 必须是唯一的。maven 自带的中央仓库 id 为 central，如果其他的仓库声明也使用该 id，就会覆盖中央仓库的配置。releases 和 snapshots 元素用来控制 maven 对于发布版构件和快照版构件的下载。除了 enabled，还包含两个子元素 `updatePolicy`（配置 maven 从远程仓库检查更新的频率，默认值是 daily 每天，可用值：never 从不，always 每次构建，`interval：x` 每隔 x 分钟检查一次） 和 `checksumPolicy`（配置 maven 检查检验和文件的策略。当构件被部署到 maven 仓库中时，会同时部署对应的校验和文件。在下载构件的时候，maven 会验证校验和文件，当值为默认的 warn 时，maven 会在执行构建时输出警告信息，fail 遇到校验和错误就构建失败，ignore 使 maven 完全忽略校验和错误）。layout 元素值表示仓库的布局是 `maven2` 或 `maven3` 的默认布局，而不是 `maven1` 的布局。
 
 * 远程仓库的认证
 
-  大部分远程仓库无须认证就可以访问，当需要认证时，配置认证信息必须在 settings.xml 文件中
+  大部分远程仓库无须认证就可以访问，当需要认证时，配置认证信息必须在 `settings.xml` 文件中
 
   ```xml
   <settings>
@@ -90,4 +90,73 @@
   </project>
   ```
 
-  distributionManagement 包含 repository 和 snapshotRepository 子元素，前者表示发布版本构件的仓库，后者表示快照版本的仓库。配置正确后，运行：`man clean deploy` 命令，maven 就会将项目构建输出的构件部署到配置对应的远程仓库，如果项目当前的版本是快照版本，则部署到快照版本仓库地址，否则部署到发布版本仓库地址
+  `distributionManagement` 包含 repository 和 `snapshotRepository` 子元素，前者表示发布版本构件的仓库，后者表示快照版本的仓库。配置正确后，运行：`man clean deploy` 命令，maven 就会将项目构建输出的构件部署到配置对应的远程仓库，如果项目当前的版本是快照版本，则部署到快照版本仓库地址，否则部署到发布版本仓库地址
+
+##### 配置仓库镜像
+
+统一修改仓库地址
+
+可以直接修改 `MAVEN_HOME/conf` 文件夹中的 `settings.xml` 文件，或者 `~/.m2/settings.xml` 文件。`setting.xml` 里有个 `mirrors` 节点，用来配置镜像 URL。mirrors 可以配置多个 mirror，每个 mirror 有：
+
+* id
+
+  唯一标识一个 mirror
+
+* name
+
+  类似描述
+
+* `url`
+
+  官方库地址
+
+* `mirrorOf`
+
+  代表一个镜像的替代位置，central 即代替官方的中央库
+
+`mirror` 不是按 `settings.xml` 中书写的顺序进行查询，会按 `id` 的字母排序来进行查找。
+
+```xml
+<mirrors>
+	<mirror>
+        <id>alimaven</id>
+        <name>aliyun maven mirror</name>
+        <url>https://maven.aliyun.com/repository/central</url>
+        <mirrorOf>central</mirrorOf>
+    </mirror>
+</mirrors>
+```
+
+单个项目
+
+直接在项目的 `pom.xml` 中修改中央库的地址
+
+```xml
+<repositories>
+    <repository>
+        <id>alimaven</id>
+        <name>aliyun maven</name>
+        <url>https://maven.aliyun.com/repository/central</url>
+    </repository>
+</repositories>
+```
+
+#### 仓库搜索
+
+* `Sonatype Nexus`
+
+  `http://repository.sonatype.org`
+
+* `jarvana`
+
+  `http://www.jarvana.com/jarvana/`
+
+* `MVNbbrowser`
+
+  `http://www.mvnbrowser.com`
+
+* `MVNrepository`
+
+  `http://mvnrepository.com`
+
+  
