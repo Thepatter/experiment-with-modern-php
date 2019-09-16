@@ -1,3 +1,5 @@
+## maven 构建
+
 ### maven 构建配置文件
 
 构建配置文件是一系列的配置项的值，用来设置或者覆盖 maven 构建默认值。使用构建配置文件，可以为不同的环境，定制构建方式。配置文件在 `pom.xml` 文件中使用 `activeProfiles` 或者 `profiles` 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 `POM`，并且用来给参数设定不同的目标环境。
@@ -259,5 +261,24 @@ Bound to phase 会显式该目标默认绑定的生命周期阶段
         </plugin>
     </plugins>
 </build>
+```
+
+### maven 构建 web 应用
+
+#### 概述
+
+需要显式指定打包方式为 `war`，maven 对 web 项目的布局结构也有一个通用的约定：
+
+* 类及资源文件与 Jar 项目一致
+
+* Web 资源目录
+
+  默认位置为 `/src/main/webapp/`，必须包含一个子目录 WEB-INF，该子目录还必须包含 `web.xml` 文件。它们与 WAR 包中的 Web 资源完全一致。WAR 包中有一个 lib 目录包含所有依赖 JAR 包，但 maven 项目结构中没有这样一个目录，maven 在用 WAR 方式打包的时候会根据 POM 的配置从本地仓库复制相应的 JAR 文件
+
+```xml
+<artifactId>account-web</artifactId>
+<packaging>war</packaging>
+# 使用 finalName 元素指定 war 包名称
+<finalName>account</finalName>
 ```
 

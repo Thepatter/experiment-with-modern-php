@@ -33,15 +33,22 @@
 ```xml
 <build>
 	<plugins>
-    	<plugin>
-        	<groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-            	<source>11</source>
-                <target>11</target>
-            </configuration>
-        </plugin>
-    </plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>11</source>
+            <target>11</target>
+        </configuration>
+    </plugin>
+    <plugin>
+      <grouId>org.apache.maven.plugins</grouId>
+      <artifactId>maven-resources-plugin</artifactId> 
+      <configuration>
+        <encoding>UTF-8</encoding>
+      </configuration>
+    </plugin>	
+  </plugins>
 </build>
 ```
 
