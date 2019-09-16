@@ -179,6 +179,7 @@ groupId, artifactId, version 是必须定义的，packaging 是可选的，class
         <scope>system</scope>
         <systemPath>$ {java.home}/lib/rt.jar</systemPath>
     </dependency>
+    ```
 
     import：(maven 2.0.9 及以上)，导入依赖范围。该依赖范围不会对三种 classpath 产生实际的影响
 
@@ -189,3 +190,50 @@ groupId, artifactId, version 是必须定义的，packaging 是可选的，class
 * exclusions
 
     排除依赖传递性依赖
+    
+    传递性依赖和依赖范围。依赖范围不仅可以控制依赖与三种 classpath 的关系，还对传递性依赖产生影响。假设 A 依赖于 B，B 依赖于 C，A 对于 B 是第一直接依赖，B 对于 C 是第二直接依赖，A 对于 C 是传递性依赖。第一直接依赖的范围和第二直接依赖的范围决定了传递性依赖的范围。
+    
+    *依赖范围影响传递性依赖*
+    
+    ![](./Images/依赖范围影响传递性依赖.png)
+    
+    *左边为第一直接依赖范围，上面为第二直接依赖范围，交叉为传递性依赖范围*
+    
+    当第二直接依赖的范围是 compile 的时候，传递性依赖的范围与第一直接依赖的范围一致；当第二直接依赖的范围是 test 的时候，依赖不会得以传递；当第二直接依赖的范围是 provided 的时候，只传递第一直接依赖范围也为 provided 的依赖，且传递性的范围同样为 provided；当第二直接依赖的范围是 runtime 的时候，传递性依赖的范围与第一直接依赖的范围一致，但 compile 例外，此时传递性依赖的范围为 runtime
+    
+    maven 引入的传递性依赖机制，大部分情况下只需要关心项目的直接依赖是什么，而不用考虑这些直接依赖会引入什么传递性依赖。但有时候，当传递性依赖造成问题的时候，需要知道该传递性依赖是从哪条依赖路径引入的：
+    
+    项目 A 有以下依赖关系 `A->B->C->X(1.0) A->D->X(2.0)`，X 是 A 的传递性依赖，但是两条路径上有两个版本的 X，此时 maven 会根据依赖调解机制：路径最近者优先；在路径长度相等的前提下，在 POM 中依赖声明的顺序决定，顺序最靠前的那个依赖优先解析；
+
+##### 归类依赖
+
+假定依赖于同一项目的不同模块，这些依赖的版本都是相同的，如果将来需要升级，这些依赖的版本会一起升级如（springframework），可以在一个唯一的地方定义版本，并且在 dependency 声明中引用。使用 properties 元素定义 maven 属性
+
+```xml
+<properties>
+	<springframework.version>4.3.18</springframework.version>
+</properties>
+<dependencies>
+	<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-beans</artifactId>
+    <version>$ {springframwrok.version}</version>
+  </dependency>
+</dependencies>
+```
+
+##### 优化依赖
+
+maven 会自动解析所有项目的直接依赖和传递性依赖，并且根据规则正确判断每个依赖的范围，对于一些依赖冲突，也能进行调节，以确保任何一个构件只有唯一的版本在依赖中存在。这些工作后，得到的依赖位解析依赖（Resolved Dependency）。
+
+```shell
+# 查看当前项目的已解析依赖
+mvn dependency:list
+# 查看当前项目的依赖树
+mvn dependency:tree
+# 分析依赖
+mvn dependency:analyze
+```
+
+分析依赖结果中：`Used undeclared dependencies`，为项目中使用到的，但是没有显式声明的依赖，这种依赖意味着潜在的风险，当前项目直接在项目中使用它们，因此应该显式声明任何项目中直接用到的依赖；`Unused declared dependencies`，为项目中未使用的，但显式声明的依赖，对于这一类依赖，不应该简单地直接删除其声明，而是应该仔细分析，由于 `dependency:analyze` 只会分析编译主代码和测试代码需要用到的依赖，一些执行测试和运行时需要的依赖它就发现不了。
+
