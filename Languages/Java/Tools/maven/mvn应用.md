@@ -164,7 +164,7 @@ groupId, artifactId, version 是必须定义的，packaging 是可选的，class
 
     *scope与classpath*
 
-    ![](./Images/scope与classpath关系.png)
+    ![](../Images/scope与classpath关系.png)
 
     依赖的范围。maven 在编译项目主代码的时候需要使用一套 classpath，在编译和执行测试的时候会使用另外一套，实际运行 maven 项目的时候，又会使用另外一套 classpath。依赖范围就是用来控制与这三种 classpath（编译 classpath、测试 classpath、运行 classpath）的关系，maven 有以下几种依赖范围：
 
@@ -202,7 +202,7 @@ groupId, artifactId, version 是必须定义的，packaging 是可选的，class
     
     *依赖范围影响传递性依赖*
     
-    ![](./Images/依赖范围影响传递性依赖.png)
+    ![](../Images/依赖范围影响传递性依赖.png)
     
     *左边为第一直接依赖范围，上面为第二直接依赖范围，交叉为传递性依赖范围*
     

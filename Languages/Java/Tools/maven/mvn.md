@@ -6,7 +6,7 @@
 
 *maven约定目录结构*
 
-![](./Images/maven约定目录结构.png)
+![](../Images/maven约定目录结构.png)
 
 ##### maven特点
 

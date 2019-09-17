@@ -282,3 +282,211 @@ Bound to phase 会显式该目标默认绑定的生命周期阶段
 <finalName>account</finalName>
 ```
 
+使用 profile 过滤 web 资源，配置不同 profile
+
+```xml
+<profiles>
+	<profile>
+        <id>client-a</id>
+        <proerties>
+        	<client.logo>a.jpg</client.logo>
+            <client.theme>red</client.theme>
+        </proerties>
+    </profile>
+    <profile>
+    	<id>client-b</id>
+        <properties>
+        	<client.logo>b.jpg</client.logo>
+            <client.theme>blue</client.theme>
+        </properties>
+    </profile>
+</profiles>
+```
+
+使用 `maven-war-plugin` 插件对 `src/main/webapp` 资源目录开启过滤
+
+```xml
+<plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-war-plugin</artifactId>
+    <version>2.1-beta-1</version>
+    <configuration>
+    	<webResources>
+        	<resource>
+            	<filtering>true</filtering>
+                <directory>src/main/webapp</directory>
+                <includes>
+                	<include>**/*.css</include>
+                    <include>**/*.js</include>
+                </includes>
+            </resource>
+        </webResources>
+    </configuration>
+</plugin>
+```
+
+激活构建 `mvn clean install -Pclient-a`
+
+### maven profile
+
+#### profile 种类
+
+为了能让构建在各个环境下方便的移植，maven 引入了 profile 的概念。profile 能够在构建的时候修改 POM 的一个子集，或者添加额外的配置元素。用户可以使用很多方式激活 profile，以实现构建在不同环境下的移植。根据具体的需要，可以在以下位置声明 profile
+
+- `pom.xml`
+
+  只对当前项目有效
+
+- 用户 `settings.xml`
+
+  该用户所有 maven 项目有效
+
+- 全局 `settings.xml`
+
+  本机所有 maven 项目有效
+
+*不同环境的profile*
+
+```xml
+<profiles>
+  <profile>
+    <id>dev</id>
+    <properties>
+      <db.driver>com.mysql.jdbc.Driver</db.driver>
+      <db.url>jdbc:mysql://localhost:3306/test</db.url>
+      <db.username>dev</db.username>
+      <db.password>secret</db.password>
+    </properties>
+  </profile>
+  <profile>
+    <id>test</id>
+    <properties>
+      <db.driver>com.mysql.jdbc.Driver</db.driver>
+      <db.url>jdbc:mysql://192.168.1.100:3306/test</db.url>
+      <db.username>test</db.username>
+      <db.password>secret</db.password>
+    </properties>
+  </profile>
+</profiles>
+```
+
+`POM` 中的 profile 可使用的元素
+
+```xml
+<project>
+	<repositories></repositories>
+    <pluginRepositories></pluginRepositories>
+    <distributionManagement></distributionManagement>
+    <dependencies></dependencies>
+    <dependencyManagement></dependencyManagement>
+    <modules></modules>
+    <properties></properties>
+    <reporting></reporting>
+    <build>
+    	<plugins></plugins>
+        <defaultGoal></defaultGoal>
+        <resources></resources>
+        <testResources></testResources>
+        <finalName></finalName>
+    </build>
+</project>
+```
+
+`POM` 外部的 profile 可使用的元素
+
+```xml
+<project>
+	<repositories></repositories>
+    <pluginRepositories></pluginRepositories>
+    <properties></properties>
+</project>
+```
+
+#### 激活 profile
+
+* 默认激活
+
+  在定义 profile 的时候指定其默认激活，使用 `activeByDefault` 元素用户可以指定 profile 自动激活。如果 POM 中任何一个 profile 通过其他任意一种方式被激活了，所有的默认激活配置都会失效
+
+  ```xml
+  <profiles>
+  	<profile>
+          <id>dev</id>
+          <activation>
+          	<activeByDefault>true</activeByDefault>
+          </activation>
+      </profile>
+  </profiles>
+  ```
+
+  如果项目中有很多的 profile，它们的激活方式各异，`maven-help-plugin` 可以帮助用户了解当前激活的 `profile`
+
+  ```xml
+  # 当前激活的 profile
+  mvn help:active-profiles
+  # 列出当前所有的 profile
+  mvn help:all-profiles
+  ```
+
+* 命令行激活
+
+  可以使用 maven 命令行参数 -P 加 profile 的 id 来激活，多个 id 之间用 ，分割
+
+  ```xml
+  mvn clean install -Pdev, test
+  ```
+
+* settings 文件显式激活
+
+  可以配置 `settings.xml` 文件的  `activeProfiles` 元素，表示其配置的 `profile` 对于所有项目都处于激活状态
+
+  ```xml
+  <settings>
+  	<activeProfiles>
+          <activeProfile>dev</activeProfile>
+      </activeProfiles>
+  </settings>
+  ```
+
+* 系统属性激活
+
+  可以配置当某系统属性存在的时候且值确定时，自动激活 profile
+  
+  ```xml
+  <profiles>
+  	<profile>
+      	<activation>
+          	<property>
+              	<name>test</name>
+                  <value>x</value>
+              </property>
+          </activation>
+      </profile>
+  </profiles>
+  ```
+  
+  ```shell
+  mvn clean install -Dtest = x
+  ```
+
+* 操作系统环境激活
+
+  profile 可以自动根据操作系统环境激活，如果构建在不同的操作系统有差异，用户完全可以将这些差异写进 profile，然后配置它们自动基于操作系统环境激活
+
+  ```xml
+  <profiles>
+  	<profile>
+      	<activation>
+          	<os>
+                  <name>Windows XP</name>
+                  <family>Windows</family>
+                  <arch>x86</arch>
+                  <version>5.1.2600</version>
+              </os>
+          </activation>
+      </profile>
+  </profiles>
+  ```
+
+  
+
