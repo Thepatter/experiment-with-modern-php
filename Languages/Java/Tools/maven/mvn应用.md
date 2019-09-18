@@ -33,22 +33,22 @@
 ```xml
 <build>
 	<plugins>
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>11</source>
-            <target>11</target>
-        </configuration>
-    </plugin>
-    <plugin>
-      <grouId>org.apache.maven.plugins</grouId>
-      <artifactId>maven-resources-plugin</artifactId> 
-      <configuration>
-        <encoding>UTF-8</encoding>
-      </configuration>
-    </plugin>	
-  </plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>11</source>
+                <target>11</target>
+            </configuration>
+        </plugin>
+        <plugin>
+            <grouId>org.apache.maven.plugins</grouId>
+            <artifactId>maven-resources-plugin</artifactId> 
+            <configuration>
+                <encoding>UTF-8</encoding>
+            </configuration>
+        </plugin>	
+  	</plugins>
 </build>
 ```
 
@@ -82,34 +82,35 @@
   可以让其他的 maven 项目直接引用这个 jar，该任务会将项目输出的 jar 安装到 maven 本地仓库中。默认打包生成的 jar 是不能直接运行的，因为带有 main 方法的类信息不会添加到 `mainfest` 中（jar 文件中的 `META-INF/MANIFEST.MF` 文件，将无法看到 `Main-Class` 一行）。为了生成可执行的 `jar` 文件，需要使用 `maven-shade-plugin`
 
   ```xml
-  <plugins>
-              <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-shade-plugin</artifactId>
-                  <version>3.2.1</version>
-                  <executions>
-                      <execution>
-                          <phase>package</phase>
-                          <goals>
-                              <goal>shade</goal>
-                          </goals>
-                          <configuration>
-                              <transformers>
-                                  <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-  <!--                                    <manifestEntries>-->
-  <!--                                        <Main-Class>com.game.chaoyi.controller.HelloWorld</Main-Class>-->
-  <!--                                        <X-Compile-Source-JDK>11</X-Compile-Source-JDK>-->
-  <!--                                        <X-Compile-Target-JDK>11</X-Compile-Target-JDK>-->
-  <!--                                    </manifestEntries>-->
-                                      <mainClass>com.game.chaoyi.controller.HelloWorld</mainClass>
-                                  </transformer>
-                              </transformers>
-                          </configuration>
-                      </execution>
-                  </executions>
-              </plugin>
-          </plugins>
-      </build>
+  <build>
+  	<plugins>
+      	<plugin>
+          	<groupId>org.apache.maven.plugins</groupId>
+          	<artifactId>maven-shade-plugin</artifactId>
+          	<version>3.2.1</version>
+          	<executions>
+              	<execution>
+                  	<phase>package</phase>
+                  	<goals>
+                      	<goal>shade</goal>
+                  	</goals>
+                  	<configuration>
+                      	<transformers>
+                          	<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+<!--                                    <manifestEntries>-->
+<!--                                        <Main-Class>com.game.chaoyi.controller.HelloWorld</Main-Class>-->
+<!--                                        <X-Compile-Source-JDK>11</X-Compile-Source-JDK>-->
+<!--                                        <X-Compile-Target-JDK>11</X-Compile-Target-JDK>-->
+<!--                                    </manifestEntries>-->
+                              	<mainClass>com.game.chaoyi.controller.HelloWorld</mainClass>
+                          	</transformer>
+                      	</transformers>
+                  	</configuration>
+              	</execution>
+              </executions>
+          </plugin>
+      </plugins>
+  </build>
   ```
 
   `mainfestEntries` 元素等于 `mainClass`，官方示例为 `<mainfestEntries>` 元素。安装完成后会生成可运行的 jar 和原始的 jar。
@@ -224,7 +225,8 @@ groupId, artifactId, version 是必须定义的，packaging 是可选的，class
 	<dependency>
     <groupId>org.springframework</groupId>
     <artifactId>spring-beans</artifactId>
-    <version>$ {springframwrok.version}</version>
+    <version>$
+        {springframwrok.version}</version>
   </dependency>
 </dependencies>
 ```

@@ -199,14 +199,14 @@ Bound to phase 会显式该目标默认绑定的生命周期阶段
 
   ```xml
   <build>
-  	<plugins>
-      	<plugin>
-          	<groupId>org.apache.maven.plugins</groupId>
+      <plugins>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-antrun-plugin</artifactId>
               <version>1.3</version>
               <executions>
-              	<executions>
-                  	<id>ant-validate</id>
+              	  <execution>
+                      <id>ant-validate</id>
                       <phase>validate</phase>
                       <goals>
                       	<goal>run</goal>
@@ -216,7 +216,7 @@ Bound to phase 会显式该目标默认绑定的生命周期阶段
                               <echo>I'm bound to validate phase</echo>
                           </tasks>
                       </configuration>
-                  </executions>
+                  </execution>
               </executions>
           </plugin>
       </plugins>
@@ -278,7 +278,7 @@ Bound to phase 会显式该目标默认绑定的生命周期阶段
 ```xml
 <artifactId>account-web</artifactId>
 <packaging>war</packaging>
-# 使用 finalName 元素指定 war 包名称
+<!-- 使用 finalName 元素指定 war 包名称 -->
 <finalName>account</finalName>
 ```
 

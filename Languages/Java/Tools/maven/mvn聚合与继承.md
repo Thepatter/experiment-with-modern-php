@@ -6,7 +6,8 @@
 
 ```xml
 <project>
-	<groupId>com.project.test</groupId>
+
+    <groupId>com.project.test</groupId>
     <artifactId>account-aggregator</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaing>pom</packaing>
@@ -52,7 +53,8 @@
 
 ```xml
 <project>
-	<groupId>com.project.test</groupId>
+
+    <groupId>com.project.test</groupId>
     <artifactId>project-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -64,6 +66,7 @@
 
 ```xml
 <project>
+
 	<parent>
     	<groupId>com.project.test</groupId>
         <artifactId>account-parent</artifactId>

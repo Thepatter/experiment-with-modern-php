@@ -33,19 +33,19 @@
 ```xml
 <project>
 	<repositories>
-  	<respository>
-    	<id>jboss</id>
-      <name>JBoss Repository</name>
-      <url>http://repository.jboss.com/maven2/</url>
-      <releases>
-      	<enabled>true</enabled>
-      </releases>
-      <snapshots>
-      	<enabled>false</enabled>
-      </snapshots>
-      <layout>default</layout>
-    </respository>
-  </repositories>
+  	    <respository>
+            <id>jboss</id>
+            <name>JBoss Repository</name>
+            <url>http://repository.jboss.com/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <layout>default</layout>
+        </respository>
+    </repositories>
 </project>
 ```
 
@@ -75,18 +75,18 @@
 
   ```xml
   <project>
-  	<distributionManagement>
-    	<repository>
-      	<id>proj-release</id>
-        <name>Proj Release Repository</name>
-        <url>http://192.168.1.100/content/repositories/proj-releases</url>
-      </repository>
-      <snapshotRepository>
-      	<id>proj-snapshots</id>
-        <name>Proj Snapshot Repository</name>
-        <url>http://192.168.1.100/content/repositories/proj-snapshots</url>
-      </snapshotRepository>
-    </distributionManagement>
+      <distributionManagement>
+          <repository>
+              <id>proj-release</id>
+              <name>Proj Release Repository</name>
+              <url>http://192.168.1.100/content/repositories/proj-releases</url>
+          </repository>
+          <snapshotRepository>
+              <id>proj-snapshots</id>
+              <name>Proj Snapshot Repository</name>
+              <url>http://192.168.1.100/content/repositories/proj-snapshots</url>
+          </snapshotRepository>
+      </distributionManagement>
   </project>
   ```
 
