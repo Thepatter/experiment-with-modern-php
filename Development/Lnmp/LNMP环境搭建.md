@@ -132,7 +132,7 @@
 
 * 从官网下载源码
 
-* 执行 `./configure
+* 执行 `./configure`
 
   **configure配置**
 
