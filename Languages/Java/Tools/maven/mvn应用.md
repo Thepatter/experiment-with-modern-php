@@ -163,7 +163,7 @@ groupId, artifactId, version 是必须定义的，packaging 是可选的，class
 
 * scope
 
-    *scope与classpath*
+    *scope与 classpath*
 
     ![](../Images/scope与classpath关系.png)
 
@@ -223,11 +223,10 @@ groupId, artifactId, version 是必须定义的，packaging 是可选的，class
 </properties>
 <dependencies>
 	<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-beans</artifactId>
-    <version>$
-        {springframwrok.version}</version>
-  </dependency>
+    	<groupId>org.springframework</groupId>
+    	<artifactId>spring-beans</artifactId>
+    	<version>${springframwrok.version}</version>
+    </dependency>
 </dependencies>
 ```
 

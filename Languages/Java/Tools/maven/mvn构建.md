@@ -1,8 +1,8 @@
 ## maven 构建
 
-### maven 构建配置文件
+### maven 构建配置文件 profile
 
-构建配置文件是一系列的配置项的值，用来设置或者覆盖 maven 构建默认值。使用构建配置文件，可以为不同的环境，定制构建方式。配置文件在 `pom.xml` 文件中使用 `activeProfiles` 或者 `profiles` 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 `POM`，并且用来给参数设定不同的目标环境。
+为了能让构建在各个环境下方便的移植，maven 引入了 profile 的概念。profile 能够在构建的时候修改 POM 的一个子集，或者添加额外的配置元素。用户可以使用很多方式激活 profile，以实现构建在不同环境下的移植，构建配置文件是一系列的配置项的值，用来设置或者覆盖 maven 构建默认值。使用构建配置文件，可以为不同的环境，定制构建方式。配置文件在 `pom.xml` 文件中使用 `activeProfiles` 或者 `profiles` 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 `POM`，并且用来给参数设定不同的目标环境。
 
 #### 构建配置文件的类型
 
@@ -18,7 +18,125 @@
 
   定义在 Maven 全局的设置 xml 文件中（`%M2_HOME%/conf/settings.xml`）
 
-#### maven 生命周期
+*pom文件中profile能使用元素*
+
+```xml
+<project>
+	<repositories></repositories>
+    <pluginRepositories></pluginRepositories>
+    <distributionManagement></distributionManagement>
+    <dependencies></dependencies>
+    <dependencyManagement></dependencyManagement>
+    <modules></modules>
+    <properties></properties>
+    <reporting></reporting>
+    <build>
+    	<plugins></plugins>
+        <defaultGoal></defaultGoal>
+        <resources></resources>
+        <testResources></testResources>
+        <finalName></finalName>
+    </build>
+</project>
+```
+
+*pom外部文件中profile可用元素*
+
+```xml
+<project>
+	<repositories></repositories>
+    <pluginRepositories></pluginRepositories>
+    <properties></properties>
+</project>
+```
+
+#### 激活 profile
+
+- 默认激活
+
+  在定义 profile 的时候指定其默认激活，使用 `activeByDefault` 元素用户可以指定 profile 自动激活。如果 POM 中任何一个 profile 通过其他任意一种方式被激活了，所有的默认激活配置都会失效
+
+  ```xml
+  <profiles>
+  	<profile>
+          <id>dev</id>
+          <activation>
+          	<activeByDefault>true</activeByDefault>
+          </activation>
+      </profile>
+  </profiles>
+  ```
+
+  如果项目中有很多的 profile，它们的激活方式各异，`maven-help-plugin` 可以帮助用户了解当前激活的 `profile`
+
+  ```shell
+  # 当前激活的 profile
+  mvn help:active-profiles
+  # 列出当前所有的 profile
+  mvn help:all-profiles
+  ```
+
+- 命令行激活
+
+  可以使用 maven 命令行参数 -P 加 profile 的 id 来激活，多个 id 之间用 ，分割
+
+  ```shell
+  mvn clean install -Pdev, test
+  ```
+
+- settings 文件显式激活
+
+  可以配置 `settings.xml` 文件的  `activeProfiles` 元素，表示其配置的 `profile` 对于所有项目都处于激活状态
+
+  ```xml
+  <settings>
+  	<activeProfiles>
+          <activeProfile>dev</activeProfile>
+      </activeProfiles>
+  </settings>
+  ```
+
+- 系统属性激活
+
+  可以配置当某系统属性存在的时候且值确定时，自动激活 profile
+
+  ```xml
+  <profiles>
+  	<profile>
+      	<activation>
+          	<property>
+              	<name>test</name>
+                  <value>x</value>
+              </property>
+          </activation>
+      </profile>
+  </profiles>
+  ```
+
+  ```shell
+  mvn clean install -Dtest = x
+  ```
+
+- 操作系统环境激活
+
+  profile 可以自动根据操作系统环境激活，如果构建在不同的操作系统有差异，用户完全可以将这些差异写进 profile，然后配置它们自动基于操作系统环境激活
+
+  ```xml
+  <profiles>
+  	<profile>
+      	<activation>
+          	<os>
+                  <name>Windows XP</name>
+                  <family>Windows</family>
+                  <arch>x86</arch>
+                  <version>5.1.2600</version>
+              </os>
+          </activation>
+      </profile>
+  </profiles>
+  ```
+
+### maven 生命周期
 
 maven 生命周期包含了项目的清理、初始化、编译、测试、打包、集成测试、验证、部署、站点生成等几乎所有构建步骤。maven 的生命周期是抽象了构建的各个步骤，定义了它们的次序，生命周期本身不做任何实际的工作。在 maven 的设计中，实际的任务都交由插件来完成，maven 为大多数构建步骤编写并绑定了默认插件。
 
@@ -86,7 +204,7 @@ default 生命周期
 
 * package
 
-  接受编译好额代码，打包成可发布的格式
+  打包成可发布的格式
 
 * `pre-integration-test`
 
@@ -160,9 +278,9 @@ mvn help:describe-Dplugin = compiler-Dgoal = compile
 mvn help:describe-Dplugin = compiler-Ddetail
 ```
 
-Bound to phase 会显式该目标默认绑定的生命周期阶段
+Bound to phase 会显示该目标默认绑定的生命周期阶段
 
-#### 插件配置
+### 插件配置
 
 * 命令行插件配置
 
@@ -279,7 +397,9 @@ Bound to phase 会显式该目标默认绑定的生命周期阶段
 <artifactId>account-web</artifactId>
 <packaging>war</packaging>
 <!-- 使用 finalName 元素指定 war 包名称 -->
-<finalName>account</finalName>
+<build>
+	<finalName>account-web</finalName>
+</build>
 ```
 
 使用 profile 过滤 web 资源，配置不同 profile
@@ -326,167 +446,3 @@ Bound to phase 会显式该目标默认绑定的生命周期阶段
 ```
 
 激活构建 `mvn clean install -Pclient-a`
-
-### maven profile
-
-#### profile 种类
-
-为了能让构建在各个环境下方便的移植，maven 引入了 profile 的概念。profile 能够在构建的时候修改 POM 的一个子集，或者添加额外的配置元素。用户可以使用很多方式激活 profile，以实现构建在不同环境下的移植。根据具体的需要，可以在以下位置声明 profile
-
-- `pom.xml`
-
-  只对当前项目有效
-
-- 用户 `settings.xml`
-
-  该用户所有 maven 项目有效
-
-- 全局 `settings.xml`
-
-  本机所有 maven 项目有效
-
-*不同环境的profile*
-
-```xml
-<profiles>
-  <profile>
-    <id>dev</id>
-    <properties>
-      <db.driver>com.mysql.jdbc.Driver</db.driver>
-      <db.url>jdbc:mysql://localhost:3306/test</db.url>
-      <db.username>dev</db.username>
-      <db.password>secret</db.password>
-    </properties>
-  </profile>
-  <profile>
-    <id>test</id>
-    <properties>
-      <db.driver>com.mysql.jdbc.Driver</db.driver>
-      <db.url>jdbc:mysql://192.168.1.100:3306/test</db.url>
-      <db.username>test</db.username>
-      <db.password>secret</db.password>
-    </properties>
-  </profile>
-</profiles>
-```
-
-`POM` 中的 profile 可使用的元素
-
-```xml
-<project>
-	<repositories></repositories>
-    <pluginRepositories></pluginRepositories>
-    <distributionManagement></distributionManagement>
-    <dependencies></dependencies>
-    <dependencyManagement></dependencyManagement>
-    <modules></modules>
-    <properties></properties>
-    <reporting></reporting>
-    <build>
-    	<plugins></plugins>
-        <defaultGoal></defaultGoal>
-        <resources></resources>
-        <testResources></testResources>
-        <finalName></finalName>
-    </build>
-</project>
-```
-
-`POM` 外部的 profile 可使用的元素
-
-```xml
-<project>
-	<repositories></repositories>
-    <pluginRepositories></pluginRepositories>
-    <properties></properties>
-</project>
-```
-
-#### 激活 profile
-
-* 默认激活
-
-  在定义 profile 的时候指定其默认激活，使用 `activeByDefault` 元素用户可以指定 profile 自动激活。如果 POM 中任何一个 profile 通过其他任意一种方式被激活了，所有的默认激活配置都会失效
-
-  ```xml
-  <profiles>
-  	<profile>
-          <id>dev</id>
-          <activation>
-          	<activeByDefault>true</activeByDefault>
-          </activation>
-      </profile>
-  </profiles>
-  ```
-
-  如果项目中有很多的 profile，它们的激活方式各异，`maven-help-plugin` 可以帮助用户了解当前激活的 `profile`
-
-  ```xml
-  # 当前激活的 profile
-  mvn help:active-profiles
-  # 列出当前所有的 profile
-  mvn help:all-profiles
-  ```
-
-* 命令行激活
-
-  可以使用 maven 命令行参数 -P 加 profile 的 id 来激活，多个 id 之间用 ，分割
-
-  ```xml
-  mvn clean install -Pdev, test
-  ```
-
-* settings 文件显式激活
-
-  可以配置 `settings.xml` 文件的  `activeProfiles` 元素，表示其配置的 `profile` 对于所有项目都处于激活状态
-
-  ```xml
-  <settings>
-  	<activeProfiles>
-          <activeProfile>dev</activeProfile>
-      </activeProfiles>
-  </settings>
-  ```
-
-* 系统属性激活
-
-  可以配置当某系统属性存在的时候且值确定时，自动激活 profile
-  
-  ```xml
-  <profiles>
-  	<profile>
-      	<activation>
-          	<property>
-              	<name>test</name>
-                  <value>x</value>
-              </property>
-          </activation>
-      </profile>
-  </profiles>
-  ```
-  
-  ```shell
-  mvn clean install -Dtest = x
-  ```
-
-* 操作系统环境激活
-
-  profile 可以自动根据操作系统环境激活，如果构建在不同的操作系统有差异，用户完全可以将这些差异写进 profile，然后配置它们自动基于操作系统环境激活
-
-  ```xml
-  <profiles>
-  	<profile>
-      	<activation>
-          	<os>
-                  <name>Windows XP</name>
-                  <family>Windows</family>
-                  <arch>x86</arch>
-                  <version>5.1.2600</version>
-              </os>
-          </activation>
-      </profile>
-  </profiles>
-  ```
-
-  
-

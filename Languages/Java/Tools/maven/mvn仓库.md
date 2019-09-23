@@ -14,11 +14,11 @@
 
 * 中央仓库
 
-  中央仓库是 maven 核心自带的远程仓库，包含了绝大部分开源的构件。在默认配置下，当本地仓库 maven 需要的构件的时候，它就会尝试从中央仓库下载
+  中央仓库是 maven 核心自带的远程仓库，包含了绝大部分开源的构件。在默认配置下，当本地仓库 maven 需要构件的时候，它就会尝试从中央仓库下载
 
 * 本地仓库
 
-  一般来说，在 maven 项目目录下，没有诸如 `lib/` 这样用来存放依赖文件的目录，当 maven 在执行编译或测试时，如果需要使用依赖文件，它总是基于坐标使用本地仓库的依赖文件。默认情况下，每个用户在自己的用户目录下都有一个路径为 `.m2/repository/` 的仓库目录。可以编译 `.m2/settings.xmk`，设置 `localRepository` 元素的值为想要的仓库地址
+  一般来说，在 maven 项目目录下，没有诸如 `lib/` 这样用来存放依赖文件的目录，当 maven 在执行编译或测试时，如果需要使用依赖文件，它总是基于坐标使用本地仓库的依赖文件。默认情况下，每个用户在自己的用户目录下都有一个路径为 `.m2/repository/` 的仓库目录。可以编译 `.m2/settings.xml`，设置 `localRepository` 元素的值为想要的仓库地址
 
   ```xml
   <settings>
@@ -58,16 +58,16 @@
   ```xml
   <settings>
   	<servers>
-    	<server>
-      	<id>my-proj</id>
-        <username>repo-user</username>
-        <password>repo-pwd</password>
-      </server>
-    </servers>
+    	    <server>
+      	    <id>my-proj</id>
+              <username>repo-user</username>
+              <password>repo-pwd</password>
+          </server>
+      </servers>
   </settings>
   ```
 
-  maven 使用 servers 元素及其 server 子元素配置仓库认证信息。id 元素必须于 POM 中需要认证的 repository 元素的 id 完全一致。
+  maven 使用 servers 元素及其 server 子元素配置仓库认证信息。id 元素必须与 POM 中需要认证的 repository 元素的 id 完全一致。
 
 * 部署到远程仓库
 

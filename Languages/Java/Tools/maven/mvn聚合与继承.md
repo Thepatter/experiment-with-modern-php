@@ -6,7 +6,6 @@
 
 ```xml
 <project>
-
     <groupId>com.project.test</groupId>
     <artifactId>account-aggregator</artifactId>
     <version>1.0.0-SNAPSHOT</version>
@@ -14,12 +13,12 @@
     <name>Account Aggregator</name>
     <modules>
     	<module>account-email</module>
-        <module>account-persist</module>
+    	<module>account-persist</module>
     </modules>
 </project>
 ```
 
-对于聚合模块，其打包方式 `packaing` 的值必须为 `pom`，`modules` 元素这是实现聚合的最核心的配置，用户可以通过在一个打包方式为 `pom` 的 maven 项目中声明任意数量的 module 元素来实现模块的聚合。值为一个当前 POM 的相对目录。通常将聚合模块放在项目目录的最顶层，其他模块则作为聚合模块的子目录存在。聚合模块一般只存在一个 POM 文件
+对于聚合模块，其打包方式 `packaing` 的值必须为 `pom`，`modules` 元素是实现聚合的最核心的配置，用户可以通过在一个打包方式为 `pom` 的 maven 项目中声明任意数量的 module 元素来实现模块的聚合。值为一个当前 POM 的相对目录。通常将聚合模块放在项目目录的最顶层，其他模块则作为聚合模块的子目录存在。聚合模块一般只存在一个 POM 文件
 
 #### 反应堆
 
@@ -39,7 +38,7 @@
 
 * -pl，`--projects <arg>`
 
-  投机指定的模块，模块间用逗号分隔
+  指定模块，模块间用逗号分隔
 
 * -rf，`-resume-from <arg>`
 
@@ -53,7 +52,6 @@
 
 ```xml
 <project>
-
     <groupId>com.project.test</groupId>
     <artifactId>project-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
@@ -66,12 +64,12 @@
 
 ```xml
 <project>
-
 	<parent>
     	<groupId>com.project.test</groupId>
         <artifactId>account-parent</artifactId>
         <version>1.0.0</version>
-        <relativePath>../account-parent/pom.xml</relativePath> // 指定父模块相对路径
+        <!-- 指定父模块相对路径 -->
+        <relativePath>../account-parent/pom.xml</relativePath> 
     </parent>
 </project>
 ```
@@ -107,18 +105,18 @@ maven 提供的 `dependencyManagement` 元素能让子模块继承父模块的�
   ```xml
   <dependencyManagement>
   	<dependencies>
-    	<dependency>
-      	<groupId>com.project.test</groupId>
-        <artifactId>account-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
+    		<dependency>
+      		<groupId>com.project.test</groupId>
+        		<artifactId>account-parent</artifactId>
+        		<version>1.0.0-SNAPSHOT</version>
+        		<type>pom</type>
+        		<scope>import</scope>
+      	</dependency>
+      </dependencies>
   </dependencyManagement>
   ```
 
 #### 插件管理
 
-maven 提供了 `pluginManagament` 元素管理插件。在该元素中配置的依赖不会造成实际的插件调用行为，当 POM 中配置了真正的 `plugin` 元素，并且其 `groupID` 和 `artifactId` 和 `pluginManagement` 中配置的插件匹配时，`pluginManagemane` 的配置才会影响实际的插件行为。当项目中的多个模块有同样的插件配置时，应当将配置移到父 POM 的 `pluginManagement` 元素中，即使各个模块对于同一插件的具体配置不尽相同，也应当使用父 POM 的 `pluginManagement` 元素统一声明插件的版本。
+maven 提供了 `pluginManagament` 元素管理插件。在该元素中配置的依赖不会造成实际的插件调用行为，当 POM 中配置了真正的 `plugin` 元素，并且其 `groupID` 和 `artifactId` 和 `pluginManagement` 中配置的插件匹配时，`pluginManagemant` 的配置才会影响实际的插件行为。当项目中的多个模块有同样的插件配置时，应当将配置移到父 POM 的 `pluginManagement` 元素中，即使各个模块对于同一插件的具体配置不尽相同，也应当使用父 POM 的 `pluginManagement` 元素统一声明插件的版本。
 
