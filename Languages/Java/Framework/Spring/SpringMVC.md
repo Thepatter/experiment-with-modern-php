@@ -115,3 +115,14 @@ public class RootConfig {
 }
 ```
 
+##### mvc 中使用的注解
+
+* `Controller`
+
+  声明控制器，可用 `component` 代替，声明为 Spring 上下文中一个 bean
+
+* `RequestMapping`
+
+  value 属性指定请求路径（可使用数组映射多个路径），应用在类上则整个类都映射到该路径，可指定 method 属性限制请求方法
+
+* 
