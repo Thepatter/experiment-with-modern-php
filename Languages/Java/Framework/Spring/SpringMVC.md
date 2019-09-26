@@ -1,8 +1,6 @@
 ## Spring MVC
 
-### Spring MVC
-
-#### Spring MVC 请求处理
+### Spring MVC 请求处理
 
 ![](./Images/SpringMVC请求处理流程.png)
 
@@ -13,9 +11,9 @@
 * DispatcherServlet 将会使用视图分析器（view resolver）来将逻辑视图名匹配为一个特定的视图实现。
 * 视图将使用模型数据渲染输入，输出会通过响应对象传递给客户端
 
-#### 搭建 Spring MVC
+### 搭建 Spring MVC
 
-##### 配置 DispatcherServlet
+#### 配置 DispatcherServlet
 
 DispatcherServlet 是 Spring MVC 的核心。传统会将该 Servlet 配置在 web.xml 文件中。Servlet3 规范可以使用注解配置
 
@@ -47,7 +45,7 @@ public class SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherS
 
 在 Spring Web 应用中，通常还会有另外一个应用上下文。这个应用上下文由  `ContextLoaderListener` 创建。实际上，AbstractAnnotationConfigDispatcherServletInitializer 会同时创建 DispatcherServlet 和 ContextLoaderListener。`GetServletConfigClasses()` 方法返回的带有 `@Configuration` 注解的类将会用来定义 DispatcherServlet 应用上下文中的 bean。`getRootConfigClasses()` 方法返回的带有 `@Configuration` 注解的类将会用来配置 ContextLoaderListener 创建的应用上下文中的 bean
 
-##### 启用 SpringMVC
+#### 启用 SpringMVC
 
 ```java
 package spittr.config;
@@ -115,7 +113,7 @@ public class RootConfig {
 }
 ```
 
-##### mvc 中使用的注解
+#### mvc 中使用的注解
 
 * `Controller`
 
@@ -125,4 +123,343 @@ public class RootConfig {
 
   value 属性指定请求路径（可使用数组映射多个路径），应用在类上则整个类都映射到该路径，可指定 method 属性限制请求方法
 
-* 
+* `RequestParam`
+
+  value 属性指定请求参数键，所有请求参数值都为字符串
+
+* `PathVariable`
+
+  路径参数，当值为与 `RequestMapping`  中指定的 `{}` 括号内一致时可以省略 `value` 值
+
+* `Autowired`
+
+  自动注入，使用该注解，spring 将自动注入（扫描 bean 或 component 注解）
+
+* `Valid`
+
+  注解要验证的请求参数
+
+#### 编写测试
+
+* 为 spring 的 controller 编写测试，测试返回对应视图
+
+  ```java
+  import static org.mockito.Mockito.*;
+  import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+  import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+  import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
+  import org.springframework.test.web.servlet.MockMvc;
+  public class SpitterControllerTest {
+      @Test
+      public void shouldShowRegistration() throws Exception {
+          SpitterController controller = new SpitterController(mock(SpitterRepository.class));
+          MockMvc mockMvc = standaloneSetup(controller).build();
+          mockMvc.perform(get("/spitter/register"))
+                  .andExpect(view().name("registerForm"));
+      }
+  }
+  ```
+
+* 测试 post 表单提交
+
+  ```java
+  @Test
+      public void shouldProcessRegistration() throws Exception {
+          SpitterRepository mockRepository = mock(SpitterRepository.class);
+          Spitter unsaved = new Spitter("jbauer", "24hours", "Jack", "Bauer", "email@qq.com");
+          Spitter saved = new Spitter("jbauer", "24hours", "Jack", "Bauer", "email@qq.com");
+          when(mockRepository.save(unsaved)).thenReturn(saved);
+          SpitterController controller = new SpitterController(mockRepository);
+          MockMvc mockMvc = standaloneSetup(controller).build();
+          mockMvc.perform(post("/spitter/register")
+                  .param("firstName", "Jack")
+                  .param("lastName", "Bauer")
+                  .param("username", "jbauer")
+                  .param("password", "24hours")
+          ).andExpect(redirectedUrl("/spitter/jbauer"));
+          verify(mockRepository, atLeastOnce()).save(unsaved);
+      }
+  ```
+
+* 测试 get 请求响应 list
+
+  ```java
+  @Test
+      public void shouldShowPageSpittles() throws Exception {
+          List<Spittle> expectedSpittles = createSpittleList(50);
+          SpittleRepository mockRepository = mock(SpittleRepository.class);
+          when(mockRepository.findSpittles(238900, 50)).thenReturn(expectedSpittles);
+          SpittleController controller = new SpittleController(mockRepository);
+          MockMvc mockMvc = standaloneSetup(controller)
+                  .setSingleView(new InternalResourceView("/WEB-INF/views/spittles.jsp"))
+                  .build();
+          mockMvc.perform(get("/spittles?max=238900&count=50"))
+                  .andExpect(view().name("spittles"))
+                  .andExpect(model().attributeExists("spittleList"))
+                  .andExpect(model().attribute("spittleList", hasItems(expectedSpittles.toArray())));
+      }
+  ```
+
+#### controller 响应
+
+* 响应视图及传参
+
+  ```java
+  @RequestMapping(value = "/{spittleId}", method = RequestMethod.GET)
+      public String showSpittle(@PathVariable int spittleId, Model model) {
+          model.addAttribute(spittleRepository.findOne(spittleId));
+          return "spittle";
+      }
+  ```
+
+  返回 spring 对应视图，`redirect:` 前缀为重定向规则，`forward:` 前缀为请求该 url
+
+### Web 视图
+
+#### 视图解析流程
+
+在 Spring 中编写的控制器方法都没有直接产生浏览器中渲染的 HTML，这些方法只是将一些数据填充到模型中，然后将模型传递给一个用来渲染的视图。这些方法会返回一个 String 类型的值，这个值是视图的逻辑名称，不会直接引用具体的视图实现。
+
+将控制器中请求处理的逻辑和视图中的渲染实现解耦是 Spring MVC 的一个重要特性。如果控制器中的方法直接负责产生 HTML 的话，就很难在不影响请求处理逻辑的前提下，维护和更新视图。控制器方法和视图的实现会在模型内容上达成一致。Spring MVC 定义了一个名为 ViewResolver 的接口
+
+```java
+public interface ViewResolver {
+    View resolveViewName(String viewName, Locale locale) throws Exception;
+}
+```
+
+当给 `resolveViewName` 方法传入一个视图名和 Locale 对象时，它会返回一个 View 实例。
+
+```java
+public interface View {
+    String getContentType();
+    void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception;
+}
+```
+
+View 接口的任务就是接受模型以及 Servlet 的 request 和 response 对象，并将输出结果渲染到 response 中。Spring 提供了多个内置视图解析器的实现：
+
+* `BeanNameViewResolver`
+
+  将视图解析为 Spring 应用上下文中的 bean，其中 bean 的 ID 与视图的名字相同
+
+* `ContentNegotiatingViewResolver`
+
+  通过考虑客户端需要的内容类型来解析视图，委托给另外一个能够产生对应内容类型的视图解析器
+
+* `FreeMarkerViewResolver`
+
+  将视图解析为 FreeMaker 模板
+
+* `InternalResourceViewResolver`
+
+  将视图解析为 Web 应用的内部资源（一般为 JSP）
+
+* `JasperReportsViewResolver`
+
+  将视图解析为 JasperReports 定义
+
+* `ResourceBundleViewResolver`
+
+  将视图解析为资源 bundle
+
+* `TilesViewResolver`
+
+  将视图解析为 Apache Tile 定义，其中 tile ID 与视图名称相同，有两个不同的 TileViewResolver 实现，分别对应 Tiles2.0 和 Tiles3.0
+
+* `UrlBasedViewResolver`
+
+  直接根据视图的名称解析视图，视图的名称会匹配一个物理视图的定义
+
+* `VelocityLayoutViewResolver`
+
+  将视图解析为 Velocity 布局，从不同的 Velocity 模板中组合页面
+
+* `VelocityViewResolver`
+
+  将视图解析为 Velocity 模板
+
+* `XmlViewResolver`
+
+  将视图解析为特定 XML 文件中的 bean 定义，类似于 BeanNameViewResolver
+
+* `XsltViewResolver`
+
+  将视图解析为 XSLT 转换后的结果
+
+#### JSP 视图
+
+Spring 提供了两种支持 JSP 视图的方式：
+
+##### InternalResourceViewResolver
+
+`InternalResourceViewResolver` 会将视图名解析为 JSP 文件。如果在 JSP 页面中使用 JSTL，InternalResourceViewResolver 能够将视图名解析为 JstlView 形式的 JSP 文件，从而将 JSTL 本地化和资源 bundle 变量暴露给 JSTL 的格式化（formatting）和信息（message）标签。它遵循一种约定，会在视图名上添加前缀和后缀，进而确定一个 Web 应用中视图资源的物理路径。
+
+使用 `@Bean` 注解配置
+
+```java
+@Bean
+public ViewResolver viewResolver() {
+    InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+    resolver.setPrefix("/WEB-INF/views/");
+    resolver.setSuffix(".jsp");
+    return resolver;
+}
+```
+
+使用 XML 的 spring 配置
+
+```xml
+<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+      p:perfix="/WEB-INF/views/"
+      p:suffix=".jsp" />
+```
+
+当逻辑视图名中包含斜线时，这个斜线也会带到资源的路径名中
+
+JSTL 的格式化标签需要一个 Locale 对象，以便于恰当地格式化地域相关的值，信息标签可以借助 Spring 的信息资源和 Locale，从而选择适当的信息渲染到 HTML 之中。通过解析 JstlView，JSTL 能够获得 Locale 对象以及 Spring 中配置的信息资源。
+
+将视图解析为 JstlView
+
+```java
+@Bean
+public ViewResolver viewResolver() {
+	InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+    resolver.setPrefix("/WEB-INF/views/");
+    resolver.setSuffix(".jsp");
+    resolver.setViewClass(org.springframework.web.servlet.view.JstlView.class);
+    return resolver;
+}
+```
+
+使用 XML 配置 JstlView
+
+```xml
+<bean id="viewResolver"
+      class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+      p:prefix="/WEB_INF/views/"
+      p:suffix=".jsp"
+      p:viewClass="org.springframework.web.servlet.view.JstlView" />
+```
+
+##### spring 提供的 JSP 标签库
+
+Spring 提供了两个 JSP 标签库，一个用于表单到模型的绑定，另一个提供了通用的工具类特性
+
+将表单绑定到模型
+
+Spring 的表单绑定 JSP 标签库包含了 14 个标签，大多数都用来渲染 HTML 中的表单标签，与原生 HTML 标签的区别在于它们会绑定模型中的一个对象，能够根据模型中对象的属性填充值。标签库中还包含了一个为用户展现错误的标签，它会将错误信息渲染到最终的 HTML 中，使用表单绑定库，需要在 JSP 页面中声明
+
+```jsp
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="sf" %>
+```
+
+* `<sf:checkbox>`
+
+  渲染成一个 HTML `<input>` 标签，其中 type 属性设置为 checkbox
+
+* `<sf:checkboxes>`
+
+  渲染成多个 HTML `<input>` 标签，其中 type 属性设置为 checkbox
+
+* `<sf:errors>`
+
+  在一个 HTML `<span>` 中渲染输入域的错误
+
+* `<sf:form>`
+
+  渲染成一个 HTML `<form>` 标签，并为其内部标签暴露绑定路径，用于数据绑定
+
+* `<sf:hidden>`
+
+  渲染成一个 HTML `<input>` 标签，其中 type 属性为 hidden
+
+* `<sf:label>`
+
+  渲染成一个 HTML `<label>` 标签
+
+* `<sf:option>`
+
+  渲染成一个 HTML `<option>` 标签，其 selected 属性根据所绑定的值进行设置
+
+* `<sf:options>`
+
+  按照绑定的集合、数组或 Map，渲染成一个 HTML `<option>` 标签的列表
+
+* `<sf:password>`
+
+  渲染成一个 HTML `<input>` 标签，type 属性为 password
+
+* `<sf:radiobutton>`
+
+  渲染一个 HTML `<input>` 标签，type 属性设置为 radio
+
+* `<sf:radiobuttons>`
+
+  渲染成毒功而 HTML `<input>` 标签，其 type 属性设置为 radio
+
+* `<sf:select>`
+
+  渲染为一个 HTML `<select>` 标签
+
+* `<sf:textarea>`
+
+  渲染为一个 HTML `<textarea>` 标签
+
+```jsp
+<%@ taglib prefix="sf" uri="http://www.springframework.org/tags/form" %>
+<sf:form method="POST" commandName="spitter">
+        First Name: <sf:input path="firstName"/><br>
+        Last Name: <label><sf:input path="lastName"/><br>
+        Username: <label><sf:input path="username"/></label><br>
+        Password: <sf:password path="password"/><br>
+        Email: <label><sf:input type="email" path="email"/></label><br>
+        <input type="submit" value="Register">
+</sf:form>
+```
+
+Spring 通用的标签库
+
+```jsp
+<%@ taglib uri="http://www.springframework.org/tags" prefix="s" %>
+```
+
+* `<s:bind>`
+
+  将绑定属性的状态导出到一个名为 status 的页面作用域属性中，与 `<s:path>` 组合使用获取绑定属性的值
+
+* `<s:escapeBody>`
+
+  将标签体中的内容进行 HTML 或 Js 转义
+
+* `<s:hasBindErrors>`
+
+  指定模型对象（在请求属性中）是否有绑定错误，有条件地渲染内容
+
+* `<s:htmlEscape>`
+
+  为当前页面设置默认的 HTML 转义值
+
+* `<s:message>`
+
+  根据给定的编码获取信息，然后要么进行渲染（默认行为），要么将其设置为页面作用域，请求作用域，会话作用域或应用作用域的变量（通过 var 和 scope 属性实现）
+
+* `<s:nestedPath>`
+
+  设置嵌入式 path，用于 `<s:bind>` 之中
+
+* `<s:theme>`
+
+  根据给定的编码获取主题信息，然后要么进行渲染（默认行为），要么将其设置为页面作用域，请求作用域，会话作用域或应用作用域的变量（通过使用 var 和 scope 属性实现）
+
+* `<s:transform>`
+
+  使用命令对象的属性编辑器转换命令对象中不包含的属性
+
+* `<s:url>`
+
+  创建相对于上下文的 URL，支持 URI 模板变量以及 HTML/XML/JS 转义，可以渲染 URL（默认行为），也可以将其设置为页面作用域，请求作用域，会话作用域或应用作用域的变量（通过 var 和 scope 属性实现）
+
+* `<s:eval>`
+
+  计算负荷 Spring 表达式语言语法的某个表达式的值，然后要么进行渲染，要么将其设置为页面作用域，请求作用域，会话作用域或应用作用域的变量（通过 var 和 scope 属性实现）
