@@ -444,6 +444,39 @@ Spring 通用的标签库
 
   根据给定的编码获取信息，然后要么进行渲染（默认行为），要么将其设置为页面作用域，请求作用域，会话作用域或应用作用域的变量（通过 var 和 scope 属性实现）
 
+  ```jsp
+  <h1>
+      <s:message code="spittr.welcome" />
+  </h1>
+  ```
+
+  `<s:message>` 将会根据 key 为 `spittr.welcome` 的信息源来渲染文本。Spring 有多个信息源的类，都实现了 `MessageSource` 接口，在这些类中，常见的是 `ResourceBundleMessageSource`，它会从一个属性文件中加载信息，这个属性文件的名称是根据基础名称衍生而来。如 `@Bean` 配置 `ResourceBundleMessageSource`
+
+  ```java
+  @Bean
+  public MessageSource messageSource() {
+      ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+      messageSource.setBasename("messages");
+      return messageSource;
+  }
+  ```
+
+  将其设置 messages 后，ResourceBundleMessageSource 就会试图在根类路径的属性文件`messages.properties`中解析信息。
+
+  使用 `ReloadableResourceBundleMessageSource` 能够重新加载信息属性，而不必重新编译或重启应用
+
+  ```java
+  @Bean
+  public MessageSource messageSource() {
+      ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+      messageSource.setBasename("file:///etc/spittr/message");
+      messageSource.setCacheSeconds(10);
+      return messageSource;
+  }
+  ```
+
+  basename 可以设置为类路径下 `classpath:`、文件系统`file:`或Web应用的根路径下（没有前缀）查找属性。指定地区 `messages_zh_CN.properties`。可使用 `text` 属性指定默认值
+
 * `<s:nestedPath>`
 
   设置嵌入式 path，用于 `<s:bind>` 之中
@@ -460,6 +493,105 @@ Spring 通用的标签库
 
   创建相对于上下文的 URL，支持 URI 模板变量以及 HTML/XML/JS 转义，可以渲染 URL（默认行为），也可以将其设置为页面作用域，请求作用域，会话作用域或应用作用域的变量（通过 var 和 scope 属性实现）
 
+  它是 JSTL 中 `<c:url>` 标签替代者。`<s:url>` 会接受一个相对于 Servlet 上下文的 URL，并在渲染的时候预先添加上 Servlet 上下文路径
+
 * `<s:eval>`
 
   计算负荷 Spring 表达式语言语法的某个表达式的值，然后要么进行渲染，要么将其设置为页面作用域，请求作用域，会话作用域或应用作用域的变量（通过 var 和 scope 属性实现）
+
+#### Apache Tiles 布局引擎
+
+##### 配置 Tiles 视图解析器
+
+为了在 Spring 中使用 Tiles，需要配置几个 bean：`TilesConfigurer` 它负责定位和加载 Tile 定义并协调生成 Tiles；`TilesViewResovler` 将逻辑视图名解析为 Tile 定义
+
+```java
+@Bean
+public TilesConfigurer tilesConfigurer() {
+    TilesConfigurer tiles = new TilesConfigurer();
+    tiles.setDefinitions("/WEB-INF/layout/tiles.xml", "/WEB-INF/views/**/tiles.xml");
+    tiles.setCheckRefresh(true);
+    return tiles;
+}
+@Bean
+public ViewResolver viewResolver() {
+    return new TilesViewResolver();
+}
+```
+
+使用 XML 定义
+
+```xml
+<bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+	<property name="definitions">
+		<list>
+			<value>/WEB-INF/layout/tiles.xml</value>
+			<value>/WEB-INF/views/**/tiles.xml</value>
+        </list>
+    </property>
+</bean>
+<bean id="viewrResolver" class="org.springframework.web.servlet.view.tiles3.TilesViewResolver"/>
+```
+
+#### Thymeleaf 视图解析器
+
+Thymeleaf 模板是原生的，不依赖于标签库。它能在接受原始 HTML 的地方进行编辑和渲染。它没有与 Servlet 规范耦合。
+
+##### 配置 Thymeleaf
+
+为了要在 Spring 中使用 Thymeleaf，需要配置三个启用 Thymeleaf 与 Spring 集成的 bean：
+
+* `ThymeleafViewResolver`
+
+  将逻辑视图名称解析为 Thymeleaf 模板视图
+
+* `SpringTemplateEngine`
+
+  处理模板并渲染结果
+
+* `TemplateResolver`
+
+  加载 Thymeleaf 模板
+
+使用 Java 配置
+
+```java
+@Bean
+public ViewResolver viewResolver(SpringTemplateEngine templateEngine) {
+    ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+    viewResolver.setTemplateEngine(templateEngine);
+    return viewResolver;
+}
+
+@Bean
+public TemplateEngine templateEngine(TemplateResolver templateResolver) {
+    SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+    templateEngine.setTemplateResolver(templateResolver);
+    return templateEngine;
+}
+
+@Bean
+public TemplateResolver templateResolver() {
+    TemplateResolver templateResolver = new ServletContextTemplateResolver();
+    templateResolver.setPrefix("/WEB-INF/templates/");
+    templateResolver.setSuffix(".html");
+    templateResolver.setTemplateMode("HTML5");
+    return templateResolver;
+}
+```
+
+使用 XML 配置
+
+```xml
+<bean id="viewResolver" class="org.thymeleaf.spring3.view.ThymeleafViewResolver"
+      p:tempateEngine-ref="templateEngine" />
+<bean id="templateEngine" class="org.thymeleaf.spring3.SpringTemplateEngine"
+      p:templateResolver-ref="templateResolver" />
+<bean id="templateResolver" class="org.thymeleaf.templateresolver.ServletContextTemplateResolver"
+      p:prefix="/WEB-INF/templates/"
+      p:suffix=".html"
+      p:templateMods="HTML5" />
+```
+
+`ThymeleafViewResolver` 是 SpringMVC 中 ViewResolver 的一个实现类。它接受一个逻辑视图名称，并将其解析为视图（一个 Thymeleaf 模板）。ThymeleafViewResolver bean 中注入了一个对 SpringTemplateEngine bean 的引用。SpringTemplateEngine 会在 Spring 中启用 Thymeleaf 引擎，用来解析模板，并基于这些模板渲染结果。
+
