@@ -14,7 +14,7 @@
 * 触发器不能修改，只能删除 `DROP TRIGGER trigger_name`
 
 ```mysql
-`CREATE TRIGGER newproduct AFTER INSERT ON products FOR EACH ROW SELECT 'product added'`
+CREATE TRIGGER newproduct AFTER INSERT ON products FOR EACH ROW SELECT 'product added'
 ```
 
 **`CREATE TRIGGER` 用来创建名为 newproduct 的新触发器。触发器可在一个操作发生之前或之后执行，这里给出了 `AFTER INSERT` 所在触发器将在 `INSERT` 语句成功执行后执行。这个触发器还指定 `FOR EACH ROW`， 因此代码对每个插入行执行**。

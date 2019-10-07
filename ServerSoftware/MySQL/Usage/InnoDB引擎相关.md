@@ -105,3 +105,20 @@
 
 * 无法在事务中锁定其他表，因为[`LOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)执行隐式 [`COMMIT`](https://dev.mysql.com/doc/refman/8.0/en/commit.html)和 [`UNLOCK TABLES`](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)。
 
+### InnoDB 存储引擎的表空间
+
+InnoDB 存储引擎的文件格式是 `.idb` 文件，数据会按照表空间（tablespace）进行存储，分为共享表空间和独立表空间。
+
+```mysql
+# 查看表空间存储方式
+show variables like 'innodb_file_per_table';
+```
+
+* 独立表空间
+
+  每个数据表都有自己的物理文件，即 `table_name.idb` 文件，在这个文件中保存了数据表中的数据、索引、表的内部数据字典等信息。它的优势在于每张表都相互独立，不会影响到其他数据表，存储结构清晰，利于数据恢复，同时数据表还可以在不同的数据库之间进行迁移
+
+* 共享表空间
+
+  InnoDB 存储的表数据会放到共享表空间中，多个数据表共用一个表空间，同时表空间也会自动分成存放到磁盘上。优势在于单个数据表的大小可以突破文件系统大小的限制，最大可以达到 64 TB，即 InnoDB 存储引擎表空间的上限。缺点在于多个数据表存放在一起，结构不清晰，不利于数据的找回，同时将所有数据和索引都存放到一个文件中，也会使得共享表空间的文件很大
+
