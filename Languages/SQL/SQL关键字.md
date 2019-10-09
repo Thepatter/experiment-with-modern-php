@@ -1,0 +1,66 @@
+### 关键字
+
+|      ACCESSIBLE      |       ACTION       |           ADD           |       AFTER       |            AGAINST            |
+| :------------------: | :----------------: | :---------------------: | :---------------: | :---------------------------: |
+|      ALGORITHM       |        ALL         |          ALTER          |      ANALYZE      |              AND              |
+|         ANY          |         AS         |           ASC           |    ASENSITIVE     |              AT               |
+|    AUTO_INCREMENT    |   AVG_ROW_LENGTH   |         BACKUP          |      BEFORE       |             BEGIN             |
+|      BENCHMARK       |      BETWEEN       |         BINLOG          |        BIT        |             BOOL              |
+|         BOTH         |         BY         |          CACHE          |       CALL        |            CASCADE            |
+|       CASCADED       |        CASE        |         CHANGE          |     CHARACTER     |            CHARSET            |
+|        CHECK         |      CHECKSUM      |         CLIENT          |      COLLATE      |           COLLATION           |
+|        COLUMN        |      COLUMNS       |         COMMIT          |     COMMITTED     |          COMPLETION           |
+|      CONCURRENT      |     CONNECTION     |       CONSISTENT        |    CONSTRAINT     |            CONVERT            |
+|       CONTAINS       |      CONTENTS      |         CREATE          |       CROSS       |             DATA              |
+|       DATABASE       |     DATABASES      |        DAY_HOUR         |  DAY_MICROSECOND  |          DAY_MINUTE           |
+|      DAY_SECOND      |     DEALLOCATE     |           DEC           |      DEFAULT      |            DEFINER            |
+|       DELAYED        |  DELAY_KEY_WRITE   |         DELETE          |       DESC        |         DETERMINISTIC         |
+|   DELIMITER(mysql)   |     DIRECTORY      |         DISABLE         |      DISCARD      |           DESCRIBE            |
+|       DISTINCT       |    DISTINCTROW     |           DIV           |       DROP        |             DUAL              |
+|       DUMPFILE       |     DUPLICATE      |          EACH           |       ELSE        |            ELSEIF             |
+|        ENABLE        |      ENCLOSED      |           END           |       ENDS        |            ENGINE             |
+|       ENGINES        |       ESCAPE       |         ESCAPED         |      ERRORS       |             EVENT             |
+|        EVENTS        |       EVERY        |         EXECUTE         |      EXISTS       |           EXPANSION           |
+|       EXPLAIN        |       FALSE        |         FIELDS          |       FILE        |             FIRST             |
+|        FLOAT4        |       FLOAT8       |          FLUSH          |        FOR        |             FORCE             |
+|       FOREIGN        |        FROM        |          FULL           |     FULLTEXT      |           FUNCTION            |
+|      FUNCTIONS       |       GLOBAL       |          GRANT          |      GRANTS       |             GROUP             |
+|        HAVING        |        HELP        |      HIGH_PRIORITY      |       HOSTS       |       HOUR_MICROSECOND        |
+|     HOUR_MINUTE      |    HOUR_SECOND     |       IDENTIFIED        |      IGNORE       |       IGNORE_SERVER_IDS       |
+|        INDEX         |       INFILE       |          INNER          |       INOUT       |          INSENSITIVE          |
+|        INSERT        |   INSERT_METHOD    |         INSTALL         |       INT1        |             INT2              |
+|         INT3         |        INT4        |          INT8           |      INTEGER      |             INTO              |
+|      IO_THREAD       |         IS         |        ISOLATION        |      INVOKER      |             JOIN              |
+|         KEY          |        KEYS        |          KILL           |       LAST        |            LEADING            |
+|        LEAVES        |       LEVEL        |          LESS           |       LIKE        |             LIMIT             |
+|        LINEAR        |       LINES        |          LIST           |       LOAD        |             LOCAL             |
+|         LOCK         |        LOGS        |          LONG           |   LOW_PRIORITY    |            MASTER             |
+|        MASTER        |    MASTER_HOST     | MASTER_HEARTBEAT_PERIOD |  MASTER_LOG_FILE  |        MASTER_LOG_POS         |
+| MASTER_CONNECT_RETRY |  MASTER_PASSWORD   |       MASTER_PORT       |    MASTER_SSL     |         MASTER_SSL_CA         |
+|  MASTER_SSL_CAPATH   |  MASTER_SSL_CERT   |    MASTER_SSL_CIPHER    |  MASTER_SSL_KEY   | MASTER_SSL_VERIFY_SERVER_CERT |
+|     MASTER_USER      |       MATCH        |        MAX_ROWS         |     MAXVALUE      |           MIDDLEINT           |
+|       MIN_ROWS       | MINUTE_MICROSECOND |      MINUTE_SECOND      |        MOD        |             MODE              |
+|        MODIFY        |      MODIEIES      |          NAMES          |      NATURAL      |              NEW              |
+|          NO          |     NODEGROUP      |           NOT           | NO_WRITE_TOBINLOG |             NULL              |
+|       NUMERIC        |         OJ         |         OFFSET          |        OLD        |              ON               |
+|       OPTIMIZE       |       OPTION       |       OPTIONALLY        |       OPEN        |              OR               |
+|        ORDER         |        OUT         |          OUTER          |      OUTFILE      |           PACK_KEYS           |
+|       PARTIAL        |     PARTITION      |       PARTITIONS        |    PERSISTENT     |            PLUGIN             |
+|       PLUGINS        |     PERCISION      |         PERPARE         |     PRESERVE      |            PRIMARY            |
+|      PRIVILEGES      |     PROCEDURE      |         PROCESS         |    PROCESSLIST    |             PURGE             |
+|        QUERY         |    RAID_CHUNKS     |     RAID_CHUNKSIZE      |     RAID_TYPE     |             RANGE             |
+|         READ         |       READS        |       READ_WRITE        |       REAL        |            REBUILD            |
+|      REFERENCES      |       REGEXP       |     RELAY_LOG_FILE      |   RELAY_LOG_POS   |            RELEASE            |
+|        RELOAD        |       RENAME       |       REORGANIZE        |      REPAIR       |          REPEATABLE           |
+|       REPLACE        |    REPLICATION     |         REQUIRE         |     RESIGNAL      |           RESTRICT            |
+|        RESET         |      RESTORE       |         RETURN          |      RETURNS      |            REVOKE             |
+|        RLIKE         |      ROLLBACK      |         ROLLUP          |      ROUTINE      |              ROW              |
+|      ROW_FORMAT      |        ROWS        |        SAVEPOINT        |      SCEDULE      |            SCHEMA             |
+|       SCHEMAS        | SECOND_MICROSECOND |        SECURITY         |      SELECT       |           SENSITIVE           |
+|      SEPARATOR       |    SERIALIZABLE    |         SESSION         |        SET        |             SHARE             |
+|         SHOW         |      SHUTDOWN      |         SIGNAL          |      SIMPLE       |             SLAVE             |
+|                      |                    |                         |                   |                               |
+|                      |                    |                         |                   |                               |
+|                      |                    |                         |                   |                               |
+|                      |                    |                         |                   |                               |
+
