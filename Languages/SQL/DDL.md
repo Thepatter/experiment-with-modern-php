@@ -1,8 +1,8 @@
-# DDL 语句
+## DDL 语句
 
-## SQL 基础
+### SQL 基础
 
-__SQL非过程化语句__
+#### SQL非过程化语句
 
 过程化语言对所期望的结果和产生这些结果的执行机制或过程都进行了定义
 
@@ -10,11 +10,11 @@ __SQL非过程化语句__
 
 SQL语句只定义必要的输入和输出,而执行语句的方式则交由数据库引擎的一个组件,即优化器(optimizer)处理.
 
-### 创建及修改
+#### 创建及修改
 
 ##### 创建表
 
-创建表需要定义 表名,表字段名,定义每个表字段
+创建表需要定义 表名,表字段名,定义每个表字段类型及属性
 
 结构
 
@@ -85,7 +85,7 @@ ALTER TABLE table_name comment ''
 
 #### 字符型数据
 
-字符型数据可以使用定长或者变长的字符串来实现,其不同点在于固定长度的字符串使用空格向右填充,以保证占用同样的字节数;变长字符串不需要向右填充,并且所有字节数可变,char 列可以设置的最大长度为 255 个字节,而 varchar 列最多可以存储 65535 个字节.(oracle 数据库对 varchar 的使用是个特例,使用 varchar2 类型表示变长字符串列),如果需要存储的数据超过 64kb(varchar 列所能允许上限), 就需要使用文本类型
+字符型数据可以使用定长或者变长的字符串来实现，其不同点在于固定长度的字符串使用空格向右填充，以保证占用同样的字节数；变长字符串不需要向右填充，并且所有字节数可变。char 列可以设置的最大长度为 255 个字节，而 varchar 列最多可以存储 65535 个字节(oracle 数据库对 varchar 的使用是个特例，使用 varchar2 类型表示变长字符串列)，如果需要存储的数据超过 64kb(varchar 列所能允许上限)， 就需要使用文本类型
 
 |    文本类型    | Maximum number of bytes |
 | :--------: | :---------------------: |
@@ -96,17 +96,17 @@ ALTER TABLE table_name comment ''
 
 使用文本类型时候:
 
-如果被装载到文本列中的数据超出了该类型的最大长度,数据将会被截断
+如果被装载到文本列中的数据超出了该类型的最大长度，数据将会被截断
 
-在向文本列装载数据时,不会消除数据的尾部空格
+在向文本列装载数据时，不会消除数据的尾部空格
 
-当使用文本列排序或分组时,只会使用前1024个字节,可修改配置
+当使用文本列排序或分组时，只会使用前1024个字节，可修改配置
 
-以上表格只针对MYSQL,SQLServer 对于大的字符型数据只提供 text 类型.而 DB2 和 oracle 使用的数据类型名称为 clob(Character Large Object)
+以上表格只针对MYSQL，SQLServer 对于大的字符型数据只提供 text 类型，而 DB2 和 oracle 使用的数据类型名称为 clob(Character Large Object)
 
-如今MYSQL,允许 varchar 列最大容纳 65535 个字节,这样一般不需要 tinytext 或 text 类型.
+如今MYSQL，允许 varchar 列最大容纳 65535 个字节，这样一般不需要 tinytext 或 text 类型
 
-Oracle 数据库中, char 列能容纳 2000 个字节,varchar2 能容纳 4000个字节,而 SQLServer 中 char 和 varchar 列都能够容纳 8000 个 字节
+Oracle 数据库中，char 列能容纳 2000 个字节，varchar2 能容纳 4000个字节，而 SQLServer 中 char 和 varchar 列都能够容纳 8000 个 字节
 
 #### 数值型数据
 
@@ -150,7 +150,7 @@ insert 语句的 3 个组成部分:
 * 所要插入数据的表的名称
 * 表中需要使用的列的名称
 * 需要插入到列的值
-* MYSQL 为时间类型列提供的值为字符串,只要符合上表中列出的格式,MYSQL 就会自动将字符串转换为日期类型
+* MYSQL 为时间类型列提供的值为字符串，只要符合上表中列出的格式，MYSQL 就会自动将字符串转换为日期类型
 
 语法
 
@@ -166,7 +166,7 @@ INSERT INTO TABLE_NAME(field1, field2, field3, filed4) VALUES (value1, value2, '
 UPDATE table_name SET field1=new-value1, field2=new-value2 WHERE Clause
 ```
 
-update 可以同时更新一个或多个字段,可以在 where 子句中指定任何条件,可以在一个单独表中同时更新数据.
+update 可以同时更新一个或多个字段，可以在 where 子句中指定任何条件，可以在一个单独表中同时更新数据
 
 ##### 删除数据
 
@@ -176,7 +176,7 @@ update 可以同时更新一个或多个字段,可以在 where 子句中指定�
 DELETE FROM table_name WHERE Clause
 ```
 
-如果没有指定 where 子句, 表中的所有记录将被删除, 可以在 where 子句中指定任何条件,可以在单个表中一次性删除记录.
+如果没有指定 where 子句，表中的所有记录将被删除，可以在 where 子句中指定任何条件，可以在单个表中一次性删除记录
 
 ##### 查询语句
 
@@ -186,7 +186,7 @@ DELETE FROM table_name WHERE Clause
 SELECT column_name, columen_name FROM table_name WHERE Clause LIMIT N OFFSET M
 ```
 
-查询语句中可以使用一个或者多个表,表之间使用逗号分割,并使用 WHERE 语句来设定查询条件
+查询语句中可以使用一个或者多个表，表之间使用逗号分割，并使用 WHERE 语句来设定查询条件
 
 SELECT 命令可以读取一条或者多条记录
 

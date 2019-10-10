@@ -38,7 +38,7 @@ SQL 在 Oracle 中执行流程：
 
 * 笛卡尔积
 
-  笛卡尔积是两个积合的所有可能组合。即交叉连接，`CROSS JOIN`，它的作用是可以把任意表进行连接，即使这两张表不相关。
+  笛卡尔积是两个集合的所有可能组合。即交叉连接，`CROSS JOIN`，它的作用是可以把任意表进行连接，即使这两张表不相关。
 
 * 等值连接
 
@@ -50,7 +50,7 @@ SQL 在 Oracle 中执行流程：
 
 * 外连接
 
-  除了查询满足条件的记录外，外连接还可以查询某一方不满足条件的记录。两张表的外连接，会有一张表是主表，另一张表是从表。如果是多张表的外连接，那么第一张表是主表，即显式全部的行，而剩下的表则显式对应连接的信息。**左外连接**：左边的表是主表，需要显示左边表的全部行，而右侧的表是从表`(+)` 表示哪个是从表。**右外连接**：右边的表是主表，显示右边表的全部行，而左侧的表是从表。`LEFT JOIN` 和 `RIGHT JOIN` 只存在于 SQL99 标准，在 SQL 92 中只能使用 `(+)` 标识从表
+  除了查询满足条件的记录外，外连接还可以查询某一方不满足条件的记录。两张表的外连接，会有一张表是主表，另一张表是从表。如果是多张表的外连接，那么第一张表是主表，即显示全部的行，而剩下的表则显示对应连接的信息。**左外连接**：左边的表是主表，需要显示左边表的全部行，而右侧的表是从表`(+)` 表示哪个是从表。**右外连接**：右边的表是主表，显示右边表的全部行，而左侧的表是从表。`LEFT JOIN` 和 `RIGHT JOIN` 只存在于 SQL99 标准，在 SQL 92 中只能使用 `(+)` 标识从表
 
   ```sql
   # 左连接SQL92
@@ -85,7 +85,7 @@ SQL 在 Oracle 中执行流程：
 # SQL 92
 SELECT player_id, a.team_id, player_name, height, team_name FROM player as a, team as b where a.team_id = b.team_id
 # SQL 99
-SELECT player_id, team_id, player_name,height,team_name FROM player NATURAL JOIN team
+SELECT player_id, team_id, player_name, height, team_name FROM player NATURAL JOIN team
 ```
 
 在 SQL 99 中使用 NATURAL JOIN 替代了 WHERE player.team_id = team.team_id
@@ -95,7 +95,7 @@ SELECT player_id, team_id, player_name,height,team_name FROM player NATURAL JOIN
 ON 连接用来指定想要的条件。一般来说在 SQL 99 中，需要连接的表会采用 JOIN 进行连接，ON 指定了连接条件，后面可以是等值连接，也可以是非等值连接
 
 ```SQL
-SELECT player_id, player.team_id,player_name, height, team_name FROM player JOIN team ON player.team_id = team.team_id
+SELECT player_id, player.team_id, player_name, height, team_name FROM player JOIN team ON player.team_id = team.team_id
 ```
 
 #### USING 连接
