@@ -182,9 +182,9 @@ show table status like 'table_name'\G;
 
 Compact 行记录是在 MySQL 5.0 中引入的，其设计目的是高效地存储数据。即一个页中存放的行数据越多，其性能就越高。
 
-![](../Images/Performance/innodb引擎compact数据行格式.png)
+*Compact 行记录格式：*
 
-Compact 行记录格式：
+![](../Images/Performance/innodb引擎compact数据行格式.png)
 
 * 首部是一个非 NULL 变长字段长度列表，并且按照列的顺序逆序放置的，其长度为：若列的长度小于 255 字节，用 1 字节表示，若大于 255 字节，用 2 字节表示，该字段长度最大不可以超过 2 字节
 
@@ -194,7 +194,17 @@ Compact 行记录格式：
 
   ![](../Images/Performance/Compact行记录头信息.png)
 
-* 列数据，
+* 列数据，存储每个列的数据，NULL 不占该部分任何空间，即 NULL 除了占有 NULL 标志位，实际存储不占有任何空间。每行数据除了用户定义的列外，还有两个隐藏列，事务 ID 列（6 字节）和回滚指针列（7字节），如果 InnoDB 表没有定义主键，每行还会增加一个 6 字节的 rowid 列
+
+##### Redundant 行记录格式
+
+Redundant 是 MySQL 5.0 之前 InnoDB 的行记录存储方式，MySQL 5.0 支持 Redundant 是为了兼容之前版本的页格式，
+
+*Redundant行记录格式*
+
+![](../Images/Performance/innodb行记录redundant格式.png)
+
+* 
 
 ### 数据库缓存池
 
