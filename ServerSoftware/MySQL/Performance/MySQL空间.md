@@ -143,31 +143,143 @@ show variables like '%innodb_page_size%';
 
 ![](../Images/Performance/数据页结构.png)
 
-* 文件头（File Header)
+##### 文件头 File Header
 
-  占用 38 字节，文件头，描述页的信息。文件头中两个字段，分别是 `FIL_PAGE_PREV` 和 `FIL_PAGE_NEXT`，它们的作用相当于指针，分别指向上一个数据页和下一个数据页。连接起来的页相当于一个双向的链表。
+占用 38 字节，文件头，描述页的信息。文件头中两个字段，分别是 `FIL_PAGE_PREV` 和 `FIL_PAGE_NEXT`，它们的作用相当于指针，分别指向上一个数据页和下一个数据页。连接起来的页相当于一个双向的链表。
 
-  ![](../Images/Performance/数据页组成的双向链表.png)
+![](../Images/Performance/数据页组成的双向链表.png)
 
-  采用链表的结构让数据页之间不需要是物理上的连续，而是逻辑上的连续
+采用链表的结构让数据页之间不需要是物理上的连续，而是逻辑上的连续
 
-* 页头（Page Header)，56 字节，页头，页的状态信息
+*文件头组成部分*：
 
-* 最大最小记录（Infimum+Supremum)，26字节，虚拟的行记录
+* FIL_PAGE_SPACE_OR_CHKSUM
 
-* 用户记录（User Records)，不确定大小，用户记录，存储行记录内容
+  4 字节，当 MySQL 为 MySQL 4.0.14 之前的版本时，该值为 0。在之后的 MySQL 版本中，该值代表页的 checksum 值（一种新的 checksum 值）
 
-* 空闲空间（Free Space)，不确定大小，空闲空间，页中还没有被使用的空间，当有新记录插入时，会从空闲空间中进行分配用于存储新记录
+* FIL_PAGE_OEESET
 
-* 页目录（Page Directory)
+  4 字节，表空间中页的偏移值。如某独立表空间 `a.ibd` 的大小的 1 GB，如果页中大小为 16 KB，那么总共有 65536 个页。FIL_PAGE_OFFSET 表示该页在所有页中的位置。若此表空间的 ID 为 10，那么搜索页（10，1）就表示查找表 a 中的第二个页
 
-  不确定大小，存储用户记录的相对位置。它起到了记录索引作用，在页中，记录是以单向链表的形式进行存储的。单向链表的特点就是插入、删除非常方便，但是检索效率不高。因此在页目录中提供了二分查找的方式，用来提高记录的检索效率。
+* FIL_PAGE_PREV
 
-  ![](../Images/Performance/页目录存储记录.png)
+  4 字节，当前页的上一个页
 
-  将所有的记录分成几个组，这些记录包括最小记录和最大记录，但不包括标记为“已删除”的记录。第一组即最小记录所在的分组只有 1 条记录；最后一组，就是最大记录所在的分组，会有 1 ～ 8 条记录；其余的组记录数量在 4 ～ 8 条之间。除了第 1 组以外，其余组的记录数会尽量平分。在每个组中最后一条记录的头信息中会存储该组一共有多少条记录，作为 `n_owned` 字段。页目录用来存储每组最后一条记录的地址偏移量，这些地址偏移量会按照先后顺序存储起来，每组的地址偏移量也被称为“槽”（slot），每个槽相当于指针指向了不同组的最后一个记录。页目录存储的是槽，槽相当于分组记录的索引。
+* FIL_PAGE_NEXT
 
-* 文件尾（File Tailer)，8 字节，文件尾，校验页是否完整
+  4 字节，当前页的下一个页
+
+* FIL_PAGE_LSN
+
+  8 字节，该页最后被修改的日志序列位置 LSN（Log Sequence Number）
+
+* FIL_PAGE_TYPE
+
+  2 字节，InnoDB 存储引擎页的类型，常见的类型如下， `0x45BF`，该值代表了存放的是数据页，及实际行记录的存储空间
+
+  *InnoDB存储引擎中页的类型*
+
+  ![](../Images/Performance/InnoDB存储引擎中页的类型.png)
+
+* FILE_PAGE_FILE_FLUSH_LSN
+
+  8 字节，该值仅在系统表空间的一个页中定义，代表文件至少被更新到了该 LSN 值。对于独立表空间，该值都为 0
+
+* FILE_PAGE_ARCH_LOG_NO_OR_SPACE_ID
+
+  4 字节，4.1 开始，该值代表页属于那个表空间
+
+##### 页头 Page Header
+
+该部分用来记录数据页的状态信息，由 14 个部分组成，共占用 56 字节
+
+* PAGE_N_DIR_SLOTS
+
+  2 字节，在 Page Directory 页目录中的 Slot（槽）数
+
+* PAGE_HEAP_TOP
+
+  2 字节，堆中第一个记录的指针，记录在页中时根据堆的形式存放的
+
+* PAGE_N_HEAP
+
+  2 字节，堆中的记录数，一共占用 2 字节，但是第 15 位表示行记录格式
+
+* PAGE_FREE
+
+  2 字节，指向可重用空间的首指针
+
+* PAGE_GARBAGE
+
+  2 字节，已删除记录的字节数，即行记录结构中 delete flag 位 1 的记录大小的总数
+
+* PAGE_LAST_INSERT
+
+  2 字节，最后插入记录的位置
+
+* PAGE_DIRECTION
+
+  2 字节，最后插入的方向，可能的取值为：PAGE_LEFT（0x01），PAGE_RIGHT（0x02），PAGE_SAME_REC（0x03），PAGE_SAME_PAGE（0x04），PAGE_NO_DIRECTION（0x05）
+
+* PAGE_N_DIRECTION
+
+  2 字节，一个方向连续插入记录的数量
+
+* PAGE_N_RECS
+
+  2 字节，该页中记录的数量
+
+* PAGE_MAX_TRX_ID
+
+  8 字节，修改当前页的最大事务 ID，该值仅在 Secondary Index 中定义
+
+* PAGE_LEVEL
+
+  2 字节，当前页在索引树中的位置，0x00 代表叶节点，即叶节点总是在第 0 层
+
+* PAGE_INDEX_ID
+
+  8 字节，索引 ID，表示当前页属于哪个索引
+
+* PAGE_BTR_SEG_LEAF
+
+  10 字节，B+ 树数据页非叶子节点所在段的 segment header，该值仅在 B+ 树的 Root 页中定义
+
+* PAGE_BTR_SEG_TOP
+
+  10 字节，B+ 树数据页所在段的 segment header，该值仅在 B+ 树的 Root 页中定义
+
+##### Infimum 和 Supremum Record
+
+在 InnoDB 存储引擎中，每个数据页中有两个虚拟的行记录，用来限定记录的边界。Infimum 记录是比该页中任何主键值都要小的值，Supremum 指比任何可能大的值还要大的值。这两个值在页创建时被建立，并且在任何情况下不会被删除。在 Compact 行格式和 Redundant 行格式下，两者占用的字节数各不相同。
+
+##### User Record 和 Free Space
+
+User Record 即实际存储行记录的内容。InnoDB 存储引擎表总是 B+ 树索引组织的。Free Space 即空闲空间，同样也是个链表数据结构。在一条记录被删除后，该空间会被加入到空闲链表中，当有新记录插入时，会从空闲空间中进行分配用于存储新记录
+
+#####页目录 Page Directory
+
+Page Directory 中存放了记录的相对位置（注意，这里存放的是页相对位置，而不是偏移量），有些时间这些记录指针为 Slots（槽）或目录槽（Directory Slots）。与其他数据库系统不同的是，在 InnoDB 中并不是每个记录拥有一个槽，Innodb 存储引擎的槽是一个稀疏目录（sparse directory），即一个槽中可能包含多个记录。伪记录 Infimum 的 n_owned 值总是 1，记录 Supremum 的 n_owned 的取值范围为 [1, 8]，其他用户记录 n_owned 的取值范围为 [4, 8]。当记录被插入或删除时需要对槽进行分裂或平衡的维护操作。
+
+不确定大小，存储用户记录的相对位置。它起到了记录索引作用，在页中，记录是以单向链表的形式进行存储的。单向链表的特点就是插入、删除非常方便，但是检索效率不高。因此在页目录中提供了二分查找的方式，用来提高记录的检索效率。
+
+![](../Images/Performance/页目录存储记录.png)
+
+将所有的记录分成几个组，这些记录包括最小记录和最大记录，但不包括标记为“已删除”的记录。第一组即最小记录所在的分组只有 1 条记录；最后一组，就是最大记录所在的分组，会有 1 ～ 8 条记录；其余的组记录数量在 4 ～ 8 条之间。除了第 1 组以外，其余组的记录数会尽量平分。在每个组中最后一条记录的头信息中会存储该组一共有多少条记录，作为 `n_owned` 字段。页目录用来存储每组最后一条记录的地址偏移量，这些地址偏移量会按照先后顺序存储起来，每组的地址偏移量也被称为“槽”（slot），每个槽相当于指针指向了不同组的最后一个记录。页目录存储的是槽，槽相当于分组记录的索引。
+
+由于在 InnoDB 存储引擎中 Page Directory 是稀疏目录，二叉查找的结果是一个粗略的结果，因此 InnoDB 存储引擎必须通过 recorder header 中的 next_record 来继续查找相关记录。这些记录不包括在 Page Directory 中。
+
+B+ 树索引本身不能找到具体的一条记录，能找到的只是该记录所在的页。数据库把页载入到内存，然后通过 Page Direcotory 再进行二叉查找
+
+##### 文件尾 File Tailer
+
+8 字节，文件尾，校验页是否完整。只有一个 FIL_PAGE_END_LSN 部分，占用 8 字节，前 4 字节代表该页的 checksum 值，最后 4 字节和 File Header 中的 FIL_PAGE_LSN 相同。将这两个值与 File Header 中的 FIL_PAGE_SPACE_OR_CHKSUM 和 FIL_PAGE_LSN 值进行比较，看是否一致（checksum 的比较需要通过 InnoDB 的 checksum 函数来进行比较，不是简单的等值比较），以此来保证页的的完整性（not corrupted）。
+
+在默认配置下，InnoDB 存储引擎每次从磁盘读取一页就会检测该页的完整性，即页是否发生 Corrupt，这就是通过 File Tailer 部分进行检测，而该部分的检测会有一定的开销。可以通过参数 `innodb_checksums` 来开启或关闭对这个页完整性的检查。
+
+MySQL 5.6.6 版本开始新增了参数 `innodb_checksum_algorithm`，该参数用来控制检测 `checksum` 函数的算法，默认值为 `crc32`，可设置的值有：`innodb`，`crc32`，`none`，`strict_innodb`，`strit_crc32`，`strict_none`
+
+`innodb` 为兼容之前版本 InnoDB 页的 checksum 检测方式，crc32 为 MySQL 5.6.6 版本引进的新的 checksum 算法，该算法较之前的 innodb 有着较高的性能。但是若表中所有页的 checksum 值都 strict 算法保存，那么低版本将不能读取这些页。none 表示不对页启用 checksum 检查。`strict_*` 正如其名，表示严格按照设置的 checksum 算法进行页的检测。因此若低版本数据库升级到 5.6.6 或之后的版本，启用 `strict_crc32` 将导致不能读取表中的页。启用 `strict_crc32` 方式是最快的方式，因为其不再对 `innodb` 和 `crc32` 算法进行两次检测。若数据库从低版本升级而来，则需要进行 mysql_upgrade 操作
 
 #### 数据行
 
@@ -204,7 +316,17 @@ Redundant 是 MySQL 5.0 之前 InnoDB 的行记录存储方式，MySQL 5.0 支�
 
 ![](../Images/Performance/innodb行记录redundant格式.png)
 
-* 
+* 字段长度偏移列表，同样按照列的顺序逆序放置。若列的长度小于 255 字节，用 1 字节表示；若大于 255 字节用 2 字节表示。
+
+* 记录头信息，redundant 行记录格式的记录头占用 6 字节，每位含义：
+
+  *redundant行格式记录头信息*
+
+  <img src="../Images/Performance/redundant行格式记录头信息.png" style="zoom:50%;" />
+
+##### Compressed 和 Dynamic 行格式
+
+InnoDB 1.0.X 版本开始引入了新的文件格式（file fromat，新的页格式），以前支持的 Compact 和 Redundant 格式称为 Antelope 文件格式，新的文件格式为 Barracuda 文件格式，Barracuda 文件格式下拥有两种新的行记录格式：Compressed 和 Dynamic，新的两种记录格式对于存放在 BLOB 中的数据采用采用了完全的行溢出的方式：在数据页中只存放 20 个字节的指针，实际的数据都存放在 Off Page 中，而之前的 Compact 和 Redundant 两种格式会存放 768 个前缀字节，Compressed 行记录格式下，存储在其中的行数据会以 zlib 的算法进行压缩，对于大长度类型的数据能够进行非常有效的存储
 
 ### 数据库缓存池
 
