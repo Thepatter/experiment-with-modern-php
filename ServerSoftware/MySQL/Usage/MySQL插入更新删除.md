@@ -28,23 +28,28 @@ delete from table_name where
 
 * 更快的删除,如果想从表中删除所有行,使用 `truncate table` 更快
 
-#### 修改表数据 alter table
+#### 使用 alter 修改表结构
 
-* 添加列 `alter table table_name add column column_name datatype`
-
-* 删除表中的列 `alter table table_name drop column column_name`
-
-* 修改表中列的数据类型 `alter table table_name alter column clumn_name datatype`
-
-* 定义外键 `alter table table_name add constraint  foreign_key_name(外键名称)  foreign key (本表列名) references 关联表名（关联表列名）`
-
-  `alter table tb_active add constraint FK_ID foreign key(user_id) references tb_user(id)`
-
-* 删除外键 `alter table table_name drop foreign key (外键名称)`
-
-  `alter table tb_active drop foreign key FK_ID`
-
-* 重命名表 `rename table source_table_name to target_table_name`
+```mysql
+# 添加列
+ALTER TABLE table_name ADD COLUMN column_name datatype
+# 删除列
+ALTER TABLE table_name DROP COLUMN column_name
+# 修改列数据类型
+ALTER TABLE table_name ALTER COLUMN column_name datatype
+# 定义外键
+ALTER TABLE table_name ADD CONSTRAINT foreign_key_name(外键名称) FOREIGN key(本表列名) REFERENCES 关联表名(关联表列名)
+# 删除外键
+ALTER TABLE table_name DROP FOREIGN key(外键名称)
+# 重名名表
+RENAME TABLE source_table_name TO target_table_name
+# 索引创建
+ALTER TABLE tb_name | ADD {INDEX|KEY} [index_name] [index_type] (index_col_name,...) [index_option]...
+CREATE [UNIQUE] INDEX index_name [index_type] ON tb_name (index_col_name,...)
+# 索引删除
+ALTER TABLE tb_name DROP PARIMARY KEY | DROP {INDEX|KEY} index_name
+DROP INDEX index_name ON tb_name
+```
 
 #### 视图
 
