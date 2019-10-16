@@ -193,6 +193,33 @@ b.如果确认全部包含 `A'` 从自己的 `binlog` 文件里面，找出第�
 
 ### GTID 和在线 DDL
 
+#### 在线 DDL
+
+5.6 开始支持 Online DDL 操作，允许创建二级索引得同时，还允许其他诸如 INSERT、UPDATE、DELETE 这类 DML 操作，以下这几类 DDL 操作也可以 Online 方式进行操作：
+
+* 辅助索引得创建与删除
+* 改变自增长值
+* 添加或删除外键约束
+* 列的重命名
+
+通过新的 ALTER TABLE 语法实现
+
+```mysql
+ALTER TABLE tb_name | ADD {INDEX|KEY} [index_name] [index_type] (index_col_name,...) [index_option]... ALGORITHM [=] {DEFAULT|INPLACE|COPY} LOCK [=] {DEFAULT|NONE|SHARED|EXCLUSIVE}
+```
+
+* ALGORITHM
+
+  指定了创建或删除索引的算法，`COPY` 表示按照 5.1 版本之前创建临时表的方式，`INPLACE` 表示索引创建或删除操作不需要创建临时表，`DEFAULT` 表示根据参数 `old_alter_table` 来判断是通过 `INPLACE` 还是 `COPY`，默认为 OFF，即 `INPLACE`
+
+* LOCK
+
+  为索引创建或删除时对表添加锁的情况：`NONE` 执行索引创建或者删除操作时，对目标表不添加任何的锁，即事务仍然可以进行读写操作，不会收到阻塞。因此这种模式可以获得最大的并发度；`SHARE` 和之前 FIC 类型，执行索引创建或删除操作时，对目标表加上一个 S 锁，对于并发读事务，依然可以执行，但遇到写事务，就会等待。如果引擎不支持 SHARE 模式，会返回一个错误信息；`EXCLUSIVE` 执行索引创建或删除操作时，对目标表加一个 X  锁。独占执行，读写事务都不能进行，会阻塞所有的线程，和 COPY 方式运行得到的状态类似，但不需要像 COPY 方式那样创建一张临时表；DEFAULT 首先会判断当前操作是否可以使用 NONE 模式，若不能，则判断是否可以使用 SHARE 模式，最后判断是否可以使用 EXCLUSIVE 模式。DEFAULT 会通过判断事务的最大并发性来判断执行 DDL 的模式
+
+InnoDB 引擎实现 Online DDL 的原理是在执行创建或删除操作的同时，将 INSERT、UPDATE、DELETE 这类 DML 操作日志写入到一个缓存中，待完成索引创建后再将重做应用到表上，以此达到数据的一致性。这个缓存大小由参数 `innodb_online_alter_log_max_size` 控制，默认为 128 MB。若用户更新表比较大，并且在创建过程中伴有大量的写事务，如遇到 `innodb_online_alter_long_max_size` 的空间不能存放日志时，会抛出错误。可以调大该参数，或设置 ALTER TABLE 的模式为 SHARE，这样在执行过程中不会有写事务发生，不需要进行 DML 日志的记录。由于 Online DDL 在创建索引完成后再通过重做日志达到数据库的最终一致性，即再索引创建过程中，SQL 优化器不会选择正在创建中的索引。
+
+#### 基于 GTID 同步
+
 如果是由于索引缺失引起的性能问题，可以通过在线加索引来解决。但是，考虑到要避免新增索引对主库性能造成的影响，可以在备库加索引，然后再切换。在双 M 结构下，备库执行的 DDL 语句也会传给主库，为了避免传回后对主库造成影响，要通过 `set sql_log_bin=off` 关掉 `binlog`
 
 假定，这两个互为主备关系的库是实例 X 和实例 Y，且当前主库是 X，并且都打开了 `GTID` 模式。此时主备切换流程为：

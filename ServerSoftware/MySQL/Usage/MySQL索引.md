@@ -128,6 +128,10 @@ NDB 集群引擎也支持唯一哈希索引，且在 NDB 集群引擎中作用�
 
 `InnoDB` 引擎有一个特殊的功能是 “自适应哈希索引”（adaptive hash index）。当 `InnoDB` 注意到某些索引值被使用得非常频繁时，它会在内存中基于 `B-Tree` 索引之上再创建一个哈希索引，这样就让 `B-Tree` 索引页具有哈希索引的一些优点（如快速的哈希查找，这是一个完全自动的、内部的行为，用户无法控制或配置，但可以关闭该功能）
 
+##### 自适应哈希索引
+
+是数据库自身创建并使用的，DBA 本身不能对其进行干预。自适应哈希索引经哈希函数映射到一个哈希表中，因此对于字典类型的查找非常快，但对于范围查找就无能为力。由于自适应哈希索引是由 InnoDB 存储引擎自身控制的，可以通过参数 `innodb_adaptive_hash_index` 来禁用或启动此特性，默认为开启
+
 #### 空间数据索引（R-Tree）
 
 MyISAM 表支持空间索引，可以用作地理数据存储，和 `B-Tree` 索引不同，这类索引无须前缀查询。空间索引会从所有维度来索引数据。查询时，可以有效地使用任意维度来组合查询。必须使用 MySQL 的 GIS 相关函数如 `MBRCONTAINS()` 等来维护数据，MySQL 的 GIS 支持并不完善，一般不建议使用，开源数据库中对 GIS 的解决方案较好的是 `PostgreSQL` 和 `PostGIS`
@@ -137,6 +141,32 @@ MyISAM 表支持空间索引，可以用作地理数据存储，和 `B-Tree` 索
 全文索引是一种特殊类型的索引，它查找的是文本中的关键词，而不是直接比较索引中的值。全文搜索和其他几类索引的匹配方式完全不一样。它有许多需要注意的细节，如停用词、词干和复数、布尔查询等。全文索引类似于搜索引擎做的事情，而不是简单的 `where` 条件匹配
 
 在相同的列上同时创建全文索引和基于值的 `B-Tree` 索引不会有冲突，全文索引适用于 `MATCH AGAINST` 操作，而不是普通的 `WHERE` 条件操作
+
+当前 InnoDB 存储引擎的全文索引限制：
+
+* 每张表只能有一个全文检索的索引
+* 由多列组合而成的全文检索的索引列必须使用相同的字符集和排序规则
+* 不支持没有单词界定符的语言如中文，日文，韩文等
+
+```mysql
+MATCH(col1,col2,...) AGAINST (expr [search_modifier])
+search_modifier:
+{
+	IN NATURAL LANGUAGE MODE
+	| IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION
+	| IN BOOLEAN MODE
+	| WITH QUERY EXPANSION
+}
+select * from fts_a where match(body) against ('Porridge' IN NATURAL LANGUAGE MODE);
+```
+
+通过 `MATCH()...AGAINST()` 语法支持全文检索的查询，MATCH 指定了需要被查询的列，AGAINST 指定了使用何种方法去进行查询：
+
+* Natural Language
+
+  全文检索通过 MATCH 函数进行查询，默认采用改模式，表示查询带有指定 word 的文档
+
+* 
 
 ### 索引的优点
 

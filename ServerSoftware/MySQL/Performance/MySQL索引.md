@@ -34,7 +34,6 @@ s varchar(16) NOT NULL DEFAULT '',
 index k(k))
 engine=InnoDB;
 insert into T values(100,1, 'aa'),(200,2,'bb'),(300,3,'cc'),(500,5,'ee'),(600,6,'ff'),(700,7,'gg');
-
 ```
 
 `select * from T where k between 3 and 5`，需要执行几次树的搜索操作，会扫描多少行？
@@ -50,6 +49,29 @@ insert into T values(100,1, 'aa'),(200,2,'bb'),(300,3,'cc'),(500,5,'ee'),(600,6,
 在这个过程中，回到主键索引树搜索的过程，成为回表。这个查询读了 k 索引树的 3 条记录（步骤1，3 和 5），回表了两次（步骤 2 和 4）。
 
 在这个查询语句中，由于查询结果所需要的数据只在主键索引上有，所以不得不回表。可以经过索引优化，避免回表过程
+
+#### Multi-Range Read 优化
+
+5.6 开始支持 Multi-Range Read 优化，目的为了减少磁盘的随机访问，并且将随机访问转化为较为顺序的数据访问，这对于 IO-bound 类型的 SQL 查询语句可带来性能极大的提升。MRR 可适用于 range，ref，eq_ref 类型得查询：
+
+* MRR 使数据访问变得较为顺序。在查询辅助索引时，首先根据得到的查询结果，按照主键进行排序，并按照主键排序的顺序进行书签查找
+* 减少缓冲池中页被替换的次数
+* 批量处理对键值的查询操作
+
+对于 InnoDB 和 MyISAM 存储引擎的范围查询和 JOIN 查询操作，MRR 的工作方式如下：将查询得到的辅助索引键值存放于一个缓存中，这是缓存中的数据是根据辅助索引键值排序的，将缓存中的键值根据 RowID 进行排序，根据 RowID 的排序顺序来访问实际的数据文件。
+
+MRR 可以将某些范围查询，拆分为键值对，以此来进行批量数据查询，这样可以在拆分过程中，直接过滤一些不符合查询条件的数据。是否启用 MRR 优化可以通过参数 `optimizer_switch` 中的标记（flag）来控制。当 mrr 为 on 时，表示启用 MRR 优化，`mrr_cost_based` 标识是否通过 `cost based` 的方式来选择是否启用 mrr。若将 mrr 设为 on，`mrr_cost_based` 设为 `off`，则总是启用 MRR 优化
+
+```mysql
+# 开启 MRR 优化
+set @@optionmizer_switch='mrr=on,mrr_cost_based=off';
+```
+
+参数 `read_rnd_buffer_size` 用来控制键值的缓冲区大小，当大于该值时，则执行器对已经缓存的数据根据 RowID 进行排序，并通过 RowID 来取得行数据，该值默认为 256K
+
+```mysql
+select @@read_rnd_buffer_size\G;
+```
 
 #### 覆盖索引
 
@@ -96,9 +118,11 @@ create table `tuser` (
 
 #### 索引下推
 
+Index Condition Pushdown ICP 优化，是 5.6 开始支持的一种根据索引进行查询的优化方式。在不支持 Index Condition Pushdown 查询时，首先根据索引来查找记录，然后再根据 WHERE 条件来过滤记录。在支持 Index Condition Pushdown 后，MySQL 数据库会在去除索引的同时，判断是否可以进行 WHERE 条件的过滤，即将 WHERE 的部分过滤操作放在了存储引擎层。在某些查询下，可以大大减少上层 SQL 层对记录的索取（fetch），从而提高数据库的整体性能，支持 `range`，`ref`，`eq_ref`，`ref_or_null` 类型的查询，当优化器选择 `Index Condition Pushdown` 优化时，可在执行计划的列 Extra 看到 `Using index condition` 提示
+
 `select * from tase where name like '张%' and age = 10 and issmale = 1`
 
-依据前缀索引规则，该语句在搜索索引树的时候，只能用 “张”，找到第一个满足条件的记录 ID3。然后是判断其他条件是否满足。在 MySQL 5.6 之前，只能从 ID3 开始一个个回表。到主键索引上找出数据行，再对比字段值。而 MySQL 5.6 引入的索引下推优化（index condition pushdown)，可以在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数。
+依据前缀索引规则，该语句在搜索索引树的时候，只能用 “张”，找到第一个满足条件的记录 ID3。然后是判断其他条件是否满足。在 MySQL 5.6 之前，只能从二级索引获取记录后一个个回表。到主键索引上找出数据行，再对比字段值。而 MySQL 5.6 引入的索引下推优化（index condition pushdown)，可以在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数。
 
 ### 普通索引与唯一索引区别
 
@@ -244,6 +268,13 @@ MySQL 计算索引的基数并不是把整张表取出来一行行的统计，�
 * 采用 `force index` 强行选择一个索引。MySQL 会根据词法解析的结果分析出可能可以使用的索引作为候选项，然后在候选列表中依次判断每个索引需要扫描多少行。如果 `force index` 指定的索引在候选索引列表中，就直接选择这个索引，不再评估其他索引的执行代价。
 * 修改语句，引导 MySQL 使用我们期望的索引
 * 有些场景下，可以新建一个更合适的索引，来提供给优化器做选择，或删掉误用的索引
+
+##### 索引提示 Index Hint
+
+```mysql
+tb_name [[AS] alias] [index_hint_list] index_hint_list: index_hint [, index_hint] ... index_hint:
+USE {INDEX|KEY} [{FOR {JOIN|ORDER BY | GROUP BY}}] ([index_list]) | IGNORE {INDEX|KEY} [{FOR {JOIN|ORDER BY|GROUP BY}}] (index_list) | FORCE {INDEX|KEY} [{FOR {JOIN|ORDER BY|GROUP BY}}] (index_list) index_list: index_name [, index_name]
+```
 
 ### 字符串索引的选择
 
