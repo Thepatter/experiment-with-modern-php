@@ -166,7 +166,13 @@ select * from fts_a where match(body) against ('Porridge' IN NATURAL LANGUAGE MO
 
   全文检索通过 MATCH 函数进行查询，默认采用改模式，表示查询带有指定 word 的文档
 
-* 
+* Boolean
+
+  当使用该修饰符时，查询字符串的前后字符会有特殊的含义：`+` 表示该 word 必须存在，`-` 表示该 word 必须被排除，`no operator` 表示该 word 是可选的，但如果出现，其相关性会更高，`@distance` 表示查询的多个单词之间的距离是否在 distance 之内，distance 的单位是字节（`MATCH(body) AGAINST ('"Pease pot@30" IN BOOLEAN MODE'`）表示字符串 Pease 和 pot 之间的距离需在 30 字节内。`>` 表示出现该单词时增加相关性，`<` 表示出现该单词时降低相关性，`~` 表示允许出现该单词，但是出现时相关性为负，`*` 表示以该单词开头的单词，`"` 表示短语。
+
+* Query Expansion
+
+  扩展查询，通常在查询的关键词太短，用户需要`implied knowledge` （隐含知识）时进行。
 
 ### 索引的优点
 
