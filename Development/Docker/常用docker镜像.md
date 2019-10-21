@@ -5,7 +5,10 @@
 #### 启动服务
 
 ```shell
+# 启动服务
 docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD=<my-secret-pw> -d mysql:<tag>
+# 作为客户端
+docker run -it --rm mysql mysql -hsome.mysql.host -usome-mysql-user -p
 ```
 
 * <some-mysql> 为运行容器的命名
@@ -19,6 +22,7 @@ docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD=<my-secret-pw
 许多配置选项可以作为标志传递给 `mysqld`。这将可以灵活的自定义容器而无需 cnf 文件。如，更改所有表的默认编码和排序规则使用UTF-8（utf8mb4)，只需执行如下命令：
 
 ```shell
+# 传参配置
 docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD=<secret> -d mysql:<tag> --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 ```
 
@@ -166,7 +170,14 @@ docekr run --name phpfpm -itd --network container:nginx php-fpm:0.0.1
 ### redis
 
 ```shell
+# 启动并指定密码为 redispass
 docker run --name redis -d -p 0.0.0.0:6379:6379 redis:5.0 --requirepass "redispass"
+# 作为客户端使用连接容器
+docker run -it --link redis-container:db --entrypoint redis-cli redis -h db
+# 作为客户端连接
+docker run -it redis redis-cli -h 182.92.223.239
+# 使用自定义配置
+docker run -v /myredis/conf/redis.conf:/usr/local/etc/redis/redis.conf --name myredis redis redis-server /usr/local/etc/redis/redis.conf
 ```
 
 ### hyperf 镜像
