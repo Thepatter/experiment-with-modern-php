@@ -163,7 +163,17 @@ compose 的默认管理对象是服务栈，通过子命令对栈中的多个服
 
 是 compose 的核心，大部分指令与 `docker [container]create|run` 相关参数的含义类似，默认的模板文件名称为 docker-compose.yml，格式为 YAML 格式，最新版本为 v3
 
-`v1` 的 compose 文件结构为每个顶级元素为服务名称，次级元素为服务容器的配置信息，`v2` 和 `v3` 扩展了 compose 的语法，同时尽量保持跟旧版本兼容：可以声明网络和存储信息，添加了版本信息，将所有的服务放到 services 根下面，每个服务都必须通过 image 指令指定镜像或 build 指令（需要 Dockerfile）等来自动构建生成镜像，如果使用 build 指令，在 Dockerfile 中设置的选项（如：CMD，EXPOSE，VOLUME，ENV等）将会自动被获取，无须再 docker-compose.yml 中再次设置
+`v1` 的 compose 文件结构为每个顶级元素为服务名称，次级元素为服务容器的配置信息，`v2` 和 `v3` 扩展了 compose 的语法，同时尽量保持跟旧版本兼容：可以声明网络和存储信息，添加了版本信息，将所有的服务放到 services 根下面，每个服务都必须通过 image 指令指定镜像或 build 指令（需要 Dockerfile）等来自动构建生成镜像，如果使用 build 指令，在 Dockerfile 中设置的选项（如：CMD，EXPOSE，VOLUME，ENV等）将会自动被获取，无须在 docker-compose.yml 中再次设置
+
+从 1.5 开始，compose 模板文件支持动态读取主机的系统环境变量
+
+```yaml
+db:
+	# compose 文件将从运行它的环境中读取 ${MONGO_VERSION} 的值，不指定默认 3.2
+	image: "mongo:${MONGO_VERSION-3.2"
+```
+
+
 
 *compose模板文件主要命令*
 
@@ -850,6 +860,7 @@ compose 的默认管理对象是服务栈，通过子命令对栈中的多个服
 | config  |              校验和查看 compose 文件得配置信息               |
 |  down   | 停止服务栈，并删除相关资源，包括容器，挂载卷，网络，创建镜像等，默认情况下只清除所创建得容器和网络资源 |
 | events  |                    实时监控容器得事件信息                    |
+|  exec   |               在一个运行中的容器内执行给定命令               |
 |  help   |                      获得一个命令得帮助                      |
 | images  |                     列出服务所创建得镜像                     |
 |  kill   |           通过发送 SIGKILL 信息号强制停止服务容器            |
@@ -865,7 +876,7 @@ compose 的默认管理对象是服务栈，通过子命令对栈中的多个服
 |  scale  |                  设置指定服务运行得容器个数                  |
 |  start  |                    启动已经存在得服务容器                    |
 |  stop   |             停止已经处于运行状态得容器，但不删除             |
-|   top   |                显式服务栈中正在运行得进程信息                |
+|   top   |                显示服务栈中正在运行得进程信息                |
 | unpause |                   恢复处于暂停状态中得服务                   |
 |   up    | 尝试自动完成一系列操作：包括构建镜像，创建服务，启动服务，关联服务相关容器 |
 | version |                         打印版本信息                         |
@@ -1122,6 +1133,46 @@ compose 的默认管理对象是服务栈，通过子命令对栈中的多个服
 
   `docker-compos up[options][SERVICE...]`
 
-  尝试自动完成包括构建镜像，重新创建服务，启动服务，并关联服务，链接的服务都将会被自动启动，除非已经处于运行状态，大部分可以直接通过该命令来启动一个项目，默认启动的容器都在前台，控制台会打印所有容器的输出信息。默认情况下，如果服务容器已经存在，将会尝试停止容器，然后重新创建（保持使用 volumes-from）挂载的卷，以保证新启动的服务匹配 docker-compose.yml 文件的最新内容。`docker-compose up --no-deps -d <service_NAME>`
+  尝试自动完成包括构建镜像，重新创建服务，启动服务，并关联服务，链接的服务都将会被自动启动，除非已经处于运行状态，大部分可以直接通过该命令来启动一个项目，默认启动的容器都在前台，控制台会打印所有容器的输出信息。默认情况下，如果服务容器已经存在，将会尝试停止容器，然后重新创建（保持使用 volumes-from）挂载的卷，以保证新启动的服务匹配 docker-compose.yml 文件的最新内容。`docker-compose up --no-deps -d <service_NAME>` 来重新创建服务并后台停止旧服务，启动新服务，并不会影响到其所依赖的服务。支持选项：
 
+  `-d`： 在后台运行服务容器
   
+  `--no-color`：不使用颜色来区分不同的服务的控制台输出
+  
+  `--no-deps`：不启动服务所链接的容器
+  
+  `--force-recreate`：强制重新创建容器，不能与 `--no-recreate` 同时使用
+  
+  `--no-recreate`：如果容器已经存在，则不重新创建，不能与 `--force-recreate` 同时使用
+  
+  `--no-build`：不自动构建缺失的服务镜像
+  
+  `--abort-on-container-exit`：当有容器停止时中止整个服务，与 `-d` 选项冲突
+  
+  `-t, --timeout TIMEOUT`：停止容器超时（10s），与 `-d` 冲突
+  
+  `--remove-orphans`：删除服务中未定义的孤儿容器
+  
+  `--exit-code-from SERVICE`：退出时返回指定服务器容器的退出符
+  
+  `--scale SERVICE=NUM`：扩展指定服务实例到指定数目
+
+#### Compose 环境变量
+
+环境变量用来配置 Compose 的行为，以 DOCKER_ 开头的变量和用来配置 Dockers 命令行客户端的使用一样
+
+|            变量            |                             说明                             |
+| :------------------------: | :----------------------------------------------------------: |
+|    COMPOSE_PROJECT_NAME    | 设置 Compose 的项目名称，默认是当前工作目录（docker-compose.yml文件目录）的名字，compose 会为每个启动的容器前添加的项目名称 |
+|        COMPOSE_FILE        | 设置docker-compose.yml路径，如果不指定，默认会先查找当前目录 |
+|    COMPOSE_API_VERSION     |               指定 API 版本以兼容dockers服务端               |
+|        DOCKER_HOST         | 设置docker服务端监听地址，默认 `unix://var/run/docker.sock`  |
+|     DOCKER_TLS_VERIFY      |    如果该变量不为空，则与docker服务端交互都通过 TLS 协议     |
+|      DOCKER_CERT_PATH      | 配置 TLS 通信所需要的验证文件（ca.pem,cert.pem,key.pem）的路径，默认`~/.docker` |
+|    COMPOSE_HTTP_TIMEOUT    |         compose 向 docker 服务器发送请求超时默认60s          |
+|    COMPOSE_TLS_VERSION     |                指定与dockers服务交互的TLS版本                |
+|   COMPOSE_PATH_SEPARATOR   |           指定 COMPOSE_FILE 环境变量中的路径间隔符           |
+|   COMPOSE_IGNORE_ORPHANS   |                       是否忽略孤儿容器                       |
+|   COMPOSE_PARALLEL_LIMIT   |              设置 Compose 可以执行进程的并发数               |
+| COMPOSE_INTERACTIVE_NO_CLI |        尝试不适用 Docker 命令来执行 run 和 exec 指令         |
+
