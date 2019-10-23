@@ -1176,3 +1176,341 @@ db:
 |   COMPOSE_PARALLEL_LIMIT   |              设置 Compose 可以执行进程的并发数               |
 | COMPOSE_INTERACTIVE_NO_CLI |        尝试不适用 Docker 命令来执行 run 和 exec 指令         |
 
+### SWARM
+
+#### 基本概念
+
+* swarm 集群 cluster
+
+  为一组被统一管理起来的 docker 主机。集群是 swarm 所管理对象，这些主机通过 docker 引擎的 swarm 模式相互沟通，其中部分主机可能作为管理节点（manager）响应外部请求，其他主机作为工作节点（worker）来实际运行 docker 请求。同一主机即可以是管理节点，同时作为工作节点
+
+* 节点 node
+
+  是 swarm 集群的最小资源单位，每个节点实际上都是一台 docker 主机分为：
+
+  管理节点：负责响应外部对集群的操作请求，并维持集群中资源，分发任务给工作节点，多个管理节点之间通过 raft 协议构成共识，一般推荐每个集群设置 5 或 7 个管理节点；
+
+  工作节点：负责执行管理节点安排的具体任务，默认情况下，管理节点自身同时也是工作节点。每个工作节点上运行 agent 来汇报任务完成情况
+
+* 服务 service
+
+  是 docker 支持复杂容器协作场景工具，一个服务可以由若干个任务组成，每个任务为某个具体的应用。服务还包括对应的存储、网络、端口映射、副本个数、访问配置、升级配置等附加参数。集群中服务分为：
+
+  复制服务（replicated services）模式：默认，每个任务在集群中会有若干副本，这些副本会被管理节点按照调度策略分发到集群中的工作节点上。此模式下可以使用 `-replicas` 参数设置副本数量
+
+  全局服务（global services）模式：调度器将在每个可用节点都执行一个相同的任务。该模式适合运行节点的检查，如监控应用等
+
+* 任务
+
+  是 swarm 集群中的最小调度单位，即一个指定的应用容器，任务从生命周期上可能处于创建（NEW）、等到（PENDING）、分配（ASSIGNED）、接受（ACCEPTED）、准备（PREPARING）、开始（STARTING）、运行（RUNNING）、完成（COMPLETE）、失败（FAILED）、关闭（SHUTDOWN）、拒绝（REJECTED）、孤立（ORPHANED）等不同状态。swarm 集群中的管理节点会按照调度要求将任务分配到工作节点，一旦当某个任务被分配到一个工作节点，将无法被转移到另外的工作节点，swarm 中的任务不支持迁移，无法将任务转移到其他工作节点
+
+* 服务的外表访问
+
+  集群中的服务要被集群外部访问，必须要能允许任务的响应端口映射出来，支持入口负载均衡（ingress load balancing）的映射测试。该模式下，每个服务都会被分配一个公开端口（PublishedPort），该端口在集群中任意节点上都可以访问到，并被保留给该服务，当有请求发送到任意节点的公开端口时，该节点若并没有实际执行服务相关的容器，则会通过路由机制将请求转发给实际执行了服务容器的工作节点
+
+#### 使用 swarm
+
+##### 创建集群
+
+```shell
+docker swarm init --advertise-addr <manager id>
+```
+
+默认的管理服务端口为 2377，需要能被工作节点访问到，为了支持集群的成员发现和外部服务映射，需要在所有节点上开启 7947 TCP/UDP 端口和 4789 UDP 端口，创建成功后会返回该集群唯一标识 token
+
+* `--advertise-addr[:port]`
+
+  知道服务监听的地址和端口
+
+* `--autolock`
+
+  自动锁定管理服务器的启停操作，对服务进行启动或停止都需要通过口令来解锁
+
+* `--availability string`
+
+  节点的可用性，包括 active、pause、drain 三种，默认为 active
+
+* `--cert-expiry duration`
+
+  根证书的过期时长，默认为 90 天
+
+* `--data-path-addr`
+
+  指定数据流量使用的网络接口或地址
+
+* `dispatcher-heartbeat duration`
+
+  分配组建的心跳时长，默认为 5s
+
+* `--external-ca external-ca`
+
+  指定使用外的证书签名服务地址
+
+* `--force-new-cluster`
+
+  强制创建新集群
+
+* `--max-snapshots uint`
+
+  raft 协议快照保留的个数
+
+* `--snapshot-interval uint`
+
+  raft 协议进行快照的间隔（单位为事务个数），默认为 10000 个事务
+
+* `--task-history-limit int`
+
+  任务历史的保留个数，默认为 5s
+
+##### 使用
+
+```shell
+# 查看集群信息 swarm key
+docker info 
+# 查看集群中节点
+docker node ls
+# 加入集群
+docker swarm join --token 
+```
+
+可以使用 docker service 命令操作集群，或使用 `-H ` 选项向指定的 docker 服务端发送 docker 命令来操作集群
+
+```shell
+# 查看服务
+docker service ls
+docker service inspect --pretty <service_name>
+# 伸缩服务
+docker service scale <service_name>=1
+# 删除
+docker service rm <service_name>
+# 离开集群,最后一个节点离开必须加 -f 选项
+docker swarm leave
+```
+
+更新集群
+
+docker swarm update [options] 命令来更新集群
+
+* `--autolock`
+
+  启动或关闭自动锁定
+
+* `-cert-expiry duration`
+
+  根证书的过期时长，默认为 90 天
+
+* `--dispatcher-heartbeat duration`
+
+  分配组件的心跳时长，默认为 5s
+
+* `--external-ca external-ca`
+
+  指定使用外部的证书签名服务地址
+
+* `--max-snapshots uint`
+
+  raft 协议快照保留数
+
+* `--snapshot-interval uint`
+
+  raft 协议进行快照的间隔（单位为事务个数）默认 10000 个事务
+
+* `--task-history-limit int`
+
+  任务历史的保留个数，默认为 5
+
+#### 使用服务命令
+
+swarm 提供了对应服务的良好支持，docker 通过 service 命令来管理应用服务，包括以下命令
+
+|   命令   |           说明           |
+| :------: | :----------------------: |
+|  create  |         创建应用         |
+| inspect  |         查看应用         |
+|   logs   |    获取服务或任务日志    |
+|    ls    |      列出服务的信息      |
+|    ps    | 列出服务中包括的任务信息 |
+|    rm    |         删除服务         |
+| rollback |         回滚服务         |
+|  scale   |  对服务进行横向扩展调整  |
+|  update  |         更新服务         |
+
+* create
+
+  `docker service create[OPTIONS]IMAGE[COMMAND][ARG]`
+
+  `--config config`
+
+  指定暴露给服务的配置
+
+  `--constraint list`
+
+  应用实例在集群中被放置时的位置限制
+
+  `-d, --detach`
+
+  不等待创建后对应用进行探测即返回
+
+  `--dns list`
+
+  自定义 dns
+
+  `--endpoint-mode string`
+
+  指定外部访问模式，vip（虚地址字段负载）dnsrr（DNS轮训）
+
+  `-e, --env list`
+
+  环境变量列表
+
+  `--health-cmd string`
+
+  进行健康检查的指令
+
+  `-l, --label list`
+
+  指定服务的标签
+
+  `--mode string`
+
+  服务模式，包括 replicated 默认或 global
+
+  `--replicas uint`
+
+  指定实例复制份数
+
+  `--secret secret`
+
+  向服务暴露的秘密数据
+
+  `-u,--user string`
+
+  指定用户信息，UID:GID 
+
+  `-w,--workdir string`
+
+  指定容器中的工作目录位置
+
+* inspect
+
+  `docker service inspect[OPTIONS]SERVIVE[SERVICE...]`
+
+  `-f, --format string` 
+
+  使用 go 模版指定格式化输出
+
+  `--pretty`
+
+  适合阅读格式输出
+
+* logs
+
+  `docker service logs[OPTIONS]SERVICE|TASK`
+
+  `--details`：所有细节
+
+  `-f,--follow`：持续跟随输出
+
+  `--no-resolve`：输出中不将对象的ID映射为名称
+
+  `--no-task-ids`：输出中不包括任务的ID信息
+
+  `--no-trunc`：不截断输出信息
+
+  `--raw`：输出原始格式信息
+
+  `--since string`：输出自指定时间开始的日志
+
+  `--tail string`：只输出给定行数的最新日志信息
+
+  `-t, --timestamps`：打印日志时间戳
+
+* ls
+
+  `docker service ls[options]`
+
+  `-f, --filter filter`：只输出过滤信息
+
+  `--format string`：按照 go 模版输出
+
+  `-q, --quit`：只输出 id
+
+* ps
+
+  `docker service ps[options] service[service...]`
+
+  `-f --filter` 过滤
+
+  `--format string` 格式化
+
+  `-no-resolve` 不将 id 映射为名称
+
+  `--no-trunc` 不截断
+
+  `-q, --quiet` 输出 id
+
+* rollback
+
+  `docker service rollback[options]service`
+
+  `-d, --detach` 执行后返回，不等待服务状态校验完整
+
+  `-q,--quiet` 不显示执行信息
+
+* update
+
+  `docker service update[options]service`
+
+  `--args command` 服务命令参数
+
+  `--config-add config` 增加或更新一个服务的配置信息
+
+  `--config-rm list` 删除一个配置文件
+
+  `--constraint-add list` 增加或更新放置的限制条件
+
+  `--constraint-rm list` 删除一个限制条件
+
+  `-d, --detach` 不等待校验返回
+
+  `--dns-add list` 增加或更新 dns 信息
+
+  `--dns-rm list`：删除 dns 信息
+
+  `--endpoint-mode string` 指定外部访问模式，vip，dnsrr
+
+  `--entrypont command`指定默认入口命令
+
+  `--env-add list` 添加或更新一组环境变量
+
+  `--env-rm list` 删除环境变量
+
+  `--health-cmd string` 进行检查检查
+
+  `--label-add list` 添加或更新一组标签信息
+
+  `--label-rm list` 删除一组标签信息
+
+  `--no-healthcheck` 不进行健康检查
+
+  `--publish-add port` 添加或更新外部端口信息
+
+  `--publish-rm port` 删除端口信息
+
+  `-q, --quiet` 简略信息
+
+  `--read-only` 指定容器文件系统为只读
+
+  `--replicas uint`：指定服务实例的复制份数
+
+  `--rollback` 回滚到上次配置
+
+  `--secret-add secret` 添加或更新秘密数据
+
+  `--secret-rm list` 删除秘密数据
+
+  `--update-parallelism unit` 更新执行并发数
+
+  `-u, --user string` 指定用户信息 UID:GID
+
+  `-w, --workdir string` 指定容器中工作目录信息
