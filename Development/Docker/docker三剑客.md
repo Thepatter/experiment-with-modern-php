@@ -173,8 +173,6 @@ db:
 	image: "mongo:${MONGO_VERSION-3.2"
 ```
 
-
-
 *compose模板文件主要命令*
 
 |       命令        |                             功能                             |
