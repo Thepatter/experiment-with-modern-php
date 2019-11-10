@@ -283,13 +283,17 @@ MySQL 5.6.6 版本开始新增了参数 `innodb_checksum_algorithm`，该参数�
 
 #### InnoDB 行格式
 
+InnoDB 表默认行格式由 `innodb_default_row_format` 变量定义，默认为 `dynamic`，重建表操作可能会静默的将行格式更改为该变量值（8.0.18 已确定不会），8.0.1 及之前重建表后会隐式改变行格式为 `innodb_default_row_format` 的值
+
 表的行格式决定其行的物理存储方式，太长而无法容纳在B树页面上的可变长度列存储在单独分配的磁盘页面上，这些页面为溢出页面，这些列为页外列。页外列的值存储在溢出页面的单链表中，每个列都有一个或多个溢出页面的列表，根据列的长度，所有或可变长度列值的前缀存储在 B 树中。
 
 数据是按行进行存放的。每个页存放的行记录是最多约等（page size / 2 -200）行的记录。在 InnoDB 1.0.x 版本之前，InnoDB 存储引擎提供了 compact 和 Redundant 两种格式来存放行记录数据，这是目前使用最多的一种格式。Redundant 格式是为兼容之前版本而保留的。
 
 ```mysql
-// row_format 属性表示当前所使用的行记录结构类型
+# row_format 属性表示当前所使用的行记录结构类型
 show table status like 'table_name'\G;
+# 查询 INFORMATION_SCHEMA.INNODB_TABLES 表
+select NAME, ROW_FORMAT from information_schema.innodb_tables where name = 'test/t1';
 ```
 
 ##### Compact 行记录格式
@@ -360,7 +364,17 @@ Redundant 行格式存储特性：
 
   <img src="../Images/Performance/redundant行格式记录头信息.png" style="zoom:50%;" />
 
-##### Compressed 和 Dynamic 行格式
+##### Dynamic 格式
+
+该 DYNAMIC 行格式提供相同的存储特性 COMPACT 行格式，但增强的变长列的存储功能，并支持大型索引键前缀。InnoDB 可完全在页外存储长的可变长度列值，而聚集索引记录仅包含指向溢出页的 20 字节指针，大于或等于 768 字节的固定长度字段被编码为可变长度字段。
+
+列是否页外存储取决于页面大小和行的总大小。当一行太长时，将选择最长的列进行页外存储，直到聚簇索引记录适合 B 树页面为止。小于或等于 40 字节的 TEXT 和 BLOB 列将存储在行中。DYNAMIC 行格式避免了用大量长列数据字节填充 B 树节点的问题，可以保持整个行存储在索引节点中的效率。支持索引键的前缀可达 3072 字节。
+
+##### COMPRESSED 行格式
+
+COMPRESSED 行格式提供 DYNAMIC 行格式相同的存储特性和功能，但增加了对表和索引数据压缩的支持。
+
+可以在常规表空间和单独表空间存储 COMPRESSED 格式，系统表空间不支持 COMPRESS 格式，由于物理页大小不同，压缩表和未压缩表不能在同一常规表空间中共存。
 
 InnoDB 1.0.X 版本开始引入了新的文件格式（file fromat，新的页格式），以前支持的 Compact 和 Redundant 格式称为 Antelope 文件格式，新的文件格式为 Barracuda 文件格式，Barracuda 文件格式下拥有两种新的行记录格式：Compressed 和 Dynamic，新的两种记录格式对于存放在 BLOB 中的数据采用采用了完全的行溢出的方式：在数据页中只存放 20 个字节的指针，实际的数据都存放在 Off Page 中，而之前的 Compact 和 Redundant 两种格式会存放 768 个前缀字节，Compressed 行记录格式下，存储在其中的行数据会以 zlib 的算法进行压缩，对于大长度类型的数据能够进行非常有效的存储
 
