@@ -270,6 +270,12 @@ git push origin v1.5
 git push origin --tags
 ```
 
+##### 拉取标签
+
+```shell
+git pull origin --tags
+```
+
 ##### 删除标签
 
 ```shell
