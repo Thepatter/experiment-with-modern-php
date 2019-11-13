@@ -61,7 +61,7 @@ MySQL 还支持 hash 分区，list 分区等。实际使用时，分区表跟用
 
 *session B 的锁信息*
 
-![](./Images/分区表会话间隙锁冲突.png)
+![](../Images/Performance/分区表会话间隙锁冲突.png)
 
 ##### MyISAM 引擎行为
 

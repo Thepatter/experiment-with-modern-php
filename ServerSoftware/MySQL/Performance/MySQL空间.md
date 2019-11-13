@@ -257,7 +257,7 @@ show variables like '%innodb_page_size%';
 
 User Record 即实际存储行记录的内容。InnoDB 存储引擎表总是 B+ 树索引组织的。Free Space 即空闲空间，同样也是个链表数据结构。在一条记录被删除后，该空间会被加入到空闲链表中，当有新记录插入时，会从空闲空间中进行分配用于存储新记录
 
-#####页目录 Page Directory
+##### 页目录 Page Directory
 
 Page Directory 中存放了记录的相对位置（注意，这里存放的是页相对位置，而不是偏移量），有些时间这些记录指针为 Slots（槽）或目录槽（Directory Slots）。与其他数据库系统不同的是，在 InnoDB 中并不是每个记录拥有一个槽，Innodb 存储引擎的槽是一个稀疏目录（sparse directory），即一个槽中可能包含多个记录。伪记录 Infimum 的 n_owned 值总是 1，记录 Supremum 的 n_owned 的取值范围为 [1, 8]，其他用户记录 n_owned 的取值范围为 [4, 8]。当记录被插入或删除时需要对槽进行分裂或平衡的维护操作。
 
@@ -394,7 +394,74 @@ InnoDB 1.0.X 版本开始引入了新的文件格式（file fromat，新的页�
 
 #### 查看缓存池大小
 
-如果使用 `MySQL MyISAM` 存储引擎，它只缓存索引，不缓存数据，对应的键缓存参数为 `key_buffer_size`。如果使用 `MySQL InnoDB` 存储引擎，对应的参数为 `innodb_buffer_pool_size`
+##### MyISAM 键缓存 Key Caches
+
+MyISAM 键缓存默认只有一个键缓存，可以创建多个。MyISAM 自身只缓存索引，不缓存数据（依赖操作系统缓存数据）。如果大部分时 MyISAM 表，就应该为键缓存分配较多内存。
+
+默认情况下，MyISAM 将所有索引都缓存在默认键缓存中，但也可以创建多个命名得键缓冲，这样就可以同时缓存超过 4 GB 的内存。
+
+```ini
+# 创建多个键缓存 my.cnf
+key_buffer_1.key_buffer_size = 1G
+key_buffer_2.key_buffer_size = 1G
+```
+
+上面将配置 3 个键缓存：两个明确定义，一个默认。
+
+```mysql
+# 将表映射到对应的缓冲区
+CACHE INDEX t1, t2 IN key_buffer_1;
+# 将表索引预载到缓冲区
+LOAD INDEX INTO CACHE t1, t2
+```
+
+任何没明确指定映射到那个键缓冲区的索引，在 MySQL 第一次需要访问 `.MYI` 文件时，都会分配到默认缓冲区。可以通过 `SHOW STATUS` 和 `SHOW VARIABLES` 命令的信息来监控键缓冲的使用情况。
+
+```sql
+# 监控键缓冲的使用情况
+100 - ((key_blocks_unused * key_cache_block_size) * 100 / key_buffer_size)
+# 监控
+mysqladmin extended-status -r -i 10 | grep key_reads
+```
+
+即使没有任何 MyISAM 表，依然需要将 `key_buffer_size` 设置为较小的值。MySQL 服务器有时会在内部使用 MyISAM 表（GROYP BY）语句可能使用 MyISAM 做临时表
+
+* `key_buffer_size`
+
+  任何没有分配给它的内存都可以被操作系统缓存利用。5.0 有一个规定有效上限是 4 GB，不管系统是什么架构。5.1 允许更大的值。
+
+  在决定键缓存需要分配多少内存前，确定 MyISAM 索引实际上占用多少磁盘空间是很有帮助的。不需要把键缓存设置得比需要缓存得索引数据还大。查询 `INFORMATION_SCHEMA` 表得 `INDEX_LENGTH` 字段，把它们值相加，就可以得到索引存储占用得空间
+
+  ```mysql
+  # 索引占用空间
+  SELECT SUM(INDEX_LENGTH) FROM INFORMATION_SCHEMA.TABLES WHERE ENGINE='MYISAM';
+  ```
+
+  类 UNIX 系统，查看文件
+
+  ```shell
+  du -sch `find /path/to/mysql/database/ -name "*.MYI"`
+  ```
+
+  设置键缓存时，不要超过索引得总大小，或者不超过为操作系统缓存保留总内存得 25% ~ 50%，以更小得为准。
+
+* `key_cache_block_size`
+
+  块大小对于写密集型负载很重要，它影响了 MyISAM、操作系统缓冲，以及文件系统之间的交互。如果缓冲块太小了，可能会碰到写时读取（read-around-write，操作系统在执行写操作之前必须先从磁盘上读取一些数据）。5.0  及之前无法配置索引块大小，5.1 之后，可以设置 MyISAM 的索引块大小跟操作系统一样，以避免写时读取。
+
+##### InnoDB
+
+`innodb_buffer_pool_size` 在数据库中进行读取页的操作，首先将从磁盘读到的页存放在缓存池中，这个过程称为将页“FIX”在缓存池中，下一次再读相同的页时，首先判断该页是否在缓存池中。若在缓存池中，则该页在缓存池被命中，直接读取该页。对于数据库中页的修改操作，首先修改在缓存池中的页，然后再以一定的频率刷新到磁盘上，checkpoint 刷盘机制。
+
+缓存池中缓存的数据页类型有：索引页、数据页、undo 页、插入缓冲（insert buffer)、自适应哈希索引（adaptive hash index）、Innodb 存储的锁信息（lock info）、数据字典信息（data dictionary）等。
+
+*innodb缓存池数据对象*
+
+![](C:/Users/z/IdeaProjects/notes/ServerSoftware/MySQL/Images/Usage/InnoDB缓存池数据对象.png)
+
+从 innodb 1.0.x 开始，允许有多个缓冲池实例，每个页根据哈希值平均分配到不同缓存池实例中。可以减少数据库内部的资源竞争，增加数据库的并发处理能力。通过参数 `innodb_buffer_pool_instances` 来进行配置，默认为 1，修改该配置需要将 `innodb_buffer_pool_size` 设置为大于 1 G。`innodb_buffer_pool_size` 必须是 128 M （`innodb_buffer_pool_chunk_size`）的整数倍，且能整除 `innodb_buffer_pool_instances` ，不然 mysql 会自行调节 `innodb_buffer_pool_size` 大小。
+
+对应的参数为 `innodb_buffer_pool_size`
 
 ```mysql
 // 查看缓存池大小
@@ -404,8 +471,6 @@ set global innodb_buffer_pool_size = 134217728;
 // 查看缓存池个数
 show variables like 'innodb_buffer_pool_instances';
 ```
-
- 在 Innodb 存储引擎中，可以同时开启多个缓存池，`innodb_buffer_pool_instances` 默认情况下为 8，如果想要开启多个缓存池，首先需要将 `innodb_buffer_pool_size` 参数设置为大于等于 1GB，这时 `innoldb_buffer_pool_instances` 才会大于 1
 
 #### 数据页加载的三种方式
 
