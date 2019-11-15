@@ -39,6 +39,8 @@ git log --oneline --decorate --graph --all
 ```shell
 git checkout master
 git merge <branch>
+# 合并某个分支上的单个 commit
+git cherry-pick <commit-hash>
 ```
 
 #### 分支管理
