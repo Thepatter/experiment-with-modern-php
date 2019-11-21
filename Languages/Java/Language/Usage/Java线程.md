@@ -123,3 +123,4 @@ Semaphore(nunberOfPermits: int, fair: boolean)          // 创建一个具有指
 acquire(): void             // 从该信号量获取一个许可，如果许可不可用，线程会阻塞等待
 release(): void             // 释放一个许可返回给信号量
 ```
+
