@@ -44,6 +44,4 @@ pm.test("Your test name", function () {
 
 第二个测试用例，判断响应数据 `pm.expect(pm.response.text()).to.include("")` 断言响应数据中一定会包含某个字段
 
-### API 文档
 
-Apizza 在线 API 管理工具，界面及使用方式与 postman 类似。支持导入 postman 的 collection 文件
