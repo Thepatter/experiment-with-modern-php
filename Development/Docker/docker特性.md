@@ -323,7 +323,7 @@ docker run -d -P --name web --mount type=bind,source=/webapp,destination=/opt/we
 docker run -d -P --name web -v /webapp:/opt/webapp training/webapp python app.py
 ```
 
-本地目录的路径必须是决定路径，容器内路径可以为相对路径，如果目录不存在，docke 会自动创建，docker 挂载数据卷的默认权限是读写（rw），可通过 `ro` 指定为只读（容器内对锁挂载数据卷内的数据就无法修改了）
+本地目录的路径必须是绝对路径，容器内路径可以为相对路径，如果目录不存在，docker 会自动创建，docker 挂载数据卷的默认权限是读写（rw），可通过 `ro` 指定为只读（容器内对锁挂载数据卷内的数据就无法修改了）
 
 ```shell
 docker run -d -P --name web -v /webapp:/opt/webapp:ro training/webapp python app.py
