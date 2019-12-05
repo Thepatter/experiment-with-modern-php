@@ -1,38 +1,32 @@
-## 常用 docker 镜像
+### 常用 docker 镜像
 
-### MySQL
+#### MySQL
 
-#### 启动服务
+##### 启动服务
+
+默认配置文件是 `/etc/mysql/my.cnf`
 
 ```shell
 # 启动服务
-docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD=<my-secret-pw> -d mysql:<tag>
+docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
+# 启动另一个容器连接 some-mysql
+docker run -it --network some-network --rm mysql mysql -hsome-mysql -uroot -p
 # 作为客户端
 docker run -it --rm mysql mysql -hsome.mysql.host -usome-mysql-user -p
 ```
 
-* <some-mysql> 为运行容器的命名
-* <my-secret-pw> 是 root 用户的密码
-* <tag> 是 mysql Image tag
-
-默认配置文件是 `/etc/mysql/my.cnf`
-
-#### 没有 cnf 文件时
+##### 没有 cnf 文件时
 
 许多配置选项可以作为标志传递给 `mysqld`。这将可以灵活的自定义容器而无需 cnf 文件。如，更改所有表的默认编码和排序规则使用UTF-8（utf8mb4)，只需执行如下命令：
 
 ```shell
 # 传参配置
 docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD=<secret> -d mysql:<tag> --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-```
-
-可用选项的完整列表
-
-```mysql
+# 可用选项的完整列表
 docker run -it --rm mysql:tag --verbose --help
 ```
 
-#### 环境变量
+##### 环境变量
 
 启动 mysql 镜像时，可以通过在 `docker run` 命令行上传递一个或多个环境变量来调整 MySQL 实力的配置。如果使用已包含数据的数据目录启动容器，则以下任何变量都不会产生任何影响：任何预先存在的数据库在容器启动时始终保持不变
 
@@ -60,7 +54,7 @@ docker run -it --rm mysql:tag --verbose --help
 
   初始化完成后，将 `root` 设置为过期，在首次登录时强制更改密码。仅在 5.6+ 上支持此功能
 
-#### 使用文件传递敏感信息
+##### 使用文件传递敏感信息
 
 替代通过环境变量传递敏感信息的方法，`__FILE` 可以使初始化脚本从文件中加载变量
 
@@ -70,7 +64,7 @@ docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD_FILE=/run/sec
 
 仅支持 `MYSQL_ROOT_PASSWORD`，`MYSQL_ROOT_HOST`，`MYSQL_DATABASE`，`MYSQL_USER`，`MYSQL_PASSWORD`
 
-#### 连接到 mysql 服务容器
+##### 连接到 mysql 服务容器
 
 * 进入 mysql 服务容器的 bash 在 bash 中进入 mysql 命令后
 
@@ -80,7 +74,7 @@ docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD_FILE=/run/sec
 
   启动另一个 `mysql` 容器来运行命令行客户端，连接 mysql 服务端容器
 
-#### 存储数据的位置
+##### 存储数据的位置
 
 * 让 `Docker` 通过使用自己的内部卷管理将数据库文件写入主机系统上的磁盘来管理数据库数据的存储。这是默认设置，对用户来说简单且透明，缺点是文件可能很难找到直接在主机系统上运行的工具和应用程序，即外部容器
 
@@ -94,7 +88,7 @@ docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD_FILE=/run/sec
   docker run --name <some-mysql> -p 3306:3306 -v /my/own/datadir/:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=secret -d mysql:tag
   ```
 
-#### 转存数据库
+##### 转存数据库
 
 可以使用能访问容器的任何工具。也可以使用 `docker exec` 从同一容器中使用和运行该工具
 
@@ -102,7 +96,7 @@ docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD_FILE=/run/sec
 docker exec <some-mysql> sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
 ```
 
-#### docker stack
+##### docker stack
 
 *stack.yml*
 
@@ -124,50 +118,46 @@ services:
 
 运行 `docker stack deploy -c stack.yml mysql` 或 `docker-compose -f stack.yml up`，等待初始化完成后，访问 `http://swarm-ip:8080`，`http://localhost:8080`，`http://host-ip:8080`
 
-### Nginx
+#### Nginx
 
-#### `Dockerfile`
+* *Dockerfile*
 
-```dockerfile
-FROM nginx
-ADD app/ /app
-ADD nginx.conf /etc/nginx/nginx.conf
-```
+  ```dockerfile
+  FROM nginx
+  ADD app/ /app
+  ADD nginx.conf /etc/nginx/nginx.conf
+  ```
 
-#### 打包
+* run
 
-```shell
-docker build --tag=nginx:0.0.1 .
-```
+  ```shell
+  docker build --tag=nginx:0.0.1 .
+  docker run --name nginx -itd -p 80:80 nginx:0.0.1
+  ```
 
-#### 应用
+#### PHP-FPM
 
-```shell
-docker run --name nginx -itd -p 80:80 nginx:0.0.1
-```
+* *Dockerfile*
 
-### PHP-FPM
+  ```do
+  FROM php:7.4-fpm-alpine
+  ADD app/ /app
+  RUN apk add --no-cache --update --virtual .phpize-deps $PHPIZE_DEPS \
+      && pecl install -o -f redis  \
+      && docker-php-ext-enable redis \
+      && rm -rf /usr/share/php \
+      && rm -rf /tmp/* \
+      && apk del  .phpize-deps
+  ```
 
-#### Dockerfile
+* run
 
-```dockerfile
-FROM bitnami/php-fpm
-ADD app/ /app
-```
+  ```shell
+  docker build --tag=php-fpm:0.0.1 .
+  docekr run --name phpfpm -itd --network container:nginx php-fpm:0.0.1
+  ```
 
-#### 打包
-
-```
-docker build --tag=php-fpm:0.0.1 .
-```
-
-#### 运行
-
-```php
-docekr run --name phpfpm -itd --network container:nginx php-fpm:0.0.1
-```
-
-### redis
+#### redis
 
 ```shell
 # 启动并指定密码为 redispass
@@ -180,7 +170,7 @@ docker run -it redis redis-cli -h 182.92.223.239
 docker run -v /myredis/conf/redis.conf:/usr/local/etc/redis/redis.conf --name myredis redis redis-server /usr/local/etc/redis/redis.conf
 ```
 
-### hyperf 镜像
+#### hyperf 镜像
 
 ```shell
 # 下载并运行 hyperf/hyperf 镜像，并将镜像内的项目目录绑定到宿主机的 /tmp/skeleton 目录
