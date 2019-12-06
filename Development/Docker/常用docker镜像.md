@@ -24,6 +24,8 @@ docker run -it --rm mysql mysql -hsome.mysql.host -usome-mysql-user -p
 docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD=<secret> -d mysql:<tag> --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 # 可用选项的完整列表
 docker run -it --rm mysql:tag --verbose --help
+# 挂载 my.cnf 文件夹
+docker run --name some-mysql -v /my/custom:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
 ```
 
 ##### 环境变量
@@ -90,11 +92,17 @@ docker run --name <some-mysql> -p 3306:3306 -e MYSQL_ROOT_PASSWORD_FILE=/run/sec
 
 ##### 转存数据库
 
-可以使用能访问容器的任何工具。也可以使用 `docker exec` 从同一容器中使用和运行该工具
+* create databases dumps by docker-exec command
 
-```shell
-docker exec <some-mysql> sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
-```
+  ```shell
+  docker exec some-mysql sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql
+  ```
+
+* restoring data from dump files
+
+  ```shell
+  docker exec -i some-mysql sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < /some/path/on/your/host/all-databases.sql
+  ```
 
 ##### docker stack
 
@@ -157,7 +165,7 @@ services:
   docekr run --name phpfpm -itd --network container:nginx php-fpm:0.0.1
   ```
 
-#### redis
+#### Redis
 
 ```shell
 # 启动并指定密码为 redispass
@@ -170,7 +178,7 @@ docker run -it redis redis-cli -h 182.92.223.239
 docker run -v /myredis/conf/redis.conf:/usr/local/etc/redis/redis.conf --name myredis redis redis-server /usr/local/etc/redis/redis.conf
 ```
 
-#### hyperf 镜像
+#### Hyperf 镜像
 
 ```shell
 # 下载并运行 hyperf/hyperf 镜像，并将镜像内的项目目录绑定到宿主机的 /tmp/skeleton 目录

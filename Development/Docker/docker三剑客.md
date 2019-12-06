@@ -1129,7 +1129,7 @@ db:
 
 * up
 
-  `docker-compos up[options][SERVICE...]`
+  `docker-compose up[options][SERVICE...]`
 
   尝试自动完成包括构建镜像，重新创建服务，启动服务，并关联服务，链接的服务都将会被自动启动，除非已经处于运行状态，大部分可以直接通过该命令来启动一个项目，默认启动的容器都在前台，控制台会打印所有容器的输出信息。默认情况下，如果服务容器已经存在，将会尝试停止容器，然后重新创建（保持使用 volumes-from）挂载的卷，以保证新启动的服务匹配 docker-compose.yml 文件的最新内容。`docker-compose up --no-deps -d <service_NAME>` 来重新创建服务并后台停止旧服务，启动新服务，并不会影响到其所依赖的服务。支持选项：
 
