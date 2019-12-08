@@ -1,15 +1,4 @@
-## PDOCurd
-
-### 单例
-
-```php
 <?php
-/**
- * Created by PhpStorm.
- * User: company
- * Date: 2018/11/24
- * Time: 11:32
- */
 
 interface DB
 {
@@ -35,19 +24,19 @@ class PDOMysqlSingleton
     }
 
     public static function getLink() {
-       if (self::$link) {
-           return self::$link;
-       }
-       $dsn = 'mysql:dbname=' . DB::dbName . ';host=' . DB::host . ';port=' . DB::port  . ';charset=UTF8';
-       self::$link = new PDO($dsn, DB::username, DB::password);
-       return self::$link;
+        if (self::$link) {
+            return self::$link;
+        }
+        $dsn = 'mysql:dbname=' . DB::dbName . ';host=' . DB::host . ';port=' . DB::port  . ';charset=UTF8';
+        self::$link = new PDO($dsn, DB::username, DB::password);
+        return self::$link;
     }
 
     public static function __callStatic($name, $arguments)
     {
-       // TODO: Implement __callStatic() method.
-       $callback = [self::getLink(), $name];
-       return call_user_func_array($callback, $arguments);
+        // TODO: Implement __callStatic() method.
+        $callback = [self::getLink(), $name];
+        return call_user_func_array($callback, $arguments);
     }
 }
 
@@ -69,19 +58,6 @@ class MysqliSingleton
         return self::$link;
     }
 }
-```
-
-### curd
-
-```php
-<?php
-/**
- * Created by PhpStorm.
- * User: company
- * Date: 2018/11/24
- * Time: 15:34
- */
-require 'PDOMysqlSingleton.php';
 
 class PDOCurd
 {
@@ -187,35 +163,3 @@ class PDOCurd
         $pdo->commit();
     }
 }
-
-class MysqliCurd
-{
-    /**
-     * @return array
-     * 预处理防止 sql 注入
-     */
-    public function action()
-    {
-        $mysqlLink = MysqliSingleton::getLink();
-        $mysqlStatement = $mysqlLink->prepare('select id, user_id, created_at from ' . DB::weChatFansComparedTable . ' where id > ? limit ?, ?');
-        if ($mysqlStatement) {
-            $mysqlStatement->bind_param('iii', $id, $start, $end);
-            $id = 10;
-            $start = 1;
-            $end = 10;
-            $mysqlStatement->execute();
-        } else {
-            var_dump($mysqlLink->error);
-        }
-        $mysqlStatement->execute();
-        $mysqlStatement->bind_result($id, $user_id, $created_at);
-        $result = [];
-        while ($mysqlStatement->fetch()) {
-            $result[] = ['id' => $id, 'user_id' => $user_id, 'created_at' => $created_at];
-        }
-        $mysqlStatement->close();
-        $mysqlLink->close();
-        return $result;
-    }
-}
-```

@@ -1,17 +1,52 @@
-## redis订阅任务
-
-### 后台执行订阅任务
-
-```php
 <?php
-/**
- * Created by PhpStorm.
- * User: z
- * Date: 2018/10/10
- * Time: 22:45
- */
 
-/** 守护进程化订阅消息 */
+interface redisConfig
+{
+    const host = '127.0.0.1';
+    const db = 1;
+    const password = '';
+}
+
+class RedisSingleton
+{
+    private static $link = null;
+
+    private function __construct()
+    {
+    }
+
+    public static function getConnection()
+    {
+        if (self::$link) {
+            return self::$link;
+        }
+        self::$link = new \Redis();
+        self::$link->connect(redisConfig::host);
+        self::$link->auth(redisConfig::password);
+        self::$link->select(redisConfig::db);
+        return self::$link;
+    }
+}
+
+/**
+ * 发布耗时任务
+ */
+$redis = new \Redis;
+$redis->connect('127.0.0.1');
+for ($i = 0; $i < 20; $i++) {
+    $redis->publish('redisPubAndSub', json_encode([
+        'timeHex' => dechex(time()),
+        'timeString' => date('Y-m-d H:i:s', time()),
+        'timeDex' => time(),
+        'useTime' => 20 + $i,
+    ]));
+}
+$redis->close();
+
+/**
+ * 守护进程化订阅消息
+ * 不过两个回调都会在最后一个消息处理完成后产生一个僵尸子进程,但当新消息来时会自动回收该僵尸进程,该文件中的类子进程能够调用
+ **/
 $pid = pcntl_fork();
 
 if ($pid) {
@@ -57,7 +92,7 @@ if ($pid == -1) {
     };
     $redis->subscribe([$channel], $fun);
 }
-/** @var $f 该回调可以满足当消息来时新开进程来处理 */
+/** 该回调可以满足当消息来时新开进程来处理 */
 $multiProcess = function ($redis, $chan, $msg) {
     if ($chan === 'pubAndSubChan') {
         $pid = pcntl_fork();
@@ -85,6 +120,3 @@ $multiProcess = function ($redis, $chan, $msg) {
         }
     }
 };
-
-// 不过两个回调都会在最后一个消息处理完成后产生一个僵尸子进程,但当新消息来时会自动回收该僵尸进程,该文件中的类子进程能够调用
-```
