@@ -1,13 +1,4 @@
-## RSA加解密
-```php
 <?php
-/**
- * RSA 公私钥加密
- * Created by PhpStorm.
- * User: 76073
- * Date: 2018/4/15
- * Time: 21:43
- */
 
 class RsaCrypt
 {
@@ -76,20 +67,7 @@ class RsaCrypt
         return false;
     }
 }
-```
 
-### 解密中间件
-
-```php
-<?php
-
-namespace App\Http\Middleware;
-
-/**
- * Class Secret
- * @package App\Http\Middleware
- * API 传输数据解密中间件
- */
 class Secret
 {
     public function handle($request, Closure $next)
@@ -130,4 +108,3 @@ class Secret
         //return $next($request);
     }
 }
-```

@@ -1,13 +1,4 @@
-## 读取file
-
-```php
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: company
- * Date: 2018/11/19
- * Time: 13:43
- */
 
 class ReadFile
 {
@@ -61,4 +52,3 @@ class ReadFile
         return parse_ini_file($file);
     }
 }
-```

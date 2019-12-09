@@ -1,13 +1,5 @@
-## AES加解密
-
-```php
 <?php
-/**
- * Created by PhpStorm.
- * User: company
- * Date: 2019/3/6
- * Time: 10:20
- */
+
 class RequestApi
 {
     const APP_ID = '4f30e5156a404dd2b7f5d86eccedeac4';
@@ -15,7 +7,7 @@ class RequestApi
     const KEY = 'VxwJRypPI5S7GBY9';
 
     private $requestParam;
-    
+
     public function __construct()
     {
 
@@ -119,5 +111,3 @@ class RequestApi
         return $data . str_repeat(chr($pad), $pad);
     }
 }
-```
-

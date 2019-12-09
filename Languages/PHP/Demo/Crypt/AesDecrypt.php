@@ -1,13 +1,4 @@
-## 使用Mcrypt模块
-
-```php
 <?php
-/**
- * Created by PhpStorm.
- * User: work
- * Date: 2018/4/13
- * Time: 16:53
- */
 
 class AesDecrypt
 {
@@ -69,4 +60,3 @@ class AesDecrypt
         return $hex;
     }
 }
-```

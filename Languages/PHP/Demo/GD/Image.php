@@ -1,15 +1,6 @@
-## gd库使用
-
-```php
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: company
- * Date: 2018/11/29
- * Time: 15:19
- */
 
-class image
+class Image
 {
     public function generateTextPng($width, $height, $string, $fileName)
     {
@@ -46,4 +37,3 @@ class image
         return false;
     }
 }
-```
