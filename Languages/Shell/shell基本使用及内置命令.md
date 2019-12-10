@@ -11,7 +11,7 @@ shell 会在当前用户 `PATH` 下寻找对应命令，可以将编译后的二
 * 添加 PATH，使用 `:` 分隔目录
 
   ```shell
-export PATH=$PATH:<PATH1>:<PATH2>
+  export PATH=$PATH:<PATH1>:<PATH2>
   ```
   
   ```shell
