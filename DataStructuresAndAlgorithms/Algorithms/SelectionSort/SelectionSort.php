@@ -9,7 +9,7 @@ function selectSort(array $origin): array
     for ($index = 0; $index < $originCount; ++$index) {
         $minIndex = $index;
         for ($l = $index + 1; $l < $originCount; ++$l) {
-            if ($origin[$l] < $origin[$minIndex]) {
+            if ($origin[$l] < $origin[$index]) {
                 $minIndex = $l;
             }
         }

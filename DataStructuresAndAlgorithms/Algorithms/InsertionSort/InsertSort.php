@@ -7,16 +7,15 @@ function insertSort(array $origin): array
         return $origin;
     }
     for ($index = 1; $index < $originCount; ++$index) {
-        $temp = $origin[$index];
-        $j = $index - 1;
-        for (; $j >= 0; --$j) {
-            if ($origin[$j] > $temp) {
-                $origin[$j + 1] = $origin[$j];
+        $tmp = $origin[$index];
+        for ($l = $index - 1; $l >= 0; --$l) {
+            if ($origin[$l] > $tmp) {
+                $origin[$l + 1] = $origin[$l];
             } else {
                 break;
             }
         }
-        $origin[$j + 1] = $temp;
+        $origin[$l + 1] = $tmp;
     }
     return $origin;
 }
