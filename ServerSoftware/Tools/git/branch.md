@@ -16,7 +16,7 @@ git branch testing
 
 *创建分支*
 
-![](./Images/创建分支.png)
+![](Images/创建分支.png)
 
 `HEAD` 的特殊指针，指向当前所在的本地分支。使用 `git log --online --decorate` 查看各个分支当前所指的对象
 
@@ -127,7 +127,7 @@ git branch -vv
 
 *跟踪远程分支*
 
-![](./Images/跟踪远程分支.png)
+![](Images/跟踪远程分支.png)
 
 这里可以看到 `iss53` 分支正在跟踪 `origin/iss53` 并且 “ahead” 是 2，意味着本地有两个提交还没有推送到服务器上。 也能看到 `master` 分支正在跟踪 `origin/master` 分支并且是最新的。 接下来可以看到 `serverfix` 分支正在跟踪 `teamone` 服务器上的 `server-fix-good` 分支并且领先 3 落后 1，意味着服务器上有一次提交还没有合并入同时本地有三次提交还没有推送。 最后看到 `testing` 分支并没有跟踪任何远程分支。
 

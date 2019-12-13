@@ -8,7 +8,7 @@ docker 服务启动时会首先在主机上自动创建一个 docker0 虚拟网�
 
 *docker 网络连接原理*
 
-<img src="./Images/docker网络连接原理.png" style="zoom:50%;" />
+<img src="Images/docker网络连接原理.png" style="zoom:50%;" />
 
 从 1.7.0 开始 Docker 正式把网络与存储着两部分的功能实现都以插件化形式剥离出来，剥离出来的独立容器网络项目即为 `libnetwork` 项目
 
@@ -18,7 +18,7 @@ libnetwork 中容器网络模型（Container Networking Model，CNM）十分简�
 
 *CNM的典型生命周期*
 
-<img src="./Images/CNM典型生命周期.png" style="zoom:50%;" />
+<img src="Images/CNM典型生命周期.png" style="zoom:50%;" />
 
 目前 CNM 支持的驱动类型有四种：Null、Bridge、Overlay、Remote
 

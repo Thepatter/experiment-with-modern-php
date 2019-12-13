@@ -10,7 +10,7 @@
 
 *GIt仓库、工作目录、暂存区域*
 
-![](./Images/git工作区.png)
+![](Images/git工作区.png)
 
 * **git 仓库目录**：是 Git 用来保存项目的元数据和对象数据库的地方。这是 Git 中最重要的部分，从其他计算机克隆仓库时，拷贝的就是这里的数据
 * **工作目录**：是对项目的某个版本独立提取出来的内容。这些从 Git 仓库的压缩数据库中提取出来的文件，放在磁盘上修改或使用
@@ -65,7 +65,7 @@ Git 支持多种数据传输协议：`https://`，`git://`，`ssh`
 
 *使用 Git 时文件的生命周期*
 
-![](./Images/使用git时文件的生命周期.png)
+![](Images/使用git时文件的生命周期.png)
 
 ##### 状态概览
 
@@ -73,7 +73,7 @@ Git 支持多种数据传输协议：`https://`，`git://`，`ssh`
 
 *git状态概览*
 
-![](./Images/git状态概览.png)
+![](Images/git状态概览.png)
 
 新添加的未跟踪文件前面有 `??` 标记，新添加到暂存区中的文件前面有 `A` 标记，修改过的文件前面有 `M` 标记。出现在有右边的 M 表示该文件被修改了但是还没有放入暂存区，出现在靠左边的 M 表示该文件被修改了并放入了暂存区。
 
@@ -107,7 +107,7 @@ git rm --cached README
 
 *git log 常用选项*
 
-![](./Images/gitlog选项.png)
+![](Images/gitlog选项.png)
 
 * `-p` 用来显示每次提交的内容差异
 
@@ -134,11 +134,11 @@ git rm --cached README
 
   *git log --pretty=format 常用选项*
 
-  ![](./Images/git-logformat选项.png)
+  ![](Images/git-logformat选项.png)
 
 *限制 git log 输出的选项*
 
-![](./Images/限制gitlog输出的选项.png)
+![](Images/限制gitlog输出的选项.png)
 
 #### 撤销操作
 
