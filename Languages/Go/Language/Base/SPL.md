@@ -1,5 +1,59 @@
 ### SPL
 
+#### 内置函数
+
+* close
+
+  管道通信
+
+* len
+
+  返回某个类型的长度或数量（字符串、数组、切片、map、管道）
+
+* cap
+
+  返回某个类型的最大容量（只能用于切片和 map）
+
+* new
+
+  分配内存，用于值类型和用户定义的类型，如自定义结构。`new(type)` 分配类型 T 的零值并返回其地址，也可以被用于基本类型 `v := new(int)`
+
+* make
+
+  分配内存，`make(T)` 返回类型 T 的初始化之后的值，它比 new 进行更多的工作
+
+* copy
+
+  复制切片
+
+* append
+
+  连接切片
+
+* panic
+
+  错误处理
+
+* recover
+
+  错误处理
+
+* print
+
+  底层打印，在部署环境中建议使用 `fmt` 包
+
+* println
+
+  底层打印
+
+* complex
+
+  创建复数
+
+* realimag
+
+  操作复数
+
 #### strings
 
 https://golang.org/pkg/strings/
@@ -79,5 +133,14 @@ time.Now()
 // 获取时间的一部分
 t.Day()
 t.Minute()
+// 计算函数运行时间
+start := time.Now()
+longCalculation()
+end := time.Now()
+delta := end.Sub(start)
 ```
+
+#### runtime
+
+#### log
 
