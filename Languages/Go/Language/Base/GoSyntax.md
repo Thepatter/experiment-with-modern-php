@@ -405,7 +405,7 @@ for i := 0; i < len(arr1); i++ {
     arr[i] = i * 2
 }
 // 使用 for-range 遍历
-for index, value:= range arr1
+for index, value := range arr1
 ```
 
 数组是一种值类型（不像 C/C++ 中是指向首元素的指针），可以通过 `new()` 来创建
@@ -475,5 +475,182 @@ s = s[:cap(s)]
 var slice1 []type = make([]type, len)
 // 简写, len 即是数组的长度也是 slice 的初始长度
 slice1 := make([]type, len)
+```
+
+切片通常也是一维的，但是也可以由一维组合成高维。通过分片的分片（或者切片的数组）长度可以任意动态变化，Go 语言的多维切片可以任意切分，而内层的切片必须单独分配（通过make函数）
+
+```go
+// start_length 为切片初始长度，capacity 作为相关数组长度
+slice1 := make([]type, start_length, capacity)
+// 重组,end 是新的末尾索引
+slice1 = slice1[0:end]
+// 切片扩展一位
+sl = sl[0:len(sl)+1]
+```
+
+如果想增加切片的容量，必须创建一个新的更大的切片并把原分配的内容都拷贝过去，使用切片拷贝函数 `copy` 和追加新元素的 `append` 函数
+
+切片的底层指向一个数组，该数组的实际容量可能要大于切片所定义的容量，只有在没有任何切片指向的时候，底层的数组内存才会被释放，这种特性有时会导致程序占用多余的内存
+
+#### Map
+
+一种元素对（pair）的无序集合，`pair` 的一个元素是 `key`，对应的另一个元素是 `value`，map 是引用类型
+
+```go
+// keytype 和 valuetype 之间允许有空格
+var map1 map[keytype]valuetype
+var map1 map[string]int
+// 初始化
+var map1 = make(map[keytype]valuetype)
+map1 := make(map[keytype]valuetype)
+map1 = map[string]int{"one": 1, "two": 2}
+// 指定长度
+mp2 := make(map[keytype]valuetype, cap)
+map2 := make(map[string]float32, 100)
+// 赋值及访问使用 []
+map1[key1] = val1
+// 将 key1 对应的值赋值为 v，如果 map 中没有 key1 存在，v 将被赋值为 map1 的值类型的空值
+v := map1[key1]
+// 用切片作为 map 的值
+mp1 := make(map[int][]int)
+mp2 := make(map[int]*[]int)
+```
+
+在声明的时候不需要知道 map 的长度，map 是可动态增长的，可以指定 map 的初始容量，当 map 增长到容量上限的时候，如果再增加新的 key-value 对，map 的大小会自动加 1，出于性能考虑，对于大的 map 或者会快速扩张的 map，即使只是大概知道容量，也最好先编码
+
+未初始化的 map 的值是 nil，key 可以是任意可以用 `==` 或 `!=` 操作符比较的类型（string，int，float，指针，接口）。数组，切片和结构体不能作为 key，如果要用结构体作为 key 可以提供 `key()` 和 `hash()` 方法，这样可以通过结构体的域计算出唯一的数字或字符串的 key。`value` 可以是任意类型的；通过使用空接口类型，可以存储任意值，但是使用这种类型作为值时需要先做一次类型断言
+
+```go
+// 测定是否存在 key1, isPresent 返回一个 bool 值，如果 key1 存在于 map1，va11 就是 key1 对应的 value 值，isPresent 为 true，如果 key1 不存在，val1 是一个控制，isPresent 为 false
+val1, isPresent = map1[key1]
+// 与 if 混用
+if _, ok := map1[key1]; ok {
+    
+}
+// 删除 map1 中的 key1
+delete(map1, key1)
+// for 循环 map
+for key, value := range map1 {
+    
+}
+```
+
+map 类型为非线程安全的，当并行访问一个共享的 map 类型的数据，map 数据将会出错
+
+#### 包
+
+go install 是 Go 中自动包安装工具：如需要将包安装到本地它会从远端仓库下载包：检出、编译和安装一气呵成。在包安装前的先决条件是要自动处理包自身依赖关系的安装。被依赖的包也会安装到子目录下，但是没有文档和示例。`go install` 使用了 GOPATH 变量
+
+#### 结构
+
+Go 通过类型别名和结构体的形式支持用户自定义类型。结构体是复合类型，当需要定义一个类型，它由一系列属性组成，每个属性都有自己的类型和值。结构体是值类型，可以通过 `new` 函数来创建，组成结构体类型的那些数据为字段。每个字段都有一个类型和一个名字，在一个结构体中，字段名字必须是唯一的
+
+```go
+type identifier struct {
+    field1 type1
+}
+type T struct {a, b int}
+// 使用 new 给结构体分配内存，返回指向已分配内存的指针
+var t *T = new(T)
+// t 指向 T 的指针，结构体字段的值是它们所属类型的零值
+t := new(T)
+// 结构体字段赋值
+structname.fieldname = value
+// 初始, 底层仍然调用 new()
+ms := &structname{10, 15.5, "Chris"}
+```
+
+结构体的字段可以是任何类型，甚至是结构体本身。`var t T` 也会给 `t` 分配内存，并零值化内存，但这个时候 `t` 是类型 T。
+
+结构体和它所包含的数据在内存中是以连续块的形式存在的，即使结构体中嵌套有其他的结构体，这在性能上带来了很大优势。结构体类型可以通过引用自身来定义（这在定义链表或二叉树的元素时特别有用，此时节点包含指向临近节点的链接）
+
+```go
+type Node struct {
+    pr *Node
+    data float64
+    su *Node
+}
+type Tree struct {
+    le *Tree
+    data float64
+    ri *Tree
+}
+```
+
+当为结构体定义了一个 alias 类型时，此结构体类型和它的 alias 类型都有相同的底层类型。结构体中的字段除了有名字和类型外，还可以有一个可选的标签（tag）：它是一个附属于字段的字符串，可以是文档或其他的重要标记。标签的内容不可以在一般的编程中使用，只有包 `reflect` 能获取它
+
+```go
+type TagType struct {
+    field1 bool "An important answer"
+    field2 string "The name of the thing"
+}
+func refTag(tt TagType, ix int) {
+    ttType := reflect.TypeOf(tt)
+    ixField := ttType.Field(ix)
+    fmt.Printf("%v\n", ixField.Tag)
+}
+```
+
+结构体可以包含一个或多个匿名（内嵌）字段，这些字段没有显示的名字，只有字段的类型是必须的，此时类型就是字段的名字。匿名字段本身可以是一个结构体类型，即结构体可以包含内嵌结构体。**在一个结构体中对于每一种数据类型只能有一个匿名字段**
+
+```go
+type innerS struct {
+    in1 int
+    in2 int
+}
+type outerS struct {
+    b    int
+    c    float32
+    int  // anonymous field
+    innerS //anonymous field
+}
+func main() {
+    outer := new(outerS)
+    outer.b = 6
+    outer.c = 7.5
+    outer.int = 60
+    outer.in1 = 5 // 外层结构体直接进入内存结构体的字段，内嵌结构体可以来自其他包
+    outer.in2 = 10
+    // 使用结构体字面量
+    outer2 := outerS{6, 7.5, 60, innerS{5, 10}}
+    fmt.Println("outer2 is:", outer2)
+}
+```
+
+当两个字段拥有相同的名字时：
+
+* 外层名字会覆盖内层名字（但是两者的内存空间都保留），这提供了一种重载字段或方法的方式
+* 如果相同的名字在同一级别出现了两次，如果这个名字被程序使用了，将会引发一个错误（不使用没关系），没有办法来解决这种问题引起的二义性，必须由程序员自己修正
+
+##### 方法
+
+在 Go 中，它和方法有着同样的名字，并且大体上意思相同：Go 方法是作用在接收者上的一个函数，接收者是某种类型的变量。因此方法是一种特殊类型的函数
+
+接收者类型可以是任何类型，不仅仅是结构体类型：任何类型都可以有方法，甚至是函数类型，可以是 `int`，`bool`，`string` 或数组的别名类型。但接收者不能是一个接口类型也不能是一个指针类型，但可以是任何其他允许类型的指针
+
+一个类型加上它的方法等价于面向对象中的一个类，一个重要的区别是：在 Go 中，类型的代码和绑定在它上面的方法的代码可以不放置在一起，它们可以存在在不同的源文件，它们必须是同一个包的
+
+方法是函数，不允许方法重载，对于一个类型只能有一个给定名称的方法。但是如果基于接收者类型，是有重载的：具有相同名字的方法可以多个不同的接收者类型上存在
+
+```go
+// 方法基于接受者重载
+func (a *denseMatrix) Add(b Matrix) Matrix
+func (a *sparseMatrix) Add(b Matrix) Matrix
+```
+
+别名类型不能有它原始类型上已经定义过的方法
+
+```go
+// 方法名之前，func 关键字之后的括号中指定 receiver
+func (recv receiver_type) methodName(parameter_list)(return_value_list) {
+    ...
+}
+type TwoInts struct {
+    a int
+    b int
+}
+func (tn *TwoInts) AddThem() int {
+    return tn.a + tn.b
+}
 ```
 

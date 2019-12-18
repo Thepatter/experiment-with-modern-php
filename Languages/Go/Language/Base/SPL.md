@@ -144,3 +144,36 @@ delta := end.Sub(start)
 
 #### log
 
+#### regexp
+
+```go
+// 简单匹配
+ok, _ := regexp.Match(pat, []byte(searchIn))
+ok, _ := regexp.MatchString(pat, searchIn)
+// 结构
+re, _ := regexp.Compile(pat)
+str := re.ReplaceAllString(searchIn, "###")
+str2 := re.ReplaceAllStringFunc(searchIn, f)
+```
+
+#### sync
+
+`sync.Mutex` 是一个互斥锁，它的作用是守护在临界区入口 来确保同一时间只能有一个线程进入临界区
+
+`sync.RWMutex` 锁，能通过 `RLock()` 来允许同一时间多个线程对变量进行读操作，但只能一个线程进行写操作。
+
+#### big
+
+* `big.Int`
+
+  ```go
+  // 大整数构造
+  big.NewInt(n)
+  // 大有理数构造, N 分子，D 分母都是 int64 型整数
+  big.NewRat(N,D)
+  ```
+
+* `big.Rat`
+
+Go 语言不支持运算符重载，所有大数字类型都有像 `Add()` 和 `Mul()` 这样的方法
+
