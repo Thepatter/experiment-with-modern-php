@@ -177,3 +177,117 @@ str2 := re.ReplaceAllStringFunc(searchIn, f)
 
 Go 语言不支持运算符重载，所有大数字类型都有像 `Add()` 和 `Mul()` 这样的方法
 
+#### runtime
+
+```go
+// 触发 GC
+runtime.GC()
+// 当前内存分配
+var m runtime.MemStats
+runtime.ReadMemStats(&m)
+fmt.Printf("%d kb\n", m.Alloc / 1024)
+// 对象被内存移除前执行一些特殊操作,func(obj *typeObj) 需要一个 typeObj 类型的指针参数 obj，特殊操作会在它上面执行。func 也可以是一个匿名函数，在对象被 GC 进程选中并从内存中移除以前，SetFinalizer 都不会执行，即使程序正常结束或发生错误
+runtime.SetFinalizer(Obj, func(obj *typeObj))
+```
+
+#### reflect
+
+反射是通过检查一个接口的值，变量首先被转换成空接口，接口的值包含一个 type 和 value。反射可以从接口值反射到对象，也可以从对象反射回接口值
+
+```go
+// 返回被检查对象的类型和值
+reflect.TypeOf
+reflect.ValueOf
+// 使用反射设置值
+var x float64 = 3.4
+v := reflect.ValueOf(x)
+// setting a value:
+// v.SetFloat(3.1415) // Error: will panic: reflect.Value.SetFloat using unaddressable value
+fmt.Println("settability of v:", v.CanSet())
+v = reflect.ValueOf(&x) // Note: take the address of x.
+fmt.Println("type of v:", v.Type())
+fmt.Println("settability of v:", v.CanSet())
+v = v.Elem()
+fmt.Println("The Elem of v is: ", v)
+fmt.Println("settability of v:", v.CanSet())
+v.SetFloat(3.1415) // this works!
+fmt.Println(v.Interface())
+fmt.Println(v)
+```
+
+#### fmt
+
+```go
+// 接收标准输入,将空格分隔的值依次存放到后续的参数内，直到碰到换行
+fmt.Scanln(&firstName, &lastName)
+```
+
+#### bufio
+
+```go
+// 创建读取器，并将其与标准输入绑定,读取器对象提供 ReadString(delim byte)，该方法从输入中读取内容，直到碰到 delim 指定的字符，然后将读取到的内容连同 delim 字符一起放到缓冲区，出错返回 nil，读到文件结束则返回读取到的字符串和 io.EOF, 如果读取过程中没有碰到 delim 字符，将返回错误 err != nil
+inputReader := bufio.NewReader(os.Stdin)
+// 读文件 inputFile 是 *os.File 类型的。该类型是一个结构，表示一个打开文件的描述符（文件句柄）
+inputFile, inputError := os.Open("inputFileName")
+if inputError != nil {
+    return
+}
+defer inputFile.Close()
+inputReader := bufio.NewReader(inputFile)
+for {
+    inputString, readerError := inputReader.ReadString('\n')
+    fmt.Printf("The input was: %s", inputString)
+    if readerError == io.EOF {
+        return
+    }
+}
+```
+
+#### ioutil
+
+```go
+// 将整个文件的内容读到一个字符串里
+buf, err := ioutil.ReadFile(inputFile)
+if err != nil {
+    fmt.Fprintf(os.Stderr, "File Error: %s\n", err)
+}
+fmt.Printf("%s\n", string(buf))
+    err = ioutil.WriteFile(outputFile, buf, 0644) // oct, not hex
+    if err != nil {
+        panic(err.Error())
+}
+// 带缓冲的读取, n 为读到的字节数
+buf := make([]byte, 1024)
+n, err := inputReader.Read(buf)
+if (n == 0) { break }
+```
+
+#### compress
+
+读取压缩文件的功能，支持：bzip2，flate，gzip，lzw，zlib
+
+```go
+// 读取 gzip 文件
+fName := "MyFile.gz"
+var r *bufio.Reader
+fi, err := os.Open(fName)
+if err != nil {
+    fmt.Fprintf(os.Stderr, "%v, Can't open %s: error: %s\n", os.Args[0], fName, err)
+    os.Exit(1)
+}
+fz, err := gzip.NewReader(fi)
+if err != nil {
+    r = bufio.NewReader(fi)
+} else {
+    r = bufio.NewReader(fz)
+}
+for {
+    line, err := r.ReadString('\n')
+    if err != nil {
+        fmt.Println("Done reading file")
+        os.Exit(0)
+    }
+    fmt.Println(line)
+}
+```
+

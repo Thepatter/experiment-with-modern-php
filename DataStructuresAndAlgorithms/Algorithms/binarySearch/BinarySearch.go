@@ -1,18 +1,27 @@
 package main
 
-import "fmt"
-
-type A struct {
-	ax, ay int
-}
-
-type B struct {
-	A
-	bx, by float32
-}
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"os"
+)
 
 func main() {
-	b := B{A{1, 2}, 3.0, 4.0}
-	fmt.Println(b.ax, b.ay, b.bx, b.by)
-	fmt.Println(b.A)
+	inputFile, inputError := os.Open("./input.dat")
+	if inputError != nil {
+		fmt.Printf("An error occurred on opening the inputfile\n" +
+			"Does the file exist?\n" +
+			"Have you got acces to it?\n")
+		return
+	}
+	defer inputFile.Close()
+	inputReader := bufio.NewReader(inputFile)
+	for {
+		inputString, readerError := inputReader.ReadString('\n')
+		fmt.Printf("The input was: %s", inputString)
+		if readerError == io.EOF {
+			return
+		}
+	}
 }
