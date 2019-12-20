@@ -1,27 +1,27 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
-	"os"
+	"time"
 )
 
 func main() {
-	inputFile, inputError := os.Open("./input.dat")
-	if inputError != nil {
-		fmt.Printf("An error occurred on opening the inputfile\n" +
-			"Does the file exist?\n" +
-			"Have you got acces to it?\n")
-		return
-	}
-	defer inputFile.Close()
-	inputReader := bufio.NewReader(inputFile)
-	for {
-		inputString, readerError := inputReader.ReadString('\n')
-		fmt.Printf("The input was: %s", inputString)
-		if readerError == io.EOF {
-			return
-		}
-	}
+	fmt.Println("In main()")
+	longWait()
+	shortWait()
+	fmt.Println("About to sleep in main()")
+	time.Sleep(10 * 1e9)
+	fmt.Println("At the end of main()")
+}
+
+func longWait() {
+	fmt.Println("Beginning longWait()")
+	time.Sleep(5 * 1e9) // sleep for 5 seconds
+	fmt.Println("End of longWait()")
+}
+
+func shortWait() {
+	fmt.Println("Beginning shortWait()")
+	time.Sleep(2 * 1e9) // sleep for 2 seconds
+	fmt.Println("End of shortWait()")
 }

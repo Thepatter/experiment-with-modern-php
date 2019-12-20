@@ -291,3 +291,105 @@ for {
 }
 ```
 
+#### json
+
+```go
+type Address struct {
+    Type    string
+    City    string
+    Country string
+}
+
+type VCard struct {
+    FirstName string
+    LastName  string
+    Addresses []*Address
+    Remark    string
+}
+
+func main() {
+    pa := &Address{"private", "Aartselaar", "Belgium"}
+    wa := &Address{"work", "Boom", "Belgium"}
+    vc := VCard{"Jan", "Kersschot", []*Address{pa, wa}, "none"}
+    // fmt.Printf("%v: \n", vc) // {Jan Kersschot [0x126d2b80 0x126d2be0] none}:
+    // JSON format:
+    js, _ := json.Marshal(vc)
+    fmt.Printf("JSON format: %s", js)
+    // using an encoder:
+    file, _ := os.OpenFile("vcard.json", os.O_CREATE|os.O_WRONLY, 0666)
+    defer file.Close()
+    enc := json.NewEncoder(file)
+    err := enc.Encode(vc)
+    if err != nil {
+        log.Println("Error in encoding json")
+    }
+}
+```
+
+出于安全考虑，在 web 应用中最好使用 `json.MarshalforHTML()` 函数，其对数据执行 HTML 转码，文本可以被安全地嵌在 HTML `<script>` 标签中
+
+JSON 与 Go 类型对应如下：
+
+* bool 对应 JSON 的 booleans
+* float64 对应 JSON 的 numbers
+* string 对应 JSON 的 string
+* nil 对应 JSON 的 null
+
+不是所有的数据都可以编码为 JSON 类型：只有验证通过的数据结构才能被编码：
+
+* JSON 对象只支持字符串类型的 key；要编码一个 Go map 类型，map 必须是 `[string] T`
+* Channel，复杂类型和函数类型不能被编码
+* 不支持循环数据结构；它将引起序列化进入一个无限循环
+* 指针可以被编码，实际上是对指针指向的值进行编码
+
+json 包提供了 `Decoder` 和 `Encoder` 类型来支持常用 JSON 数据流读写
+
+```go
+// NewDecoder 和 NewEncoder 分别封装了 io.Reader 和 io.Writer 接口
+func NewDecoder(r io.Reader) *Decoder
+func NewEncoder(w io.Writer) *Encoder
+```
+
+#### xml
+
+```go
+var t, token xml.Token
+var err error
+
+func main() {
+    input := "<Person><FirstName>Laura</FirstName><LastName>Lynn</LastName></Person>"
+    inputReader := strings.NewReader(input)
+    p := xml.NewDecoder(inputReader)
+
+    for t, err = p.Token(); err == nil; t, err = p.Token() {
+        switch token := t.(type) {
+        case xml.StartElement:
+            name := token.Name.Local
+            fmt.Printf("Token name: %s\n", name)
+            for _, attr := range token.Attr {
+                attrName := attr.Name.Local
+                attrValue := attr.Value
+                fmt.Printf("An attribute is: %s %s\n", attrName, attrValue)
+                // ...
+            }
+        case xml.EndElement:
+            fmt.Println("End of token")
+        case xml.CharData:
+            content := string([]byte(token))
+            fmt.Printf("This is the content: %v\n", content)
+            // ...
+        default:
+            // ...
+        }
+    }
+}
+```
+
+包中定义了若干 XML 标签类型：`StartElement`，`Chardata`（从开始标签到结束标签之间得实际文本），`EndElement`，`Comment`，`Directive`，`Proclnst`
+
+包中同样定义了一个结构解析器：`NewParser` 方法持有一个 io.Reader（这里具体类型是 strings.NewReader）并生成一个解析器类型的对象。还有一个 `Token()` 方法返回输入流里的下一个 XML token。在输入流的结尾处，会返回（nil，io.EOF）
+
+XML 文本被循环处理直到 `Token()` 返回一个错误，因为已经到达文件尾部，再没有内容可供处理了。通过一个 type-switch 可以根据一些 XML 标签进一步处理。Chardata 中的内容只是一个 [] byte，通过字符串转换让其变得可读性强一些。
+
+
+
