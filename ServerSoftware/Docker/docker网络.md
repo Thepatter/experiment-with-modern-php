@@ -1,6 +1,56 @@
-## docker  关键特性
+### Docker 网络
 
-### docker 网络
+Docker 在容器内部运行应用，这些应用之间的交换依赖于大量不同的网络，Docker 对于容器之间、容器与外部网络和 VLAN 之间的连接均有相应的解决方案。
+
+Docker 网络架构源自一种叫做容器网络模型（CNM）的方案，该方案是开源的并且支持插接式连接。`Libnetwork` 是 Docker 对 CNM 的一种实现，提供了 Docker 核心网络架构的全部功能。不同的驱动可以通过插拔的方式接入 `Libnetwork` 来提供定制化的网络拓扑。
+
+为了实现开箱即用的，Docker 封装了一系列本地驱动，覆盖了大部分常见的网络需求。其中包括单机桥接网络（Single-Host Bridge Network）、多机覆盖网络（Multi-Host Overlay）、并且支持接入现有 VLAN。`Libnetwork` 提供了本地服务发现和基础的容器负载均衡解决方案
+
+#### 底层设计
+
+在顶层设计中，Docker 网络架构由 3 个主要部分构成：`CNM`、`Libnetwork`、`Drive`
+
+`CNM` 是设计标准，在 CNM 中，规定了 Docker 网络架构的基础组成要素；`Libnetwork` 是 `CNM` 的具体实现，并且被 Docker 采用，`Libnetwork` 通过 Go 语言编写，并实现了 `CNM` 中列举的核心组件，`Drive` 通过实现特定网络拓扑的方式来拓展该模型的能力
+
+##### CNM
+
+CNM 定义了 3 个基本要素：
+
+* 沙盒（Sandbox）
+
+  是一个独立的网络栈，其中包括以太网接口、端口、路由表以及 DNS 配置
+
+* 终端（Endpoint）
+
+  是虚拟网络接口，就像普通网络接口一样，终端主要职责是负责创建连接，在 CNM 中，终端负责将沙盒连接到网络。终端与常见的网络适配器类似，终端只能接入某一个网络，如果容器需要接入到多个网络，就需要多个终端
+
+* 网络（Network）
+
+  是802.1d网桥（类似交换机）的软件实现。因此，网络就是需要交互的终端的集合，并且终端之间相互独立。
+
+*CNM组件与容器进行关联，沙盒被放置在容器内部，为容器提供网络连接*
+
+<img src="./Images/CNM组件与容器关联.png" style="zoom:75%;" />
+
+##### Libnetwork
+
+CNM 是设计规范，`Libnetwork` 是标准的实现，它采用 Go 语言编写，是跨平台的。Docker 将网络部分从 daemon 中拆分，并重构为一个 `Libnetwork` 的外部类库。现在 docker 的核系网络架构代码都在 `Libnetwork` 中
+
+`Libnetwork` 实现了 CNM 中定义的全部 3 个组件，还实现了本地服务发现（Service Discovery）、基于 Ingress 的容器负载均很，以及网络控制层和管理层功能
+
+##### Drive
+
+如果说 `Libnetwork` 实现了控制层和管理层功能，那么驱动就负责实现数据层。驱动层实际创建网络对象。Docker 封装了若干内置驱动，通常被称为原生驱动或者本地驱动。在 Linux 上包括 Bridge、Overlay、Macvlan，在 Windows 上包括 NAT、Overlay、Transport、L2 Bridge
+
+*控制层管理层数据层关系*
+
+<img src="./Images/控制层管理层数据层关系.png" style="zoom:75%;" />
+
+每个驱动都负责其上所有网络资源的创建和管理，`Linnetwork` 支持同时激活多个网络驱动
+
+#### 单机桥接网络
+
+最简单的 docker 网络模型，只能在单个 docker 主机上运行，并且只能与所在 docker 主机上的容器进行连接。Linux Docker创建单机桥接网络采用内置的桥接驱动，而Windows Docker创建时使用内置的NAT驱动。实际上，这两种驱动工作起来毫无差异
 
 docker 服务启动时会首先在主机上自动创建一个 docker0 虚拟网桥（Linux网桥）同时分配一个本地未占用的私有网段中的一个地址给 docker0 接口（典型：网段172.17.0.0/16掩码255.255.0.0）此后启动的容器内的网口也会自动分配一个该网段的地址。
 
@@ -8,9 +58,13 @@ docker 服务启动时会首先在主机上自动创建一个 docker0 虚拟网�
 
 *docker 网络连接原理*
 
-<img src="Images/docker网络连接原理.png" style="zoom:50%;" />
+<img src="C:/Users/z/code/notes/ServerSoftware/Docker/Images/docker网络连接原理.png" style="zoom:50%;" />
 
 从 1.7.0 开始 Docker 正式把网络与存储着两部分的功能实现都以插件化形式剥离出来，剥离出来的独立容器网络项目即为 `libnetwork` 项目
+
+#### 多机覆盖网络
+
+覆盖网络适用于多机环境。它允许单个网络包含多个主机，这样不同主机上的容器间就可以在链路层实现通信。覆盖网络是理想的容器间通信方式，支持完全容器化的应用，并且具备良好的伸缩性。Docker为覆盖网络提供了本地驱动。这使得创建覆盖网络非常简单，只需要在docker network create命令中添加--d overlay参数。
 
 #### 容器网络模型
 
@@ -18,7 +72,7 @@ libnetwork 中容器网络模型（Container Networking Model，CNM）十分简�
 
 *CNM的典型生命周期*
 
-<img src="Images/CNM典型生命周期.png" style="zoom:50%;" />
+<img src="C:/Users/z/code/notes/ServerSoftware/Docker/Images/CNM典型生命周期.png" style="zoom:50%;" />
 
 目前 CNM 支持的驱动类型有四种：Null、Bridge、Overlay、Remote
 
@@ -126,8 +180,17 @@ libnetwork 中容器网络模型（Container Networking Model，CNM）十分简�
   `docker network rm NETWORK[NETWORK...]`
 
 ```shell
-# 创建网络 backend
+# 创建网络 backend -d 指定驱动
+docker network create -d overlay overnet # 创建名为 overnet 的覆盖网络
 docker network create backend
+# 列出本地 Docker 主机上的全部网络
+docker network ls
+# 查看网络详情
+docker network inspect
+# 删除主机上全部未使用的网络
+docker network prune
+# 删除指定网络
+docker network rm
 # 创建 container1/2 并加入 backend
 docker run -it --name container1 --net backend busybox
 docker run -it --name container2 --net backend busybox
@@ -274,99 +337,4 @@ docker run --net=isolated_nw -it --name=container1 --link container2:c2 busybox
 # 创建 container2
 docker run --net=isolated_nw -itd --name=container2 busybox
 ```
-
-### 数据卷
-
-是一个可供容器使用的特殊目录，它将主机操作系统目录直接映射进容器，类似于 linux 中的 mount 行为，有用的特性：
-
-* 数据卷可以在容器之间共享和重用，容器间传递数据将变得高效与方便
-* 对数据卷内数据的修改会立马生效，无论是容器内操作还是本地操作
-* 对数据卷的更新不会影响镜像，解耦开应用和数据
-* 卷会一直存在，直到没有容器使用，可以安全地卸载它
-
-#### 创建数据卷
-
-使用 volume 子命令来管理数据卷
-
-```shell
-# 创建数据卷 test，指定 local 驱动
-docker volume create -d local test
-# 查看信息
-docker volume inspect test
-# 列出所有卷
-docker volume ls
-# 清理无用卷
-docker volume prune
-# 删除无用卷
-docker volume rm
-```
-
-#### 绑定数据卷
-
-可以在创建容器时将主机本地的任意路径挂载到容器内作为数据卷，即绑定数据卷，在用 `docker [container] run` 命令时，可以使用 `-mount` 选项来使用数据卷。`-mount` 选项支持三种类型的数据卷，包括：
-
-* `-volume`
-
-  普通数据卷，映射到主机 `/var/lib/docker/volumes` 路径下
-
-* `-bind`
-
-  绑定数据卷，映射到主机指定路径下
-
-* `-tmpfs`
-
-  临时数据卷，只存在于内存中
-
-```shell
-docker run -d -P --name web --mount type=bind,source=/webapp,destination=/opt/webapp training/webapp python app.py
-# 上述等价于旧的 -v 标记
-docker run -d -P --name web -v /webapp:/opt/webapp training/webapp python app.py
-```
-
-本地目录的路径必须是绝对路径，容器内路径可以为相对路径，如果目录不存在，docker 会自动创建，docker 挂载数据卷的默认权限是读写（rw），可通过 `ro` 指定为只读（容器内对锁挂载数据卷内的数据就无法修改了）
-
-```shell
-docker run -d -P --name web -v /webapp:/opt/webapp:ro training/webapp python app.py
-```
-
-如果直接挂载一个文件到容器，使用文件编辑工具，可能回造成文件 `inode` 的改变，1.1.0 开始，这会导致错误信息，推荐的方式是直接挂载目录到容器中
-
-#### 数据卷容器
-
-需要在多个容器之间共享一些持续更新的数据，最简单的方式是使用数据卷容器，它专门提供数据卷给其他容器挂载。
-
-```shell
-# 创建一个数据卷容器 dbdata, 在其中创建一个数据卷挂载到 /dbdata
-docker run -it -v /dbdata --name dbdata ubuntu
-# 在其他容器中使用
-docker run -it --volumes-from dbdata --name db1 ubuntu
-```
-
-使用 `--volumes-from` 参数所挂载数据卷的容器自身并不需要保持在运行状态。如果删除了挂载的容器，数据卷并不会被自动删除，如果要删除一个数据卷，必须在删除最后一个还挂载着它的容器时显式使用 `docker rm -v` 命令来指定同时删除关联的容器。
-
-##### 利用数据卷容器来迁移数据
-
-可以利用数据卷容器对其中的数据卷进行备份、恢复、以实现数据的迁移
-
-* 备份
-
-  ```shell
-  # 备份 dbdata 数据卷容器内的数据卷
-  docker run --volumes-from dbdata -v $(pwd):/backup --name worker ubuntu tar cvf /backup/backup.tar /dbdata
-  ```
-
-  使用 Ubuntu 镜像创建一个容器 worker，使用 `--volumes-from dbdata` 参数来让 worker 容器挂载 dbdata 容器的数据卷（即 dbdata 数据卷）；使用 `-v $(pwd):/backup` 参数来挂载本地的当前目录到 worker 容器的 `/backup` 目录。worker 容器启动后，使用 `tar cvf/backup/backup.tar /dbdata` 命令将 `/dbdata` 下内容备份为容器内的 `/backup/backup.tar`，即宿主机当前目录下的 backup.tar
-
-* 恢复数据到一个容器
-
-  ```
-  # 创建一个带有数据卷的容器 dbdata2:
-  docker run -v /dbdata --name dbdata2 ubuntu /bin/bash
-  # 创建一个新的容器，挂载 dbdata2 容器，并解压备份文件到所挂载的容器卷中
-  docker run --volumes-from dbdata2 -v $(pwd):/backup busybox tar xvf /backup/backup.tar
-  ```
-
-  
-
-  
 
