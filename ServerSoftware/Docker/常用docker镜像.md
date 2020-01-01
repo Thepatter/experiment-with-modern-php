@@ -197,7 +197,22 @@ cd hyperf-skeleton
 php bin/hyperf.php start
 ```
 
+#### registry
 
+```shell
+docker run -d -p 5000:5000 --restart always --name registry registry:2.7.1
+docker pull ubuntu:18.04
+docker tag ubuntu:18 registry.com:5000/ubuntu:18
+docker push registry:5000/ubuntu:18
+```
+
+需要在客户端 `daemon.json` 添加：
+
+```json
+{"insecure-registries" : ["home.com:5000"]}
+```
+
+并重启 docker 客户端
 
 
 
