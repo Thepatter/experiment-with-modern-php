@@ -22,7 +22,7 @@
 
 不存在编号为 0 的信号，`kill` 函数对信号编号 0 有特殊应用，POSIX.1 将此种信号编号值称为空信号
 
-在系统默认动作列，"终止+core" 表示在进程当前工作目录地 `core` 文件中复制了该进程的内存映像（该文件名为 `core`）。大多数 `UNIX` 系统调试程序都使用 `core` 文件检查进程终止时地状态
+在系统默认动作列，「终止+core」表示在进程当前工作目录地 `core` 文件中复制了该进程的内存映像（该文件名为 `core`）。大多数 `UNIX` 系统调试程序都使用 `core` 文件检查进程终止时地状态
 
 产生 core 文件时大多数 UNIX 系统的实现功能。虽然该功能不是 POSIX.1 的组成部分，但在 SUS 的 XSI 扩展部分中，这一功能作为一个潜在的特定实现的动作被提及
 
@@ -190,7 +190,9 @@ POSIX.1 要求只有中断信号的 SA_RESTART 标志有效时，实现才重启
  *             < 0 将该信号发送给其进程组 ID 等于 pid 的绝对值，而且发送进程具有权限向其发送信号的所有进
  *                 程。（系统进程集除外）
  *             = -1 将该信号发送给发送进程有权限向它们发送信号的所有进程，不包括系统进程集
- *                 
+ *         signo POSIX.1 将信号编号 0 定义为空信号，如果 signo 参数是 0， 则 kill 仍执行正常的错
+ *               误检查，但不发送信号。这常被用来确定一个特定进程是否仍然存在：如果向一个并不存在的进程发生
+ * 							 空信号，则 kill 返回 -1，errno 被设置为 ESRCH。但内核可能会隔断时间后重用进程 ID
  **/
 int kill(pid_t pid, int signo);
 /**
@@ -201,27 +203,136 @@ int raise(int signo);
 
 进程将信号发送给其他进程需要权限：超级用户可将信号发送给任一进程。对于非超级用户，其基本规则是发送者的实际用户 ID 或有效用户 ID 必须等于接收者的实际用户 ID 或有效用户 ID。如果实现支持 `_POSIX_SAVED_IDS` （POSIX.1）则检查接收者的保存设置用户 ID（而不是有效用户 ID)；如果被发送的信号是 `SIGCONT`，则进程可将它发送给属于同一会话的任一其他进程。
 
-### alarm 和 pause
+如果调用 `kill` 为调用进程产生信号，而且此信号是不被阻塞的，那么在 `kill` 返回之前，`signo` 或者某个其他未决的、非阻塞信号被传送至该进程
 
-使用 alarm 函数可以设置一个定时器（闹钟时间），在将来的某个时刻决定该定时器会超时。当定时器超时时，产生 `SIGALRM` 信号。如果忽略或不捕捉此信号，则其默认动作是终止调用该 `alarm` 函数的进程
+#### alarm 和 pause
 
-```c
-#include <unistd.h>
-unsigned int alarm(unsigned int seconds) // 返回值：0或以前设置的闹钟时间的余留秒数
-```
-
-参数 `seconds` 的值是产生 `SIGALRM` 需要经过的时钟秒数。当这一时刻到达时，信号由内核产生，由于进程调度的延迟，所以进程得到控制从而能够处理该信号还需要一个时间间隔。每个进程只能有一个闹钟时间。如果在调用 `alarm` 时，之前已为该进程注册的闹钟时间还没有超时，则该闹钟时间的余留值作为本次 `alarm` 函数调用的值返回。以前注册的闹钟时间则被新值代替。如果有以前注册的尚未超过的闹钟时间，而且本次调用的 `seconds` 值是 0，则取消以前的闹钟时间，其余留值仍作为 `alarm` 函数的返回值
-
-虽然 `SIGALRM` 的默认动作是终止进程，但是大多数使用闹钟的进程捕捉此信号。如果此时进程要终止，则在终止之前它可以执行所需的清理操作。如果想捕捉 `SIGALRM` ,则必须在调用 `alarm` 之前安装该信号的处理程序。如果我们先调用 `alarm` ，然后在我们能够安装 `SIGALRM` 处理程序之前已接到该信号，那么进程将终止。
-
-`pause` 函数使调用进程挂起直至捕捉到一个信号
+使用 `alarm` 函数可以设置一个定时器（闹钟时间），在将来的某个时刻决定该定时器会超时。当定时器超时时，产生 `SIGALRM` 信号。如果忽略或不捕捉此信号，则其默认动作是终止调用该 `alarm` 函数的进程
 
 ```c
 #include <unistd.h>
-int pause(void)			// 返回值： -1，errno 设置为 ETNTR
+/**
+ * @params seconds 是产生信号 SIGALRM 需要经过的时钟秒数，当这一时刻到达时，信号由内核产生，由于进程
+ *                 调度的延迟，所以进程的到控制从而能处理该信号还需要一个时间间隔
+ * @return 0或以前设置的闹钟时间的余留秒数。每个进程只能有一个闹钟时间。如果在调用 alarm 时，之前已为该
+ *         进程注册的闹钟时间还没有超时，则该闹钟时间的余留值作为本次 alarm 函数调用的值返回，以前注册的闹
+ *         钟时间则被新值代替。如果有以前注册的尚未超过的闹钟时间，而且本次调用的 seconds 值是 0，则取消以
+ *         前的闹钟时间，其余留值仍作为 alarm 函数的返回值
+ **/
+unsigned int alarm(unsigned int seconds);
 ```
 
-只有执行了一个信号处理程序并从其返回时，`pause` 才返回。在这种情况下，`pause` 返回 -1，`errno` 设置为 `EINTR`
+虽然 `SIGALRM` 的默认动作是终止进程，但是大多数使用闹钟的进程捕捉此信号。如果此时进程要终止，则在终止之前它可以执行所需的清理操作。如果想捕捉 `SIGALRM` ，则必须在调用 `alarm` 之前安装该信号的处理程序。如果先调用 `alarm` ，然后在我们能够安装 `SIGALRM` 处理程序之前已接到该信号，那么进程将终止。
+
+`alarm` 常用于对可能阻塞的操作设置时间上限值。
+
+```c
+#include <unistd.h>
+/**
+ * pause 函数使调用进程挂起直至捕捉到一个信号。
+ * @return 只有执行了一个信号处理程序并从其返回时，pause 才返回。在这种情况下，pause 返回 -1，errno 设置
+ *         为 EINTR
+ **/
+int pause(void);
+```
+
+#### 信号集
+
+POSIX.1 定义数据类型 `sigset_t` 以包含一个信号集，并且定义了下列处理信号集函数
+
+```c
+#include <signal.h>
+/**
+ * 初始化由 set 指向的信号集，清除其中所有信号
+ * @return 成功，返回 0，出错，返回 -1
+ **/
+int sigemptyset(sigset_t *set);
+/**
+ * 初始化由 set 指向的信号集，使其包括所有信号
+ * @return 成功，返回 0，出错，返回 -1
+ */
+int sigfillset(sigset_t *set);
+/**
+ * 将一个信号添加到已有的信号集中
+ * @return 成功，返回 0，出错，返回 -1
+ */
+int sigaddset(sigset_t *set, int signo);
+/**
+ * 从信号集中删除一个信号
+ * @return 成功，返回 0，出错，返回 -1
+ */
+int sigdelset(sigset_t *set, int signo);
+// true 返回 1，false 返回 0
+int sigismember(const sigset_t *set, int signo);
+```
+
+所有应用程序在使用信号集前，要对该信号集调用 `sigemptyset` 或 `sigfillset` 一次。一旦已经初始化了一个信号集，以后就可在该信号集中增、删特定的信号
+
+#### sigprocmask
+
+```c
+#include <signal.h>
+/**
+ * @params oset 是非空指针，进程的当前信号屏蔽字通过 oset 返回
+ * @params set 是非空指针，则参数 how 指示如何修改修改信号屏蔽字
+ * @params how SIG_BLOCK 该进程新的信号屏蔽字是其当前信号屏蔽字和 set 指向信号集的并集
+ *             SIG_UNBLOCK 该进程新的信号屏蔽字是其当前信号屏蔽字和 set 所指向信号集的交集
+ *             SIG_SETMASK 该进程新的信号屏蔽字是 set 指向的值
+ * @return 成功，返回 0，出错返回 -1
+ */
+int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset);
+```
+
+在调用 `sigprocmask` 后如果有任何未决的、不再阻塞的信号，则在 `sigprocmask` 返回前，至少将其中之一递送给该进程。`sigprocmask` 是仅为单线程定义的。处理多线程进程中信号的屏蔽使用另一个函数
+
+#### sigpending
+
+```c
+/**
+ * sigpending 函数返回一信号集，对于调用进程而言，其中的各信号是阻塞不能递送的，因而也一定是当前未决的
+ * 该信号集通过 set 返回
+ * @return 成功，返回 0，出错返回 -1
+ */
+#include <signal.h>
+int sigpending(sigset_t *set);
+```
+
+#### sigaction
+
+```c
+#include <signal.h>
+/**
+ * 检查修改与指定信号相关联的处理动作。
+ * params signo 要检测修改的信号编号
+ * params act 若 act 指针非空，则要修改其动作
+ * params oact 如 oact 指针非空，则系统经由 oact 指针返回该信号的上一个动作
+ */
+int sigaction(int signo, const struct sigaction *restrict act, struct sigaction *restrict oact);
+struct sigaction {
+  void (*sa_handler)(int);  // addr of signal handler or  SIG_IGN, SIG_DFL
+  sigset_t sa_mask; 	// additional signals to block
+  int sa_flags;				// signal options
+  void (*sa_handler)(int, siginfo_t *, void *); 	// alternate handler
+}
+struct siginfo {
+  int si_signo; 			// signal number
+  int si_errno;				// if nonzero, errno value from <errno.h>
+  int si_code;				// additional info depends on signal
+  pid_t si_pid;				// sending process ID
+  uid_t si_uid;				// sending process real user ID
+  void *si_addr;			// address than caused the fault
+  int si_status;			// exit value or signal number
+  union sigval si_value;		// application-specific value possibly other fields also
+}
+union sigval {
+  int sival_int;
+  void *sival_ptr;
+}
+```
+
+当更改信号动作时，如果 sa_handler 字段包含一个信号捕捉函数的地址（不是常量 SIG_IGN 或 SIG_DFL ），则sa_mask 字段说明了一个信号集，在调用该信号捕捉函数之前，这一信号集要加到进程的信号屏蔽字中。仅当从信号捕捉函数返回时再将进程的信号屏蔽字恢复为原先值。这样，在调用信号处理程序时就能阻塞某些信号。在信号处理程序被调用时，操作系统建立的新信号屏蔽字包括正被递送的信号。因此保证了在处理一个给定的信号时，如果这种信号再次发生，那么它会被阻塞到对前一个信号的处理结束为当更改信号动作时，如果 sa_handler 字段包含一个信号捕捉函数的地址（不是常量SIG_IGN或SIG_DFL），则sa_mask字段说明了一个信号集，在调用该信号捕捉函数之前，这一信号集要加到进程的信号屏蔽字中。仅当从信号捕捉函数返回时再将进程的信号屏蔽字恢复为原先值。这样，在调用信号处理程序时就能阻塞某些信号。在信号处理程序被调用时，操作系统建立的新信号屏蔽字包括正被递送的信号。因此保证了在处理一个给定的信号时，如果这种信号再次发生，那么它会被阻塞到对前一个信号的处理结束为止
+
+一旦对给定的信号设置了一个动作，那么在调用 `sigaction` 显式地改变它之前，该设置就一直有效。 
 
 ### `sleep`, `nanosleep` `clock_nanosleep`
 
