@@ -334,7 +334,45 @@ union sigval {
 
 一旦对给定的信号设置了一个动作，那么在调用 `sigaction` 显式地改变它之前，该设置就一直有效。 
 
-### `sleep`, `nanosleep` `clock_nanosleep`
+#### sigsetjmp 和 siglongjmp
+
+POSIX.1 没有指定 `setjmp` 和 `longjmp` 对信号屏蔽字的作用，而是定义了 `sigsetjmp` 和 `siglongjmp` 在信号处理程序中进行非局部转移时使用
+
+```c
+#include <setjmp.h>
+/**
+ * 返回值，若直接调用，返回 0，若从 siglongjmp 调用返回，则返回非 0
+ */
+int sigsetjmp(sigjmp_buf env, int savemask);
+void siglongjmp(sigjmp_buf env, int val);
+```
+
+如果 `savemask` 非 0，则 `sigsetjmp` 在 `env` 中保存进程的当前信号屏蔽字。调用 `siglongjmp` 时，如果带非 0 `savemask` 的 `sigsetjmp` 调用已经保存了 `env`，则 `siglongjmp` 从其中恢复保存的信号屏蔽字
+
+#### sigsuspend
+
+```c
+#include <signal.h>
+// 原子操作，先恢复信号屏蔽字，然后使进程休眠。返回 -1，并将 errno 设置为 EINTR
+int sigsuspend(const sigset_t *sigmask);
+```
+
+进程的信号屏蔽字设置为由 `sigmask` 指向的值。在捕捉到一个信号或发生了一个会终止该进程的信号之前，该进程被挂起。如果捕捉到一个信号而且从该信号处理程序返回，则 `sigsuspend` 返回，并且该进程的信号屏蔽字设置为调用`sigsuspend` 之前的值
+
+#### abort
+
+```c
+#include <stdlib.h>
+// 使程序异常终止
+void abort(void);
+```
+
+此函数将 SIGABRT 信号发送给调用进程（进程不应忽略此信号）。ISO C 规定，调用 `abort` 将向主机环境递送一个未成功终止的通知，其方法是调用 `raise(SIGABRT)` 函数。
+ISO C 要求若捕捉到此信号而且相应信号处理程序返回，`abort` 仍不会返回到其调用者。如果捕捉到此信号，则信号处理程序不能返回的唯一方法是它调用 `exit`、`_exit`、`_Exit`、`longjmp` 或 `siglongjmp` POSIX.1也说明 `abort` 并不理会进程对此信号的阻塞和忽略。
+让进程捕捉 SIGABRT 的意图是：在进程终止之前由其执行所需的清理操作。如果进程并不在信号处理程序中终止自己，POSIX.1声明当信号处理程序返回时，abort 终止该进程。
+ISO C针对此函数的规范将下列问题留由实现决定：是否要冲洗输出流以及是否要删除临时文件。POSIX.1的要求则更进一步，它要求如果 abort 调用终止进程，则它对所有打开标准 I/O 流的效果应当与进程终止前对每个流调用 `fclose` 相同
+
+#### sleep  nanosleep  clock_nanosleep
 
 ```c
 #include <unistd.h>
@@ -346,7 +384,22 @@ unsigned int sleep(unisgned int seconds);
 * 已经过了 `seconds` 所指定的墙上时钟时间。返回值 0
 * 调用进程捕捉到一个信号并从信号处理程序返回，返回未休眠完的秒数（所要求的时间减去实际休眠时间）
 
-### `sinqueue`
+```c
+#includ <time.h>
+// 返回值，若休眠到要求的时间，返回 0，出错，返回 -1
+int nanosleep(const struct timespec *reqtp, struct timespect *remtp);
+```
+
+挂起调用进程，直到要求的时间或某个信号中断了函数。如果某个信号中断了休眠间隔，进程并没有终止，`remtp` 参数指向的 `timespec` 结构就会被设置为未休眠完的时间长度。如果对未休眠完的时间并不感兴趣，可以把该参数置为 NULL
+
+```c
+// 使用相对于特定时钟的延迟时间来挂起调用线程
+#include <time.h>
+// 返回值，若休眠要求的时间，返回 0；若出错，返回错误码
+int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *reqtp, struct timespec *remtp);
+```
+
+#### sigqueue
 
 通常一个信号带有一个位信息：信号本身。除了对信号排队以外，这些扩展允许应用程序在递交信号时传递更多的信息。这些信息嵌入在 `siginfo` 结构中。除了系统提供的信息，应用程序还可以向信号处理程序传递整数或者指向包含更多信息的缓冲区指针。使用排队信号必须做以下几个操作：
 
@@ -362,9 +415,9 @@ unsigned int sleep(unisgned int seconds);
   int sigqueue(pid_t pid, int signo, const union sigval value);
   ```
 
-  `sigqueue` 函数只能把信号发送给单个进程，可以使用 `value` 参数向信号处理程序传递整数和指针值，除此之外，`sigqueue` 函数与 `kill` 函数类似。信号不能被无限排队。到达相应的限制后，`sigqueue` 就会失败，将 `error` 设为 `EAGAIN`
+`sigqueue` 函数只能把信号发送给单个进程，可以使用 `value` 参数向信号处理程序传递整数和指针值，除此之外，`sigqueue` 函数与 `kill` 函数类似。信号不能被无限排队。到达相应的限制后，`sigqueue` 就会失败，将 `error` 设为 `EAGAIN`
 
-### 作业控制信号
+#### 作业控制信号
 
 `POSIX.1` 认为以下 6 个与作业控制有关
 
@@ -375,4 +428,34 @@ unsigned int sleep(unisgned int seconds);
 * `SIGTTIN`     后台进程组成员读控制终端
 * `SIGTTOU`     后台进程组成员写控制终端
 
-除 `SIGCHLD` 以外，大多数应用程序并不处理这些信号，交互式 `shell` 则通常会处理这些信号的所有工作。当键入挂起字符（通常是 `Ctrl+Z`) 时，`SIGTSTP` 被送至前台进程组的所有进程。当我们通知 `shell` 在前台或后台恢复运行一个作业，`shell` 向该作业中的所有进程发送 `SIGCONT` 信号。与此类似，如果向一个进程递送了 `SIGTTIN` 或 `SIGTTOU` 信号，则根据系统默认的方式，停止此进程，作业控制 `shell` 了解这一点后就通知我们。在作业控制信号间有某些交互。当对一个进程产生 4 种停止信号 （`SIGTSTP`, `SIGSTOP`, `SIGTTIN`, `SIGTTOU`) 中的任意一种时，对该进程的任一未决 `SIGCONT` 信号就被丢弃。与此类似，当对一个进程产生 `SIGCONT` 信号时，对同一进程的任一未决停止信号被丢弃。如果进程是停止的，则 `SIGCONT` 的默认动作是继续该进程；否则忽略此信号。通常，对该信号无需做任何事情。当对一个停止的进程产生一个 `SIGCONT` 信号时，该进程就继续，即使该信号是被阻塞或忽略的也是如此。
+除 `SIGCHLD` 以外，大多数应用程序并不处理这些信号，交互式 `shell` 则通常会处理这些信号的所有工作。当键入挂起字符（通常是 `Ctrl+Z`) 时，`SIGTSTP` 被送至前台进程组的所有进程。当我们通知 `shell` 在前台或后台恢复运行一个作业，`shell` 向该作业中的所有进程发送 `SIGCONT` 信号。与此类似，如果向一个进程递送了 `SIGTTIN` 或 `SIGTTOU` 信号，则根据系统默认的方式，停止此进程，作业控制 `shell` 了解这一点后就通知我们。
+
+在作业控制信号间有某些交互。当对一个进程产生 4 种停止信号 （`SIGTSTP`, `SIGSTOP`, `SIGTTIN`, `SIGTTOU`) 中的任意一种时，对该进程的任一未决 `SIGCONT` 信号就被丢弃。与此类似，当对一个进程产生 `SIGCONT` 信号时，对同一进程的任一未决停止信号被丢弃。
+
+如果进程是停止的，则 `SIGCONT` 的默认动作是继续该进程；否则忽略此信号。通常，对该信号无需做任何事情。当对一个停止的进程产生一个 `SIGCONT` 信号时，该进程就继续，即使该信号是被阻塞或忽略的也是如此。
+
+#### 信号名和编号
+
+某些系统提供信号编号和信号名之间的映射
+
+```c
+// 数组下标时信号编号，数组中的元素是指向信号名字符串的指针
+extern char *sys_siglist[];
+```
+
+可以使用 `psignal` 函数可移植的打印与信号编号对应的字符串
+
+```c
+#include <signal.h>
+void psignal(int signo, const char *msg);
+```
+
+字符串 msg（通常是程序名）输出到标准错误文件，后面跟随一个冒号和一个空格，再后面对该信号的说明，最后是一个换行符。如果msg为NULL，只有信号说明部分输出到标准错误文件，该函数类似于 `perror`
+
+```c
+#include <string.h>
+// 给出一个信号编号，返回描述该信号的字符串
+// 返回描述该信号的字符串的指针
+char *strsignal(int signo);
+```
+
