@@ -137,6 +137,23 @@ set global long_query_time = 3;
 perl mysqldumpslow.pl -s t -t 2 "C:\ProgramData\MySQL\MySQL Server 8.0\Data\DESKTOP-4BK02RP-slow.log"
 ```
 
+#### performance_schema
+
+开启，配置  `my.cnf`，或使用 `--performanceschema`
+
+```ini
+[mysqld]
+performance_schema=ON
+```
+
+* set_instruments 表
+
+  监控点，按需开启
+
+* set_consumers
+
+  与监视点相关的消费者（事件表）
+
 ### EXPLAIN分析SQL语句
 
 #### 使用 EXPLAIN 命令
