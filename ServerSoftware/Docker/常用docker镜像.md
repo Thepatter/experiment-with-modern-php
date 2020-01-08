@@ -1,5 +1,19 @@
 ### 常用 docker 镜像
 
+#### mirros
+
+```json
+{
+  "registry-mirrors" : [
+    "https://docker.mirrors.ustc.edu.cn/",
+    "https://dockerhub.azk8s.cn",
+    "https://reg-mirror.qiniu.com",
+    "https://hub-mirror.c.163.com",
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+```
+
 #### MySQL
 
 ##### 启动服务

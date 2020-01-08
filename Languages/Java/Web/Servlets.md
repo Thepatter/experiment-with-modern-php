@@ -588,7 +588,7 @@ AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletRe
 
 * 调用 `ServletRequest` 中的 `startAsync` 方法，返回一个 `AsyncContext`
 
-* 嗲用 `AsyncContext` 的 `setTimeout()`，传递容器等待任务完成的超时时间的毫秒数。可选项，如果不设置超时，容器将使用默认的超时时间，如   果任务未能在指定的超时时间内完成，将会抛出一个超时异常
+* 调用 `AsyncContext` 的 `setTimeout()`，传递容器等待任务完成的超时时间的毫秒数。可选项，如果不设置超时，容器将使用默认的超时时间，如   果任务未能在指定的超时时间内完成，将会抛出一个超时异常
 
 * 调用 `asyncContext.start`，传递一个 `Runnable` 来执行一个长时间运行的任务
 

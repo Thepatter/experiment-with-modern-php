@@ -1,6 +1,6 @@
-## Tomcat 安装
+### Tomcat 安装
 
-### 配置 Tomcat
+#### 结构
 
 *目录结构*
 
@@ -28,11 +28,17 @@
 
 * 将 `JAVA_HOME` 环境变量设为 JDK 安装目录
 
-### 启动
+#### 启动
 
-* `startup.bat` 、`shutdown.bat`
+* Windows
 
-### 定义上下文
+  `startup.bat` 、`shutdown.bat`
+
+* macos
+
+  `brew services tomcat`
+
+#### 定义上下文
 
 要将 Servlet/JSP 应用程序部署到 Tomcat 时，需要显式或隐式定义一个 Tomcat 上下文。在 Tomcat 中，每一个 Tomcat 上下文都表示一个 Web 应用程序
 
@@ -63,7 +69,7 @@
 
 * 通过将一个 WAR 文件或者整个应用程序复制到 `Tomcat` 的 `webapps` 目录下可以隐式部署
 
-### 定义资源
+#### 定义资源
 
 定义一个 JNDI 资源，应用程序便可以在 Tomcat 上下文定义中使用。资源用 `Context` 元素目录下的 `Resource` 元素表示
 
@@ -78,7 +84,7 @@
 </Context>
 ```
 
-### SSL 证书
+#### SSL 证书
 
 将证书导入 `keystore` 后，复制放在服务器某个位置下的 `keystore`，并对 `Tomcat` 进行配置即可。打开 `conf/server.xml` 文件，在 `<service>` 下添加 `Connector` 元素
 
@@ -102,7 +108,9 @@
 />
 ```
 
-#### 配置用户和角色
+#### 配置
+
+##### 配置用户角色
 
 编辑 `conf` 目录中的 `Tomcat-user.xml` 来创建用户和角色。role 元素定义角色，user 元素定义用户。
 
@@ -111,9 +119,33 @@
 ```xml
 <?xml version='1.0' encoding='utf-8'>
 <tomcat-users>
-    <role rolename="manager"/>
-    <role rolename="member"/>
-    <user username="tom" password="secret" roles="manager,member"/>
-    <user username="jerry" password="secret" roles="member"/>
+    <role rolename="manager-gui"/>
+    <role rolename="admin-gui"/>
+    <user username="tom" password="secret" roles="manager-gui,admin-guir"/>
+    <user username="jerry" password="secret" roles="admin-gui"/>
 </tomcat-users>
 ```
+
+##### 允许远程访问
+
+ `webapps` 下的 `host-manager` 和 `manager` 都有一个共同的文件夹 `META-INF`，里面都有 `context.xml`，这个文件夹的内容是
+
+```xml
+<Context antiResourceLocking="false" privileged="true" >
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow="127.d+.d+.d+|::1|0:0:0:0:0:0:0:1" />
+</Context>
+```
+
+修改为无限制
+
+```xml
+<Context antiResourceLocking="false" privileged="true" >
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow=".*" />
+</Context>
+```
+
+##### 配置自定义的 JSP 编译器
+
+Tomcat 

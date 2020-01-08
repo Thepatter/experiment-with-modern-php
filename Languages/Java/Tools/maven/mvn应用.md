@@ -42,7 +42,7 @@
             </configuration>
         </plugin>
         <plugin>
-            <grouId>org.apache.maven.plugins</grouId>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-resources-plugin</artifactId> 
             <configuration>
                 <encoding>UTF-8</encoding>
