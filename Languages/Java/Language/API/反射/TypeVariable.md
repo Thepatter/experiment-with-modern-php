@@ -1,9 +1,8 @@
-## java.lang.reflect.TypeVariable
+*java.lang.reflect.TypeVariable*
 
-* `String getName()`
-
-  获得类型变量的名字
-
-* `Type[] getBounds()`
-
-  获得类型变量的子类限定，否则，如果该变量无限定，则返回长度为 0 的数组
+```java
+// 获得类型变量的名字
+String getName();
+// 获得类型变量的子类限定，否则，如果该变量无限度，则返回长度为 0 的数组
+Type[] getBounds();
+```

@@ -1,5 +1,6 @@
-## java.lang.reflect.GenericArrayType
+*java.lang.reflect.GenericArrayType*
 
-* `Type getGenericComponentType()`
-
-  获得声明该数组类型的泛型组件类型
+```java
+// 获得声明该数组类型的泛型组件类型
+Type getGenericComponentType();
+```
