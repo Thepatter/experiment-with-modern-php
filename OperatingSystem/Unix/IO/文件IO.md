@@ -21,12 +21,12 @@ shell 把文件描述符 0 与进程的标准输入关联，1 与标准输出关
  * @param path 要打开或创建文件的名字
  * @param oflag 一个或多个选项，用 ｜ 运算符连接，该常量定义在 fcntl.h 中
  *        O_RDONLY 只读打开
- * 				O_WRONLY 只写打开
+ * 		  O_WRONLY 只写打开
  *        O_RDWR   读写打开
  *        O_EXEC   只执行打开
  *        O_SEARCH 只搜索打开（应用于目录）
  *        以上五个常量必须且只能指定一个，以下常量是可选的
- * 				O_APPEND       每次写时都追加到文件的尾端
+ * 		  O_APPEND       每次写时都追加到文件的尾端
  *        O_CLOEXEC      把 FD_CLOEXEC 常量设置为文件描述符标志
  *        O_CREAT        不存在则创建，使用此选项，须同时指定可选参数 mode 来指定该新文件的权限位 
  *        O_ODIRECTORY   如果 path 引用的不是目录则出错
