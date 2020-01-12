@@ -190,13 +190,22 @@ int pselect(int maxfdp1, fd_set *restrict readfds, fd_set *restrict writefds, fd
 * `pselect` 的超时值被声明为 `const` ，这保证了调用 `pselect` 不会改变此值。
 * `pselect` 可使用可选信号屏蔽字。若 `sigmask` 为 NULL，那么在与信号有关的方面，`pselect` 的运行状况和 `select` 相同。否则，`sigmask` 指向一信号屏蔽字，在调用 `pselect` 时，以原子操作的方式安装该信号屏蔽字。在返回时，恢复以前的信号屏蔽字
 
-### poll
+#### poll
 
 `poll` 函数可用于任何类型的文件描述符。与 `select` 不同，`poll` 不是为每个条件（可读性，可写性和异常条件）构造一个描述符集，而是构造一个 `pollfd` 结构的数组，每个数组元素指定一个描述符编号以及对该描述符感兴趣的条件。
 
 ```c
 #include <poll.h>
 // 返回值：准备就绪的描述符数目；若超时，返回 0；若出错，返回 -1
+/**
+ * @params timeout 指定愿意等待时间
+ *                 -1 ：永远等待，当所指定的描述符中的一个已准备好，或捕捉到一个信号时返回。如果捕捉到一个
+ *                      信号，则返回 -1，errno 设置为 EINTR
+ *                 0 ：不等待，测试所有的描述符并立即返回，这是一种轮询系统的方法，可以找到多个描述符的状
+ *                     态而不阻塞 poll 函数
+ *                 > 0 : 等待 timeout 毫秒数，当指定的描述符之一已准备好，或到期时立即返回，如果到期还没
+ *                       有一个描述符准备好，则返回 0
+ */
 int poll(struct pollfd fdarray[], nfds_t nfds, int timeout);
 struct pollfd {
     int fd;
@@ -211,15 +220,130 @@ struct pollfd {
 
 ![](../Images/poll的events和revents标志.png)
 
-当一个描述符被挂断后（`POLLHUP`) 后，就不能再写该描述符，但是有可能仍然可以从该描述符读取到数据。
-
-`timeout` 指定愿意等待的时
-
-`timeout == -1` ，永远等待。当所指定的描述符中的一个已准备好，或捕捉到一个信号时返回。如果捕捉到一个信号，则 `poll` 返回 `-1` ，`errno` 设置为 `EINTR`
-
-`timeout == 0` ，不等待。测试所有的描述符并立即返回。这是一种轮询系统的方法，可以找到多个描述符的状态而不阻塞 `poll` 函数
-
-`timeout > 0`，等待 `timeout` 毫秒。当指定的描述符之一已准备好，或 `timeout` 到期时立即返回。如果 `timeout` 到期时还没有一个描述符准备好，则返回值 0
-
 一个描述符是否阻塞不会影响 `poll` 是否阻塞
+
+#### 异步I/O
+
+##### POSIX 异步 I/O
+
+POSIX 异步 I/O 接口为对不同类型的文件进行异步 I/O 提供一套一致的方法。这些接口来自实时草案标准，该标准是 SUS 的可选项。在 SUSv4 中，这些接口被移动基本部分，现在所有平台都被要求支持这些接口
+
+这些异步 I/O 接口使用 AIO 控制块来描述 I/O 操作。`aiocd` 结构定义了 AIO 控制块，该结构至少包括下面这些字段
+
+```c
+struct aiocd {
+    // 被打开用来读或写的文件描述符
+    int aio_fields;				/* file descriptor */
+    // 读或写操作从 aio_offset 指定的偏移量开始
+    off_t aio_offset;			/* file offset for I/O */
+    // 对于读操作，数据会复制到缓冲区中，该缓冲区从 aio_buf 指定地址开始，对于写操作，数据会从这个缓冲区复制出来
+    volatile void *aio_buf;      /* buffer for I/O */
+    // 要读或写的字节数
+    size_t	aio_nbytes;			/* number of bytes to transfer */
+    // 为异步 I/O 请求提示顺序
+    int aio_reqprio;			/* priority */
+    // 在 I/O 事件完成后，如何通知应用程序
+    struct sigevent aio_sigevent;	/* signal information */
+    // 只能用于基于列表的异步 I/O
+    int aio_lio_opcode;  			/* operation for list I/O */
+}
+
+struct sigevent {
+    // 控制通知的类型，取值可能是 ：SIGEV_NONE，异步 I/O 请求完成后，不通知进程；SIGEV_SIGNAL 异步 I/O 请求完成后，产生由 sigev_signo 字段指定的信号，如果应用程序已选择捕捉信号，且在建立信号处理程序的时候指定了 SA_SIGINFO 标志，那么该信号将被入队（如果实现支持排队信号）。信号处理程序会传送给一个 siginfo 结构，该结构的 si_value 字段被设置为 sigev_value；SIGEV_THREAD 当异步 I/O 请求完成时，由 sigev_notify_function 指定的函数被调用。sigev_value 字段被传入作为它的唯一参数。除非 sigev_notify_attributes 字段被设定为 pthread 属性结构的地址，且该结构指定了一个另外的线程属性，否则该函数将在分离状态下的一个单独的线程中执行
+    int sigev_notify;				/* notify type */
+    int sigev_signo;				/* signal number */
+    union sigval sigev_value;		/* notify argument */
+    void (*sigev_notify_function)(union sigval);		/* notify function */
+    pthread_attr_t *sigev_notify_attributes;			/* notify attrs */
+}
+```
+
+异步 I/O 操作必须显式地指定偏移量。异步 I/O 接口并不影响由操作系统维护的文件偏移量。只要不在同一个进程里把异步 I/O 函数和传统 I/O 函数混在一起用在同一个文件上，就不会导致问题。如果异步 I/O 接口向一个以追加模式打开的文件中写入数据，AIO 控制块中的 `aio_offset` 字段会被系统忽略
+
+在进行异步 I/O 之前需要先初始化 AIO 控制块
+
+```c
+#include <aio.h>
+// 异步读操作，成功， 返回 0，出错返回 -1
+int aio_read(struct aiocd *aiocd);
+// 异步写操作，成功，返回 0，出错返回 -1
+int aio_write(struct aiocd *aiocd);
+```
+
+当这些函数返回成功时，异步 I/O 请求便已经被操作系统放入等待处理的队列中了，这些返回值与实际 I/O 操作的结果没有任何关系。I/O 操作在等待时，必须确保 AIO 控制块和数据库缓冲区保持稳定，它们下面对应的内存必须始终是合法的，除非 I/O 操作完成，否则不能被复用
+
+```c
+// 强制所有等待中的异步操作不等待而写入持久化的存储中，可以设置一个 AIO 控制块并调用 aio_fsync 函数
+#include <aio.h>
+// 返回值，若成功，返回 0；若出错，返回 -1
+/**
+ * params op O_SYNC: 类似调用 fsync, O_DSYNC：类似 fdatasync
+ * aio 控制块中的 aio_fields 字段指定了其异步写操作被同步的文件
+ */
+int aio_fsync(int op, struct aiocb *aiocd);
+```
+
+在安排了同步时，`aio_fsync` 操作返回，在异步同步操作完成之前，数据不会被持久化。AIO 控制块控制如何被通知
+
+```c
+// 获知一个异步读、写或同步操作的完成状态，需要调用 aio_error 函数
+#include <aio.h>
+/* 返回值：0 异步操作成功完成，需要调用 aio_return 函数获取操作返回值
+ *         -1 aio_error 调用失败，errno 被设置
+ *         EINPROGRESS 异步读、写或同步操作仍在等待
+ *         其他情况 其他任何返回值是相关的异步操作失败返回的错误码
+ */
+int aio_error(const struct aiocb *aiocb);
+// 如果异步操作成功，可以调用 aio_return 函数来获取异步操作的返回值;直到异步操作完成之前，都需要小心不要调用aio_return函数。操作完成之前的结果是未定义的。还需要小心对每个异步操作只调用一次aio_return。一旦调用了该函数，操作系统就可以释放掉包含了I/O操作返回值的记录
+/**
+ * @return 函数本身失败，返回 -1，设置 errno; 其他情况下，返回异步操作的结果（即返回 read、write、fsync 
+ *                      在被成功调用时可能返回的结果）
+ */
+ssize_t aio_return(const struct aiocb *aiocb);
+```
+
+执行I/O操作时，如果还有其他事务要处理而不想被 I/O 操作阻塞，就可以使用异步 I/O。然而，如果在完成了所有事务时，还有异步操作未完成时，可以调用 `aio_suspend` 函数来阻塞进程，直到操作完成
+
+```c
+#include <aio.h>
+// 返回值，成功返回 0，出错，返回 -1
+/**
+ * aio_suspend 可能会返回三种情况中的一种：如果被一个信号中断，它将会返回 -1，并将 errno 设置为 EINTR。
+ *             如果在没有任何 I/O 操作完成的情况下，阻塞的时间超过了函数中可选的 timeout 参数所指定的时间
+ *             限制，那么 aio_suspend 将返回 -1，并将 errno 设置为 EAGAIN（不想设置任何时间限制的话，可
+ *             以把空指针传给 timeout 参数）。
+ *             如果有任何 I/O 操作完成，aio_suspend 将返回0。
+ *             如果在我们调用 aio_suspend 操作时，所有的异步 I/O 操作都已完成，那么 aio_suspend 将在不阻
+ *             塞的情况下直接返回
+ * params list 是一个指向 AIO 控制块数组的指针
+ *        nent 数组中的条目数，数组中的空指针会被跳过，其他条目都必须指向已用于初始化异步 I/O 操作的 AIO
+ *             控制块
+ */
+int aio_suspend(const struct aiocd *const list[], int nent, const struct timespec *timeout);
+// 不想再完成等待中的异步 I/O 操作时，可使用 aio_cancel 取消
+/*
+ * @param fd 参数指定了那个未完成的异步 I/O 操作的文件描述符
+ *        aiocb 为 NULL，系统将会尝试取消该文件上未完成的异步 I/O 操作，其他情况下，系统将尝试取消由 AIO
+ *             控制块描述的单个异步 I/O 操作
+ * @return 可能会返回以下四个值中一个：
+           AIO_ALLDONE 所有操作在尝试取消它们之前已经完成
+           AIO_CANCELED 所有要求的操作已被取消
+           AIO_NOTCANCELED 至少有一个要求的操作没有被取消
+           -1 对 aio_cancel 调用失败，错误码被存储在 errno 中
+ */
+int aio_cancel(int fd, struct aiocb *aiocb);
+// 该函数提供一系列由 AIO 控制块列表描述的 I/O 请求
+// 返回值，成功返回 0，出错，返回 -1
+/**
+ * params mode 决定了 I/O 是否真的是异步的。如果该参数被设定为：LIO_WAIT，lio_listio 将在所有由列表指定的
+ *             I/O 操作完成后返回。此时，sigev 被忽略
+ *             LIO_NOWAIT 将在 I/O 请求入队后立即返回。进程将在所有 I/O 操作完成后，按照 sigev 参数指定的
+ *             被异步地通知。如果不想被通知，可以把 sigev 设定为 null。每个 AIO 控制块本身也可能启动了在
+ *             各自操作完成时的异步通知。被 sigev 参数指定的异步通知实在此之外另加的，并且只会在所有的 I/O
+ *             操作完成后发送
+ * params list 指向 AIO 控制块列表，该列表指定了要运行的 I/O 操作的
+ * param nent 指定了数组中的元素个数，AIO 控制块列表可以包含 NULL 指针，这些条目将被忽略
+ */
+int lio_listio(int mode, struct aiocd *restrict const list[restrict], int nent, struct sigevent *restrict sigev);
+```
 
