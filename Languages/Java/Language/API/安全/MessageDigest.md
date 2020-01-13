@@ -16,31 +16,40 @@ void reset();
 #### demo
 
 ```java
-import java.lang.*;
-import java.security.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 class StringHash {
-	public String dumpStringHash(byte[] hash, String algorithm) throws NoSumchAlogorithmException {
-    MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
-    StringBuilder hBuilder = new StringBuilder("");
-    int n;
-    for (int i = 0; i < hashString.length; i++) {
-      n = hashString[i];
-      if (n < 0) {
-        n += 256;
-      }
-      if (n < 16) {
-        hBuilder.append("0");
-      }
-      hBuilder.append(Integer.toHexString(n));
+    public static void main(String[] args) {
+        try {
+            if ("e10adc3949ba59abbe56e057f20f883e"
+                    .equals(dumpStringHash("123456".getBytes(StandardCharsets.UTF_8), "MD5"))) {
+                System.out.println("hash right");
+            }
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
-    return hBuilder.toString();
-  }
-}
-class TestStringHash {
-  public static void main(String[] args) {
-    	System.out.println((new StringHash()).StringHash("123456".getBytes(), "SHA-1"));
-  }
+
+    private static String dumpStringHash(byte[] origin, String algorithm) throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
+        byte[] hashString = messageDigest.digest(origin);
+        StringBuilder hBuilder = new StringBuilder("");
+        int n;
+        for (int i = 0; i < hashString.length; i++) {
+            n = hashString[i];
+            if (n < 0) {
+                n += 256;
+            }
+            if (n < 16) {
+                hBuilder.append("0");
+            }
+            hBuilder.append(Integer.toHexString(n));
+        }
+        return hBuilder.toString();
+    }
 }
 ```
 
