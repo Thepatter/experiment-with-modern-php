@@ -43,7 +43,7 @@
 
 * 将 `JAVA_HOME` 环境变量设为 JDK 安装目录
 
-##### Tomcat 的组成结构
+##### server.xml 配置
 
 Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Servlet 容器组件，它是所有其他 Tomcat 组件的顶层容器。Tomcat 的各个组件可以 `<CATALINA_HOME>/conf/server.xml` 文件进行配置
 
@@ -162,7 +162,7 @@ Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Servle
 
     为特定的虚拟主机处理所有客户请求，一个 Engine 元素中可以包含多个 Host 元素，每个 host 元素定义一个虚拟主机，可以包含一个或多个 web 应用。由 `org.apache.catalina.Host` 接口定义。
 
-    |      属性       |                              --                              |
+    |      属性       |                             描述                             |
     | :-------------: | :----------------------------------------------------------: |
     |    className    |     指定实现类，默认 `org.apache.catalina.StandardHost`      |
     |     appBase     | 指定虚拟主机的目录，可以指定绝对目录，也可以指定相对于 `<CATALINA_HOME>` 的相对目录，如果未设定，默认为 `<CATALINA_HOME>/webapps` |
@@ -171,18 +171,25 @@ Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Servle
     |      alias      |             指定虚拟主机的别名，可以指定多个别名             |
     | deployOnStartup | 为 true，当 Tomcat 启动时自动发布 appBase 目录下所有 web 应用，如果 Web 应用在 server.xml 中没有相应的 `<Context>` 元素，将采用默认 `<Context>` 元素。默认值为 true |
     |      name       |                       定义虚拟主机名字                       |
+    |     workDir     | 指定虚拟主机的工作目录。运行时会把与这个虚拟主机的所有 Web 应用相关的临时文件放在此目录下。默认为 `<CATALINA_HOME>/work`。如果 `<Host>` 元素下的一个 `<Context>` 元素也设置了 workDir 属性，那么 `<Context>` 元素的 workDir 属性会覆盖该属性 |
+    |    deployXML    | 如果设为 false，那么 Tomcat 不会解析 web 应用中用于设置 Context 元素的 META-INF/context.xml 文件。默认为 true |
+
+    `<Host>` 元素可以有一个或多个 `<alias>` 元素，指定别名
 
   * Context
 
     为特定的 Web 应用处理所有客户的请求，每个 Context 元素代表了运行在虚拟主机上的单个 Web 应用，一个 host 可以包含多个 Context 元素。由 `org.apache.catalina.Context` 接口定义。
 
-    |    属性    |                              --                              |
-    | :--------: | :----------------------------------------------------------: |
-    | className  |    指定实现类，默认 `org.apache.catalina.StandardContext`    |
-    |    path    |                指定访问该 Web 应用的 URL 入口                |
-    |  docBase   | 指定 Web 应用的文件路径，可以给定绝对路径，也可以给定相对于 Host 的 appBase 属性的相对路径。如果 Web 采用开放目录接口，则指定根目录，采用 WAR 则指定 WAR 文件路径 |
-    | reloadable | 为 true，在运行状态下会监视 WEB-INF/classes 和 WEB-INF/lib 目录下的 class 文件的改动，以及监视 WEB-INF/web.xml 文件的改动。如果有改动则自动刷新，默认为 false，（建议开放为 true，生产为 false） |
-    |  cookies   |       指定是否通过 Cookie 来支持 Session，默认为 true        |
+    |    属性     |                              --                              |
+    | :---------: | :----------------------------------------------------------: |
+    |  className  |    指定实现类，默认 `org.apache.catalina.StandardContext`    |
+    |    path     |                指定访问该 Web 应用的 URL 入口                |
+    |   docBase   | 指定 Web 应用的文件路径，可以给定绝对路径，也可以给定相对于 Host 的 appBase 属性的相对路径。如果 Web 采用开放目录接口，则指定根目录，采用 WAR 则指定 WAR 文件路径 |
+    | reloadable  | 为 true，在运行状态下会监视 WEB-INF/classes 和 WEB-INF/lib 目录下的 class 文件的改动，以及监视 WEB-INF/web.xml 文件的改动。如果有改动则自动刷新，默认为 false，（建议开放为 true，生产为 false） |
+    |   cookies   |       指定是否通过 Cookie 来支持 Session，默认为 true        |
+    | unloadDelay |   设定 Tomcat 等待 Servlet 卸载的毫秒数，该属性默认为 2000   |
+    |   workDir   | 指定 web 应用的工作目录。Tomcat 运行时会把与这个 web 应用相关的临时文件放在此目录下 |
+    |  uppackWar  | 为 true，将把 web 应用的 WAR 文件先展开为开放目录结构后再运行，false 则直接运行，默认为 true |
 
     Context 元素中可以包含 `<Realm>`、`<Value>`、`<Resource>` 等子元素
 
@@ -224,7 +231,7 @@ Tomcat 的类加载器负责为 Tomcat 本身以及 Java Web 应用加载相关�
 
 4.在 Tomcat 的 lib 子目录下的 Jar 文件中查找
 
-##### 配置
+##### 管理界面配置
 
 * 配置用户角色
 
@@ -270,9 +277,35 @@ Tomcat 有三种工作模式
 * Tomcat 运行在其他 Web 服务器的进程中，Tomcat 不直接和客户端通信，仅仅为其他 Web 服务器处理客户端访问 Servlet 的请求
 * 尽管Tomcat在一个Java虚拟机进程中独立运行，但是它不直接和客户端通信，仅仅为与它集成的其他Web服务器处理客户端访问Servlet的请
 
-#### 定义上下文
+#### Context 元素
 
-要将 Servlet/JSP 应用程序部署到 Tomcat 时，需要显式或隐式定义一个 Tomcat 上下文。在 Tomcat 中，每一个 Tomcat 上下文都表示一个 Web 应用程序
+##### 加载顺序
+
+要将 Servlet/JSP 应用程序部署到 Tomcat 时，需要显式或隐式定义一个 Tomcat 上下文。在 Tomcat 中，每一个 Tomcat 上下文都表示一个 Web 应用程序。它代表运行在虚拟主机 `<Host>` 上的单个 web 应用。
+
+在低版本 Tomcat 中，允许直接在 `<CATALINA_HOME>/conf/server.xml` 文件中配置 `<Context>` 元素（在运行时修改 server.xml 文件，重启生效）6.x 开始的高版本尽管允许直接在 server.xml 文件中配置 `<Context>` 元素，但不提倡采用这种方式。Tomcat 提供了多种配置 `<Context>` 元素的途径。当 Tomcat 加载一个 web 应用时，会按照以下顺序查找 web 应用的 `<Context>` 元素：
+
+1. 到 `<CATALINA_HOME>/conf/context.xml` 文件中查找 `<Context>` 元素。这个文件中的 `<Context>` 元素信息适用于所有 web 应用
+
+2. 到 `<CATALINA_HOME>/conf/[enginename]/[hostname]/context.xml.default` 文件中查找 `<Context>` 元素，该元素信息适用于当前虚拟主机中的所有 web 应用。
+
+   ```
+   # 以下文件中的 Context 元素适用于名为 Catalina 的 Engine 下的 localhost 主机的所有 web 应用
+   <CATALINA_HOME>/conf/Catalina/localhost/context.xml.default
+   ```
+
+3. 到 `<CATALINA_HOME>/conf/[enginename]/[hostname]/[contextpath].xml` 文件中查找 `<Context>` 元素。`[contextpath]` 表示单个 web 应用的 URI 入口。在 `[contextpath].xml` 文件中的 `<Context>` 元素只适用于单个 web 应用。
+
+   ```
+   # 以下文件中的 <Context> 元素适用于名为 Catalina 的 Engine 下的 localhost 主机中的 helloapp 应用
+   <CATALINA_HOME>/conf/Catalina/localhost/helloapp.xml
+   ```
+
+4. 到 Web 应用的 `META-INF/context.xml` 文件中查找 `<Context>` 元素。这个文件中的 `<Context>` 元素的信息适用于当前的 Web 应用
+
+5. 到 `<CATALINA_HOME>/conf/server.xml` 文件中的 `<Host>` 元素中查找 `<Context>` 子元素。该 `<Context>` 元素的信息只适用于单个 web 应用
+
+如果仅仅为单个 web 应用配置 `<Context>` 元素，可以优先选择第三种或第四种方式。第三种方式要求在 Tomcat 的相关目录下增加一个包含 `<Context>` 元素的配置文件，而第四种方式则要求在 web 应用的相关目录下增加一个包含 `<Context>` 元素的配置文件。对于这两种方式，Tomcat 在运行时会检测包含 `<Context>` 元素的配置文件是否被更新，如果被更新，Tomcat  会自动刷新
 
 ##### 显式定义 Tomcat 上下文
 
@@ -300,6 +333,20 @@ Tomcat 有三种工作模式
 ##### 隐式定义
 
 * 通过将一个 WAR 文件或者整个应用程序复制到 `Tomcat` 的 `webapps` 目录下可以隐式部署
+
+#### Tomcat 虚拟主机
+
+在 Tomcat 的配置文件 server.xml 中，`<Host>` 元素代表虚拟主机，在同一个 `<Engine>` 元素下可以配置多个虚拟主机。
+
+```xml
+<!-- <CATALINA_HOME>/conf/server.xml -->
+<host name="www.javathink.com" appBase="/usr/local/tomcat/javathink"
+      unpackWARS="true" autoDeploy="true">
+		<alias>javathink</alias>
+</host>
+```
+
+每个虚拟主机都可以有一个默认 Web 应用，它的默认目录为 ROOT。（如果要设置虚拟主机的默认 Web 应用的 `<Context>` 元素，那么它的 path 属性的值应该为一个空字符串）
 
 #### 定义资源
 
