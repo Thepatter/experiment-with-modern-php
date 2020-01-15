@@ -92,16 +92,21 @@ ServletContext getServletContext()
 
 ###### ServletContext
 
-`ServletContext` 表示 Servlet 应用程序。每个 Web 应用程序只有一个上下文。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，就可以共享从应用程序中的所有资料处访问到的信息，并且可以动态注册 Web 对象。`ServletContext` 将对象保存在 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
+`ServletContext` 表示 Servlet 应用程序。每个 Web 应用程序只有一个 `ServletContext`。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，可以在 web 应用范围内存取共享数据，并且可以动态注册 Web 对象。`ServletContext` 将对象保存在 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
 
-* `ServletContext` 中的下列方法负责处理属性
-
-  ```java
-  java.lang.Object getAttribute(java.lang.String name)
-  java.util.Enumeration<java.lang.String> getAttributeNames()
-  void setAttribute(java.lang.String name, java.lang.Object object)
-  void removeAttribute(java.lang.String name)
-  ```
+```java
+// 绑定属性与属性名
+void setAttribute(java.lang.String name, java.lang.Object object);
+java.lang.Object getAttribute(java.lang.String name);
+// 返回一个 Enumeration 对象，该对象包含了所有存放在 ServletContext 中的属性名
+java.util.Enumeration<java.lang.String> getAttributeNames();
+// 删除对应属性
+void removeAttribute(java.lang.String name);
+// 返回当前 web 应用的 URL 入口
+String getContextPath();
+// 根据给定参数名，返回 web 应用范围内的匹配的初始化参数值，在 web.xml 文件中，直接在 <web-app> 根元素下定义的 <context-param> 元素表示应用范围内的初始化参数
+String getInitParameter(String var1);
+```
 
 ###### HttpServletRequest
 
@@ -157,6 +162,8 @@ void sendRedirect(java.lang.String location)
 ###### HttpServlet
 
 `javax.servlet.http.HttpServlet` 继承自 `GenericServlet`，实现了 `Service` 方法。并重载了 `Service` 方法，使其基于 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServletResponse resp)` 来处理 HTTP 请求与响应。因此使用该抽象类时，处理对应请求动作的 HTTP 请求，只需覆盖对应的 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServeltResponse resp)` 方法。
+
+在开发 Web 应用时，自定义的 Servlet 类一般都继承该类。
 
 ##### Servlet 容器
 
