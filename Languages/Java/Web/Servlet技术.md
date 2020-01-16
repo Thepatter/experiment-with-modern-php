@@ -60,22 +60,65 @@ Servlet 规范提供了 `GenericServlet` 抽象类，可以通过扩展它来实
 
 ```java
 // 返回请求主体的字节数。失败 -1
-public int getContentLength()
+int getContentLength();
 // 返回请求主题的 MIME 类型，失败 null
-public String getConteneType()
+String getConteneType();
+// 返回用于读取请求正文的输入流
+ServletInputStream getInputStream();
+// 返回服务器端的 IP 地址
+String getLocalAddr();
+// 返回客户端的 IP 地址
+String getRemoteAddr();
+// 返回用于读取字符串形式的请求正文的 BufferedReader 对象
+BufferdReader getReader();
 // 返回指定请求参数的值，失败 null
-public String getParameter(String name)()
+String getParameter(String name);
 // 返回 HTTP 协议名称和版本
-public String getProtocol()
+String getProtocol();
+// 在请求范围内保存一个属性
+void setAttribute(String name, Object object);
+// 返回对应属性
+Object getAttribute(String vr1);
+// 从请求范围内删除一个属性
+void removeAttribute(String name);
 ```
 
 ###### ServletResponse
 
 `javax.servlet.ServletResponse` 接口表示一个 Servlet 响应，在调用 Servlet 的 `service` 方法前，Servlet 容器首先创建一个 `ServletResponse`，并将它作为第二个参数传给 `service` 方法。`ServletResponse` 隐藏了向浏览器发送响应的复杂过程。
 
-在 `ServletResponse` 中的 `getWriter` 方法，返回了一个可以向客户端发送文本的 `java.io.PrintWriter`，默认情况下，`PrintWriter` 对象使用 ISO-8859-1 编码；`getOutputStream` ，但这个方法是用于发送二进制数据的，因此，大多数情况使用的是 `getWriter` ，而不是 `getOutputStream`；
+```java
+// 设置响应正文的字符编码，默认编码为 ISO-8859-1
+void setCharacterEncoding(String charset);
+// 设置响应正文长度
+void setContentLength(int len);
+// 设置响应正文的 MIME 类型
+void setContentType(String type);
+// 设置缓冲区大小
+void setBufferSize(int var);
+// 清空缓冲区内的正文数据，并且清空响应状态代码以及响应头
+void reset();
+// 仅请求缓冲区内的正文数据，不清空响应状态代码以及响应头
+void resetBuffer();
+// 强制性刷新缓冲区到客户端
+void flushBuffer();
+// 缓冲区内数据是否已经提交到客户端
+boolean isCommited();
+// 返回一个 ServletOutputStream 对象，Servlet 用它来输出二进制的正文数据
+ServletOutputStream getOutputStream();
+// 返回一个 PrintWriter 对象，Servlet 用它来输出字符串形式的正文数据
+PrintWriter getWriter();
+```
 
-在发送任何 HTML 标签前，应该先调用 `setContentType` 方法，设置响应的内容类型。
+`ServletOutputStream` 和 `PrintWriter` 先把数据写到缓冲区内，在以下情况下，缓冲区内的数据会被提交给客户：
+
+* 缓冲区内数据已满时，会自动把缓冲区内的数据发送给客户端，并且清空缓冲区
+* Servlet 调用 `ServletResponse` 对象的 `flushBuffer()` 方法
+* Servlet 调用 `ServletOutputStream` 或 `PrintWriter` 对象的 `flush()` 方法或 `close()` 方法
+
+为了确保 `ServletOutputStream` 或 `PrintWriter` 输出的所有数据都会被提交给客户，比较安全的做法是在所有数据都输出完毕后，调用 `ServletOutputStream` 或 `PrintWriter` 的 `close()` 方法。
+
+如果要设置响应正文的MIME类型和字符编码，必须先调用 `ServletResponse` 对象的 `setContentType()` 和`setCharacterEncoding()` 方法，然后再调用 `ServletResponse` 的 `getOutputStream()` 或 `getWriter()` 方法，以及提交缓冲区内的正文数据。只有满足这样的操作顺序，所作的设置才能生
 
 ###### ServletConfig
 
@@ -83,29 +126,46 @@ public String getProtocol()
 
 ```java
 // 获取参数值
-java.lang.String getInitParameter(java.lang.String name)
+String getInitParameter(String name);
 // 所有初始参数名称的 Enumeration
-java.util.Enumeration<java.lang.String> getInitParameterNames()
+Enumeration<String> getInitParameterNames();
 // 从 Servlet 内部获取 ServletContext
-ServletContext getServletContext()
+ServletContext getServletContext();
+String getServletName();
 ```
 
 ###### ServletContext
 
-`ServletContext` 表示 Servlet 应用程序。每个 Web 应用程序只有一个 `ServletContext`。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，可以在 web 应用范围内存取共享数据，并且可以动态注册 Web 对象。`ServletContext` 将对象保存在 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
+`ServletContext` 是 `Servlet` 和 `Servlet` 容器之间进行通信的接口。Servlet 容器为每个 Web 应用程序创建一个 `ServletContext`。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，可以在 web 应用范围内存取共享数据，并且可以动态注册 Web 对象。`ServletContext` 将对象保存在 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
 
 ```java
-// 绑定属性与属性名
-void setAttribute(java.lang.String name, java.lang.Object object);
-java.lang.Object getAttribute(java.lang.String name);
+// 在 Web 应用范围内存取共享数据
+void setAttribute(String name, Object object);
+Object getAttribute(String name);
+void removeAttribute(String name);
 // 返回一个 Enumeration 对象，该对象包含了所有存放在 ServletContext 中的属性名
-java.util.Enumeration<java.lang.String> getAttributeNames();
-// 删除对应属性
-void removeAttribute(java.lang.String name);
-// 返回当前 web 应用的 URL 入口
+Enumeration<String> getAttributeNames();
+// 访问当前 Web 应用的资源, 返回当前 web 应用的 URL 入口
 String getContextPath();
 // 根据给定参数名，返回 web 应用范围内的匹配的初始化参数值，在 web.xml 文件中，直接在 <web-app> 根元素下定义的 <context-param> 元素表示应用范围内的初始化参数
 String getInitParameter(String var1);
+Enumeration<String> getInitParameterNames();
+String getServletContextName();
+// 返回一个用于向其他 web 组件转发请求的 RequestDispatcher 对象
+RequestDispatcher getRequestDispatcher(String path); 
+// 访问 Servlet 容器的相关信息
+int getMajorVersion(); // 返回 Servlet 容器支持的 Java Servlet API 的主版本号
+int getMinorVersion(); // 返回 Servlet 容器支持的 Java Servlet API 的次版本号
+String getServletInfo(); // 返回 Servlet 容器的名字和版本
+// 访问服务器端的文件系统资源
+String getRealPath(String var1); // 根据参数指定的虚拟路径，返回文件系统中真实路径
+URL getResource(String path); 	// 返回映射到参数指定的路径的 URL
+// 返回一个用于读取参数指定的文件的输入流
+InputStream getResourceAsStream(String var1); 
+String getMimeType(String file); // 返回参数指定的文件的 MIME 类型
+// 输出日志
+void log(String var1);  // 向 Servlet 的日志文件中写日志
+void log(String var1, Throwable var2); // 向 Servlet 的日志文件中写错误日志，以及异常堆栈信息
 ```
 
 ###### HttpServletRequest
@@ -113,33 +173,44 @@ String getInitParameter(String var1);
 `javax.servlet.http.HttpServletRequest` 接口继承了 `ServletRequest` 接口。定义了 HTTP 环境中的 `Servelt` 请求
 
 ```java
-// 返回请求上下文的请求 URI 部分
-java.lang.String getContextPath()
+// 返回请求的 web 应用的 URL 入口，
+String getContextPath();
 // 返回一个 Cookie 对象数组
-Cookie[] getCookie()
-// 返回方法名
-java.lang.String getMethod()
-// 返回指定 header
-java.lang.String getHeader(java.lang.String name)
+Cookie[] getCookie();
+// 返回 HTTP 头对于 header
+String getHeader(String var1);
+// 返回一个 Enumeration 对象，包含了 HTTP 请求头部的所有项目名
+Enumeration<String> getHeaderNames();
+// 返回 HTTP 请求方法
+String getMethod();
 // 返回请求 URL 中的查询字符串
-java.lang.String getQueryString()
+String getQueryString();
 // 返回session对象，如果没有，将创建一个新的session对象
-HttpSession getSession()
+HttpSession getSession();
 // 返回会话对象。如果create为true，将创建一个新的会话对象
-HttpSession getSession(boolean create)
+HttpSession getSession(boolean create);
+// 返回 HTTP 请求的头部的第一行的 URI
+String getRequestURI();
 ```
 
 ###### HttpServletResponse
 
-`javax.servlet.http.HttpServletResponse` 接口继承了 `ServletResponse` 接口，表示 HTTP 环境中的 `Servlet` 响应
+`javax.servlet.http.HttpServletResponse` 接口继承了 `ServletResponse` 接口，表示 HTTP 环境中的 `Servlet` 响应，提供了设置 HTTP 响应头或向客户端写 Cookie：
 
 ```java
+// 向 HTTP 响应头中加入一项内容
+void addHeader(String var1, String var2); 
+// 向客户端发送特定 HTTP 响应状态码
+void sendError(int sc);
+void sendError(int sc, String msg);
+// 设置响应头中的一项内容，将覆盖已存在设置
+void setHeader(String var1, String var2);
+// 设置响应状态码
+void setStatus(int sc);
 // 为响应对象添加 cookie
-void addCookie(Cookie cookie)
-// 为响应对象添加一个 header
-void addHeader(java.lang.String name, java.lang.String value)
+void addCookie(Cookie cookie);
 // 将浏览器跳转到指定的位置
-void sendRedirect(java.lang.String location)
+void sendRedirect(java.lang.String location);
 ```
 
 ###### Servlet 缺点
@@ -186,6 +257,35 @@ Servlet 容器会实例化和调用 Servlet，一般采用 Web 应用程序的�
 ![](./Images/Web应用目录结构.png)
 
 Servlet 规范里定义了 `ServletContext` 接口来对应一个 Web 应用。Web 应用部署好后，Servlet 容器在启动时会加载 Web 应用，并为每个 Web 应用创建唯一的 `ServletContext` 对象。可以将 `ServletContext` 看成一个全局对象，一个 Web 应用可能有多个 Servlet，这些 Servlet 可以通过全局的 `ServletContext` 来共享数据，这些数据包括 Web 应用的初始化参数、Web 应用目录下的文件资源等。由于 `ServletContext` 持有所有的 Servlet 实例，还可以通过它实现 Servlet 请求的转发
+
+##### Servlet 生命周期
+
+`Servlet` 生命周期由 Servlet 容器来控制。分为：
+
+###### 初始化阶段
+
+Servlet 的初始化阶段包括：
+
+1. Servlet 容器加载 Servlet 类，把它的 `.class` 文件中的数据读入到内存中
+2. Servlet 容器创建 `ServletConfig` 对象，`ServletConfig` 对象包含了特定 `Servlet` 的初始化配置信息，如 `Servlet` 的初始化参数。
+3. Servlet 容器创建 `Servlet` 对象
+4. Servlet 容器调用 `Servlet` 对象的 `init` 方法。
+
+在下列情况之一，Servlet 会进入初始化阶段：
+
+1. 当前 Web 应用处于运行时阶段，特定 Servlet 被客户端首次请求访问。多数 Servlet 都会在这种情况下被 Servlet 容器初始化
+2.  如果在 web.xml 中为一个 Servlet 设置了 `<load-on-startup>` 元素，那么当 Servlet 容器启动 Servlet 所属的 Web 应用时，就会初始化这个 Servlet
+3. 当 Web 应用被重新启动时，Web 应用中的所有 Servlet 都会在特定的时刻被重新初始化
+
+###### 运行时阶段
+
+在这个阶段，`Servlet` 可以随时响应客户端的请求，当 Servlet 容器收到请求时，Servlet 容器创建针对于该请求的 `ServletRequest` 对象和 `ServletResponse` 对象，然后调用相应 `Servlet` 对象的 `Service()` 方法。
+
+当 Servlet 容器把响应发送给客户端后，Servlet 容器就会销毁 `ServletRequest` 对象和 `ServletResponse` 对象。
+
+###### 销毁阶段
+
+当 web 应用被终止时，Servlet 容器会先调用 Web 应用中 `Servlet` 对象的 `destroy()` 方法，然后再销毁这些 `Servlet` 对象。还会销毁与 `Servlet` 对象关联的 `ServletConfig` 对象                                                                
 
 #### 扩展机制
 
@@ -329,8 +429,8 @@ ServletContext 的监听器接口有两个：
 
   ```java
   // 当 Servlet 容器启动 web 应用时调用该方法，在调用完该方法之后，容器再对 Filter 初始化，并且
-    	// 对那些在 web 应用启动时就需要被初始化的 Servlet 进行初始化
-      default void contextInitialized(ServletContextEvent sce) {}
+  // 对那些在 web 应用启动时就需要被初始化的 Servlet 进行初始化
+  default void contextInitialized(ServletContextEvent sce) {}
   		// 当 Servlet 容器终止 web 应用时调用该方法。在调用该方法之前，容器会先销毁所有的 Servlet 和 Filter 过滤器
       default void contextDestroyed(ServletContextEvent sce) {}
   ```
@@ -454,6 +554,188 @@ ServletRequest  Listeners
         <listener-class>fully-qualified listener class</listener-class>
   </listener>
   ```
+
+#### Servlet 注解
+
+从 Servlet 3 开始，在 `javax.servlet.annotation` 包中引入了一组注解类型，可以注解包括 `servlet`，`filter`，`listener` 等 Web 对象，可以直接使用注解配置 web 应用
+
+##### HandlesTypes
+
+这个注解用来声明 `ServletContainerInitializer` 可以处理的类。
+
+* 这个注解只有一个属性 `value`，该值为其可以处理的类
+
+```java
+// 该 initializer 可以处理 UsefulServlet
+@HandlesTypes({UsefulServlet.class})
+public class MyInitializer implements ServletContainerInitializer {
+
+}
+```
+
+##### HttpConstraint
+
+表示施加到所有的 HTTP 协议方法的安全约束，且 HTTP 协议方法对应的 `@HttpMethodConstraint` 没有出现在 `@ServletSecurity` 注解中。此注解类型必须包含在 `ServletSecurity` 注解中
+
+* `rolesAllowed` 
+
+  包含授权角色的字符串数组
+
+* `transportGuarantee` 
+
+  连接请求所必须满足的数据保护需求。有效值为 `ServletSecurity.TransportGuarantee` 枚举成员 `CONFIDENTIAL or NONE`
+
+* `value` 
+
+  默认授权
+
+##### HttpMethodConstraint
+
+特定的 HTTP 方法的安全性约束。只能出现在 `ServletSecurity` 注解中
+
+* `emptyRoleSemantic` 
+
+  当 `rolesAllowed` 返回一个空数组，应用默认授权语义。有效值为 `ServletSecurity.EmptyRoleSemantic` 枚举成员 `DENY or PERMIT`
+
+* `rolesAllowed` 
+
+  包含授权角色的字符串数组
+
+* `transportGuarantee` 
+
+  连接请求所必须满足的数据保护需求。有效值为 `ServletSecurity.TransportGuarantee` 枚举成员
+
+* `value` 
+
+  HTTP 协议方法
+
+```java
+// 该 servlet 可以被任何用户通过 GET 方法访问，但其他的 HTTP 方法只能被授予经理角色的用户访问
+@ServletSecurity(value = @HttpContraint(rolesAllowed = "manager"), httpMethodConstraints = {@HttpMethodConstraint("GET")})
+// 该 Servlet 阻止所有通过 Get 方法的访问，但允许所有 member 角色的用户通过其他 HTTP 方法访问
+@ServletSecurity(value = @HttpConstraint(rolesAllowed = "member"), httpMethodConstraints = {@HttpMethodConstraint(value = "GET", emptyRoleSemantic = EmptyRoleSemantic.DENY)})
+```
+
+##### MultipartConfig
+
+标注一个 Servlet 来指示该 Servlet 实例能够处理的 `multipart/form-data` 的 MIME 类型，在上传文件时通常会用到
+
+* `fileSizeThreshold`
+
+  当文件大小超过指定的大小后将写入到硬盘上
+
+* `location`
+
+  文件保存在服务端的路径
+
+* `maxFileSize`
+
+  允许上传的文件最大值。默认值为 -1，表示没有限制
+
+* `maxRequestSize`
+
+  针对该 `multipart/form-data` 请求的最大数量，默认值为 -1，表示没有限制
+
+##### ServletSecurity
+
+标注一个 Servlet 类在 Servlet 的应用安全约束。出现在 `ServletSecurity` 注解的属性
+
+* `httpMethodConstrains` 
+
+  HTTP 方法的特定限制数组
+
+* `value`
+
+  `HttpConstraint` 定义了应用到没有在 `httpMethodConstraints` 返回的数组中表示的所有 HTTP 方法的保护
+
+##### WebFilter
+
+用于标注一个Filter
+
+* `asyncSupported` 
+
+  是否支持异步处理
+
+* `description`
+
+  描述信息
+
+* `dispatcherTypes`
+
+  指定过滤器的转发模式。具体取值包括：`ASYNC`、`ERROR`、`FORWARD`、`INCLUDE`、`REQUEST`
+
+* `displayName`
+
+  显示名
+
+* `filterName`
+
+  名称
+
+* `initParams`
+
+  初始化参数
+
+* `largeIcon`
+
+  大图
+
+* `ServletNames`
+
+  指定过滤器将应用于那些 Servlet 取值是 `@WebServlet` 中的 `name` 属性的取值或者是 `web.xml` 中 `<servlet-name>` 的取值
+
+* `smallIcon`
+
+  小图
+
+* `urlPatterns`
+
+  URL匹配模式
+
+* `value`
+
+  URL匹配模式，与 `urlPatterns` 不能同时使用
+
+##### WebInitParam
+
+用于传递初始化参数到一个 `Servlet` 或过滤器。
+
+* description
+
+  参数描述
+
+* name
+
+  初始化参数名
+
+* value
+
+  初始化参数值
+
+##### WebListener
+
+标注一个 Listener，唯一属性为 value 是可选的，包括该 Listener 的描述
+
+##### WebServlet
+
+标注一个 Servlet，标注的各个属性和 web.xml 文件中配置 Servlet 的特定元素对应。
+
+|      属性      |       --       |                          描述                          |
+| :------------: | :------------: | :----------------------------------------------------: |
+|      name      |     String     |  指定 Servlet 名字，等价 `<servlet-name>` ，默认类名   |
+|  urlPatterns   |    String[]    | 指定一组 Servlet 的 URL 匹配模式，等价 `<url-pattern>` |
+| loadOnStartup  |      int       |   指定 Servlet 的加载顺序，等价 `<load-on-startup>`    |
+|   initParams   | WebInitParam[] |   指定一组 Servlet 初始化参数，等价于 `<init-param>`   |
+| asyncSupported |    boolean     |  声明 Servlet 是否支持异步，等价 `<async-supported>`   |
+|  description   |     String     |     指定 Servlet 的描述信息，等价 `<description>`      |
+|  displayName   |     String     |       指定 Servlet 显示名，等价 `<display-name>`       |
+|   largeIcon    |     String     |                          大图                          |
+|   smallIcon    |     String     |                          小图                          |
+|     value      |     String     |         URL 匹配，与 urlPatterns 不能同时使用          |
+
+```java
+@Webservlet(name="SerletName", urlPatterns={"/url"}, initParams={@WebInitParam(name="name", value="value")})
+```
 
 #### 部署描述符
 
