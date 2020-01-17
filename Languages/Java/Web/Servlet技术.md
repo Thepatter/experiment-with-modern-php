@@ -2,6 +2,11 @@
 
 #### Servlet
 
+Servlet 缺点
+
+* 写在 Servlet 中的所有 HTML 标签必须包含 Java 字符串
+* 所有的文本和 HTML 标签是硬编码，导致即使是表现层的微小变化，也需要重新编译
+
 ##### Servlet 组成包
 
 Servlet API 有 4 个包：
@@ -191,6 +196,8 @@ HttpSession getSession();
 HttpSession getSession(boolean create);
 // 返回 HTTP 请求的头部的第一行的 URI
 String getRequestURI();
+// 返回请求 part 集合
+Collection<Part> getParts() throws IOException, ServletException;
 ```
 
 ###### HttpServletResponse
@@ -213,10 +220,22 @@ void addCookie(Cookie cookie);
 void sendRedirect(java.lang.String location);
 ```
 
-###### Servlet 缺点
+###### Part
 
-* 写在 Servlet 中的所有 HTML 标签必须包含 Java 字符串
-* 所有的文本和 HTML 标签是硬编码，导致即使是表现层的微小变化，也需要重新编译
+```java
+// 读取子部分的请求头中特定选项的值，参数 name 用于指定特定的选项
+String getHeader(String var1);
+Collection<String> getHeaders(String var1);
+Collection<String> getHeaderNames();
+// 读取子部分请求正文的数据类型
+String getContentType();
+// 读取子部分的名字，它和 HTML 表单中的 <input> 元素的 name 属性值对应
+String getName();
+// 读取子部分的请求正文长度，以字节为单位
+long size();
+// 把子部分的请求正文写道参数 filename 指定的文件中
+void write(String var1) throws IOException;
+```
 
 ##### Servlet 抽象类
 
