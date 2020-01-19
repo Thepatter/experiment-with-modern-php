@@ -171,6 +171,21 @@ String getMimeType(String file); // 返回参数指定的文件的 MIME 类型
 // 输出日志
 void log(String var1);  // 向 Servlet 的日志文件中写日志
 void log(String var1, Throwable var2); // 向 Servlet 的日志文件中写错误日志，以及异常堆栈信息
+// 获取其他 Web 应用的 ServletContext 对象
+ServletContext getContext(String uripath);
+```
+
+###### RequestDispatcher
+
+```java
+// 把请求转发给目标组件
+// 处理流程：情况用于存放响应正文数据的缓冲区，如果目标组件为 Servlet 或 JSP，就调用它们的 service() 方法，把该方法的响应结果发送到客户端；如果目标组件为文件系统中的静态 HTML 文档，就读取文档中的数据并发送到客户端
+// 如果源组件在进行请求转发之前，已经提交了响应结果（ServletResponse 的 flushBuffer 方法，或与 ServletResponse 关联的输出六的 close 方法，会抛出 IllegalStateException 异常）
+void forward(ServletRequest request, ServletResponse response) throws ServletException, IOException;
+// 包含目标组件得响应结果
+// 处理流程：如果目标组件为 Servlet 或 JSP，就调用它们的相应的 service() 方法，把该方法产生的响应正文添加到源组件的响应结果中；如果目标组件为 HTML 文档，就直接把文档的内容添加到源组件的响应结果中，返回到源组件的服务方法中，继续执行后续代码块
+// 源组件与被包含的目标组件的输出数据都会被添加到响应结果中，在目标组件中对响应状态代码或响应头所做的修改都会被忽略
+void include(ServletRequest request, ServletResponse response) throws ServletException, IOException;
 ```
 
 ###### HttpServletRequest
@@ -235,6 +250,47 @@ String getName();
 long size();
 // 把子部分的请求正文写道参数 filename 指定的文件中
 void write(String var1) throws IOException;
+// 重定向 Servlet 源组件生成的响应结果不会被发送到客户端，只有重定向的目标组件生成的响应结果才会被发送到客户端，如果源组件在进行重定向之前，已经提交了响应结果（flushBuffer(), close()) 抛出 IllegalStateException 异常。源组件和目标组件不共享 ServletRequest 对象。location 如果以 / 开头，即相对于当前服务器根路径的URL，如果以 http 开头，即完整 url
+void sendRedirect(String location) throws IOException;
+```
+
+###### AsyncContext
+
+```java
+// 设置异步线程处理请求任务的超时实际（以毫秒为单位），即异步线程必须在 timeout 参数指定的时间内完成任务
+void setTimeout(long timeout);
+// 启动一个异步线程，执行 run 指定的任务
+void start(Runable run);
+// 添加一个异步监听器
+void addListener(AsyncListener listener);
+// 告诉 Servlet 容器任务完成，返回响应结果
+void complete();
+// 把请求派发给参数 path 指定的 web 组件
+void dispatcher(ServletContext context, String path);
+// 获取当前上下文中的 ServletRequest 对象
+ServletRequest getRequest();
+// 获取当前上下文中的 ServleetResponse 对象
+ServletResponse getResponse();
+```
+
+###### ReadListener
+
+```java
+// 输入流中有可读数据时触发此方法
+void onDataAvailable() throws IOException;
+// 输入流中所有数据读完时触发此方法
+void onAllDataRead() throws IOException;
+// 输入操作出现错误时触发此方法
+void onError(Throwable t);
+```
+
+###### WriteListener
+
+```java
+// 可以向输出流写数据时触发此方法
+void onWritePossible();
+// 输出操作出现错误时触发此方法
+void onError();
 ```
 
 ##### Servlet 抽象类
@@ -277,6 +333,45 @@ Servlet 容器会实例化和调用 Servlet，一般采用 Web 应用程序的�
 
 Servlet 规范里定义了 `ServletContext` 接口来对应一个 Web 应用。Web 应用部署好后，Servlet 容器在启动时会加载 Web 应用，并为每个 Web 应用创建唯一的 `ServletContext` 对象。可以将 `ServletContext` 看成一个全局对象，一个 Web 应用可能有多个 Servlet，这些 Servlet 可以通过全局的 `ServletContext` 来共享数据，这些数据包括 Web 应用的初始化参数、Web 应用目录下的文件资源等。由于 `ServletContext` 持有所有的 Servlet 实例，还可以通过它实现 Servlet 请求的转发
 
+###### 转发和包含
+
+Servlet 对象由 Servlet 容器创建，并且 Servlet 对象的 `service()` 方法也由容器调用。一个 Servlet 对象不能直接调用另一个 Servlet 对象的 `service()` 方法。一个 Servlet 对象无法获得另一个 Servlet 对象的引用
+
+在旧版本的 Servlet API 中，ServletContext 接口的  `getServlet(String name)` 方法能根据参数给定的名字返回相应的 Servlet 对象的引用。从 Servlet API 2.1 开始，该方法被废弃。对于支持 Servlet API 2.1 或以上版本的 Servlet 容器，会使得 ServletContext 得实现类 `getServlet(String  name)` 方法总使返回 null，因此一个 Servlet 对象无法再获得另一个 Servlet 对象得引用
+
+Servlet 规范为 web 组件之间得协作提供了两种途径：
+
+* 请求转发
+
+  Servlet （源组件）先对客户请求做一些预处理操作，然后把请求转发给其他 Web 组件（目标组件）来完成包括生成响应结果在内得后续操作
+
+* 包含
+
+  Servlet （源组件）把其他 Web 组件（目标组件）生成得响应结果包含到自身得响应结果中
+
+请求转发与包含具有以下共同特点：
+
+* 源组件和目标组件处理的都是同一个客户请求，源组件和目标组件共享同一个ServletRequest对象和ServletResponse对象。
+
+* 目标组件都可以是Servlet、JSP或HTML文档。
+
+* 都依赖javax.servlet. RequestDispatcher接口。
+
+  Servlet 可以通过两种方式得到 `RequestDispatcher` 对象：调用 `ServletContext` 的 `getRequestDispatcher(String path)` 方法（path 参数必须为绝对路径）；调用 `ServletRequest` 的 `getRequestDispatcher(String path)` 方法（`path` 参数可以为绝对路径，也可以为相对路径）
+
+###### 重定向
+
+在 Java Servlet API 中，HttpServletResponse 接口的 `sendRedirect(String location)` 方法用于重定向。
+
+###### 访问 Servlet 容器内的其他 web 应用
+
+在一个 Servlet 容器进程内的多个 Web 应用可以互相通信。`ServletContext` 接口中的 `getContext(String uripath)` 方法可以得到其他 Web 应用的 `ServletContext` 对象。
+
+多数 Servlet 容器实现可以让用户设置是否允许 Web 应用得到其他 web 应用的 `ServletContext` 对象。在 Tomcat 中，`<Context>` 元素的 `crossContext` 属性用于设置该选项：
+
+* 当 `crossContext` 为 `false` 时，`<Context>` 元素对应的 Web 应用无法得到其他 web 应用的 `ServletContext` 对象，当这个 Web 应用中的 `Servlet` 调用 `getContext(String uripath)` 返回 `null`，默认为 `false`
+* 当 `crossContext` 为 `true` 时，`<Context>` 元素对应的 web 应用可以得到其他 web 应用的 `ServletContext` 对象，当这个 Web 应用中的 `Servlet` 调用 `getContext(String uripath)` 返回对应 `ServletContext` 对象
+
 ##### Servlet 生命周期
 
 `Servlet` 生命周期由 Servlet 容器来控制。分为：
@@ -304,7 +399,25 @@ Servlet 的初始化阶段包括：
 
 ###### 销毁阶段
 
-当 web 应用被终止时，Servlet 容器会先调用 Web 应用中 `Servlet` 对象的 `destroy()` 方法，然后再销毁这些 `Servlet` 对象。还会销毁与 `Servlet` 对象关联的 `ServletConfig` 对象                                                                
+当 web 应用被终止时，Servlet 容器会先调用 Web 应用中 `Servlet` 对象的 `destroy()` 方法，然后再销毁这些 `Servlet` 对象。还会销毁与 `Servlet` 对象关联的 `ServletConfig` 对象
+
+##### Servlet 并发
+
+当多个客户端并发访问 web 应用中的同一个 Servlet，`Servlet` 容器为了保证能同时响应多个客户的要求访问同一个 Servlet 的 HTTP 请求，通常会为每个请求分配一个工作线程，这些工作线程并发执行同一个 Servlet 对象的 `service()` 方法。
+
+一个 HTTP 请求对应一个工作线程，一个 HTTP 请求对应一个类变量
+
+当多个线程并发执行同一个 Servlet 对象的 `service()` 方法时，可能会导致并发问题，在解决并发问题时：
+
+1. 根据实际应用需求，合理决定在 Servlet 中定义的变量的作用域
+
+   局部变量在一个方法中定义，每当一个线程执行局部变量所在的方法，在线程的堆栈中就会创建这个局部变量，当线程执行完该方法，局部变量就结束生命周期。如果同一时刻有多个线程同时执行该方法，那么每个线程都拥有自己的局部变量
+
+   实例变量定义在类，类的每一个实例都拥有自己的实例变量。当一个实例结束生命周期，属于它的实例变量也就结束生命周期。如果
+
+2. 对于多个线程同时访问共享数据而导致并发问题的场合，使用 Java 同步机制对线程进行同步
+
+3. 不建议使用被废弃的 `javax.servlet.SingleThreadModel` 接口
 
 #### 扩展机制
 
@@ -327,8 +440,7 @@ public interface Filter {
   	// 当 Servlet 容器每次处理 Filter 相关资源时，都会调用该 Filter 实例的 doFilter 方法。Filter 的 doFilter 方法包含 ServletRequest、ServletResponse、FilterChain, 在 Filter 的 doFilter 的实现中，最后一行需要调用 FilterChain 中的 doChain 方法。filterChain.doFilter()
     void doFilter(ServletRequest var1, ServletResponse var2, FilterChain var3) throws IOException, ServletException;
   	// // Servlet 容器要销毁 Filter 时触发，一般在应用停止时进行调用
-    default void destroy() {
-    }
+    default void destroy() {}
 }
 ```
 
@@ -775,12 +887,12 @@ Cookies 是一个很少的信息片段，可自动在浏览器和 Web 服务器�
   ```java
   // 创建 cookie
   Cookie cookie = new Cookie(name, value);
-  // 设置过期时间
-  cookie.maxAge(0);
+  // 设置过期时间, expiry > 0 在客户端硬盘上保存 expiry 秒，= 0 删除当前 cookie，< 0 仅会话，默认 -1
+  cookie.maxAge(expiry);
   // 将 cookie 发送到浏览器
   httpServletResponse.addCookie(cookie);
   // 获取所有 cookie
-  httpServletResponse.getCookies();
+  Cookie[] httpServletResponse.getCookies();
   ```
 
 ##### Session
@@ -815,7 +927,28 @@ void setMaxInactiveInterval(int seconds);
 
 #### 异步处理
 
-Servlet3.0 引入了异步处理。Servlet 或过滤器占有请求处理线程直到它完成任务。当用户并发请求数目超过线程数时，容器可能会发生无可用线程的风险。如果发生这种情况，Tomcat 会堆叠请求，如果有更多的请求进来，它们将被拒绝，直到有空闲资源来处理。异步处理可以节约容器线程，会释放正在等待完成的线程，使该线程被另一请求所使用。
+##### 异步处理
+
+在 Servlet API 3.0 版本之前，Servlet 容器针对每个 HTTP 请求都会分配一个工作线程。即对于每一次 HTTP 请求，Servlet 容器都会从主线程池中取出一个空闲的工作线程，由该线程从头到尾负责处理请求。如果在响应某个 HTTP 请求的过程中涉及到进行 I/O 操作、访问数据库，或其他耗时的操作，那么该工作线程会被长时间占用，只有当工作线程完成了对当前 HTTP 请求的响应，才能释放回线程池以供后续使用
+
+Servlet 或过滤器占有请求处理线程直到它完成任务。当用户并发请求数目超过线程数时，容器可能会发生无可用线程的风险。如果发生这种情况，Tomcat 会堆叠请求，如果有更多的请求进来，它们将被拒绝，直到有空闲资源来处理。
+
+Servlet 3.0 引入了异步处理，异步处理可以节约容器线程，会释放正在等待完成的线程，使该线程被另一请求所使用。
+
+Servlet 异步处理的机制为：Servlet 从 `HttpServletRequest` 对象中获得一个 `AsyncContext` 对象，该对象表示异步处理的上下文。`AsyncContext` 把响应当前请求的任务传给一个新的线程，由这个新的线程来完成对请求的处理并向客户端返回响应结果。最初由 Servlet 容器为 HTTP 请求分配的工作线程便可以及时地释放回主线程池，从而及时处理更高的请求。即把响应请求的任务从一个线程传给另一个线程处理
+
+##### 非阻塞 I/O
+
+Servlet 3.1 引入了非阻塞 I/O 来进一步增强异步处理的性能，它建立在异步处理的基础上，具体实现方式时引入了两个监听器：
+
+* ReadListener 接口：监听 ServletInputStream 输入流的行为
+* WriteListener 接口：监听 ServletOutputStream 输出流的行为
+
+在支持异步处理的 Servlet 类中进行非阻塞 IO 操作主要步骤：
+
+1. 在服务方法中从 ServletRequest 对象或 ServletResponse 对象中得到输入流或输出流
+2. 为输入流或输出流注册监听器
+3. 在监听器中编写包含非阻塞 I/O 操作的代码
 
 ##### 异步 servlet 和 filter
 
@@ -846,7 +979,7 @@ AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletRe
 
 * 调用 `asyncContext.start`，传递一个 `Runnable` 来执行一个长时间运行的任务
 
-* 调用 `Runnable` 的 `asyncContext.complete` 或 `asyncContext.dispatch` 方法来完成任务
+* 调用 `Runnable` 的 `asyncContext.complete`（完成任务） 或 `asyncContext.dispatch`（把请求派给其他 Web 组件）
 
 ##### 异步监听器
 
@@ -862,3 +995,7 @@ void onError(AsyncEvent evnet);
 // 超时后调用
 void onTimeout(AsyncEvent event);
 ```
+
+#### 服务器推送
+
+Servlet API 4 版本开始提供对服务器推送的支持，由 PushBuilder 接口来实现

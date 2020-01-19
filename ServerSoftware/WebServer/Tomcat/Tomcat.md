@@ -307,6 +307,20 @@ Tomcat 有三种工作模式
 
 如果仅仅为单个 web 应用配置 `<Context>` 元素，可以优先选择第三种或第四种方式。第三种方式要求在 Tomcat 的相关目录下增加一个包含 `<Context>` 元素的配置文件，而第四种方式则要求在 web 应用的相关目录下增加一个包含 `<Context>` 元素的配置文件。对于这两种方式，Tomcat 在运行时会检测包含 `<Context>` 元素的配置文件是否被更新，如果被更新，Tomcat  会自动刷新
 
+##### web 应用的工作目录
+
+每个 web 应用都有一个工作目录，Servlet 容器会把这个 web 应用相关的临时文件存放在这个目录下。Tomcat 为 web 应用提供的默认工作目录为：
+
+```shell
+<CATALINA_HOME>/work/[enginename]/[hostname]/[contextpath]
+```
+
+Tomcat 还允许配置 web 应用的 `<context>` 元素时，用 `workDir` 属性来显式地指定 web 应用的工作目录，Web 应用的工作目录不仅可以被 Servlet 容器访问，还可以被 Web 应用的 Servlet 访问。Servlet 规范规定，当 Servlet 容器在初始化一个 web 应用时，应该向刚创建的 `ServletContext` 对象中设置一个名为 `javax.servlet.context.tempdir` 的属性，它的属性值为一个 `java.io.File` 对象，它代表当前 web 应用的工作目录
+
+```java
+File workDir = (File) context.getAttribute("javax.servlet.context.tempdir");
+```
+
 ##### 显式定义 Tomcat 上下文
 
 * 在 Tomcat 的 `conf/Catalina/localhost` 目录下创建一个 XML 文件
