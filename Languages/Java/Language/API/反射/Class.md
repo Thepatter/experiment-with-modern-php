@@ -5,7 +5,7 @@
 String getName();
 // 返回超类的 Class 对象
 Class getSupperclass();
-// 返回描述类名为 className 的 class 对象
+// 返回描述类名为 className 的 class 对象, 装载 className
 static Class forName(String className);
 // 返回类的新实例
 Object newInstance();

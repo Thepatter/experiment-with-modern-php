@@ -22,7 +22,7 @@
 
 ```shell
 # 启动服务
-docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
+docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -e TZ="Asia/Shanghai" -d mysql:tag
 # 启动另一个容器连接 some-mysql
 docker run -it --network some-network --rm mysql mysql -hsome-mysql -uroot -p
 # 作为客户端

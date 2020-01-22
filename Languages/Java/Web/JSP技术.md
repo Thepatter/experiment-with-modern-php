@@ -1,108 +1,78 @@
 ## Java Server Pages
 
-### JSP 概述
+#### JSP 概述
 
 JSP 页面本质上是一个 Servlet。用 JSP 页面开发比使用 Servlet 更容易，不必编译 JSP 页面；JSP 页面是以一个以 `.jsp` 为扩展名的文本文件，可以使用任何文本编辑器来编写它们。JSP 页面在 JSP 容器中运行，一个 Servlet 容器通常也是 JSP 容器。当一个 JSP 页面第一次被请求时，Servlet/JSP 容器主要做以下两件事：
 
 * 转换 JSP 页面到 JSP 页面实现类，该实现类是一个实现 `javax.servlet.jsp.JspPage` 接口或子接口 `javax.servlet.jsp.HttpJspPage` 的 Java 类。`JspPage` 是 `javax.servlet.Servlet` 的子接口，这使得每一个 JSP 页面都是一个 Servlet。该实现类的类名由 `Servlet/JSP` 容器生成。如果出现转换错误，则相关错误信息将被发送到客户端
-
 * 如果转换成功，`Servlet/JSP` 容器随后编译该 `Servlet` 类，并装载和实例化该类，像其他正常的 `Servlet` 一样执行生命周期操作
+
+Tomcat 把 JSP 生成的 Servlet 源文件和类文件放在 `<CATALINA_HOME>/work/[engine]/[host]/[app]/org/apache/jsp`，虽然理论上 JSP 和 Servlet 能完成同样的功能，但由于它们形式不一样。（JSP 允许直接包含 HTML 标记，Servlet 是存储的 Java 程序）。JSP 技术的出现，使得把 Web 应用中 HTML 文档和业务逻辑代码有效分离成为可能。通常，JSP 负责生成 HTML 文档，业务逻辑由其他可重用的组件，如 JavaBean 或其他 Java 程序来实现。JSP 可通过 Java 程序片段来访问这些业务组件
 
 对于同一个 JSP 页面的后续请求，Servlet/JSP 容器会先检查 JSP 页面是否被修改过。如果是，则该 JSP 页面会被重新翻译，编译并执行。如果不是，则执行已经在内存中的 JSP Servlet。一个 JSP 页面的第一次调用的实际花费总比后来的 花费多，因为它涉及翻译和编译。为了解决这个问题，可以执行下了动作之一：
 
 * 配置应用程序，使所有的 JSP 页面在应用程序启动时被调用，而不是在第一次请求时调用
-
 * 预编译 JSP 页面，并将其部署为 Servlet
 
 JSP 自带的 API 包含 4 个包：
 
 * `javax.servlet.jsp` 包含用于 `Servlet/JSP` 容器将 JSP 页面翻译为 `Servlet` 的核心类和接口。其中的两个重要成员为 `JspPage` 和 `HttpJspPage` 接口。所有的 JSP 页面实现类必须实现 `JspPage` 或 `HttpJspPage` 接口。
-
 * `javax.servlet.jsp.tagext` 包括用于开发自定义标签的类型
-
 * `javax.el` 提供统一表达式语言的 API
-
 * `javax.servlet.jsp.el` 提供了一组必须由 `Servlet/JSP` 容器支持，以在 JSP 页面中使用表达式语言的类
 
-### JSP 指令
+#### JSP 语法
 
-指令是 JSP 语法元素的第一种类型。它们指示 JSP 转换器如何翻译 JSP 页面为 Servlet。
+虽然 JSP 本质上就是 Servlet，但 JSP 有着不同于 Java 编程语言的专门的语法，该语法的特点是，尽可能地用标记来取代 Java 程序代码，使整个 JSP 文件在形式上不像 Java 程序，像标记文档：
 
-#### page 指令
+JSP 文件中除了可直接包含 HTML 文本，还可以包含以下内容：
 
-可以使用 page 指令来控制 JSP 转换器转换当前 JSP 页面的某些方面。如 JSP 用于转换隐式对象 out 的缓冲器的大小、内容类型及需要导入的 Java 类型等等。
+* JSP 指令（或称为指示语句）
+* JSP 声明
+* Java 程序片段（Scriptlet）
+* Java 表达式
+* JSP 隐含对象
 
-page 指令的语法如下：
+##### JSP 指令
+
+指令是 JSP 语法元素的第一种类型。它们指示 JSP 转换器如何翻译 JSP 页面为 Servlet。常用的三种指令 page，include，taglib。
 
 ```jsp
-<%@ page attribute1="value" attribute2="value2" ...%>
+<%@ attribute="value" %>
 ```
 
-@ 和 page 间的空格不是必须的，`attribute1`、`attribute2` 是 page 指令的属性，page 指令属性列表：
+###### page 指令
 
-* import
+page 指令可以指定所使用的编程语言、与 JSP 对应的 Servlet 所实现的接口、所扩展的类以及导入的软件包等。page 指令的语法：
 
-  定义一个或多个本页面中将被导入和使用的 java 类型。可以通过在两个类型间加入 `,` 分隔符来导入多个类型。JSP 默认导入：`java.lang, javax.servlet, javax.servlet.http, javax.servlet.jsp`
+```
+<%@ page attribute="value" attribute="value" %>
+```
 
-* session
+@ 和 page 间的空格不是必须的，attribute 是 page 指令的属性，page 指令属性列表：
 
-  值为 True，本页面加入会话管理；值为 False 则相反。默认值为 True，访问该页面时，若当前不存在 `javax.servlet.http.HttpSession` 实例，则会创建一个
-
-* buffer
-
-  以 KB 为单位，定义隐式对象 out 的缓冲大小。必须以 KB 后缀结尾。默认大小为 8 KB 或更大（取决于 JSP 容器）。该值可为 none，即无缓冲，所有数据将直接写入 `PrintWriter`
-
-* autoFlush
-
-  默认值为 True。若值为 True，则当输出缓冲满时会自动写入输出流。而值为 False，则仅当调用隐式对象的 `flush ` 方法时，才会写入输出流。因此，若缓冲溢出，则会抛出异常
-
-* isThreadSafe
-
-  定义该页面的线程安全级别。不推荐使用，使用该参数，会生成一些 Servlet 容器已过期的代码
-
-* info
-
-  返回调用容器生成的 Servlet 类的 `getServletInfo` 方法的结果
-
-* errorPage
-
-  定义当出错时用来处理错误的页面
-
-* isErrorPage
-
-  标识本页是一个错误处理页面
-
-* contentType
-
-  定义本页面隐式对象 response 的内容类型，默认是 text/html
-
-* pageEncoding
-
-  定义本页面的字符编码，默认是 ISO-8859-1
-
-* isELlgnored
-
-  配置是否忽略 Expression Language 表达式。
-
-* language
-
-  定义本页面的脚本语言类型，默认是 Java
-
-* extends
-
-  定义 JSP 实现类要继承的父类。这个属性的一般不使用
-
-* deferredSyntaxAllowedAsLiteral
-
-  定义是否解析字符串中出现 `#{`，默认是 False
-
-* trimDirectiveWhitespaces
-
-  定义是否不输出多余的空格/空行，默认是 False
+|        page attribute         |                         description                          |
+| :---------------------------: | :----------------------------------------------------------: |
+|           language            |   定义本文件语言，仅支持(默认) Java，多次定义以第一次为准    |
+|            method             | 指定 Java 程序片段所属的方法名称，Java 程序片段回称为指定方法的主体。默认方法 service()。多次使用指令，只有第一次有效。有效值：service, doGet,doPost 等 |
+|            import             | 定义导入的 Java 软件包名或类名列表。用 `,` 分割。默认导入：java.lang, javax.servlet, javax.servlet.http, javax.servlet.jsp |
+|          contentType          | 指定响应 MIME 类型，默认 text/html，ISO 8859-1，多次指定时，仅第一次生效 |
+|            session            | 指定 JSP 页是否使用 session，默认 true 访问该页面时，若当前不存在 `javax.servlet.http.HttpSession` 实例，则会创建一个 |
+|            buffer             | 以 KB 为单位，定义隐式对象 out 的缓冲大小。必须以 KB 后缀结尾。默认大小为 8 KB 或更大（取决于 JSP 容器）。该值可为 none，即无缓冲，所有数据将直接写入 `PrintWriter` |
+|           autoFlush           | 默认为 true。当输出缓冲满时会自动写入输出流。为 false，则仅当调用隐式对象的  flush   方法时，才会写入输出流。因此，若缓冲溢出，则会抛出异常 |
+|           errorPage           |                       定义错误处理页面                       |
+|          isErrorPage          |               此 JSP 页面是否为处理异常的页面                |
+|         isThreadSafe          | 定义该页面的线程安全级别。不推荐使用，使用该参数，会生成一些 Servlet 容器已过期的代码 |
+|             info              |  返回调用容器生成的 Servlet 类的 getServletInfo 方法的结果   |
+|         pageEncoding          |           定义本页面的字符编码，默认是 ISO-8859-1            |
+|          isELIgnored          |           配置是否忽略 Expression Language 表达式            |
+|            extends            |      定义 JSP 实现类要继承的父类。这个属性的一般不使用       |
+| deferredSyntaxAllowdAsLiteral |         定义是否解析字符串中出现 `#{`，默认是 false          |
+|   trimDirectiveWhitespaces    |         定义是否不输出多余的空格/空行，默认是 false          |
 
 大部分 page 指令可以出现在页面的任何位置，但当 page 指令包含 `contentType` 或 `pageEncoding` 属性时，其必须出现在 Java 代码发送任何内容之前。因为内容类型和字符编码必须在发送任何内容前设定。page 指令也可以出现多次，但出现多次的指令属性必须具有相同的值（除 import 属性，多个包含 import 属性的 page 指令的结果是累加的）。
 
-#### include 指令
+###### include 指令
 
 可以使用 include 指令将其他文件中的内容包含到当前 JSP 页面。一个页面中可以有多个 include 指令。若存在一个内容会在多个不同页面中使用或一个页面不同位置使用的场景，则将该内容模块化到一个 include 文件非常有用
 
@@ -112,21 +82,42 @@ page 指令的语法如下：
 
 URL 为被包含文件的相对路径，若 URL 以一个斜杠 `/` 开始，则该 URL 为文件在服务器上的绝对路径，否则为当前 JSP 页面的相对路径。JSP 转换器处理 `include` 指令时，将指令替换为指令所包含文件的内容。
 
-### 脚本元素
+##### 脚本元素 scripting element
 
-一个脚本程序是一个 Java 代码块，以 `<%` 符合开始，以 `%>` 符合结束。
+###### Java 程序片段 Scriptlet
 
-##### 表达式
-
-每个表达式都会被 JSP 容器执行，并使用隐式对象 out 的打印方法输出结果。表达式以 `<%=` 开始，并以 `%>` 结束。表达式无须分号结尾
+在 JSP 文件中，可以在 `<% %>` 标记间直接嵌入任何有效的 Java 程序代码。这种嵌入的程序片段为 `Scriptlet`。如果在 page 指令中没有指定 method 属性，那么这些程序片段默认是属于与 JSP 对应的 Servlet 类的 service() 方法中的代码块
 
 ```jsp
+<% if (gender.equals("female")) { %>
+She is a girl
+<% }else{ %>
+He is body
+<% } %>
+```
+
+###### Java 表达式
+
+Java 表达式的标记为 `<%= %>` 。如果在 JSP中使用该标记，将使用隐式对象 out 的打印方法输出结果。在表达式中，`int` 或 `float` 类型的值都自动转换成字符串再进行输出。每个表达式都会被 JSP 容器执行，表达式无须分号结尾。
+
+表达式可以直接插入到模板文件中，也可以作为 JSP 标签属性的值
+
+```jsp
+<!-- 输出 -->
+<%=hitCount %>
 Today is <%=java.util.Calendar.getInstance().getTime()%>
 ```
 
-##### 声明
+###### 声明
 
 可以声明能在 JSP 页面中使用的变量和方法。声明以 `<%!` 开始，以 `%>` 结束。在 JSP 页面中，一个声明可以出现在任何地方，并且一个页面可以有多个声明。可以使用声明来重写 JSP 页面，实现类的 init 和 destroy 方法。通过声明 jspInit 方法，来重写 init 方法。通过声明 jspDestroy 方法，来重写 destory 方法。
+
+```jsp
+<!-- 实例变量 -->
+<%! int hitCount %>
+<!-- 局部变量 -->
+<% int count=0 %>
+```
 
 * jspInit
 
@@ -147,7 +138,7 @@ Today is <%=java.util.Calendar.getInstance().getTime()%>
 %>
 ```
 
-##### 禁用脚本元素
+###### 禁用脚本元素
 
 推荐的实践是：在 JSP 页面中用 EL 访问服务器端对象且不写 Java 代码。从 JSP 2.0 起，可以通过在部署描述符中的 `<jsp-property-group>` 定义一个 `scripting-invalid` 元素，来禁用脚本元素
 
@@ -158,29 +149,132 @@ Today is <%=java.util.Calendar.getInstance().getTime()%>
 </jsp-property-group>
 ```
 
-### 动作
+##### 动作元素 action element
 
-动作是第三种类型的语法元素，它们被转换成 Java 代码来执行操作，如访问一个 Java 对象或调用方法。除标准外，还可以创建自定义标签执行某些操作
+以 `jsp` 作为前缀的标签被转换成 Java 代码来执行操作，如访问一个 Java 对象或调用方法。除标准外，还可以创建自定义标签执行某些操作。
 
-##### useBean
+###### useBean
 
 useBean 将创建一个关联 Java duix的脚本变量。这是早期分离的表示层和业务逻辑的手段。随着其他技术的发展，如自定义标签和表达语言，现在很少使用 useBean 方式
 
-##### setProperty 和 getProperty
+###### setProperty 和 getProperty
 
 `setProperty` 动作可对一个 Java 对象设置属性，而 `getProperty` 则会获取 Java 对象的一个属性。
 
-##### include
+###### include
 
 include 动作用来动态地引入另一个资源，可以引入另一个 JSP 页面，也可以引入一个 Servlet 或一个静态的 HTML 页面。对于 include 指令，资源引入发生在页面转换时，即当 JSP 容器将页面转换为生成的 Servlet 时。而对于 include 动作，资源引入发生在请求页面时，include 动作可以传递参数，而 include 指令不能；include 指令对引入的文件扩展名不做特殊要求。但对于 include 动作，若引入的文件需以 JSP 页面处理，则其文件扩展名必须是 JSP。若使用 `.jspf` 为扩展名，则该页面被当作静态文件
 
-##### forward
+```jsp
+<jsp:include page="/url" />
+```
 
-forward 将当前页面转向到其他资源
+###### forward
 
-### 错误处理
+forward 标签实现请求转发，转发的目标可以为 HTML，JSP，Servlet。
+
+```jsp
+<jsp:forward page="/url" />
+```
+
+JSP 源组件中 forward 标签后的代码不会执行。规则与 Servlet 的 
+
+##### 隐含对象
+
+*JSP中的隐含对象*
+
+|  隐含对象   |              隐含对象类型              |
+| :---------: | :------------------------------------: |
+|   request   |  javax.servlet.http.HttpServletRequst  |
+|  response   | javax.servlet.http.HttpServletResponse |
+| pageContext |     javax.servlet.jsp.PageContext      |
+| application |      javax.servlet.ServletContext      |
+|     out     |      javax.servlet.jsp.JspWriter       |
+|   config    |      javax.servlet.ServletConfig       |
+|    page     |            java.lang.Object            |
+|   session   |     javax.servlet.http.HttpSession     |
+|  exception  |          java.lang.Exception           |
+
+#### JSP 生命周期
+
+JSP 的生命周期包含以下阶段：
+
+* 解析阶段：Servlet 容器解析 JSP 文件的代码，如果有语法错误，就会向客户端返回错误信息
+* 翻译阶段：Servlet 容器把 JSP 文件翻译成 Servlet 源文件
+* 编译阶段：Servlet 容器编译 Servlet 源文件，生成 Servlet 类
+* 初始化阶段：加载与 JSP 对应的 Servlet 类，创建其实例，并调用它的初始化方法
+* 运行时阶段：调用与 JSP 对应的 Servlet 实例的服务方法
+* 销毁阶段：调用与 JSP 对应的 Servlet 实例的销毁方法，然后摧毁 Servlet 实例
+
+解析、翻译、编译阶段仅发生在：
+
+* JSP 文件被客户端首次请求访问
+* JSP 文件被更新
+* 与 JSP 文件对应的 Servlet 类的类文件被手动删除
+
+#### 错误处理
 
 JSP 提供良好的错误处理能力，除了在 Java 代码中使用 try 语句，还可以指定一个特殊页面。当页面遇到未捕获的异常时，将显示该页面。使用 page 指令的 `isErrorPage` 属性（属性值必须为 True）来标识一个 JSP 页面是错误页面。其他需要防止未捕获的异常的页面使用 page 指令的 errorPage 属性来指向错误处理页面
+
+```jsp
+<!-- 转发错误 -->
+<%@ page errorPage="errorpage.jsp" %>
+<!-- 声明异常处理 -->
+<%@ page isErrorPage="true" %>
+<!-- 处理异常的网页可以直接访问 exception 隐含对象，获取当前异常的详细信息 -->
+<p>
+    错误原因：<% exception.printStackTrace(new PrintWriter(out)); %>
+</p>
+```
+
+#### 配置
+
+也可以在 `web.xml` 为 JSP 配置 `<servlet>` 和 `<servlet-mapping>` 元素
+
+```xml
+<servlet>
+	<servlet-name>hi</servlet-name>
+    <jsp-file>/hello.jsp</jsp-file>
+</servlet>
+<servlet-mapping>
+	<servlet-name>hi</servlet-name>
+    <url-pattern>/hi</url-pattern>
+</servlet-mapping>
+```
+
+在 web.xml 中，可以用 `<jsp-config>` 元素来对一组 JSP 文件进行配置，包括 `<taglib>` 和 `<jsp-property-group>` 子元素
+
+*jsp-property-group子元素*
+
+|       子元素        |               描述               |
+| :-----------------: | :------------------------------: |
+|    <url-pattern>    |      设置该配置所影响的 JSP      |
+|    <description>    |          对 JSP 的描述           |
+|   <display-name>    |          JSP 的显示名字          |
+|    <el-ignored>     |     为 true，不支持 EL 语法      |
+| <scripting-invalid> | true，不支持 <% %> Java 程序片段 |
+|   <page-encoding>   |     设定 JSP  文件的字符编码     |
+|  <include-prelude>  | 设置自动包含 JSP 页面的头部文件  |
+|   <include-coda>    | 设置自动包含 JSP 页面的结尾文件  |
+
+```xml
+<jsp-config>
+	<jsp-property-group>
+    	<description>
+        	this is description
+        </description>
+        <display-name>someePage</display-name>
+        <url-pattern>*.jsp</url-pattern>
+        <el-ignored>true</el-ignored>
+        <page-encoding>UTF-8</page-encoding>
+        <scripting-invalid>true</scripting-invalid>
+        <include-prelude>/include/head.jsp</include-prelude>
+        <include-coda>/include/foot.jsp</include-coda>
+    </jsp-property-group>
+</jsp-config>
+```
+
+
 
 ### 表达式语言
 
@@ -199,7 +293,7 @@ EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们�
   EL 表达式可以返回任意类型的值。如果 EL 表达式的结果是一个带有属性的对象，则可以利用 `[]` 或者 `.` 运算符来访问该属性，如果 `propertyName` 不是有效的 Java 变量名，只能使用 `[]` 运算符。如果对象的属性是带有属性的另一个对象，则既也可用 `[]` 或 `.` 来访问对象属性对象的属性。
 
 * 算术运算符
- 
+
   加（`+`）减（`-`）、乘（`*`）、除（`/` 或 `div`）、取模（`%` 或 `mod`）
 
 * 逻辑运算符
@@ -217,7 +311,7 @@ EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们�
 #### 表达式取值规则
 
   EL 表达式的取值是从左到右进行的。对于 `expr-a[expr-b]` 形式的表达式，其 EL 表达式的取值方法如下： 
-  
+
   * 先计算 `expr-a` 得到 `value-a`
   
   * 如果 `value-a` 为 `null`，则返回 `null`，
@@ -250,23 +344,24 @@ EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们�
 
   pageContext 对象表示当前 JSP 页面的 `javax.servlet.jsp.PageContext`。包含所有其他 JSP 隐式对象，JSP 隐式对象对应 EL 中类型
 
-  * request 对应 javax.servlet.http.HttpServlet
+PageContext 类提供了一组用于向各种范围内存取属性的方法：scope 值为以下四个常量（PageContext.PAGE_SCOPE = 1，PageContext.REQUEST_SCOPE，PageContext.SESSION_SCOPE，PageContext.APPLICATION_SCOPE）
 
-  * response 对应 javax.servlet.http.HttpServletResponse
+●　getAttribute（String name）：返回页面范围内的特定属性的值。
+●　getAttribute（String name，int scope）：返回参数scope指定的范围内的特定属性的值。
+●　setAttribute（String name，Object value，int scope）：向参数scope指定的范围内存放属性。
+●　removeAttribute（String name，int scope）：从参数scope指定的范围内删除特定属性。
+●　findAttribute（String name）：依次从页面范围、请求范围、会话范围和Web应用范围内寻找参数name指定的属性，如果找到，就立即返回该属性的值。如果所有的范围内都不存在该属性，就返回null。
+●　int getAttributesScope（java.lang.String name）：返回参数指定的属性所属的范围，如果所有的范围内都不存在该属性，就返回0。
 
-  * Out 对应 javax.servlet.jsp.JspWriter
-
-  * session 对应 javax.servlet.http.HttpSession
-
-  * application 对应 javax.servlet.ServletContext
-
-  * config 对应 javax.servlet.Servlet.Config
-
-  * PageContext 对应 javax.servlet.jsp.PageContext
-
-  * page 对应 javax.servlet.jsp.HttpJspPage
-
-  * exception 对应 java.lang.Throwable
+用于获得由Servlet容器提供的其他对象的引用的方法，PageContext 类的以下方法用于获得由 Servlet 容器提供的ServletContext、HttpSession、ServletRequest 和 ServletResponse 等对象：
+●　getPage（）：返回与当前 JSP 对应的 Servlet 实例。
+●　getRequest（）：返回 ServletRequest 对象。
+●　getResponse（）：返回 ServletResponse 对象。
+●　getServletConfig（） ：返回 ServletConfig 对象。
+●　getServletContext（） ：返回 ServletContext 对象。
+●　getSession（）：返回 HttpSession 对象。
+●　getOut（）：返回一个用于输出响应正文的 JspWriter 对象。
+在 JSP 文件的 Java 程序片段中，可以直接通过 application、request 和 response 等固定变量来引用 PageContext、ServletRequest 和 ServletResponse 等对象。而在自定义的 JSP 标签的处理类中，无法使用 application、request和 response 等固定变量，此时就需要依靠 PageContext 类的相关方法来得到 ServletContext、ServletRequest 和ServletResponse 等对象。
 
 ##### initParam
 
@@ -754,7 +849,7 @@ body content 是 JSP。属性值可以是类型为 String 或 java.util.TimeZone
 
 setTimeZone 标签用于将指定时区保存在一个有界变量或时间配置变量中。语法：
 
-```jsp
+​```jsp
 <fmt:setTimeZone value="timeZone" [var="varName"][scope="{page|request|session|application}"]>
 ```
 

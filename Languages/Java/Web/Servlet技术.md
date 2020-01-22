@@ -293,6 +293,15 @@ void onWritePossible();
 void onError();
 ```
 
+###### PushBuilder
+
+```java
+// 指定待推送资源的 URL 路径
+PushBuilder path(String path);
+// 推送
+void push();
+```
+
 ##### Servlet 抽象类
 
 ###### GenericServlet
