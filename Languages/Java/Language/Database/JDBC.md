@@ -1,13 +1,30 @@
-## 数据库编程
+###  JDBC
 
-### JDBC 的设计
+#### JDBC 的设计
 
-#### JDBC 驱动程序类型
+Java DataBase Connectivity 是连接 Java 程序和数据库服务器的纽带。JDBC 的实现封装了与各种数据库服务器通信的细节。Java 程序通过 JDBC API 来访问数据库，优点：
+
+* 简化访问数据库的程序代码，无须涉及与数据库服务器通信的细节
+* 不依赖于任何数据库平台。同一个 Java 程序可以访问多种数据库服务器
+
+*Java 程序通过 JDBC API 访问数据库*
+
+![](../Images/java与JDBCAPI通信.png)
+
+JDBC 的实现包括三部分：
+
+* JDBC 驱动管理器：`java.sql.DriverManager` 类，由 Oracle 公司实现，负责注册特定 JDBC 驱动器，以及根据特定驱动器建立与数据库的连接
+
+* JDBC 驱动器 API：由 Oracle 公司制定，最主要的接口是 `java.sql.Driver`
+
+* JDBC 驱动器：由数据库供应商或其他第三方工具提供商创建，JDBC 驱动器实现了 JDBC 驱动器 API，负责与特定的数据库连接，以及处理通信细节。JDBC 驱动器可以注册到 JDBC 驱动管理器中
+
+  JDBC 驱动器才是真正的连接 Java 应用程序与特定数据库的纽带，Java 应用如果希望访问某种数据库，必须先获得相应的 JDBC 驱动器的类库，然后把它注册到 JDBC 驱动管理器中
 
 JDBC 规范将驱动程序归结为以下几类
 
 * 第一类驱动程序将 JDBC 翻译成 ODBC，然后使用一个 ODBC 驱动程序与数据库进行通信。较早版本 Java 包含了一个这样的驱动程序：`JDBC/ODBC` 桥，不过在使用这个桥接器之前需要对 `ODBC` 进行相应的部署和正确的设置。在 `JDBC` 面世之初，桥接器可以方便地用于测试，却不太适用于产品的开发。Java 8 不再提供 `JDBC/ODBC` 桥
-* 第二类驱动程序由部分 Java 程序和部分本地代码组成的，用于与数据库的客户端API进行通信。在使用这种驱动程序之前。客户端不仅需要安装 Java 类库，还需要安装一些与平台相关的代码
+* 第二类驱动程序由部分 Java 程序和部分本地代码组成的，用于与数据库的客户端 API 进行通信。在使用这种驱动程序之前。客户端不仅需要安装 Java 类库，还需要安装一些与平台相关的代码
 * 第三类驱动程序是纯 Java 客户端类库，它使用一种与具体数据库无关的协议将数据库请求发送给服务器构件，然后该构件再将数据库请求翻译成数据库相关的协议。这简化了部署，因为平台相关的代码只位于服务器端
 * 第四类驱动程序是纯 Java 类库，它将 JDBC 请求直接翻译成数据库相关的协议
 
@@ -15,6 +32,26 @@ JDBC 为了实现以下目标
 
 * 通过使用标准的 SQL 语句，甚至专门的 SQL 扩展，程序员就可以利用 Java 语言开发访问数据库的应用，同时还依旧遵守 Java 语言的相关约定
 * 数据库供应商和数据库工具开发商可以提供底层的驱动程序。因此可以优化各自数据库产品的驱动程序
+
+JDBC API 主要位于 java.sql 包，关键的接口与类：
+
+* Driver 接口，驱动器
+
+  所有 JDBC 驱动器都必须实现 Driver 接口，JDBC 驱动器由数据库厂商或第三方提供。在编写访问数据库的 Java 程序时，必须把特定数据库的 JDBC 驱动器的类库加入到 classpath 中
+
+* DriverManager 类，驱动管理器
+
+  用来建立和数据库的连接以及管理 JDBC 驱动器。该类方法都是静态的
+
+* Connection 接口，数据库连接
+
+* Statement 接口，执行 SQL 语句
+
+* PreparedStatement 接口：负责执行预处理的 SQL 语句
+
+* CallableStatement 接口：负责执行 SQL 存储过程
+
+* ResultSet 接口，结果集
 
 #### JDBC 的典型用法
 
@@ -30,11 +67,57 @@ JDBC 为了实现以下目标
 
 ​				![](../Images/三层数据库连接结构.png)
 
-### JDBC 配置
+##### 编写访问数据库程序的步骤
 
-JDBC 使得我们可以通过 SQL 与数据库进行通信。桌面数据库通常都有一个图形用户界面；通过这种界面，用户可以直接操作数据。但是，基于服务器的数据库只能使用 SQL 进行访问
+在 Java 程序中，通过 JDBC API 访问数据库包含以下步骤：
 
-#### 数据库 URL
+1. 获得要访问的数据库的 JDBC驱动器的类库，把它导入 classpath 中
+
+2. 在程序中加载并注册 JDBC 驱动器。
+
+3. 建立与数据库的连接
+
+4. 创建 statement 对象
+
+5. 执行 SQL 语句
+
+6. 访问 ResultSet 中的记录集
+
+   ResultSet 接口的迭代协议于 `java.util.Iterator` 接口不同。对于 ResultSet 接口，迭代器初始化时被设定在第一行之前的位置，必须调用 `next()` 方法将它移动到第一行。另外，它没有 `hasNext` 方法，需要不断地调用 `next`，直至该方法返回 `false`
+
+   结果集中行地顺序是任意排列地。除非使用 `ORDER BY` 子句指定行地顺序，否则不能为行序强加任何意义
+
+   当 `getXXX()` 方法地类型和数据库列数据类型不一致时，每个 `getXXX()` 方法都会进行合理地转换。
+
+7. 依次关闭 ResultSet、Statement、Connection 对象
+
+```java
+// 加载 JdbcDriver 类
+Class.forName("oracle.jdbc.driver.OracleDriver");
+// 注册 JDBC 驱动器
+java.sql.DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
+// 获取连接
+Connection conn = java.sql.DriverManager.getConnection(jdbc:oracle:mthin:@localhost:1521:sid);
+// 创建 statement 对象
+Statement stmt = conn.createStatement();
+// 执行 SQL 语句
+String sql = "select id, name, price form goods where id = 1";
+ResultSet rs = stmt.executeQuery(sql);
+// 方法 ResultSet 结果集
+while (rs.next()) {
+    int id = rs.getInt(1); 	// 列索引效率较高
+    String name = rs.getString("name"); // 列名易于维护
+    float price = rs.getFloat("price");
+}
+// 关闭
+rs.close();
+stmt.close();
+conn.close();
+```
+
+##### JDBC 配置
+
+###### 数据库 URL
 
 在连接数据库时，必须使用各种与数据库类型相关的参数，例如主机名，端口号和数据库名。JDBC 使用一种与普通 URL 相类似的语法来描述数据源。
 
@@ -51,7 +134,7 @@ jdbc:subprotocol:other sutff
 
 其中，`subprotocol` 用于选择连接到数据库的具体驱动程序。`other stuff` 参数的格式随所使用的 `subprotocol` 不同而不同。
 
-#### 驱动程序 JAR 文件
+###### 驱动程序 JAR 文件
 
 需要获得包含了所使用的数据库的驱动程序的 JAR 文件。在运行访问数据库的程序时，需要将驱动程序的 JAR 文件包括到类路径中（编译时并不需要这个 JAR 文件）。在从命令行启动程序时，只需要使用下面的命令
 
@@ -59,11 +142,9 @@ jdbc:subprotocol:other sutff
 java -classpath driverPath:. ProgromName
 ```
 
-#### 注册驱动器类
+###### 注册驱动器类
 
-许多 JDBC 的 JAR 文件会自动注册驱动器类。包含 `META-INF/services/java.sql.Driver` 文件的 JAR 文件可以自动注册驱动器类，解压缩驱动程序 JAR 文件可以检查其是否包含该文件。
-
-如果驱动器程序 JAR 文件不支持自动注册，那么就需要找出数据库提供商使用的 JDBC 驱动器类的名字。典型的驱动器名字如下
+许多 JDBC 的 JAR 文件会自动注册驱动器类。包含 `META-INF/services/java.sql.Driver` 文件的 JAR 文件可以自动注册驱动器类，如果驱动器程序 JAR 文件不支持自动注册，那么就需要找出数据库提供商使用的 JDBC 驱动器类的名字。典型的驱动器名字如下
 
 ```java
 org.apache.derby.jdbc.ClientDriver
@@ -96,89 +177,27 @@ System.setProperty("jdbc.drivers", "org.postgresql.Driver");
 org.postgresql.Driver:org.apache.derby.jdbc.ClientDriver
 ```
 
-#### 连接到数据库
-
-在 Java 程序中，可以在代码中打开一个数据库连接
-
-```java
-String url = "jdbc:postgresql:COREJAVA";
-String username = "dbuser";
-String pssword = "secret";
-Connection conn = DriverManager.getConnection(url, username, password);
-```
-
-驱动管理器遍历所有注册过的驱动程序，以便找到一个能够使用数据库 URL 中指定的子协议的驱动程序。`getConnection` 方法返回一个 `Connection` 对象。
-
-### 使用 JDBC
-
-#### 执行 SQL 语句
-
-在执行 SQL 语句之前，首先需要创建一个 `Statement` 对象。要创建 `Statement` 对象，需要使用调用 `DriverManager.getConnection` 方法所获得的 `Connection` 对象
-
-```java
-Statement stat = conn.createStatement();
-```
-
-接着，把要执行的 SQL 语句放入字符串
-
-```java
-String command = "UPDATE Books" + " SET Price = Price - 5.00" + " WHERE Title NOT LIKE '%Introduction%';
-```
-
-然后，调用 `Statement` 接口中的 `executeUpdate` 方法
-
-```java
-stat.executeUpdate(command);
-```
-
-`executeUpdate` 方法将返回受 SQL 语句影响的行数，或者对不返回行数的语句返回 0。`executeUpdate` 方法既可以执行 DDL 语句也可以执行更新数据语句。但是执行 `SELECT` 查询时必须使用 `executeQuery` 方法。另外还有一个 `execute` 语句可以执行任意的 SQL 语句，此方法通常只用于由用户提供的交互式查询。
-
-`executeQyery` 方法会返回一个 `ResultSet` 类型的对象，可以通过它来每次一行地遍历所有查询结果
-
-```sql
-Result rs = stat.executeQuery("SELECT * FROM Books");
-```
-
-分析结构集
-
-```java
-while (re.next()) {
-    
-}
-```
-
-`ResultSet` 接口的迭代协议于 `java.util.Iterator` 接口不同。对于 `ResultSet` 接口，迭代器初始化时被设定在第一行之前的位置，必须调用 `next` 方法将它移动到第一行。另外，它没有 `hasNext` 方法，需要不断地调用 `next`，直至该方法返回 `false`
-
-结果集中行地顺序是任意排列地。除非使用 `ORDER BY` 子句指定行地顺序，否则不能为行序强加任何意义
-
-查看每一行时，有许多访问器方法可以用于获取这些信息
-
-```java
-String isbn = rs.getString(1);
-double price = rs.getDouble("Price");
-```
-
-不同地数据类型有不同地访问器，如 `getString` 和 `getDouble`。每个访问器都有两种形式，一种接受数字型参数，另一种接受字符串型参数。当使用数字型参数时，指的时该数字所对应地列。数据库列序号从 1 开始计算。当使用字符串参数时，指的是结果集中以该字符串为列名地列。使用数字型参数效率更高，但是字符串参数易于维护。
-
-当 `get` 方法地类型和列地数据类型不一致时，每个 `get` 方法都会进行合理地转换。
-
-#### 管理连接、语句和结果集
-
-每个 `Connection` 对象都可以创建一个或多个 `Statement` 对象。同一个`Statement` 对象可以用于多个不相关的命令和查询。但是，一个 `Statement` 对象最多只能有一个打开的结果集。如果需要执行多个查询操作，且需要同时分析查询结果，那么必须创建多个 `Statement` 对象
-
-使用 `DatebaseMetaData` 接口中的 `getMaxStatements` 方法可以获取 `JDBC` 驱动程序支持的同时活动的语句对象的总数
-
-通常并不需要同时处理多个结果集。如果结果集相互关联，可以使用组合查询，这样只需要分析一个结果。对数据库进行组合查询比使用 Java 程序遍历多个结果集要高效的多
-
-使用完 `ResultSet`，`Statement` 或 `Connection` 对象后，应立即调用 `close` 方法。这些对象都使用了规模较大的数据结果，它们会占用数据库存服务器上的有限资源
-
-如果 `Statement` 对象上有一个打开的结果集，那么调用 `close` 方法将自动关闭该结果集。同样地，调用 `Connection` 类的 `close` 方法将关闭该连接上的所有语句
-
-在 `Statement` 上调用 `closeOnCompletion` 方法，在其所有结果集都被关闭后，该语句会立即被自动关闭
+##### 管理连接、语句和结果集
 
 如果所有连接都是短时的，那么无需考虑关闭语句和结果集。只需将 `close` 语句放在带资源的 `try` 语句中，以便确保最终连接对象不可能继续保持打开状态
 
 应该使用带资源的 `try` 语句块来关闭连接，并使用一个单独的 `try/catch` 块处理异常。分离 `try` 程序块可以提高代码的可读性和可维护性
+
+* connection
+
+  每个 `Connection` 对象都可以创建一个或多个 `Statement` 对象。同一个`Statement` 对象可以用于多个不相关的命令和查询。但是，一个 `Statement` 对象最多只能有一个打开的结果集。如果需要执行多个查询操作，且需要同时分析查询结果，那么必须创建多个 `Statement` 对象
+
+  使用 `DatebaseMetaData` 接口中的 `getMaxStatements` 方法可以获取 `JDBC` 驱动程序支持的同时活动的语句对象的总数
+
+  通常并不需要同时处理多个结果集。如果结果集相互关联，可以使用组合查询，这样只需要分析一个结果。对数据库进行组合查询比使用 Java 程序遍历多个结果集要高效的多
+
+  使用完 `ResultSet`，`Statement` 或 `Connection` 对象后，应立即调用 `close` 方法。这些对象都使用了规模较大的数据结果，它们会占用数据库存服务器上的有限资源
+
+* Statement
+
+  如果 `Statement` 对象上有一个打开的结果集，那么调用 `close` 方法将自动关闭该结果集。同样地，调用 `Connection` 类的 `close` 方法将关闭该连接上的所有语句
+
+  在 `Statement` 上调用 `closeOnCompletion` 方法，在其所有结果集都被关闭后，该语句会立即被自动关闭
 
 #### 分析 SQL 异常
 
@@ -186,7 +205,7 @@ double price = rs.getDouble("Price");
 
 ```java
 for (Throwable t : sqlException) {
-    do
+    ...
 }
 ```
 
@@ -209,47 +228,34 @@ while (w != null) {
 
 当数据从数据库中读出并意外被截断时，`SQLWarning` 的 `DataTruncation` 子类就派上用户场了。如果数据截断发送在更新语句中，那么 `DataTruncation` 将会被当作异常抛出
 
-### 执行查询操作
+#### 执行查询操作
 
-#### 预备语句
+##### 预备语句
 
 没有必要在每次开始一个这样的查询时都建立新的查询语句，而是准备一个带有宿主变量的查询语句，每次查询时只需为该变量填入不同的字符串就可以反复多次使用该语句。这一技术改进了查询性能，每当数据库执行一个查询时，它总是首先通过计算来确定查询策略，以便高效的执行查询操作。通过事先准备好查询并多次重用它，就可以确保查询所需的准备步骤只被执行一次
 
-在预备查询语句，每个宿主变量都用 “?”  来表示。如果存在一个以上的变量，那么在设置变量值时必须注意 “?” 的位置。如果预备查询为如下形式：
-
 ```java
+// 在预备查询语句，每个宿主变量都用 ? 来表示。如果存在一个以上的变量，在设置变量值时必须注意 ? 的位置
 String publishQuery=
 	"Select Books.Price, Books.Title" +
 	" FROM Books, Publishers" + 
 	" WHERE Books.Publisher_ID = Publishers.Publisher_ID AND Publishers.Name = ?";
 PreparedStatement stat = conn.prepareStatement(publisherQuery);
-```
-
-在执行预备语句之前，必须使用 `set` 方法将变量绑定到实际的值上。和 `ResultSet` 接口中的 `get` 方法类似，针对不同的数据类型也有不同的 `set` 方法。
-
-```java
+// 在执行预备语句之前，必须使用 setXxx 将变量绑定到实际的值上,第一个参数是需要设置的宿主变量的位置，位置 1 表示第一个 ?。第二个参数指的是赋予宿主变量的值。
 stat.setString(1, publisher);
-```
-
-第一个参数是需要设置的宿主变量的位置，位置 1 表示第一个 “?”。第二个参数指的是赋予宿主变量的值。
-
-如果想要重用已经执行过的预备查询语句，除非使用 `set` 方法或调用 `clearParameters` 方法，否则所有宿主变量的绑定都不会改变。在从一个查询到另一个查询的过程中，只需使用 `setXXX` 方法重新绑定那些需要改变的变量即可。
-
-一旦为所有变量绑定了具体的值，就可以执行查询操作了
-
-```java
+// 一旦为所有变量绑定了具体的值，就可以执行查询操作了
 ResultSet rs = stat.executeQuery();
 ```
 
-通过连接字符串来手动构建查询显得非常枯燥乏味，而且存在潜在的危险。必须注意像引号这样的特殊字符，而且如果查询中涉及了用户的输入，那还需要警惕注入攻击。因此，只有查询涉及变量是，才应该使用预处理语句。
+如果想要重用已经执行过的预备查询语句，除非使用 `set` 方法或调用 `clearParameters` 方法，否则所有宿主变量的绑定都不会改变。在从一个查询到另一个查询的过程中，只需使用 `setXXX` 方法重新绑定那些需要改变的变量即可。
+
+通过连接字符串来手动构建查询显得非常枯燥乏味，而且存在潜在的危险。必须注意像引号这样的特殊字符，而且如果查询中涉及了用户的输入，那还需要警惕注入攻击。因此，只有查询涉及变量时，才应该使用预处理语句。
 
 在相关的 `Connection` 对象关闭之后，`PreparedStatement` 对象也就变得无效了。不过，许多数据库通常都会自动缓存预备语句。如果相同的查询被预备两次，数据库通常会直接重用查询策略。因此，无需过多考虑调用 `prepareStatement` 的开销
 
-#### 读写 LOB
+##### 读写 CLOB/BLOB 大对象
 
-除了数字、字符串和日期之外，许多数据库还可以存储大对象，例如图片或其他数据。在 SQL 中，二进制大对象称为 `BLOB`，字符型大对象称为 `CLOB`。
-
-要读取 `LOB`，需要执行 `SELECT` 语句，然后在 `ResultSet` 上调用 `getBlob` 或 `getClob` 方法，这样就可以获得 `Blob` 或 `Clob` 类型的对象。要从 `Blob` 中获取二进制数据，可以调用 `getBytes` 或 `getBinaryStream` 
+在 SQL 中，二进制大对象称为 `BLOB`，字符型大对象称为 `CLOB`。要读取 `LOB`，需要执行 `SELECT` 语句，然后在 `ResultSet` 上调用 `getBlob` 或 `getClob` 方法，这样就可以获得 `Blob` 或 `Clob` 类型的对象。要从 `Blob` 中获取二进制数据，可以调用 `getBytes` 或 `getBinaryStream` 
 
 ```java
 // 获取一张图像
@@ -277,7 +283,7 @@ stat.set(2, coverBlob);
 stat.executeUpdate();
 ```
 
-#### SQL 转义
+##### SQL 转义
 
 转义语法是各种数据库普通支持的特性，但是数据库使用的是与数据库相关的语法变体，因此，将转义语法转译为特定数据库的语法是 JDBC 驱动程序的任务之一
 
@@ -313,7 +319,7 @@ stat.executeUpdate();
 
 两个表的外连接并不要求每个表的所有行都要根据连接条件进行匹配
 
-#### 多结果集
+##### 多结果集
 
 在执行存储过程，或者在使用允许在单个查询中提交多个 `SELECT` 语句的数据库时，一个查询有可能会返回多个结果集。获取所有结果集的步骤
 
@@ -348,7 +354,7 @@ while (!done) {
 }
 ```
 
-#### 获取自动生成的键
+##### 获取自动生成的键
 
 大多数数据库都支持某种在数据库中对行自动编号的机制。尽管 JDBC  没有提供独立于提供商的自动生成键的解决方案，但是它提供了获取自动生成键的有效途径。当向数据表中插入一个新行，且其键自动生成时，可以用下面的代码来获取这个键
 
@@ -360,66 +366,40 @@ if (rs.next()) {
 }
 ```
 
-### 可滚动和可更新的结果集
+##### 结果集类型
 
 使用 `ResultSet` 接口中的 `next` 方法可以迭代遍历结果集中的所有行。对于一个只需要分享数据的程序来说，这一觉足够。但是如果是用于展示一张表或查询结果的可视化数据显示，通常会希望用户可以在结果集上前后移动。对于可滚动结果集而言，可以在其中向前或向后移动，甚至可以跳到任意位置
 
 一旦向用户显示了结果集中的内容，他们就可能希望编辑这些内容。在可更新的结果集中，可以以编程方式来更新其中的项，使得数据库可以自动更新数据。
 
-#### 可滚动的结果集
+###### 可滚动的结果集
 
-默认情况下，结果集是不可滚动和不可更新的。为了从查询中获取可滚动的结果集，必须使用下面的方法得到一个不同的 `Statement` 对象
-
-`Statement stat = conn.createStatement(type, concurrency)`
-
-如果要获得预备语句，要调用下面的方法
+默认情况下，结果集是不可滚动和不可更新的。为了从查询中获取可滚动的结果集，必须使用下面的方法
 
 ```java
+// 得到一个不同的 Statement 对象
+/**
+ * @param type TYPE_FORWARD_ONLY 结果集不能滚动（默认值）TYPE_SCROLL_INSENSITIVE 结果集可以滚动，但对数
+ * 	           据库变化不敏感 TYPE_SCROLL_SENSITIVE 结果集可以滚动，且对数据库变化敏感
+ * @param concurrency CONCUR_READ_ONLY 结果集不能用于更新数据库（默认值）
+ *                    CONCUR_UPDATEBLE 结果集可以用于更新数据库
+ */ 
+Statement stat = conn.createStatement(type, concurrency);
+// 如果要获得预备语句，要调用下面的方法
 PreparedStatement stat = conn.prepareStatement(command, type, concurrency);
-```
-
-* `ResultSet` 类的 `type` 值
-
-  `TYPE_FORWARD_ONLY`		结果集不能滚动（默认值）
-
-  `TYPE_SCROLL_INSENSITIVE`	结果集可以滚动，但对数据库变化不敏感
-
-  `TYPE_SCROLL_SENSITIVE`		结果集可以滚动，且对数据库变化敏感
-
-* `ResultSet` 类的 `Concurrency` 值
-
-  `CONCUR_READ_ONLY`			结果集不能用于更新数据库（默认值）
-
-  `CONCUR_UPDATEBLE`			结果集可以用于更新数据库
-
-```java
 // 只滚动遍历结果集，而不编辑它的数据
 Statement stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 // 获得的所有结果集都将是可滚动的
 ResultSet rs = stat.executeQuery(query);
+// 滚动结果集 n 为正，游标向前移动。如果 n 为负，游标将向后移。如果 n 为 0，那么调用该方法将不起任何作用。如果试图将游标移动到当前行集的范围之外，即根据 n 值的正负号，游标需要被设置在最后一行之后或第一行之前，那么，该方法将返回 false，且不移动游标，如果游标位于一个实际的行上，那么该方法将返回 true
+rs.relative(n);
+// 设置游标到指定的行号上
+rs.absolute(n);
+// 返回当前行的行号
+int currentRow = rs.getRow()
 ```
 
 可滚动的结果集有一个游标，用以指示当前位置（使用 `DatabaseMetaData` 接口中的 `supportsResultSetType` 和 `supportsResultSetConcurrency` 方法，可以获知在使用特定的驱动程序时，某个数据库究竟支持哪些结果集类型以及哪些并发模式）
-
-滚动结果集调用
-
-```java
-rs.relative(n)
-```
-
-如果 n 为正数，游标将向前移动。如果 n 为负数，游标将向后移动。如果 n 为 0，那么调用该方法将不起任何作用。如果试图将游标移动到当前行集的范围之外，即根据 n 值的正负号，游标需要被设置在最后一行之后或第一行之前，那么，该方法将返回 `false`，且不移动游标，如果游标位于一个实际的行上，那么该方法将返回 `true`
-
-设置游标到指定的行号上
-
-```java
-rs.absolute(n);
-```
-
-返回当前行的行号
-
-```java
-int currentRow = rs.getRow()
-```
 
 结果集中第一行的行号为 1。如果返回值为 0，那么当前游标不再任何行上，它要么位于第一行之前，要么位于最后一行之后
 
@@ -429,13 +409,12 @@ int currentRow = rs.getRow()
 
 使用可滚动的结果集是非常简单的，将查询数据放入缓存中的复杂工作是由数据库驱动程序在后头完成的
 
-#### 可更新的结果集
+###### 可更新的结果集
 
 如果希望编辑结果集中的数据，并且将结果集上的数据变更自动反映到数据库中，那么就必须使用可更新的结果集。可更新的结果集并非必须是可滚动的，但如果将数据提供给用户去编辑，那么通常也会希望结果集是可滚动的。
 
-如果要获得可更新的结果集，应该使用以下方法创建一条语句
-
 ```java
+// 如果要获得可更新的结果集，应该使用以下方法创建一条语句
 Statement stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 ```
 
@@ -443,38 +422,28 @@ Statement stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultS
 
 并非所有的查询都会返回可更新的结果集。如果查询涉及多个表的连接操作，那么它所产生的结果集将是不可更新的。如果查询只涉及了一个表，或者在查询时是使用主键连接多个表的，那么它所产生的结果集将是可更新的结果集。可调用 `ResultSet` 接口中的 `getConcurrency` 方法来确定结果集是否是可更新的
 
-所有对应于 SQL 类型的数据类型都配有 `updateXxx` 方法，比如 `updateDouble`、`updateString` 等。与 `getXxx` 方法相同，在使用 `updateXxx` 方法时必须指定列的名称和序号。在使用第一个参数为列序号的 `updateXxx` 方法时，这里的列序号指的是该列在结果集中的序号。它的值可以与数据库中的列序号不同
-
-`updateXxx` 方法改变的只是结果集中的行值，而非数据库中的值。当更新完行的字段值后，必须调用 `updateRow` 方法，这个方法将当前行中的所有更新信息发送给数据库。如果没有调用 `updateRow` 方法就将游标移动到其他行上，那么对此行所做的所有更新都将被丢弃，而且永远不会被传递给数据库。还可以调用 `cancelRowUpdates` 方法来取消对当前行的更新
+所有对应于 SQL 类型的数据类型都配有 `updateXxx` 方法，比如 `updateDouble`、`updateString` 等。与 `getXxx` 方法相同，在使用 `updateXxx` 方法时必须指定列的名称或序号。`updateXxx` 方法改变的只是结果集中的行值，而非数据库中的值。当更新完行的字段值后，必须调用 `updateRow` 方法，这个方法将当前行中的所有更新信息发送给数据库。如果没有调用 `updateRow` 方法就将游标移动到其他行上，那么对此行所做的所有更新都将被丢弃，而且永远不会被传递给数据库。还可以调用 `cancelRowUpdates` 方法来取消对当前行的更新
 
 如果想在数据库中添加一条新的记录，首先需要使用 `moveToInsertRow` 方法将游标移动到特定的位置（插入行）。然后，调用 `updateXxx` 方法在插入行的位置上创建一个新的行。在上述操作全部完成后，还需要调用 `insertRow` 方法将新建的行发送给数据库。完成插入操作后，再调用 `moveToCurrentRow` 方法将游标移回到调用 `moveToInsertRow` 方法之前的位置
 
 对于在插入行中没有指定值的列，将被设置为 SQL 的 NULL。但是，如果这个列有 `NOT NULL` 约束，那么将会抛出异常，而这一行也无法插入
 
-删除游标所指的行
+删除游标所指的行 `rs.deleteRow()` ，`ResultSet` 接口中的 `updateRow`、`insertRow` 、`deleteRow` 方法的执行效果等同于 SQL 命令中的 `UPDATE`、`INSERT`、`DELETE`。
 
-```java
-rs.deleteRow();
-```
+##### 行集
 
-`ResultSet` 接口中的 `updateRow`、`insertRow` 、`deleteRow` 方法的执行效果等同于 SQL 命令中的 `UPDATE`、`INSERT`、`DELETE`。
+可滚动的结果集虽然功能强大，却有一个重要的缺陷：在用户的整个交互过程中，必须始终与数据库保持连接。这种方式存在很大的问题，因为数据库连接属于稀有资源。行集`RowSet` 接口扩展自  `ResultSet` 接口，却无需始终保持与数据库的连接。
 
-### 行集
+###### 构建行集
 
-可滚动的结果集虽然功能强大，却有一个重要的缺陷：在用户的整个交互过程中，必须始终与数据库保持连接。用户也许会离开电脑旁一段时间。而在此期间却始终占有数据库连接。这种方式存在很大的问题，因为数据库连接属于稀有资源。
-
-行集`RowSet` 接口扩展自  `ResultSet` 接口，却无需始终保持与数据库的连接。行集适用于将查询结果移动到复杂应用的其他层，或者是诸如手机之类的其他设备中。因为它的数据结构非常庞大，且依赖于数据连接
-
-#### 构建行集
-
-`javax.sql.rowset` 包提供的接口，都扩展了 `RowSet` 接口
+`javax.sql.RowSet` 包提供的接口，都扩展了 `RowSet` 接口
 
 * `CacheRowSet` 允许在断开连接的状态下执行相关操作。
 * `WebRowSet` 对象代表了一个被缓存的行集，该行集可以保存为 XML 文件。该文件可以移动到 `web` 应用的其他层中，只要该该层中使用另一个 `WebRowSet` 对象重新打开该文件即可
 * `FiltereRowSet` 和 `JoinRowSet` 接口支持对行集的轻量级操作，它们等同于 SQL 中的 SELECT 和 JOIN 操作。这两个接口的操作对象是存储在行集中的数据，因此运行时无需建立数据库连接
-* `JdbcRowSet` 是  `ResultSet` 接口的一个廋包装器。在  `RowSet` 接口中添加了有用的方法
+* `JdbcRowSet` 是  `ResultSet` 接口的一个包装器。在  `RowSet` 接口中添加了有用的方法
 
-#### 被缓存的行集
+###### 被缓存的行集
 
 一个被缓存的行集中包含了一个结果集中所有的数据。`CachedRowSet` 是 `ResultSet` 接口的子接口，所以完全可以像使用结果集一样来使用被缓存的行集。被缓存的行集有一个非常重要的优点：断开数据库连接后仍然可以使用行集。
 
@@ -530,7 +499,7 @@ crs.acceptChanges();
 
 另一个导致问题复杂化的情况是：在填充了行集之后，数据库中的数据发生了改变，这显然容易造成数据不一致性。为了解决这个问题，参考实现会首先检查行集中的原始值（即，修改前的值）是否与数据库中的当前值一致。如果一致，那么修改后的值将覆盖数据库中的当前值。否则将抛出 `SyncProviderException` 异常，且不向数据库写回任何值。在实现行集接口时其他实现也可以采用不同的同步策略
 
-### 元数据
+#### 元数据
 
 JDBC 还可以提供关于数据库及其表结构的详细信息。在 SQL 中，描述数据库或其组成部分的数据成为元数据。可以获得三类元数据：关于数据库的元数据、关于结果集的元数据以及关于预备语句参数的元数据
 
@@ -561,44 +530,33 @@ for (int i = 1; i <= meta.getColumnCount(); i++) {
 }
 ```
 
-### 事务
+#### 事务
 
-#### 用JDBC对事务编程
+##### 用JDBC对事务编程
 
-默认情况下，数据连接处于自动提交模式。每个 SQL 语句一旦被执行便被提交给数据库。一旦命令被提交，就无法对它进行回滚操作。在使用事务时，需要关闭这个默认值
+###### 事务操作流程
+
+在 Connection 接口中提供了控制事务的方法，在 JDBC API 中，默认情况下为自动提交事务。每个 SQL 语句一旦被执行便被提交给数据库。一旦命令被提交，就无法对它进行回滚操作。在使用事务时，需要关闭这个默认值
 
 ```java
 // 关闭自动提交
 conn.setAutoCommit(false);
+// 现在可以使用通常的方法创建一个语句对象
+Statement stat = conn.createStatement();
+// 然后多次调用 executeUpdate
+try {
+	stat.executeUpdate(command);
+	stat.executeUpdate(command);
+	stat.executeUpdate(command);
+    // 如果执行了所有命令之后没有出错，则调用 commit 方法
+	conn.commit();
+} catch (SQLException e) {
+    // 如果出现错误，则调用
+	conn.rollback();
+}
 ```
 
-现在可以使用通常的方法创建一个语句对象
-
-`Statement stat = conn.createStatement()`
-
-然后多次调用 `executeUpdate` 方法
-
-```java
-stat.executeUpdate(command);
-stat.executeUpdate(command);
-stat.executeUpdate(command);
-```
-
-如果执行了所有命令之后没有出错，则调用 `commit` 方法
-
-```java
-conn.commit();
-```
-
-如果出现错误，则调用
-
-```java
-conn.rollback();
-```
-
-此时，程序将自动撤销自上次提交以来的所有语句。当事务被 `SQLException` 异常中断的时，典型操作是发起回滚
-
-#### 保存点
+###### 保存点
 
 在使用某些驱动程序时，使用保存点可以更细粒度的控制回滚操作。创建一个保存点意味着稍后只需返回这个点，而非事务的开头
 
@@ -606,16 +564,13 @@ conn.rollback();
 Statement stat = conn.createStatement();
 stat.executeUpdate(command);
 Savepoint svpt = conn.setSavepoint();
-stat.executeUpdate(command);
-if (...) {
+try {
+	stat.executeUpdate(command);
+} catch (SQLException e) {
     conn.rollback(svpt);
 }
 conn.commit();
-```
-
-当不再需要保存点时，必须释放它
-
-```java
+// 当不再需要保存点时，必须释放它
 conn.releaseSavepoint(svpt);
 ```
 
@@ -625,26 +580,19 @@ conn.releaseSavepoint(svpt);
 
 处于同一批中的语句可以是 `INSERT` 、`UPDATE`、`DELETE` 等操作，也可以是数据库定义语句，如 `CREATE TABLE` 和 `DROP TABLE`。但是，在批处理中添加 `SELECT` 语句会抛出异常
 
-执行批处理，首先创建一个 `Statment` 对象
+
 
 ```java
+// 执行批处理，首先创建一个 `Statment` 对象
 Statement stat = conn.createStatement();
-```
-
-调用 `addBatch` 方法
-
-```java
+// 调用 addBatch 方法
 String command = "CREAT TABLE ..."
 stat.addBatch(command);
 while(...) {
     command = "INSERT INTO ...VALUES ("+...+")";
     stat.addBatch(command);
 }
-```
-
-提交整个批量更新语句
-
-```java
+// 提交整个批量更新语句
 int[] counts = stat.executeBatch();
 ```
 
@@ -661,7 +609,7 @@ conn.commit();
 conn.setAutoCommit(autoCommit);
 ```
 
-### 高级 SQL 类型
+#### 高级 SQL 类型
 
 *JDBC支持的SQL数据类型在Java语言中对应的数据类型*
 
@@ -669,7 +617,7 @@ conn.setAutoCommit(autoCommit);
 
 SQL ARRAY （SQL 数组）指的是值的序列。从数据库中获得一个 LOB 或数组并不等于获取了它的实际内容，只有在访问具体的值时它们才会从数据库中被读取出来。
 
-### Web中的连接管理
+### Web 中的连接管理
 
 使用 `database.properties` 文件可以对数据库连接进行简单的设置。这种方法适用于小型的测试数据库，但是不适用于规模较大的应用。在 Web 或企业环境中部署 JDBC 应用时，数据库连接管理与 Java 名字和目录接口（JNDI）是集成在一起的。遍布企业的数据源的属性可以存储在一个目录中，采用这种方式使得我们可以集中管理用户名，密码，数据库名和 JDBC URL
 
@@ -690,5 +638,5 @@ private DataSource source;
 
 当然必须在某个地方配置数据源。如果编写的数据库程序将在 `Servlet` 容器中运行，如 `Apache Tomcat` ，或在应用服务器中运行，如 `GlassFish`，那么必须将数据库配置信息（包括 JNDI 名字、JDBC URL 、用户名和密码）放置在配置文件中，或在在管理员 GUI 中进行设置
 
-JDBC 规范为实现者提供了用以实现连接池服务的手段。不过，JDK 本身并未实现这项服务，数据库供应商提供的 JDBC 驱动程序中通常也不包含这项服务。相反，`Web` 容器和应用服务器的开发商通常会提供连接池服务的实现
+JDBC 规范为实现者提供了用以实现连接池服务的手段。不过，JDK 本身并未实现这项服务，数据库供应商提供的 JDBC 驱动程序中通常也不包含这项服务。相反，Web 容器和应用服务器的开发商通常会提供连接池服务的实现
 

@@ -291,3 +291,131 @@ Connector/J 支持客户端和服务器之间的单一字符编码，以及在 R
 
 不要使用 Connector/J 查询`set names`，因为驱动程序将不会检测到查询已更改了字符集，并且将继续使用首次建立连接时配置的字符集
 
+#### use Connector/J
+
+##### Connection
+
+`DriverManager` 类管理连接的建立。指定 `DriverManager` 类的 JDBC 驱动程序，最简单的方法是 `Class.forName()` 导入实现 `java.sql.Driver` 接口的类，对于 `Connector/J` 为 `com.mysql.cj.jdbc.Dirver`
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+Connection conn = null;
+try {
+    Class.forName("com.mysql.cj.jdbc.Driver");
+   	conn = DriverManager.getConnection("jdbc://mysql://localhost/test?", "user", "password");
+} catch (ClassNotFoundException | SQLException e) {
+    
+}
+```
+
+一旦 Connection 建立起来，它可以被用来创建 Statement 和 PreparedStatement 对象，以及检索有关数据库的元数据。
+
+##### Statement
+
+Statement 对象允许执行基本的 SQL 查询并通过 ResultSet 类检索结果。要创建 `Statement` 实例，使用 `connection.createStatement()`。在 `Statement` 对象通过 `executeQuery(String SQL)` 执行 SQL 查询。要更新数据库中的数据，使用 `executeUpdate(String SQL)`，返回与 update 语句匹配的行数，而不是被修改的行数
+
+如果事先不知道 SQL 语句是 SELECT 还是 UPDATE/INSERT，则可以使用 `execute(String SQL)` 方法。如果是 SELECT，则此方法返回 true， `getResultSet()` 来检索结果。如果是 UPDATE、INSERT、DELETE 语句，返回 false，调用 `getUpdateCount()` 获取受影响行数
+
+```java
+CREATE PROCEDURE demoSp(IN inputParam VARCHAR(255), INOUT inOutParam INT)
+Statement stmt = null;
+ResultSet rs = null;
+try {
+	stmt = conn.createStatement();
+    rs = stmt.executeQuery("SELECT foo FROM bar");
+    // or alternatively, if you don't know ahead of time that
+    // the query will be a SELECT...
+    if (stmt.execute("SELECT foo FROM bar")) {
+        rs = stmt.getResultSet();
+    }
+}
+```
+
+##### Execute CallableStatement
+
+1. 通过使用准备可调用语句 Connection.prepareCall()，必须使用 JDBC 转义语法，并且参数占位符周围的括号不是可选的
+
+   ```java
+   import java.sql.CallableStatement;
+   CallableStatement cStmt = conn.prepareCall("{call demoSp(?, ?)}");
+   cStmt.setString(1, "paramter")
+   ```
+
+2. 注册输出参数（如果存在）
+
+   要检索输出参数的值（在创建存储过程时 out 或 inout 在创建存储过程时指定的参数），在执行语句之前注册参数 `registerOutputParameter()`
+
+   ```java
+   import java.sql.Types;
+   // 第二个参数。类型为 INTEGER
+   cStmt.registerOutParameter(2, Types.INTEGER);
+   // 指定参数名为 inOutParam, 类型为 Types.INTEGER
+   cStmt.registerOutParameter("inOutParam", Types.INTEGER);
+   ```
+
+3. 设置输入参数（如果存在）
+
+   ```java
+   // 根据索引设置参数
+   cStmt.setString(1, "abcs");
+   // 根据参数名称
+   cStmt.setString("inputParam", "abcs");
+   // 根据索引设置 INOUT 参数
+   cStmt.setInt(2, 1);
+   // 根据名称设置 INOUT 参数
+   cStmt.setInt("inOutParam", 1);
+   ```
+
+4. 执行，检索结果集
+
+   CallableStatement 支持任何 Statement 执行方法
+
+   ```java
+   boolean hadResults = cStmt.execute();
+   while (hadResults) {
+       ResultSet rs = cStmt.getResultSet();
+       //process result set
+       ...
+       hadResults = cStmt.getMoreResults();
+   }
+   int outputValue = cStmt.getInt(2); // index-based
+   outputValue = cStmt.getInt("inOutParam"); // name-based
+   ```
+
+##### PreparedStatement
+
+```java
+ preparedStatement = connection.prepareStatement("update books set sale_amount = sale_amount + ? where id = ?");
+            preparedStatement.setInt(1, quantity);
+            preparedStatement.setString(2, bookId);
+            preparedStatement.executeUpdate();
+// resultsets
+ PreparedStatement preparedStatement = connection.prepareStatement("select * from books");
+            ResultSet resultSet = preparedStatement.executeQuery()) {
+            while (resultSet.next()) {
+                BookDetails bookDetails1 = new BookDetails.Builder(resultSet.getString("id"))
+                        .author(resultSet.getString("author"))
+                        .title(resultSet.getString("title"))
+                        .price(resultSet.getFloat("price"))
+                        .online(resultSet.getInt("online"))
+                        .description(resultSet.getString("description"))
+                        .saleAmount(resultSet.getInt("sale_amount"))
+                        .build();
+                bookDetails.add(bookDetails1);
+            }
+ // sigleResultset
+                 if (resultSet.next()) {
+                    return new BookDetails.Builder(resultSet.getString("id"))
+                            .author(resultSet.getString("author"))
+                            .title(resultSet.getString("title"))
+                            .price(resultSet.getFloat("price"))
+                            .online(resultSet.getInt("online"))
+                            .description(resultSet.getString("description"))
+                            .saleAmount(resultSet.getInt("sale_amount"))
+                            .build();
+                }
+```
+

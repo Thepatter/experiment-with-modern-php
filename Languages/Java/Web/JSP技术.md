@@ -274,7 +274,15 @@ JSP 提供良好的错误处理能力，除了在 Java 代码中使用 try 语�
 </jsp-config>
 ```
 
+#### JSP 会话
 
+默认情况下，JSP 网页都是支持会话的，也可以通过以下语句显示声明支持会话
+
+```java
+<%@ page session="true" %>
+```
+
+在 JSP 文件中可以直接通过固定变量 `session` 来引用隐含的 `HttpSession` 对象
 
 ### 表达式语言
 
@@ -340,53 +348,51 @@ EL 表达式以 `${` 开头，`}` 结束。对于一系列的表达式，它们�
 
   在 JSP 页面中，可以利用 JSP 脚本来访问 JSP 隐式对象。但是，在免脚本的 JSP 页面中，则不可能访问这些隐式对象。EL 允许通过提供一组它自己的隐式对象来访问不同的对象
 
-##### pageContent
+* pageContent
 
-  pageContext 对象表示当前 JSP 页面的 `javax.servlet.jsp.PageContext`。包含所有其他 JSP 隐式对象，JSP 隐式对象对应 EL 中类型
+    pageContext 对象表示当前 JSP 页面的 `javax.servlet.jsp.PageContext`。包含所有其他 JSP 隐式对象，JSP 隐式对象对应 EL 中类型
 
-PageContext 类提供了一组用于向各种范围内存取属性的方法：scope 值为以下四个常量（PageContext.PAGE_SCOPE = 1，PageContext.REQUEST_SCOPE，PageContext.SESSION_SCOPE，PageContext.APPLICATION_SCOPE）
+  PageContext 类提供了一组用于向各种范围内存取属性的方法：scope 值为以下四个常量（PageContext.PAGE_SCOPE = 1，PageContext.REQUEST_SCOPE，PageContext.SESSION_SCOPE，PageContext.APPLICATION_SCOPE）
 
-●　getAttribute（String name）：返回页面范围内的特定属性的值。
-●　getAttribute（String name，int scope）：返回参数scope指定的范围内的特定属性的值。
-●　setAttribute（String name，Object value，int scope）：向参数scope指定的范围内存放属性。
-●　removeAttribute（String name，int scope）：从参数scope指定的范围内删除特定属性。
-●　findAttribute（String name）：依次从页面范围、请求范围、会话范围和Web应用范围内寻找参数name指定的属性，如果找到，就立即返回该属性的值。如果所有的范围内都不存在该属性，就返回null。
-●　int getAttributesScope（java.lang.String name）：返回参数指定的属性所属的范围，如果所有的范围内都不存在该属性，就返回0。
+  ●　getAttribute（String name）：返回页面范围内的特定属性的值。
+  ●　getAttribute（String name，int scope）：返回参数scope指定的范围内的特定属性的值。
+  ●　setAttribute（String name，Object value，int scope）：向参数scope指定的范围内存放属性。
+  ●　removeAttribute（String name，int scope）：从参数scope指定的范围内删除特定属性。
+  ●　findAttribute（String name）：依次从页面范围、请求范围、会话范围和Web应用范围内寻找参数name指定的属性，如果找到，就立即返回该属性的值。如果所有的范围内都不存在该属性，就返回null。
+  ●　int getAttributesScope（java.lang.String name）：返回参数指定的属性所属的范围，如果所有的范围内都不存在该属性，就返回0。
 
-用于获得由Servlet容器提供的其他对象的引用的方法，PageContext 类的以下方法用于获得由 Servlet 容器提供的ServletContext、HttpSession、ServletRequest 和 ServletResponse 等对象：
-●　getPage（）：返回与当前 JSP 对应的 Servlet 实例。
-●　getRequest（）：返回 ServletRequest 对象。
-●　getResponse（）：返回 ServletResponse 对象。
-●　getServletConfig（） ：返回 ServletConfig 对象。
-●　getServletContext（） ：返回 ServletContext 对象。
-●　getSession（）：返回 HttpSession 对象。
-●　getOut（）：返回一个用于输出响应正文的 JspWriter 对象。
-在 JSP 文件的 Java 程序片段中，可以直接通过 application、request 和 response 等固定变量来引用 PageContext、ServletRequest 和 ServletResponse 等对象。而在自定义的 JSP 标签的处理类中，无法使用 application、request和 response 等固定变量，此时就需要依靠 PageContext 类的相关方法来得到 ServletContext、ServletRequest 和ServletResponse 等对象。
+  用于获得由Servlet容器提供的其他对象的引用的方法，PageContext 类的以下方法用于获得由 Servlet 容器提供的ServletContext、HttpSession、ServletRequest 和 ServletResponse 等对象：
+  ●　getPage（）：返回与当前 JSP 对应的 Servlet 实例。
+  ●　getRequest（）：返回 ServletRequest 对象。
+  ●　getResponse（）：返回 ServletResponse 对象。
+  ●　getServletConfig（） ：返回 ServletConfig 对象。
+  ●　getServletContext（） ：返回 ServletContext 对象。
+  ●　getSession（）：返回 HttpSession 对象。
+  ●　getOut（）：返回一个用于输出响应正文的 JspWriter 对象。
+  在 JSP 文件的 Java 程序片段中，可以直接通过 application、request 和 response 等固定变量来引用 PageContext、ServletRequest 和 ServletResponse 等对象。而在自定义的 JSP 标签的处理类中，无法使用 application、request和 response 等固定变量，此时就需要依靠 PageContext 类的相关方法来得到 ServletContext、ServletRequest 和ServletResponse 等对象。
 
-##### initParam
+* initParam
 
-    隐式对象 initParam 用户获取上下文参数的值，包含所有环境初始化参数，并用参数名作为 key 的 Map
+  隐式对象 initParam 用户获取上下文参数的值，包含所有环境初始化参数，并用参数名作为 key 的 Map
 
-##### param
+* param
 
-    隐式对象 `param` 用户获取请求参数值。包含所有请求参数的 Map，并用参数名作为 `key` 的 Map。每个 `key` 的值就是指定名称的第一个参数值。如果两个请求参数同名，则只有第一个能够利用 `param` 取值。用 `params()` 访问同名参数的所有参数值
+  隐式对象 `param` 用户获取请求参数值。包含所有请求参数的 Map，并用参数名作为 `key` 的 Map。每个 `key` 的值就是指定名称的第一个参数值。如果两个请求参数同名，则只有第一个能够利用 `param` 取值。用 `params()` 访问同名参数的所有参数值
 
-##### paramValues
+* paramValues
 
-    获取所有请求参数的所有值的 Map，参数名称为 key，值为字符串数组，包含对应 key 的所有值，如果该 key 对应只有一个 值，返回一个元素的数组
+  获取所有请求参数的所有值的 Map，参数名称为 key，值为字符串数组，包含对应 key 的所有值，如果该 key 对应只有一个 值，返回一个元素的数组
 
-##### header
+* header
 
-    包含请求 header，并用 header 名作为 key 的 Map，每个 key 的值就是指定标题名称的第一个标题。如果一个标题的值不止一个，则只返回第一个值。获得多个值的标题，需用 `headerValues` 对象替代
+  包含请求 header，并用 header 名作为 key 的 Map，每个 key 的值就是指定标题名称的第一个标题。如果一个标题的值不止一个，则只返回第一个值。获得多个值的标题，需用 `headerValues` 对象替代
 
-##### headerValues
+* headerValues
 
-    包含请求标题，并用标题名作为 key 的 Map。每个 key 的值就是一个字符串数组，其中包含了指定标题名称的所有参数值
+  包含请求标题，并用标题名作为 key 的 Map。每个 key 的值就是一个字符串数组，其中包含了指定标题名称的所有参数值
+* cookie
 
-##### cookie
-
-    包含当前 HttpServletRequest 中所有 Cookie 对象的 Map。Cookie 名称就是 key 名称，并且每个 key 都映射到一个 Cookie 对象。 `${cookie.jsessionid.value}`
-##### applicationScope、sessionScope、requestScope、pageScope
+  包含当前 HttpServletRequest 中所有 Cookie 对象的 Map。Cookie 名称就是 key 名称，并且每个 key 都映射到一个 Cookie 对象。 `${cookie.jsessionid.value}`
 
   * applicationScope
 

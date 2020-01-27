@@ -207,7 +207,7 @@ String getMethod();
 String getQueryString();
 // 返回session对象，如果没有，将创建一个新的session对象
 HttpSession getSession();
-// 返回会话对象。如果create为true，将创建一个新的会话对象
+// create为true，等价getSession(),为false,如果会话已存在，返回对象 HttpSession 对象，不存在则返回 null
 HttpSession getSession(boolean create);
 // 返回 HTTP 请求的头部的第一行的 URI
 String getRequestURI();
@@ -302,6 +302,30 @@ PushBuilder path(String path);
 void push();
 ```
 
+###### HttpSession
+
+```java
+// 返回 session Id
+String getId();
+// 设置会话属性
+void setAttribute(String name, Object value);
+// 返回会话范围内与参数 name 匹配的属性
+Object getAttribute(String name);
+// 以数组的方式返回 HttpSession 对象中的所有属性名
+Enumeration<String> getAttributeNames();
+// 从 HttpSession 对象中删除 name 参数指定的属性
+void removeAttribute(String name);
+// 判断是否是新创建的会话，是新会话返回 true
+boolean isNew();
+// 读取当前会话可以处于不活动状态的最长时间，秒为单位
+void setMaxInactiveInterval(int interval);
+int getMaxInactiveInterval();
+// 返回会话所属的 ServletContext 对象
+ServletContext getServletContext();
+// 使该会话无效，然后取消任何绑定的对象
+void invalidate();
+```
+
 ##### Servlet 抽象类
 
 ###### GenericServlet
@@ -319,6 +343,8 @@ void push();
 `javax.servlet.http.HttpServlet` 继承自 `GenericServlet`，实现了 `Service` 方法。并重载了 `Service` 方法，使其基于 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServletResponse resp)` 来处理 HTTP 请求与响应。因此使用该抽象类时，处理对应请求动作的 HTTP 请求，只需覆盖对应的 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServeltResponse resp)` 方法。
 
 在开发 Web 应用时，自定义的 Servlet 类一般都继承该类。
+
+HttpServlet 类默认情况下不支持会话。Servlet 容器调用 `HttpServlet` 类的服务方法时，会传递一个 `HttpServletRequset` 类型对象，可以使用该对象获取 `HttpSession` 对象
 
 ##### Servlet 容器
 
@@ -571,8 +597,8 @@ ServletContext 的监听器接口有两个：
   // 当 Servlet 容器启动 web 应用时调用该方法，在调用完该方法之后，容器再对 Filter 初始化，并且
   // 对那些在 web 应用启动时就需要被初始化的 Servlet 进行初始化
   default void contextInitialized(ServletContextEvent sce) {}
-  		// 当 Servlet 容器终止 web 应用时调用该方法。在调用该方法之前，容器会先销毁所有的 Servlet 和 Filter 过滤器
-      default void contextDestroyed(ServletContextEvent sce) {}
+  // 当 Servlet 容器终止 web 应用时调用该方法。在调用该方法之前，容器会先销毁所有的 Servlet 和 Filter 过滤器
+  default void contextDestroyed(ServletContextEvent sce) {}
   ```
 
   `contextInitialized` 和 `contextDestroyed` 方法都会从容器获取到一个 `ServletContextEvent`，`javax.servlet.ServletContextEvent` 是一个 `java.util.EventObject` 的子类，定义了访问 `ServletContext` 的 `getServletContext` 方法用来获取 `ServletContext`
@@ -601,53 +627,49 @@ ServletContext 的监听器接口有两个：
 
   异步操作的监听器
 
-HttpSession Listeners
+<a id="jump">HttpSession Listeners</a>
 
 `javax.servlet.http` 包提供了四个 `HttpSession` 相关的监听器接口：
 
 * `javax.servlet.http.HttpSessionListener`
 
-  当一个 `HttpSession` 创建或销毁时，容器都会通知所有的 HttpSessionListener 监听器
-
   ```java
+// 当 Servlet 容器创建了一个会话后，会调用此方法
   void sessionCreated(HttpSessionEvent event);
+  // 当 Servlet 容器将要销毁一个会话之前，会调用此方法
   void sessionDestroyed(HttpSessionEvent event);
   ```
 
-  这两个方法可以接收到一个继承于 `java.util.Event` 的 `HttpSessionEvent` 对象。可以通过调用 `HttpSessionEvent` 对象的 `getSession` 方法来获取当前的 `HttpSession`
-
 * `javax.servlet.http.HttpSessionAttributeListener`
 
-  和 `ServletContextAttributeListener` 类似，监听的是 `HttpSession` 范围属性的添加、删除和替换
-
   ```java
-  // HttpSession 范围属性被添加时被容器调用
+// 当 web 应用向一个会话中加入一个新的属性，Servlet 容器会调用此方法
   void attributeAdded(HttpSessionBindingEvent event);
-  // HttpSession 范围属性被删除时被容器调用
+  // 当 web 应用从会话中删除了一个属性，Servlet 容器会调用此方法
   void attributeRemoved(HttpSessionBindingEvent evnet);
-  // HttpSession 范围属性被新的替换时被容器调用
+  // 当 web 应用替换了会话中的一个已经存在的属性，Servlet 容器会调用此方法
   void attributeReplaced(HttpSessionBindingEvent event);
   ```
-
+  
 * `javax.servlet.http.HttpSessionActivationListener`
 
-  在分布式环境下，会用多个容器来进行负载均衡，有可能需要将 session 保存起来，在容器之间传递。这时，容器就会通知所有 `HttpSessionActivationListener` 接口的实现类
-
   ```java
+// 当 Servlet 容器把一个会话激活后，会调用此方法
   void sessionDidActivate(HttpSessionEvent event);
+  // 当 Servlet 容器将要把一个会话搁置之前，会调用此方法
   void sessionWillPassivate(HttpSessionEvent event);
   ```
 
-  当 `HttpSession` 被转移到其他容器之后，`sessionDidActivate` 方法会被调用。容器将一个 `HttpSessionEvent` 方法传递到方法里，可以从这个对象获得 `HttpSession`，当一个 `HttpSession` 将要失效时，容器会调用 `sessionWillPassivate` 方法。
-
 * `javax.servlet.http.HttpSessionBindingListener`
 
-  当有属性绑定或者解绑到 `HttpSession` 上时，`HttpSessionBindingListener` 监听器会被调用。
-
   ```java
+// 当 web 应用把一个属性与会话绑定后，Servlet 容器会调用此方法
   void valueBound(HttpSessionBindingEvent event);
+  // 当 web 应用将要把一个属性与会话解除绑定之前，Servlet 容器会调用此方法
   void valueUnbound(HttpSessionBindingEvent event);
   ```
+
+可以通过调用 `HttpSessionEvent` 、`HttpSessionBindingEvent` 对象的 `getSession` 方法来获取当前的 `HttpSession`
 
 ServletRequest  Listeners
 
@@ -906,6 +928,11 @@ Cookies 是一个很少的信息片段，可自动在浏览器和 Web 服务器�
 
 ##### Session
 
+Servlet 规范制定了基于 Java 的会话的具体运作机制。在 Servlet API 中定义了代表会话的 `javax.servlet.http.httpSession` 接口。Servlet 容器必须实现这一接口。当一个会话开始时，Servlet 容器将创建一个 `HttpSession` 对象，在 `HttpSession` 对象中可以存放表示客户状态的信息。Sevlet 容器为每个 `HttpSession` 对象分配一个唯一标识符，称为 Session ID
+
+* 当客户请求访问该 Web 组件时，Servlet 容器会自动查找 HTTP 请求中表示 Session ID 的 Cookie，以及向 HTTP 响应结果中添加表示 Session ID 的 Cookie。Servlet 容器还会创建新的 `HttpSession` 对象或者寻找已经存在的与 Session ID 对应的 `HttpSession` 对象
+* Web 组件可以访问代表当前会话的 `HttpSession` 对象
+
 `HttpSession` 对象在用户第一次访问网站的时候自动被创建，可以通过调用 `HttpServletRequest` 的 `getSession` 方法获取对象
 
 ```java
@@ -933,6 +960,48 @@ void setMaxInactiveInterval(int seconds);
 ```
 
 放到 `HttpSession` 的值不限于 String 类型，可以是任意实现 `java.io.Serializable` 的 java 对象。如果将不支持序列化的对象放入 HttpSession，当 Servlet 容器视图序列化的时候会失败并报错。Servlet 容器为每个 `HttpSerssion` 生成唯一的标识，并将该标识发送给浏览器，或创建一个名为 `JSESSIONID` 的 `cookie`，或者在 URL 后附加一个名为 `jsessionid` 的参数。在后续的请求中，浏览器会将标识提交给服务端，这样服务器就可以识别发起请求的用户。Servlet 容器会自动选择一种方式传递会话标识。
+
+##### 会话持久化
+
+持久化会话时，servlet 容器不仅会持久化 `HttpSession` 对象，还会对其所有可以序列化的属性（属性所属的类实现了 `java.io.Serializable` 接口）进行持久化。会话从运行时状态变为持久化状态的过程为搁置（持久化）。在以下情况下，会话会被搁置：
+
+* 服务器终止或单个 web 应用终止，web 应用中的会话被搁置
+* 会话处于不过的状态达到了阈值
+* web 应用中处于运行时状态的会话数目达到了阈值，部分会话被搁置
+
+会话从持久状态变为运行时状态的过程为激活（加载），以下情况下，会话会被激活
+
+* 服务器重启或单个 web 应用重启时，web 应用中的会话被激活
+* 处于会话中的客户端向 web 应用发出 HTTP 请求，相应的会话被激活
+
+会话的搁置和激活对客户端来说是透明的额，当客户端与服务端的一个 web 应用进行会话时，客户端会认为会话始终处于运行时状态
+
+Java Servlet API 并没有为会话的持久化提供标准的接口。会话的持久化完全依赖于 Servlet 容器的具体实现，Tomcat 采用会话管理器来管理会话：
+
+###### 标准会话管理器
+
+`org.apache.catalina.session.StandardManager` 是默认的标准会话管理器。它的实现机制为：当 tomcat 服务器终止或单个 web 应用被终止时，会对被终止的 web 应用的 `HttpSession` 对象进行持久化，把它们保存到文件系统中，默认的文件为：`<CATALINA_HOME>/work/Catalina/[hostname]/[applicationname]/SESSION.ser`
+
+当 Tomcat 服务器重启或单个 web 应用重启时，会激活已经被持久化的 `HttpSession` 对象（将对应 SESSIONS.ser 文件加载到内存中）
+
+###### 持久化会话管理器
+
+`org.apache.catalina.session.PersistentManager` 提供了比 `StandardManager` 更为灵活的管理会话的功能，`PersistentManager` 把存放 `HttpSession` 对象的永久性存储设备称为"会话 Store"，`PersistentManager` 具有以下功能：
+
+* 当 Tomcat 服务器关闭或重启，或者单个 web 应用被重启时，会对 web 应用的 `HttpSession` 对象进行持久化，把它们保存到会话 Store 中
+* 具有容错功能，及时把 `HttpSession` 对象备份到会话 Store 中，当 Tomcat 服务器意外关闭后再重启时，可以从会话 Store 中恢复 `HttpSession` 对象
+* 可以灵活控制再内存中的 `HttpSession` 对象的数目，将部分 `HttpSession` 对象转移到会话 Store 中
+
+Tomcat 中会话 Store 的接口为 `org.apache.Catalina.Store`，目前提供两个实现这一接口的类：
+
+* `org.apache.Catalina.FileStore`
+* `org.apache.Catalina.JDBCStore`
+
+具体配置见 Tomcat 管理会话
+
+##### 会话监听
+
+<a href="#jump">会话监听器接口</a>
 
 #### 异步处理
 
