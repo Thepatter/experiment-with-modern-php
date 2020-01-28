@@ -899,7 +899,7 @@ public class MyInitializer implements ServletContainerInitializer {
 @Webservlet(name="SerletName", urlPatterns={"/url"}, initParams={@WebInitParam(name="name", value="value")})
 ```
 
-#### 部署描述符
+#### 部署
 
 * 可以设置 `@WebServlet` 中没有对等元素的元素，如使用 load-on-startup 使得 servlet 在程序启动时加载，而不是第一次调用时加载
 
