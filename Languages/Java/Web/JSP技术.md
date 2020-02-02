@@ -340,3 +340,324 @@ JSP 提供良好的错误处理能力，除了在 Java 代码中使用 try 语�
 ```
 
 在 JSP 文件中可以直接通过固定变量 `session` 来引用隐含的 `HttpSession` 对象
+
+#### 自定义 JSP 标签
+
+##### JSP 标签形式
+
+```jsp
+// 主体内容和属性都为空的标签
+<mm:hello/>
+// 包含属性的标签
+<mm:message key="value" />
+// 包含主体内容的标签
+<mm:greeting>How are you.</mm:greeting>
+// 包含属性和主体内容
+<mm:greeting username="tom">how are youe</mm:greeting>
+// 嵌套标签
+<mm:greeting>
+    <mm:user name="tome" age="18"/>
+</mm:greeting>
+```
+
+可以把一组功能相关的标签放在同一个标签库中，开发包含自定义标签的标签库步骤：
+
+1. 创建自定义标签的处理类 (Tag Handler Class)
+2. 创建TLD标签库描述文件 (Tag Library Descriptor)
+
+在 web 应用中使用自定义标签库步骤：
+
+1. 把标签处理类及相关类的 `.class` 文件存放在 `WEB-INF\classes` 目录下
+2. 把 TLD 标签库描述文件存放在 `WEB-INF` 目录或其自定义子目录下
+3. 在 `web.xml` 文件中声明所引用的标签库
+4. 在 JSP 文件中使用标签库中的标签
+
+##### JSPTag API
+
+ Servlet 容器允许 JSP 文件时，如果遇到自定义标签，就会调用这个标签的处理类(Tag Handler Class)的相关方法。标签处理类可以继承 JSP Tag API 中的 `TagSupport` 类或 `BodyTagSupport` 类
+
+所有的标签处理类都要实现 `JspTag` 接口，在 JSP 2.0 之前，所有的标签处理类都要实现 tag 接口，实现该接口的标签称为传统标签，JSP 2.0 提供了 SimpleTag 接口，实现该接口的标签称为简单标签。
+
+###### Tag 接口
+
+Tag 接口定义了所有传统标签处理类都要实现的基本方法，包括：
+
+```java
+// 由 Servlet 容器调用该方法，向当前标签处理对象（即 Tag 对象）传递当前的 PageContext 对象
+setPageContext(PageContext pc);
+// 由 Servlet 容器调用该方法，向当前 Tag 对象传递父标签的 Tag 对象
+setParent(Tag t);
+// 返回 Tag 类型的父标签 Tag 对象
+getParent();
+// 当 Servlet 容器需要释放 Tag 对象占用的资源时，会调用此方法
+release();
+// 当 Servlet 容器遇到标签的起始标志时，会调用此方法。返回一个整数值，用来决定程序的后续流程，Tag.SKIP_BODY(主体内容被忽略) 和 Tag.EVAL_BODY_INCLUDE(标签之间的主体内容被正常执行)
+doStartTag();
+// 当 Servlet 容器遇到标签的结束标志，就会调用 doEndTag() 方法。返回一个整数值，用来决定后续流程，Tag.SKIP_PAGE 表示立刻停止执行标签后面的 JSP 代码，网页上未处理的静态内容和 Java 程序片段均被忽略，任何已有的输出内容立刻返回给客户端，Tag.EVAL_PAGE 表示按正常的流程继续执行 JSP 文件
+doEndTag();
+```
+
+标签处理类的实例（Tag 对象）由 Servlet 容器负责创建。当 Servlet 容器在执行 JSP 文件时，如果遇到 JSP 文件中的自定义标签，就会寻找缓存中的相关的 Tag 对象，如果还不存在，就创建一个 Tag 对象，把它存放在缓存中，以便下次处理自定义标签时重复使用。Servlet 容器得到了 Tag 对象后的执行流程：
+
+1. Servlet 容器调用 Tag 对象的 `setPageContext()` 和 `setParent()` 方法，把当前 JSP 页面的 `PageContext` 对象以及父标签处理对象传给当前 Tag 对象。如果不存在父标签，则把父标签处理对象设置为 null
+2. Servlet 容器调用 Tag 对象的一系列 set 方法，设置  Tag 对象的属性。如果标签没有属性，则无须这个步骤
+3. Servlet 容器调用 Tag 对象的 `doStartTag()` 方法
+4. Servlet 容器调用 Tag 对象的 `doEndTag()` 方法
+5. 如果 `doEndTag` 方法返回 `Tag.SKIP_PAGE`，就不执行标签后续的 JSP 代码；如果 `doEndTag()` 方法返回 `Tag.EVAL_PAGE`，就执行标签后续的 JSP 代码
+
+一旦 Tag 对象被创建后，就会一直存在，可以被 Servlet 容器重复调用，当 Web 应用终止时，Servlet 容器会先调用该 Web 应用中所有 Tag 对象的 `release()` 方法，然后销毁这些 Tag 对象
+
+###### IterationTag 接口
+
+IterationTag 接口继承自 Tag 接口，增加了重复执行标签主体内容的功能：
+
+IterationTag 接口定义了 `doAfterBody()` 方法，Servlet 容器执行完标签主体内容后，调用此方法。如果 Servlet 容器未执行标签主体内容，那么不会调用此方法。`doAfterBody` 返回整型值来决定程序后续流程：`Tag.SKIP_BODY`（不再执行标签主体内容），`Tag.EVAL_BODY_AGAIN` 表示重复执行标签主体内容。Servlet 容器得到 ItrerationTag  对象执行流程：
+
+1. Servlet 容器调用 `IterationTag` 对象的 `setPageContext()` 和 `setParent()` 方法，把当前 JSP 页面的 `PageContext`对象以及父标签处理对象传给当前 `IterationTag` 对象。如果不存在父标签，则把父标签处理对象设为 null。
+2. Servlet 容器调用 `IterationTag` 对象的一系列 `set` 方法，设置 `IterationTag` 对象的属性。如果标签没有属性，则无须这个步骤
+3. Servlet 容器调用 `IterationTag` 对象的 `doStartTag()` 方法。
+4. 如果 `doStartTag()` 方法返回 `Tag.SKIP_BODY`，就不执行标签主体的内容；如果如果 `doStartTag()` 方法返回`Tag.EVAL_BODY_INCLUDE`，就执行标签主体的内容。
+5. 如果上一步中 Servlet 容器执行了标签主体的内容，那么就调用 `doAfterBody()` 方法。
+6. 如果 `doAfterBody()` 方法返回 `Tag.SKIP_BODY`，就不再执行标签主体内容；如果 `doAfterBody()` 方法返回`IterationTag. EVAL_BODY_AGAIN`，就继续重复执行标签主体内容。
+7. Servlet 容器调用 `IterationTag` 对象的 `doEndTag()` 方法。
+8. 如果 `doEndTag()` 方法返回 `Tag.SKIP_PAGE`，就不执行标签后续的JSP代码；如果 `doEndTag()` 方法返回`Tag.EVAL_PAGE`，就执行标签后续的 JSP 代码。
+
+###### BodyTag 接口
+
+BodyTag 接口继承自 `IterationTag` 接口，BodyTag 接口增加了直接访问和操纵标签主体内容的功能。BodyTag 接口定义了：
+
+```java
+// servlet 容器通过此方法向 BodyTag 对象传递一个用于缓存标签主体的执行结果的 BodyContent 对象
+setBodyContent(BodyContent bc);
+// Servlet 容器调用完 setBodyContent() 方法后，在第一次执行标签主体之前，先调用此方法，该方法用于为执行标签主体做初始化工作
+doInitBody();
+```
+
+Servlet 容器在处理 JSP 文件中的这种标签时，会寻找缓存中的相关的 BodyTag 对象，如果还不存在，就创建一个 BodyTag 对象，把它存放在缓存中，以便下次处理自定义标签时重复使用。Servlet 容器得到 BodyTag 对象后处理流程：
+
+1. Servlet 容器调用 `BodyTag` 对象的 `setPageContext()` 和 `setParent()` 方法，把当前 JSP 页面的 `PageContext` 对象以及父标签处理对象传给当前 `BodyTag` 对象。如果不存在父标签，则把父标签处理对象设为 null。
+2. Servlet 容器调用 `BodyTag` 对象的一系列 `set` 方法，设置 `BodyTag` 对象的属性。如果标签没有属性，则无须这步
+3. Servlet 容器调用 `BodyTag` 对象的 `doStartTag()` 方法。
+4. 如果 `doStartTag()` 方法返回 `Tag.SKIP_BODY`，就不执行标签主体的内容；如果如果 `doStartTag()` 方法返回`Tag.EVAL_BODY_INCLUDE`，就执行标签主体的内容；如果 `doStartTag()` 方法返回`BodyTag.EVAL_BODY_BUFFERED`，就先调用 `setBodyContent()` 和 `initBody()` 方法，再执行标签主体的内容。
+5. 如果上一步中 Servlet 容器执行了标签主体的内容，那么就调用 `doAfterBody()` 方法。
+6. 如果 `doAfterBody()` 方法返回 `Tag.SKIP_BODY`，就不再执行标签主体内容；如果 `doAfterBody()` 方法返回`IterationTag. EVAL_BODY_AGAIN`，就继续重复执行标签主体内容。
+7. Servlet 容器调用 `BodyTag` 对象的 `doEndTag()` 方法。
+8. 如果 `doEndTag()`方法返回 `Tag.SKIP_PAGE`，就不执行标签后续的 JSP 代码；如果 `doEndTag()` 方法返回`Tag.EVAL_PAGE`，就执行标签后续的 JSP 代码。
+
+###### Tag 接口实现类
+
+TagSupport 类实现拿了 IterationTage 接口，BodyTagSupport 类继承 TagSupport 类，实现了 BodyTag 接口。用户自定义标签类可以继承这两个类，重写 TagSupport 类中的 `doXxxTag` 方法
+
+##### 标签描述文件
+
+标签库描述文件（Tag Library Descriptor），采用 XML 文件格式，对标签库以及库中的标签做了描述。TLD 文件中的元素可以分为：
+
+###### `<taglib>`
+
+标签库元素用来设定标签库的相关信息
+
+*taglib子元素*
+
+|    子元素    |             描述              |
+| :----------: | :---------------------------: |
+| tlib-version |       指定标签库的版本        |
+| jsp-version  |        指定 JSP 的版本        |
+|  short-name  | 指定标签库默认的前缀名 prefix |
+|     uri      |  设定标签库的唯一访问标识符   |
+|     info     |     设定标签库的说明信息      |
+
+###### `<tag>`
+
+标签元素用来定义一个标签
+
+`tag子元素`
+
+|    子元素    |                             描述                             |
+| :----------: | :----------------------------------------------------------: |
+|     Name     |                        设定标签的名字                        |
+|  tag-class   |                      设定 tag 的处理类                       |
+| body-content | 设定标签主体的类型，可选值：empty：标签主体为空；scriptless：标签主体不为空，并且包含 JSP 的 EL 表达式和动作元素，但不能包含 JSP 的脚本元素；jsp：标签主体不为空，并且包含 JSP 代码，JSP 代码中可以包含 EL 表达式、动作元素、脚本元素。tagdependant：标签主体不为空，并且标签主体内容由标签处理类来解析和处理。标签主体的所有代码会原样传给标签处理类，而不是把标签主体的执行结果传给标签处理类 |
+|     info     |                      设定标签的说明信息                      |
+
+###### `<attribute>`
+
+标签属性元素 `<attribute>` 用来描述标签的属性
+
+`attribute子元素`
+
+|   子元素    |                            描述                             |
+| :---------: | :---------------------------------------------------------: |
+|    name     |                          属性名称                           |
+|  required   |                属性是否是必须的，默认 false                 |
+| rtexprvalue | 属性值是否可以为基于 `<%=%>` 形式的 Java 表达式或 EL 表达式 |
+
+#### 简单标签
+
+JSP 2 引入了一种新的标签扩展机制，简单标签扩展，这种机制有两种使用方式
+
+* 定义实现 `javax.servlet.jsp.tagext.Simple` 接口的标签处理器
+* 使用标签文件来定义标签，标签文件以 `.tag` 或 `.tagx` 作为扩展名
+
+##### 实现 SimpleTag 接口
+
+*javax.servlet.jsp.tagext.SimpleTag*
+
+```java
+// 由 Servlet 容器调用该方法，Servlet 容器通过此方法向 SimpleTag 对象传递当前的 JspContext 对象。JspContext 类是 PageContext 类的父类。JspContext 类中定义了用于存取各种范围内的共享数据的方法
+void setJspContext(JspContext pc);
+// 由 Servlet 容器调用该方法，向当前 SimpleTag 对象传递父标签的 JspTag 对象
+void setParent(JspTag parent);
+// 返回父标签的 JspTag 对象
+JspTag getParent();
+// 由 Servlet 容器调用，向当前 SimpleTag 对象传递标签主体，jspBody 表示当前标签的主体（封装了 JSP 代码）
+void setJspBody(JspFragment jspBody);
+// 负责具体的标签处理过程
+void doTag();
+```
+
+`SampleTag` 对象由 Servlet 容器负责创建，当前 Servlet 容器在执行 JSP 文件时，每次遇到 JSP 文件中的自定义的简单标签，都会创建一个 `SimpleTag` 对象，标签处理完毕，就会销毁该对象。（自定义标签会缓存）
+
+Servlet 容器得到了 SimpleTag 对象后执行流程：
+
+1. Servlet 容器调用 `SimpleTag` 对象的 `setJspContext()` 和 `setParent()` 方法，把当前 JSP 页面的 `JspContext` 对象以及父标签处理对象传给当前 `SimpleTag` 对象。如果不存在父标签，则把父标签处理对象设为 null
+2. Servlet 容器调用 SimpleTag 对象的 set 方法，设置 SimpleTag 对象的属性，如果标签没有属性，则跳过该步骤
+3. 如果存在标签主体，Servlet 容器就调用 `SimpleTag` 对象的 `setJspBody()` 方法，设置标签主体
+4. Servlet 容器调用 `SimpleTag` 对象的 `doTag()` 方法，在该方法中完成处理标签的具体逻辑
+
+在开发简单标签时，只需创建 SimpleTagSupport 类的子类，然后覆盖 `doTag()` 方法，后续流程于自定义 JSP 标签流程一致
+
+##### 使用标签文件
+
+标签文件采用 JSP 语法编写，可以不包含 Java 程序片段，标签文件的扩展名通常为 `.tag`，如果标签文件使用 XML 语言，则扩展名为 `.tagx`
+
+JSP 文件中的 page 指令在标签文件中不能使用，标签文件中增加了 tag 指令、attribute 指令、variable 指令，`<jsp:invoke>` 和 `<jsp:doBody>` 这两个标准动作元素只能在标签文件中使用。
+
+*greentings.tag*
+
+```
+<%@ tag pageEncoding="GB2312" %>
+你好，时间
+```
+
+标签文件的名字就是标签的名字，定义了标签文件，就可以在 JSP 网页中使用相应的标签
+
+```jsp
+<%@ page contentType="text/html;charset=GB2312" %>
+<%@ taglib prefix="mm" tagdir="/WEB-INF/tags">
+<mm:greetings>
+```
+
+使用流程：
+
+1. 把标签文件 `greeentings.tags` 放到 `tagdir` 目录
+2. 部署 jsp 文件
+
+通过标签文件来创建标签时，不必再 TLD 文件中添加标签描述符，只需将标签文件放在 Web 应用的 `WEB-INF/tags` 目标或其子目标下，然后 JSP 网页中通过 `taglib` 指令导入并使用
+
+如果将标签文件打包到 JAR 文件中，应该把标签文件复制到 JAR 文件的展开目标的 `META-INF/tags` 目录或其子目录下，并且应该再 JAR 文件的展开目录的 `MATA-INF` 子目录下提供 TLD 文件，用 `<tag-file>` 元素来配置标签文件，`<path>` 子元素的值必须以 `/META-INF/tags` 开始：
+
+```xml
+<taglib>
+	<tlib-version>1.1</tlib-version>
+    <short-name>tags</short-name>
+    <tag-file>
+    	<name>greetings</name>
+        <path>/META-INF/tags/greetings.tag</path>
+    </tag-file>
+</taglib>
+```
+
+*标签文件隐含对象*
+
+| 隐含对象的变量名 |          隐含对象的类型           |  存在范围   |
+| :--------------: | :-------------------------------: | :---------: |
+|     request      | javax.servlet.HttpServletRequest  |   request   |
+|     response     | javax.servlet.HttpServletResponse |    page     |
+|    jspContext    |   javax.servlet.jsp.JspContext    |    page     |
+|   application    |   javax.servlet.ServletContext    | application |
+|       out        |    javax.servlet.jsp.JspWriter    |    page     |
+|      config      |   javax.servlet.SerrvletConfig    |    page     |
+|     session      |  javax.servlet.http.HttpSession   |   session   |
+
+标签文件中不存在 `page` 和 `exception` 隐含对象。标签文件中存在 `jspContext` 隐含对象，它是`javax.servlet.jsp.JspContext` 类型；JSP 文件中存在 `pageContext` 隐含对象，它是 `javax.servlet.jsp.PageContext` 类型。JspContext 类是 PageContext 类的父类
+
+###### 标签文件的指令
+
+标签文件中的使用的指令包括：`taglib`、`include`、`tag`、`attribute`、`variable`。`taglib` 和 `include` 指令与 JSP 文件中的 `taglib` 和 `include` 指令的用法相同，`tag`、`attribute`、`variable` 指令只能在标签文件中使用
+
+* tag 指令
+
+  与 JSP 文件中的 page 指令的作用相似，tag 指令用于设置整个标签文件的一些属性：
+
+  * display-name 属性：为标签指定一个简短的名字，这个名字可以被一些工具软件显示。默认值为标签文件的名字（不包含扩展名）。
+  * body-content 属性：指定标签主体的格式，可选值包括 empty、scriptless 和 tagdependent 。默认值为 scriptless
+  * dynamic-attributes 属性：指定动态属性的名字。Servlet 容器把标签文件翻译成简单标签处理类时，会在类中创建一个 Map 对象，用来存放动态属性的名字和值，其中属性的名字作为 Map Key，属性的值作为 Map value
+  * small-icon 属性：为标签指定小图标文件（gif 或 jpeg 格式）的路径，大小为 16×16，该图标可以在具有图形用户界面的工具软件中显示。
+  * large-icon 属性：为标签指定大图标文件（gif 或 jpeg格式）的路径，大小为 32×32，该图标可以在具有图形用户界面的工具软件中显示。
+  * description 属性：为标签提供文本描述信息。
+  * example 属性：提供使用这个标签的例子的信息描述。
+  * language 属性：与 JSP 文件中 page 指令的 language 属性相同，用于设定编程语言，默认值为 “java”。
+  * import 属性：与 JSP 文件中 page 指令的 import 属性相同，用于引入 Java 类。
+  * pageEncoding 属性：与 JSP 文件中 page 指令的 pageEncoding 属性相同，设定标签文件的字符编码
+  * isELIgnored 属性：与 JSP 文件中 page 指令的 isELIgnored 属性相同，用于指定是否忽略 EL 表达式。如果取值为 false，则会解析 EL 表达式；如果为 true，则把 EL 表达式按照普通的文本处理。默认值为 false。
+
+* attribute 指令
+
+  类似于 TLD  中的 `<attribute>` 元素，用于声明自定义标签的属性
+
+  ```jsp
+  // 声明标签有一个 username 属性
+  <%@
+  	attribute name="username" required="true"
+  	fragment="false" rtexprvalue="true" type="java.lang.String"
+  	description="name for user"
+  %>
+  ```
+
+  * name 属性：指定属性的名字（必须）
+  * required 属性：指定属性是否是必须的。默认值为 false。
+  * fragment 属性：指定属性是否是 JspFragment 对象。默认值是 false。如果 fragment 属性为 true，那么无须设置rtexprvalue 和 type 属性，此时 rtexprvalue 属性被自动设置为 true，type 属性被自动设置`javax.servlet.jsp.tagext.JspFragment。`
+  * rtexprvalue 属性：指定属性是否可以是一个运行时表达式。默认值是 true。
+  * type 属性：指定属性的类型，不能指定为 Java 基本类型，默认值是 `java.lang.String`
+  * description 属性：为属性提供文本描述信息
+
+* variable 指令
+
+  类似于 TLD 中的 `<variable>` 元素，用于设置标签为 JSP 页面提供的变量
+
+  ```jsp
+  // 定义一个 sum 变量
+  <%@ variable name-given="sum" variable-class="java.lang.Integer" scope="NESTED"
+      description="The sum of the two operands" %>
+  ```
+
+  * name-given 属性：指定变量的名字。在 variable 指令中，要么设置 name-given 属性，要么设置 name-from-attribute 属性。
+  * name-from-attribute 属性：表示用标签的某个属性的值作为变量的名称。
+  * alias 属性：定义一个本地范围的属性来保存这个变量的值。当指定了 name-from-attribute 属性时，必须设置alias 属性。
+  * variable-class 属性：指定变量的 Java 类型，默认值为 `java.lang.String`
+  * declare 属性：指定变量是否引用新的对象，默认值为 true。
+  * scope 属性：指定变量的范围。可选值包括：AT_BEGIN(从标签起始标记开始到 JSP 页面结束构成的范围)、NESTED(标签主体构成的范围) 和 AT_END(从标签结束标记开始到JSP页面结束构成的范围)。默认：NESTED
+  * description 属性：为变量提供文本描述信息。
+
+###### 标签文件的动作元素
+
+标签文件中可以包含 `<jsp:invoke>` 和 `<jsp:doBody>` 动作元素。
+
+* `<jsp:invoke>`
+
+  用于执行标签的 JspFragment 类型的属性所包含的 JSP 代码，并把只需结果输出到当前 JspWriter 对象中，或者保存到指定的命名变量中
+
+  * fragment 属性：这是必须的属性。指定类型为 JspFragment 的属性的名称。在 JSP 文件中必须使用 `<jsp:attribute>` 元素来设置该属性，
+  * var 属性：这是可选的属性。指定一个命名变量的名字。该命名变量保存了JspFragment 对象的执行结果。var 属性和 varReader 属性只能指定其一，如果两者都没有指定，则 JspFragment 对象的执行结果被输出到当前的JspWriter 对象中。
+  * varReader 属性：这是可选的属性。指定一个 `java.io.Reader` 类型的命名变量，该变量保存了JspFragment 对象的执行结果。
+  * scope 属性：这是可选的属性。为 var 属性或 varReader 属性指定的命名变量指定存放范围，默认值为 page
+
+* `<jsp:doBody>`
+
+  用于执行标签主体，并把执行结果输出到当前 JspWriter 对象中，或保存到指定的命名变量中。
+  
+  * var 属性：同 `<jsp:invoke>`
+  * varReader 属性：同 `<jsp:invoke>`
+  * scope 属性：同 `<jsp:invoke>`
+  
+  如果标签文件未指定标签主体内容，或使用 `<jsp:body>` 指定主体内容，在 JSP 文件用 `<jsp:body>` 子元素设置标签主体内容
