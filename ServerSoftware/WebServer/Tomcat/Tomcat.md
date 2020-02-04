@@ -589,3 +589,280 @@ Manager 的持久实现是 `org.apache.catalina.session.PersistentManager`，除
 />
 ```
 
+#### 安全域
+
+安全域是 Web 服务器用来保护 Web 应用资源的一种机制。在安全域中可以配置安全验证信息（用户信息：用户名和口令，以及用户和角色的映射关系）每个用户可以拥有一个一个或多个角色，每个角色限定了可访问的 Web 资源。一个用户可以访问其拥有的所有角色对应的 Web 资源。Web 客户必须以某种用户身份才能登录 Web 应用系统，该客户只能访问与这种用户身份对应的 Web 资源。
+
+安全域是 Tomcat 内置的功能，在 `org.apache.catalina.Realm` 接口中声明了把一组用户名、口令及所关联的角色集成到 Tomcat 中的方法。Tomcat  为 Realm 接口提供了一些实现类，代表不同的安全域类型
+
+##### 配置 Realm
+
+配置安全域步骤：
+
+1. 在 web 应用的 `WEB-INF/web.xml` 文件中为 Web 资源设置安全约束
+
+   为 web 资源设置安全约束，需要在 Web 应用的 web.xml 文件中加入 `<security-constraint>`、`<login-config>`、`<security-role>` 元素
+
+   *<seecurity-constraint>子元素*
+
+   |          子元素           |                             说明                             |
+   | :-----------------------: | :----------------------------------------------------------: |
+   | <web-resource-collection> |                    声明受保护的 Web 资源                     |
+   |    <web-resource-name>    |                    标识受保护的 Web 资源                     |
+   |       <url-pattern>       |                    指定受保护的 URL 路径                     |
+   |       <http-method>       | 指定受保护的 HTTP 请求方式，如果未设置，则所有请求方式都受到保护，客户通过这种方式访问 Web 资源时，须通过安全验证 |
+   |     <auth-constraint>     | 声明可以访问受保护资源的角色，可以包含多个 <role-name> 子元素 |
+   |        <role-name>        |                 指定可以访问受包含资源的角色                 |
+
+   ```xml
+   <security-constraint>
+       <web-resource-collection>
+         <web-resource-name>HTML Manager interface (for humans)</web-resource-name>
+         <url-pattern>/html/*</url-pattern>
+       </web-resource-collection>
+       <auth-constraint>
+          <role-name>manager-gui</role-name>
+       </auth-constraint>
+   </security-constraint>
+   ```
+
+   *<login-config>子元素*
+
+   |       子元素        |                     描述                     |
+   | :-----------------: | :------------------------------------------: |
+   |    <auth-method>    |    指定验证方法可选：BASIC、DIGEST、FORM     |
+   |    <realm-name>     |                设定安全域名称                |
+   | <form-login-config> | 当验证方法为 FORM 时，配置验证网页和出错网页 |
+   |  <form-login-page>  |      当验证方法为 FORM 时，设定验证网页      |
+   |  <form-error-page>  |      当验证方法为 FORM 时，设定出错网页      |
+
+   ```xml
+   <login-config>
+        <auth-method>BASIC</auth-method>
+        <realm-name>Tomcat Manager Application</realm-name>
+   </login-config>
+   ```
+
+   * BASIC 验证
+
+     不安全，用户名和口令采用 Base64 编码
+
+   * DIGEST 验证
+
+     先对口令进行 MD5，然后传输
+
+   * FORM 验证
+
+     使用登录页面来代替登录对话框，自定义的验证网页中必须提供一个登录表单，表单中用户名对应的文本框名必须为 `j_username`，口令对应的文本框名必须为 `j_password`，表单的 `action` 值必须为 `j_security_check` 
+
+   <security-role>子元素
+
+   |   子元素    |  描述  |
+   | :---------: | :----: |
+   | description |  描述  |
+   |  role-name  | 角色名 |
+
+   ```xml
+   <security-role>
+       <description>
+         The role that is required to access the HTML Manager pages
+       </description>
+       <role-name>manager-gui</role-name>
+   </security-role>
+   ```
+
+2. 在 Tomcat 的 `<CATALIN_HOME>/conf/server.xml` 配置文件中，或 Web 应用的 `META-INF/context.xml` 文件中配置 `<Realm>` 元素，`<Realm>` 元素可以嵌入到 3 种不同的 Catalina 容器元素，这直接决定 `<Realm>` 的作用范围。
+
+   *Realm元素在 server.xml 中嵌入位置*
+
+   | 嵌入位置  |                             描述                             |
+   | :-------: | :----------------------------------------------------------: |
+   | <Engine>  | 在 `<Engine>` 中所有虚拟主机上的所有 Web 应用共享这个 Realm，如果 `<host>` 或 `<Context>` 元素定义了 Realm，则该 Realm 不生效 |
+   |  <Host>   | `<Host>` 下的所有 Web 应用共享这个 Realm，如果 `<Context>` 元素定义了 Realm，则不生效 |
+   | <Context> |     只有 <Context> 元素对应的 Web 应用才能使用这个 Realm     |
+
+   *Realm公共属性*
+
+   | 属性                             | 描述                                                         |
+   | -------------------------------- | ------------------------------------------------------------ |
+   | allRolesMode                     | 此属性控制在处理 web.xml 中的授权约束时如何处理特殊角色名称*。默认情况下，使用 strict 的规范兼容值，这意味着必须为用户分配一个在 web.xml 中定义的角色。替代值 authOnly 这意味着用户必须经过身份验证，但没有检查分配角色和 strictAuthOnly 这意味着用户必须通过身份验证和没有检查将分配角色,除非web . xml中定义的角色在这种情况下,用户必须指定至少一个角色。 |
+   | transportGuaranteeRedirectStatus | 当容器需要发出HTTP重定向以满足已配置的传输保证的要求时使用的HTTP状态代码。不验证提供的状态码。如果没有指定，则使用缺省值302 |
+   | X509UsernameRetrieverClassName   | 当使用X509客户端证书时，它指定将用于从证书检索用户名的类名。这个类必须实现org.apache.catalina.realm.X509UsernameRetriever接口。默认情况下使用证书的SubjectDN作为用户名 |
+
+##### MemoryRealm
+
+内存域是由 `org.apache.catalina.realm.MemoryRealm` 类实现，从一个 XML 文件中读取用户信息。默认情况下，该 XML 文件为 `<CATALINA_HOME>/conf/tomcat-users.xml`。<role> 元素用来定义角色，<tomcat-users> 元素用来设定用户信息
+
+```xml
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+              version="1.0">
+  <role rolename="manager-gui"/>
+  <role rolename="admin-gui"/>
+  <user username="admin" password="secret" roles="admin-gui,manager-gui"/>
+</tomcat-users>
+```
+
+配置内存域步骤：
+
+1. 在 web.xml 中配置安全约束
+
+2. 在 `<CATALINA_HOME>/conf/tomcat-user.xml` 文件中定义用户、角色，及映射关系
+
+3. 在 web 应用的 `META-INF/context.xml` 中配置 <Realm> 元素，指定使用内存域
+
+   ```xml
+   <Context>
+   	<Realm className="org.apache.catalina.realm.MemoryRealm"/>
+   </Context>
+   ```
+
+4. 重启 tomcat
+
+*Realm属性*
+
+|     属性     |                             描述                             |
+| :----------: | :----------------------------------------------------------: |
+| resourceName | 包含用户信息的 XML 文件的 URL、绝对路径或相对路径（到 `$CATALINA_BASE`）。有关所需的 XML元素格式的详细信息，请参见下文。如果未指定路径名，则默认值为 `conf/tomcat-users.xml` |
+
+##### JDBCRealm
+
+org.apache.catalina.realm.JDBCRealm 通过 JDBC 驱动程序访问存放在关系数据库中的安全验证信息。当用于通过浏览器第一访问受保护的资源时，Tomcat 将调用 Realm 的 `authenticate()` 方法，该方法从数据库中读取最小的安全验证信息。当用户通过验证后，在用户访问 Web 资源期间，当前用户的各种验证信息被保存在缓存中（对于 FORM 类型的验证，当前用户的验证信息直到 HTTP 会话结束才失效；对于 BASIC 类型的验证，当前用户的验证信息直到浏览器关闭才失效）。如果对数据库中安全验证信息做了修改，这种修改对正在访问 Web 资源的当前用户无效，只有当前用户再次登录时，才生效。
+
+###### 用户数据库结构
+
+必须在数据库中创建两张表：user(user_name, user_pass) 和 user_roles(user_name, role_name)，这两张表包含了所有的安全验证信息。
+
+*Realm元素属性*
+
+|        属性        |                      描述                       |
+| :----------------: | :---------------------------------------------: |
+|     className      |                 指定 Realm 类名                 |
+|   connectionName   |                数据库连接用户名                 |
+| connectionPassword |                 数据库连接口令                  |
+|   connectionURL    |                   数据库 URL                    |
+|       digest       |               存储口令时加密方式                |
+|     driverName     |                JDBC 驱动程序类名                |
+|    roleNameCol     |       在 user_roles 表中代表角色的字段名        |
+|    userCredCol     |        在 users 表中代表用户口令的字段名        |
+|    userNameCol     | 在 users 和 user_roles 表中代表用户名字的字段名 |
+|   userRoleTable    |            指定用户与角色映射关系表             |
+|     userTable      |                   指定用户表                    |
+
+##### DataSourceRealm
+
+org.apache.catalina.realm.DataSourceRealm   和 JDBCRealm 很相似：两者都将安全验证信息存放在关系型数据库中，并且创建的用户数据库结构也相同。两者的不同之处在于访问数据库的方式不一样：DataSourceRealm 通过JNDI DataSource 来访问数据库，而JDBCRealm 直接通过 JDBC 驱动程序访问数据库。
+
+需要在 `<CATALINA_HOME>/conf/server.xml` 中的  <GlobalNamingResources> 元素下加入 <Resource> 元素来配置 Data Source（在 server.xml 中已经存在 <GlobalNamingResource> 元素，它用于配置 Tomcat 服务器范围内的 JNDI 资源，在 Web 应用中并不会访问这个 DataSource，无须在 web.xml 中加入 <resource-ref> 元素，声明对 DATa Source 的引用）
+
+|      属性      |           描述            |
+| :------------: | :-----------------------: |
+| dataSourceName | JNDI JDBC DataSource name |
+|  userCredCol   |                           |
+|  userNameCol   |                           |
+| userRoleTable  |                           |
+|   userTable    |                           |
+|  roleNameCol   |                           |
+
+##### UserDatabaseRealm
+
+使用 JNDI 资源来存储用户信息。默认，JNDI 资源是通过一个 XML 文件来提供支持的。它并不是针对大规模生产环境用途而设计的。在启动时，UserDatabaseRealm 会从一个 XML 文档中加载所有用户以及他们角色的信息（该 XML 文档默认位于 `$CATALINA_BASE/conf/tomcat-users.xml`。）用户、密码以及相应角色通常可利用 JMX 进行动态编辑，更改结果会加以保存并立刻反映在 XML 文档中。
+
+*Realm元素属性*
+
+|     属性     |                       描述                       |
+| :----------: | :----------------------------------------------: |
+| resourceName | 全局 UserDatabase （user，password，role）资源名 |
+
+##### JNDIRealm
+
+  通过 JNDI provider 访问存放在基于 LDAP 的目录服务器中的安全验证信息
+
+##### JAASRealm
+
+利用 JAAS（Java Authentication & Authorization Service，Java 验证与收起服务）框架进行验证
+
+##### CombinedReealm
+
+合并使用其他的安全域，从多种来源中获取安全验证信息。通过一个或多个子 Realm 进行用户验证。
+
+通过 CombinedRealm，开发者能够将多个 Realm（同一或不同类型） 组合起来使用，从而用于验证多种数据源，而且万一当其中一个 Realm 失败，或其他一些操作需要多个 Realm 时，它还能提供回滚处理。
+
+子 Realm 是通过在定义 CombineRealm 的 Realm 元素中内嵌 Realm 元素来实现的。验证操作会按照 Realm 元素的叠加顺序来逐个进行。对逐个 Realm 进行验证，从而就能充分证明用户的身份。
+
+综合使用了 UserDatabaseRealm 和 DataSourceRealm：
+
+```xml
+<Realm className="org.apache.catalina.realm.CombinedRealm" >
+   <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+             resourceName="UserDatabase"/>
+   <Realm className="org.apache.catalina.realm.DataSourceRealm"
+             dataSourceName="jdbc/authority"
+             userTable="users" userNameCol="user_name" userCredCol="user_pass"
+             userRoleTable="user_roles" roleNameCol="role_name"/>
+</Realm>
+```
+
+##### LockOutRealm
+
+它扩展了 CombinedRealm，假如在某一段时间内出现很多验证失败，则它能够提供锁定用户的功能。为了确保操作的正确性，该 Realm 允许出现较合理的同步。
+
+该 Realm 并不需要对底层的 Realm 或与其相关的用户存储机制进行任何改动。它会记录失败的登录，包括那些因为用户不存在的登录。为了防止无效用户通过精心设计的请求而实施的 DOS 攻击（从而造成缓存增加），没有通过验证的用户所在列表的容量受到了严格的限制。
+
+子 Realm 是通过在定义 LockOutRealm 的 Realm 元素中内嵌 Realm 元素来实现的。验证操作会按照 Realm 元素的叠加顺序来逐个进行。对逐个 Realm 进行验证，从而就能充分证明用户的身份。
+
+```xml
+<Realm className="org.apache.catalina.realm.LockOutRealm" >
+   <Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase"/>
+</Realm>
+```
+
+|          属性           |                             描述                             |
+| :---------------------: | :----------------------------------------------------------: |
+| cacheRemovalWarningTime | 如果失败的用户因为缓存太大而从缓存中删除，则至少在此期间(以秒为单位)将记录一条警告消息。默认为3600(1小时) |
+|        cacheSize        | 未能在缓存中保存身份验证的用户数量。随着时间的推移，缓存将增长到这个大小，并且可能不会收缩。默认为1000。 |
+|      failureCount       |               身份验证失败锁定次数。默认为5。                |
+|       lockOutTime       | 用户在过多的身份验证失败后被锁定的时间(以秒为单位)。默认为300(5分钟)。锁定期间进一步的身份验证失败将导致锁定计时器重置为零，从而有效地延长锁定时间。锁出期间的有效身份验证尝试将不会成功，但也不会重置锁出时间。 |
+
+#### Tomcat 集成其他 HTTP Server
+
+##### 集成 nginx
+
+配置 tomcat 为上游服务器，有 nginx 提供负载均衡
+
+##### 集成 Apache
+
+1. 在 Apache 中加入 JK 插件
+
+   把 `mod_jk_linux.so` 放到 `<APACHE_HOME>/modules` 目录下
+
+2. 创建 workers.properties 文件
+
+   在 `<APACHE_HOME>/conf` 目录下创建 `workers.properties` 文件。
+
+   ```properties
+   worker.list=worker1 
+   worker.worker1.port=8009  #工作端口,若没占用则不用修改
+   worker.worker1.host=localhost  #Tomcat服务器的地址
+   worker.worker1.type=ajp13  #类型
+   worker.worker1.lbfactor=1  #负载平衡因数
+   ```
+
+3. 修改 Apache 配置 http.conf
+
+   在 `<APACHE_HOME>/conf/httpd.conf`
+
+   ```apache
+   LoadModule jk_module modules/mod_jk_linux.so
+   <IfModule jk_module>
+       JkWorkersFile conf/workers.properties
+       JkLogFile logs/mod_jk.log
+       JkLogLevel debug
+       JkMount /*.jsp worker1
+       JkMount /helloapp/* worker1
+   </IfModule>
+   ```
+
+   
+

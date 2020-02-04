@@ -1,6 +1,36 @@
+JavaEE
+
 #### 概述
 
+Java Platform Enterprise Edition 技术提供了以组件为基础来设计、开发、组装和发布企业应用的方法。JavaEE 提供了多层次的分布式的应用模型。应用逻辑根据不同的功能由不同的组件来实现。一个 JavaEE 应用程序由多种组件组合而成，这些组件安装在不同的机器上。
+
 大量的组件共同组成了一个 Java EE Web 应用程序。首先需要自己的代码和它依赖的第三方库，然后需要部署描述符，其中包含了部署和启动程序的命令。还可以添加 `ClassLoader` 用于将自己的应用程序与同一台服务器衫的其他 web 应用程序隔离开。最后，通过某种方式将应用程序打包，生成 WAR 和 EAR 文件
+
+一个多层次的 Java EE 应用结构包含如下 4 个层次：
+
+* 客户层：运行在客户机器上。客户层可以时普通的应用程序，直接访问业务层的 EJB 组件；也可以是浏览器程序，访问 web 层的 JSP 和 Servlet 组件
+* Web 层：运行在 JavaEE 服务器上。Web 层的组件主要包含 JSP 和 Servlet，用于动态生成 HTML 页面。web 层的组件会访问业务层的 EJB 组件
+* 业务层：运行在 JavaEE 服务器上。业务层的主要组件为 EJB，它们负责实现业务逻辑
+* Enterprise Information System EIS 层：运行在数据库服务器上，用于存储业务数据
+
+Enterprise Java Bean EJB 是应用服务器方的组件，实现了企业应用的业务逻辑。在运行环境中，企业应用的客户程序通过调用 EJB 组件的有关方法来完成业务。EJB 组件分两种类型：
+
+* 会话 Bean：实现会话中的业务逻辑
+  * 有状态会话 Bean：有状态会话 Bean 的实例始终与一个特定的客户关联，它的实例变量可以代表特定客户的状态
+  * 无状态会话 Bean：无状态会话 Bean 的实例不与特定客户关联，它的实例变量不能始终代表特定客户的状态                  
+* 实体 Bean：实现一个业务实体
+
+一个 EJB 至少需要生成 2 个 Java 文件：
+
+* Remote 接口
+
+  定义了客户可以调用的业务方法，@Remote 注解标注接口为 Remote，Oracle EJB 规范规定，如果在 Remote 接口中声明的方法的参数类型或返回类型为对象，那么该对象类必须实现 `java.io.Serializable` 接口
+
+* Enterprise Bean 类
+
+  实现 Remote 接口。当客户程序访问 EJB 组件的业务方法时，这些方法的参数以及返回值都会在网络上传输。使用 `@Stateless` 注解声明为无状态会话 Bean
+
+EJB 组件运行在 EJB 容器中，是一种 JNDI 资源。
 
 #### 目录结构和 WAR 文件
 
@@ -51,7 +81,26 @@ Java EE 6 中 Servlet 3.0 添加了使用注解和 Java Configuration API 配置
 
 * `/META-INF/application.xml`
 
-  是特有的部署描述符，用于描述如何部署 EAR 文件中包含的各种不同组件
+  是特有的部署描述符，用于描述如何部署 EAR 文件中包含的各种不同组件，声明 Java EE 应用所包含的 Web 应用以及 EJB 组件
+  
+  ```xml
+  <?xml version="1.0" encoding="UTF-8"?>
+  <application>
+      <display-name>Bookstore JavaEE Application</display-name>
+      <module>
+      <web>
+          <web-uri>bookstore.war</web-uri>
+          <context-root>/bookstore</context-root>
+      </web>
+      </module>
+      <module>
+          <ejb>bookdbejb.jar</ejb>
+      </module>
+      <library-directory>lib</library-directory>
+  </application>
+  ```
+  
+  
 
 如同 WAR 文件一样，EAR 也有自己独有的类加载器架构。通常，需要在服务器类加载器和为每个模块分配的 Web 应用程序类加载器直接插入一个额外的类加载器。该类加载器用于将该企业级应用程序与其他企业级应用程序隔离开，但允许单个 EAR 中的多个模块之间共享通用库。Web 应用程序类加载器可以是双亲委托优先模式（优先使用 EAR 库中的类）或子女委托优先（优先使用 WAR 文件中的类）。
 
@@ -69,10 +118,14 @@ Java EE 规范由许多更小的子规范组成，但大多数 Web 容器都只�
 
 开源，商业完整的 Java EE 应用服务器实现。提供了 Java EE 规范的所有特性，包括 Web 容器，还是 Java EE 规范的参考实现。
 
-##### JBoss
+##### JBoss/WildFly
 
-Red Hat 提供，WildFly 由 JBoss 社区提供免费支持
+Red Hat 提供，WildFly 由 JBoss 社区提供免费支持。同时提供了 Servlet 容器和 EJB 容器。是纯 Java 开发，运行需要 JDK（需配置 JAVA_HOME 系统变量）。支持热部署，发布 JavaEE 组件的目录为 `<WILDFLY_HOME>/standalone/deployments` 
 
 ##### Jetty
 
 社区
+
+#### 发布
+
+在发布一个 Web 应用时，可以把它打包为 WAR 文件。如果单独发布一个 EJB 组件，应该把它打包为 JAR 文件（`jar cvf bookdbejb.jar .`）。对于一个完整的 JavaEE 应用，在发布时，应该把它打包为 EAR 文件

@@ -213,6 +213,8 @@ HttpSession getSession(boolean create);
 String getRequestURI();
 // 返回请求 part 集合
 Collection<Part> getParts() throws IOException, ServletException;
+// 当通过验证的用户访问 web 资源时，返回当前用户的名字
+String getRemoteUser();
 ```
 
 ###### HttpServletResponse
@@ -454,36 +456,55 @@ Servlet 的初始化阶段包括：
 
 3. 不建议使用被废弃的 `javax.servlet.SingleThreadModel` 接口
 
-#### 扩展机制
+#### Filter 过滤器
 
-引入了 `Servlet` 规范后，不需要关心 `Socket` 网络通信，不需要关心 HTTP 协议，也不需要关心业务类如如何被实例化和调用的，因为这些被 Servlet 规范标准化，**Servlet 规范提供了两种扩展机制 `Filter` 和 `Listener`。Filter 是干预过程的，它是过程的一部分，是基于过程行为的；Listener 是基于状态的，任何行为改变同一个状态，触发的事件是一致的**
+Filter 是干预过程的，它是过程的一部分，是基于过程行为的。所有实现 Java Servlet 规范 2.3 及以上版本的 Servlet 容器都支持过滤器。过滤器能够对一部分客户请求进行预处理操作，然后再把请求转发给相应的 web 组件，等到 web 组件生成响应结果后，过滤器还能对响应结果进行检查和修改，然后再把修改后的响应结果发送给客户。各个 web 组件中的相同操作可恶意放到同一个过滤器中来完成
 
-##### Filter 过滤器
+##### 过滤器简介
 
-这个接口允许对请求和响应做一些统一的定制化处理（如根据请求的频率来限制访问）。Web 应用部署完成之后，Servlet 容器需要实例化 Filter 并把 Filter 链接成一个 `FilterChain`，当请求进来时，获取第一个 Filter 并调用 `doFilter` 方法，`doFilter` 方法负责调用这个 `FilterChain` 中的下一个 `Filter`
+过滤器能够对 Servlet 容器传给 web 组件的 `ServletRequest` 对象和 `ServletResponse` 对象进行检查和修改，过滤器本身不生成 `ServletRequest` 对象和 `ServletResponse` 对象，它只为 Web 组件（Servlet、JSP、HTML）提供过滤功能：
 
-Filter 是拦截 Request 请求的对象：在用户的请求访问资源前处理 `ServletRequest` 以及 `ServletResponse`，可以用 `Filter` 拦截处理某个资源或者某些资源，`Filter` 的配置可以通过 `Annotation` 或者部署描述符来完成，当一个资源或者某些资源需要被多个 Filter 所使用到，且它的触发顺序很重要时，只能通过部署描述符来配置
+* 过滤器能够在 Web 组件被调用之前检查 `ServletRequest` 对象，利用 ServletRequestWrapper 包装类修改请求头和请求正文，或对请求进行预处理
+* 过滤器能够在 Web 组件调用之后检查 `ServletResponse` 对象，利用 ServletResponseWrapper 包装类修改响应头和响应正文
 
-###### Filter API
+*过滤器处理流程*
 
-Filter 的实现必须继承 `javax.servlet.Filter` 接口。这个接口包含了 Filter 的 3 个生命周期：`init`、`doFilter`、`destroy`。Servlet 容器初始化 Filter 时，会触发Filter的 init 方法，一般在应用开始时。init 方法并不是在该 Filter 相关的资源使用到时才初始化的，而且这个方法只调用一次，用于初始化 Filter。
+![](./Images/过滤器处理流程.png)
+
+可以在 `web.xml` 中或使用注解为过滤器映射特定的 URL。当客户请求访问此 URL 时，Servlet 容器会先触发过滤器。 Servlet 容器需要实例化 Filter 并把 Filter 链接成一个 `FilterChain`，当请求进来时，获取第一个 Filter 并调用 `doFilter` 方法，`doFilter` 方法负责调用这个 `FilterChain` 中的下一个 `Filter`（当一个资源或者某些资源需要被多个 Filter 所使用到，且它的触发顺序很重要时，只能通过部署描述符来配置）
+
+##### Filter API
+
+所有自定义的过滤器类必须实现 `javax.servlet.Filter` 接口
 
 ```java
 public interface Filter {
-    //FilterConfig 实例是由 Servlet 容器传入 init 方法中的
+    // FilterConfig 由 servlet 容器传入 init 方法，可通过 config 读取 web.xml 为过滤器配置的初始化参数
     default void init(FilterConfig filterConfig) throws ServletException {}
-  	// 当 Servlet 容器每次处理 Filter 相关资源时，都会调用该 Filter 实例的 doFilter 方法。Filter 的 doFilter 方法包含 ServletRequest、ServletResponse、FilterChain, 在 Filter 的 doFilter 的实现中，最后一行需要调用 FilterChain 中的 doChain 方法。filterChain.doFilter()
-    void doFilter(ServletRequest var1, ServletResponse var2, FilterChain var3) throws IOException, ServletException;
-  	// // Servlet 容器要销毁 Filter 时触发，一般在应用停止时进行调用
+  	// 当前客户请求 URL 与过滤器映射的 URL 匹配时执行实际过滤
+    void doFilter(ServletRequest req, ServletResponse resp, FilterChain chan) throws IOException, ServletException;
+  	// Servlet 容器销毁 Filter 对象前调用该方法
     default void destroy() {}
 }
 ```
 
-一个资源可能需要被多个 Filter 关联到，这时 `Filter.doFilter()` 的方法将触发 `FilterChain` 链条中下一个 `Filter`。只有在 `FilterChain` 链条中最后一个 Filter 里调用 `FilterChain.doFilter()`才会触发处理资源的方法，如果在 `Filter.doFilter()` 的实现中，没有在结尾处调用 `FilterChain.doFilter()` 的方法，那么该 Request 请求中止，后续处理中断。
+过滤器对象由 Servlet 容器创建，包含以下生命周期：
 
-除非 Filter 在部署描述符中被多次定义到，否则 Servlet 窗口只会为每个 Filter 创建单一实例。由于 Servlet/JSP 的应用通常要处理用户并发请求，此时 Filter 实例需要同时被多个线程所关联到，因此需要处理多线程问题
+* init
 
-###### Filter 配置
+  初始化方法，在 Web 应用启动时，Servlet 容器先创建包含过滤器配置信息的 `FilterConfig` 对象，然后创建 `Filter `对象，然后调用该方法。只调用一次
+
+* doFilter
+
+  当 URL 匹配时，Servlet 容器先调用过滤器的。一个资源可能需要被多个 `Filter` 关联到，这时 `Filter.doFilter()` 的方法将触发 `FilterChain` 链条中下一个 `Filter`。只有在 `FilterChain` 链条中最后一个 `Filter` 里调用 `FilterChain.doFilter()`才会触发处理资源的方法，如果在 `Filter.doFilter()` 的实现中，没有在结尾处调用 `FilterChain.doFilter()` 的方法，那么该请求中止，后续处理中断。
+
+* destroy
+
+  当 Web 应用终止时，Servlet 容器先调用过滤器对象的该方法，然后销毁过滤器对象
+
+除非 `Filter` 在部署描述符中被多次定义到，否则 Servlet 容器只会为每个 `Filter` 创建单一实例。由于 Servlet/JSP 的应用通常要处理用户并发请求，此时 `Filter` 实例需要同时被多个线程所关联到，因此需要处理多线程问题
+
+##### 配置过滤器
 
 当完成 Filter 的实现后，就可以开始配置 Filter 了，Filter 的配置需要：
 
@@ -500,65 +521,14 @@ public interface FilterConfig {
   	String getFilterName();
   	ServletContext getServletContext();
   	String getInitParameter(String va1);
-  	// 获取初始化参数,返回Filter参数名称的Enumeration对象
+  	// 获取初始化参数,返回 Filter 参数名称的 Enumeration 对象
   	Enumeration<String> getInitParameterNames();
 }
 ```
 
-有两种参数可以配置 Filter：一种是通过 `@WebFilter` 的 Annotation 来配置 Filter，另一种是通过部署描述符来注册。
+###### 在 web.xml 文件中配置
 
-使用注解配置：
-
-* asyncSupported
-
-  Filter 是否支持异步操作
-
-* description
-
-  Filter 的描述
-
-* dispatcerTypes
-
-  Filter 生效范围
-
-* displayName
-
-  Filter 的显示名
-
-* filterName
-
-  Filter 的名称
-
-* initParams
-
-  Filter 的初始化参数
-
-* largeIcon
-
-  Filter 的大图名称
-
-* servletName
-
-  Filter所生效的Servlet名称
-
-* smallIcon
-
-  Filter 的 icon名称
-
-* urlPatterns
-
-  Filter 所生效的 URL 路径
-
-* value
-
-  Filter 所生效的 URL 路径
-
-
-```java
-@WebFilter(filterName = "Security Filter", urlPatterns = "{ "/ *"}, initParams = {@WebInitParam(name = "frequency" , value = "1909")})
-```
-
-使用部署描述符定义：
+在 web.xml 文件中，须先配置所有过滤器，再配置 Servlet
 
 ```xml
 <filter>
@@ -577,7 +547,53 @@ public interface FilterConfig {
 
 如果多个 Filter 应用于同一个资源，Filter 的触发顺序将变得非常重要，此时需要使用部署描述符来管理 Filter，指定那个 Filter 先被触发。Filter 会依照部署描述符中 Filter 配置顺序从上往下执行。每个 Filter 仅有一个实现，如果需要保持或改变 Filter 实现中的状态，需要考虑线程安全问题
 
-##### Listener 监听器
+###### 使用 `@WebFilter` 注解配置
+
+详情见 Servlet 注解中 WebFilter 注解
+
+
+```java
+@WebFilter(
+    filterName = "Security Filter", 
+    urlPatterns = {"/user/*", "/auth/*"}, 
+    initParams = {
+        @WebInitParam(name = "frequency" , value = "1909")
+    }
+    dispatcherTypes = {DispatcherType.REQUEST, DispatcherType.FORWARD}
+)
+```
+
+##### 过滤器链
+
+多个过滤器可以串联起来协同工作。Servlet 容器将根据在 web.xml 中定义的先后顺序，依次调用它们的 `doFilter()` 
+
+##### 异步过滤器
+
+当一个过滤器使用了异步处理模式，被过滤的 Servlet 以及串联的过滤器也都必须使用异步处理模式，否者在运行时出现IllegalStateException 异常
+
+为了使 AsyncServlet 类与 AsyncFilter 类共享同一个异步上下文 AsyncContext 对象，按照以下方式创建并访问 AsyncContext 对象：
+
+1. 在 `AsyncFilter` 的 `doFilter` 方法中，通过 ServletRequest 类的 `startAsync()` 方法创建 `AsyncContext` 对象
+
+   ```java
+   AsyncContext asyncContext = request.startAsync();
+   ```
+
+2. 在 `AsyncServlet` 的 `service()` 方法中，通过 ServletRequest 类的 `getAsyncContext()` 方法获得已经在 AsyncFilter 类中创建的 AsyncContext 对象
+
+   ```java
+   AsyncContext asyncContext = request.getAsyncContext();
+   ```
+
+3. 由 AsyncServlet 中 Runnable 对象处理具体任务，并用 AsyncContext 对象的 `complete()` 方法，来提交任务
+
+   ```java
+   asyncContext.complete();
+   ```
+
+#### Listener 监听器
+
+Listener 是基于状态的，任何行为改变同一个状态，触发的事件是一致的**
 
 当 Web 应用在 `Servlet` 容器中运行时，Servlet 容器内部会不断的发生各种事件，如 `Web` 应用的启动和停止、用户请求到达等。当事件发生时，`Servlet` 容器会负责调用监听器的方法。
 
@@ -812,51 +828,43 @@ public class MyInitializer implements ServletContainerInitializer {
 
 ##### WebFilter
 
-用于标注一个Filter
+用于标注一个 Filter
 
-* `asyncSupported` 
+|      属性       |       类型       |                     描述                      |
+| :-------------: | :--------------: | :-------------------------------------------: |
+| asyncSupported  |     boolean      |    是否支持异步，等价 `<async-supported>`     |
+|   description   |      String      |        描述，等价 `<description>` 元素        |
+| dispatcherTypes | DispatcherType[] |               过滤器的转发模式                |
+|   displayName   |      String      |                 Filter 显示名                 |
+|   filterName    |      String      | 指定 Filter 的名称，等价 `<filter-name>` 元素 |
+|   initParams    |  WebInitParam[]  | Filter 的初始化参数，等价 `<init-param>` 元素 |
+|    largeIcon    |      String      |                     大图                      |
+|   smaillIcon    |      String      |                   iocn 名称                   |
+|   servletName   |      String      |         Filter 所生效的 Servlet 名称          |
+|   urlPatterns   |     String[]     |    URL 匹配模式，等价 `<url-pattern>` 元素    |
+|      value      |     String[]     |       URL 匹配模式，与 urlPatterns 互斥       |
 
-  是否支持异步处理
+dispatcherTypes 属性指定的调用过滤器模式（可以指定多个），取值：
 
-* `description`
+* DispatcherType.REQUEST
 
-  描述信息
+  当客户端直接请求访问待过滤的目标资源时，Web 容器会先调用该过滤器。
 
-* `dispatcherTypes`
+* DispatcherTyps.FORWARD
 
-  指定过滤器的转发模式。具体取值包括：`ASYNC`、`ERROR`、`FORWARD`、`INCLUDE`、`REQUEST`
+  当待过滤的目标资源是通过 RequestDispather 的 forward（请求转发）方式被访问时，Web 容器会先调用该过滤器
 
-* `displayName`
+* DispatcherType.INCLUDE
 
-  显示名
+  当待过滤的目标资源是通过 RequestDispather 的 include（请求包含）方式被访问时，Web容器会先调用该过滤器。
 
-* `filterName`
+* DispatcherType.ERROR
 
-  名称
+  当待过滤的目标资源是通过声明式异常处理机制被访问时，Web容器会先调用该过滤器。
 
-* `initParams`
+* DispatcherType.ASYNC
 
-  初始化参数
-
-* `largeIcon`
-
-  大图
-
-* `ServletNames`
-
-  指定过滤器将应用于那些 Servlet 取值是 `@WebServlet` 中的 `name` 属性的取值或者是 `web.xml` 中 `<servlet-name>` 的取值
-
-* `smallIcon`
-
-  小图
-
-* `urlPatterns`
-
-  URL匹配模式
-
-* `value`
-
-  URL匹配模式，与 `urlPatterns` 不能同时使用
+  当待过滤的目标资源被异步访问时，Web 容器会先调用该过滤器
 
 ##### WebInitParam
 
@@ -882,7 +890,7 @@ public class MyInitializer implements ServletContainerInitializer {
 
 标注一个 Servlet，标注的各个属性和 web.xml 文件中配置 Servlet 的特定元素对应。
 
-|      属性      |       --       |                          描述                          |
+|      属性      |      类型      |                          描述                          |
 | :------------: | :------------: | :----------------------------------------------------: |
 |      name      |     String     |  指定 Servlet 名字，等价 `<servlet-name>` ，默认类名   |
 |  urlPatterns   |    String[]    | 指定一组 Servlet 的 URL 匹配模式，等价 `<url-pattern>` |
