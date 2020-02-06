@@ -91,16 +91,21 @@ st->接收用户名和密码->使用用户名查询数据库->查询数据库
 时序图
 
 ```
-[sequence]
-Rabbit->Client: 推送消息
-Note right of Client: 查询数据库任务信息并更新用户token对应value
+Rabbit->Client: 推送用户任务到队列
+Client->MySql: 写入 mysql 落盘
+MySql->Client: 成功
 Client->Rabbit: 消息确认
+MySql-->Client: 失败
+Client-->Rabbit: 消息拒绝
 ```
 
 ```sequence
-Rabbit->Client: 推送消息
-Note right of Client: 查询数据库任务信息并更新用户token对应value
+Rabbit->Client: 推送用户任务到队列
+Client->MySql: 写入 mysql 落盘
+MySql->Client: 成功
 Client->Rabbit: 消息确认
+MySql-->Client: 失败
+Client-->Rabbit: 消息拒绝
 ```
 
 
