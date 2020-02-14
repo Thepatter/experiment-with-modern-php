@@ -301,7 +301,6 @@ Connector/J 支持客户端和服务器之间的单一字符编码，以及在 R
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
 Connection conn = null;
 try {
     Class.forName("com.mysql.cj.jdbc.Driver");
@@ -324,7 +323,7 @@ CREATE PROCEDURE demoSp(IN inputParam VARCHAR(255), INOUT inOutParam INT)
 Statement stmt = null;
 ResultSet rs = null;
 try {
-	stmt = conn.createStatement();
+	  stmt = conn.createStatement();
     rs = stmt.executeQuery("SELECT foo FROM bar");
     // or alternatively, if you don't know ahead of time that
     // the query will be a SELECT...
@@ -389,33 +388,33 @@ try {
 
 ```java
  preparedStatement = connection.prepareStatement("update books set sale_amount = sale_amount + ? where id = ?");
-            preparedStatement.setInt(1, quantity);
-            preparedStatement.setString(2, bookId);
-            preparedStatement.executeUpdate();
+     preparedStatement.setInt(1, quantity);
+		 preparedStatement.setString(2, bookId);
+     preparedStatement.executeUpdate();
 // resultsets
  PreparedStatement preparedStatement = connection.prepareStatement("select * from books");
-            ResultSet resultSet = preparedStatement.executeQuery()) {
-            while (resultSet.next()) {
-                BookDetails bookDetails1 = new BookDetails.Builder(resultSet.getString("id"))
-                        .author(resultSet.getString("author"))
-                        .title(resultSet.getString("title"))
-                        .price(resultSet.getFloat("price"))
-                        .online(resultSet.getInt("online"))
-                        .description(resultSet.getString("description"))
-                        .saleAmount(resultSet.getInt("sale_amount"))
-                        .build();
-                bookDetails.add(bookDetails1);
-            }
+      ResultSet resultSet = preparedStatement.executeQuery()) {
+        while (resultSet.next()) {
+          BookDetails bookDetails1 = new BookDetails.Builder(resultSet.getString("id"))
+            .author(resultSet.getString("author"))
+            .title(resultSet.getString("title"))
+            .price(resultSet.getFloat("price"))
+            .online(resultSet.getInt("online"))
+            .description(resultSet.getString("description"))
+            .saleAmount(resultSet.getInt("sale_amount"))
+            .build();
+          bookDetails.add(bookDetails1);
+        }
  // sigleResultset
-                 if (resultSet.next()) {
-                    return new BookDetails.Builder(resultSet.getString("id"))
-                            .author(resultSet.getString("author"))
-                            .title(resultSet.getString("title"))
-                            .price(resultSet.getFloat("price"))
-                            .online(resultSet.getInt("online"))
-                            .description(resultSet.getString("description"))
-                            .saleAmount(resultSet.getInt("sale_amount"))
-                            .build();
-                }
+        if (resultSet.next()) {
+          return new BookDetails.Builder(resultSet.getString("id"))
+            .author(resultSet.getString("author"))
+            .title(resultSet.getString("title"))
+            .price(resultSet.getFloat("price"))
+            .online(resultSet.getInt("online"))
+            .description(resultSet.getString("description"))
+            .saleAmount(resultSet.getInt("sale_amount"))
+            .build();
+        }
 ```
 

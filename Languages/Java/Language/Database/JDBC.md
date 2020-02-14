@@ -580,8 +580,6 @@ conn.releaseSavepoint(svpt);
 
 处于同一批中的语句可以是 `INSERT` 、`UPDATE`、`DELETE` 等操作，也可以是数据库定义语句，如 `CREATE TABLE` 和 `DROP TABLE`。但是，在批处理中添加 `SELECT` 语句会抛出异常
 
-
-
 ```java
 // 执行批处理，首先创建一个 `Statment` 对象
 Statement stat = conn.createStatement();

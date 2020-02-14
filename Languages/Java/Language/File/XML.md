@@ -6,6 +6,10 @@ JDK 中包含了从 Apache 解析器导出的 DOM 解析器。要读入一个 XM
 
 ```java
 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+// 文档生成工厂打开验证特性
+factory.setValidating(true);
+// 不包含看文本节点的空白字符
+factory.setIgnoringElementContentWhitespace(true);
 DocumentBuilder builder = factory.newDocumentBuilder();
 // 从文件中读取某个文档
 File f = ...
