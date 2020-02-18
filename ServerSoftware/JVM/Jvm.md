@@ -19,7 +19,7 @@
 
 4. 获取源码
 
-   JDK 附带了一个 `jdk_home/lib/src.zip` 的源代码
+   JDK 附带了一个 $jdk_home/lib/src.zip 的源代码
 
    ```shell
    mkdir javasrc

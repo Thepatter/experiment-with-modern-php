@@ -1,4 +1,4 @@
-### JavaSyntax
+### Syntax
 
 #### 基本数据类型
 
@@ -30,13 +30,17 @@
 
 ##### char
 
-char 类型原本用于表示单个字符。有些 Unicode 字符用一个 char 值，另一些 Unicode 字符用两个 char 值。<u>char 类型的字面量要用单引号括起来</u>。可以用十六进制值（范围 \u0000 ~ \UFFFF 即 0 ～ 65535）。char 表示单个代码单元。
+char 类型原本用于表示单个字符。有些 Unicode 字符用一个 char 值，另一些 Unicode 字符用两个 char 值。<u>char 类型的字面量要用单引号括起来</u>。
+
+可以用十六进制值（范围 \u0000 ~ \UFFFF 即 0 ～ 65535），字长为 2 byte
+
+char 表示单个代码单元。
 
 ###### Unicode 
 
 Unicode 打破了传统字符编码机制的限制，在 Unicode 出现之前，已经有许多不同的标准：美国的 ASCII，西欧的 ISO 8859-1，俄罗斯的 KOI-8，中国的 GB 18030 和 BIG-5 等。这样问题是：对于任意的给定的代码值，在不同的编码方案下有可能对应不同字母；采用大字符集的语言其编码长度有可能不同。设计 Unicode 编码就是解决该问题。1991 年发布的 Unicode 1.0，当时占用 65536 个代码值中不到一半。
 
-在设计 Java 时采用 16 位 Unicode 字符集。现 在 Unicode 字符超过了 65536，16 位的 char 类型已经不能满足描述所有 Unicode 字符的需要。java 解决方案：
+在设计 java 时采用 16 位 Unicode 字符集。现在 Unicode 字符超过了 65536，16 位的 char 类型已经不能满足描述所有 Unicode 字符的需要。java 解决方案：
 
 * 码点（code point）
 
@@ -48,7 +52,7 @@ Unicode 打破了传统字符编码机制的限制，在 Unicode 出现之前，
 
   * 第一个代码级别称为基本的多语言级别（basic multilingual plane），码点从 U+0000 ～ U+FFFF（0～ 65535），包括经典的 Unicode；
 
-  其余的 16 个级别码点从 U+10000 ～ U+10FFFF（65536 ～ 1114111），其中包括一些辅助字符（supplementary character）
+  * 其余的 16 个级别码点从 U+10000 ～ U+10FFFF（65536 ～ 1114111），其中包括一些辅助字符（supplementary character）
 
 * 代码单元（code unit）
 
@@ -62,17 +66,11 @@ UTF-16 编码采用不同长度的编码表示所有 Unicode 码点。在 java �
 
 ##### boolean
 
-boolean 类型有两个值: false 和 true, 用来判定逻辑条件。<u>整型值和布尔值之间不能进行相互转换</u>
+boolean 类型有两个值: false 和 true，用来判定逻辑条件。<u>整型值和布尔值之间不能进行相互转换</u>
 
 ##### 数值类型转换
 
-使用两个数进行二元操作时：
-
-* 如果两个操作数中有一个是 double 类型，另一个操作数就会转换为 double 类型
-* 如果两个操作数中一个操作数是 float 类型，另一个操作数会转换为 float 类型
-* 如果两个操作数中一个操作数是 long 类型，另一个操作数会转换为 long 类型
-
-在 java 中，允许使用 () 操作符进行强制类型转换，但可能丢失信息。
+使用两个数进行二元操作时，较小单位会隐式转换为较大单位再计算，结果为较大单位。允许使用 () 操作符进行强制类型转换，但可能丢失信息。
 
 ##### 自动装开箱
 
@@ -97,7 +95,7 @@ String = "jaca";
 
 #### 常量
 
-使用关键字 final 指示常量，关键字 final 表示这个变量只能被赋值一次。一旦被赋值之后，就不能再修改。习惯上，常量名使用全大写蛇形。
+使用关键字 final 指示常量，关键字 final 表示这个变量只能被赋值一次。一旦被赋值之后，就不能再修改。习惯上常量名使用全大写蛇形。
 
 类常量使用 static final  定义，当类常量被声明为 public 时，其他类也可以该常量​     
 
@@ -132,7 +130,7 @@ String = "jaca";
 
 ##### 数组
 
-数组是对象，存储同一类型的值。通过整型下标访问数组中的值。数组初始化后不能改变大小。如果需要动态扩展数组，使用 *ArrayList*。数组传递采用的是引用传递
+数组是对象，存储同一类型的值。通过整型下标访问数组中的值。数组初始化后不能改变大小。如果需要动态扩展数组，使用 *ArrayList*。数组传递采用引用传递
 
 ```java
 int[] a = new int[100];
@@ -170,7 +168,7 @@ Size s = Size.MEDIUM;
 
 ##### 字符串
 
-Java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 编码表中码点，可能需要1个或2个代码单元表示）。使用 + 拼接字符串。*String* 类实例不可变。
+java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 编码表中码点，可能需要1个或2个代码单元表示）。使用 + 拼接字符串。*String* 类实例不可变。
 
 * 空串
 
@@ -186,7 +184,7 @@ Java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 
 
 * 类名采用大驼峰
 * 源代码的文件名必须与公共类的名字相同，用 .java 作为扩展名
-* 每个 Java 应用必须有 main 方法且必须是 public 和 static
+* 每个 java 应用必须有 main 方法且必须是 public 和 static
 
 ##### 块级作用域
 
@@ -220,7 +218,7 @@ Java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 
 |     goto     |                             保留                             |
 |      if      |                           条件判断                           |
 |  implements  |                           实现接口                           |
-|    import    |                            导入类                            |
+|    import    |                        导入类或静态块                        |
 |  instanceof  |                      测试对象是否属于类                      |
 |     int      |                          32 位整形                           |
 |  interface   |                           声明接口                           |
@@ -241,7 +239,7 @@ Java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 
 | synchronized |                对线程而言是原子的方法或代码块                |
 |     this     |                         当前对象引用                         |
 |    throw     |                            抛异常                            |
-|    throws    |                    一个方法可能抛出的异常                    |
+|    throws    |                  声明一个方法可能抛出的异常                  |
 |  transient   |                       标志非永久的数据                       |
 |     try      |                       捕获异常的代码块                       |
 |     void     |                         指定不返回值                         |

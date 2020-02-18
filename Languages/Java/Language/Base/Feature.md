@@ -334,6 +334,18 @@ interface OrdinaryGetter { Base get(); }
 interface DerivedGetter extends OrdinaryGetter { @Override Derived get(); }
 ```
 
+###### 数组与泛型
+
+通常数组与泛型不能很好结合使用。不能实例化具有参数化类型的数组
+
+```java
+Peel<Banana>[] za = new Peel<Banana>[10]; // error
+```
+
+擦除会移除参数类型信息，而数组必须知道它们所持有的确切类型，以强制保证类型安全。但可以参数化本身如使用参数化方法时使用参数化数组类型。
+
+泛型在类或方法的边界处很有效，而在类或方法的内部，擦除通常会使泛型变得不适用。
+
 #### 注解
 
 ##### 使用注解
@@ -473,14 +485,16 @@ private DataSource source;
 
 ##### lambda 表达式语法
 
-参数，箭头（`->`）以及一个表达式。
+Lambda 即带参数变量的表达式，由参数，箭头操作符及代码块组成。无需指定 lambda 表达式的返回类型，返回类型总是会由上下文推导出。
+
+如果一个 lambda 表达式只在某些分支返回一个值，而在另外一些分支不返回值，这是不合法的
 
 ```java
 (String first, String second)
     ->first.length() - seconde.length()
 ```
 
-如果代码要完成的计算无法放在一个表达式中，就可以像写方法一样，把这些代码放在 `｛｝`  中，并包含显式的 `return` 语句。
+如果代码要完成的计算无法放在一个表达式中，就可以像写方法一样，把这些代码放在 ｛｝  中，并包含显式的 return 语句。
 
 ```java
 (String first, String second)->
@@ -493,7 +507,7 @@ private DataSource source;
 	}
 ```
 
-即使 `lambda` 表达式没有参数，仍然要提供空括号，就像无参数方法一样。
+即使 lambda 表达式没有参数，仍然要提供空括号，就像无参数方法一样，如果方法只有一个参数，而且这个参数的类型可以推导得出，还可以省略小括号。
 
 ```Java
 ()->{
@@ -501,13 +515,37 @@ private DataSource source;
 }
 ```
 
-如果可以推导出一个 `lambda` 表达式的参数类型，则可以忽略其类型。如果方法只有一个参数，而且这个参数的类型可以推导得出，那么可以省略小括号
+如果可以推导出一个 lambda 表达式的参数类型，则可以忽略其类型。如果方法只有一个参数，而且这个参数的类型可以推导得出，那么可以省略小括号
 
 ```java
 (first, second)->first.length() - second.length()
 ```
 
-对于只有一个抽象方法的接口，需要这种情况的对象时，可以提供一个 lambda 表达式。这种接口即函数式接口
+###### 函数式接口
+
+对于只有一个抽象方法的接口，需要这种情况的对象时，可以提供一个 lambda 表达式。这种接口即函数式接口如：Comparator。
+
+java.util.function 包中定义了很多非常通用的函数式接口。
+
+###### 方法引用
+
+使用 :: 操作符分隔方法名与对象或类名，可以在方法引用中使用 this 和 super 引用，使用 ::new 进行构造器引用
+
+* Object::instanceMethod
+
+  方法引用等价于提供方法参数的 lambda 表达式
+
+* Class::staticMethod
+
+  方法引用等价于提供方法参数的 lambda 表达式
+
+* Class::instanceMethod
+
+  第一个参数会成为方法的目标
+
+###### 变量作用域
+
+Lambda 类似闭包作用域
 
 #### 时间日期
 

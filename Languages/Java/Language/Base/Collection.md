@@ -4,9 +4,25 @@
 
 java 最初版本只为最常用的数据结构提供了很少的一组类：*Vector*、*Stack*、*Hashtable*、*BitSet* 和 Enumeration 接口，Enumeration 接口提供了访问任意容器中各个元素的抽象机制。
 
-* *Vector*
+###### *Vector*
 
-  所有方法都是同步的
+所有方法都是同步的
+
+###### Enumeration
+
+旧版迭代器，比 Iterator 接口小，只有 hasMoreElements() 和 nextElement()。
+
+######*Hashtable*
+
+类似 *HashMap*
+
+###### *Stack*
+
+永远不应用使用，使用 list 代替
+
+###### *BitSet*
+
+如果想要高效存储大量『开关』信息是很好选择，它的效率仅对于空间，如果需要高效的访问时间，比本地数组慢。最小容量是 long 64 位。
 
 ##### 集合接口
 

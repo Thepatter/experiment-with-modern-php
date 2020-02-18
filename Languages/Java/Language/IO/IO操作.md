@@ -66,8 +66,3 @@ __如果到达 `InputStream` 的末尾之后还继续从中读取数据，就会
 
 ### 随机访问文件
 
-__使用顺序流打开的文件为顺序访问文件，内容不能更新，需要修改文件，则需使用 `RandomAccessFile` 类打开文件，允许再文件的任意位置进行读写，`RandomAccessFile` 类实现了 `DataInput` 和 `DataOutput` 接口__
-
-
-* 当创建一个 `RandomAccessFile` 时，可以指定两种模式（"r" 只读，或 "rw" 读写)，当实例化 `RandomAccessFile` 时，存在则会按指定模式访问，不存在则会创建文件再以指定模式访问
-
