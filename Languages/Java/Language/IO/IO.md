@@ -250,5 +250,23 @@ tryLock() 是非阻塞式的，它设法获取锁，如果不能获得，直接�
 
 文件映射通常应用于极大的文件，可能需要对这种巨大的文件进行部分加锁，以便其他进程可以修改文件中未被加锁的部分。
 
+#### 对象序列化
 
+##### Serializable 与 Externalizable 接口
+
+java 对象序列化将哪些实现了 Serializable 接口（标记接口，不包含任何方法）的对象转换成一个字节序列，并能够在以后将这个字节序列完全恢复为原来的对象。
+
+要序列化一个对象，首先要创建某些 *OutputStream* 对象，然后将其封装在一个 *ObjectOutputStream* 对象内。调用 writeObject() 即可将对象序列化，并将其发送给 *OutputStream* (对象序列化是基于字节的，要使用 *InputStream* 和 *OutputStream* 继承2层次结构)；反序列化一个对象，需要将一个 *InputStream* 封装在 *ObjectInputStream* 内，然后调用 readObject()，除非能验证对象，否则必须保证 jvm 能找到相关的 .class 文件
+
+特殊情况下，可通过实现 Externalizable 接口来代替 Serializable 接口，来对序列化过程进行控制，Externalizable 接口继承 Serializable 接口，同时增加了 writeExternal() 和 readExteernal() 这两个方法会在序列化和反序列化还原的过程中自动调用。
+
+<u>对于恢复 Serializable 对象，对象完全以它存储的二进制位为基础来构造，而不调用构造器，而对于一个 Externalizable 对象，所有普通的默认构造器都会被调用（包括字段定义时的初始化），然后调用 readExternal()</u>
+
+<u>Class 是 Serializable 的，但想序列化 static 值，必须手动实现</u>
+
+##### transitent 关键字
+
+对序列化进行控制时，为防止对象的敏感部分被序列化，可以将类实现为 Externalizable，这样没有任何东西可以自动序列化，并且可以在 writeExternal() 内部只对所需部分进行显式的实例化
+
+<u>如果正在操作的是一个 Serializable 对象，那么所有序列化操作都会自动进行，可以用 transient 关键字逐个字段地关闭序列化</u>
 
