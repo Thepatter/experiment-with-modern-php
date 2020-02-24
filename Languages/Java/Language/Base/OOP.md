@@ -383,5 +383,35 @@ SE 8 中，允许在接口中增加静态方法。
 
 如果使用内部类只是为了把一个类隐藏在另外一个类的内部，并不需要内部类引用外围类对象。为此，可以将内部类声明为 static，以便取消产生的引用
 
+#### Enum 类
 
+##### 基本的 enum 特性
+
+###### *Enum* 
+
+* values() 方法返回 enum 实例的数组，而且该数组中的元素严格保持其在 enum 中声明的顺序，values() 是由编译器添加的 static 方法
+* 创建 enum 时，编译器会生成一个相关的类，这个类继承自 *java.lang.Enum*，可以使用 == 来比较 enum 实例，编译器会自动为 enum 提供 equal() 和 hashCode()，*Enum* 实现了 Comparable 和 Serializable 接口
+* ordinal() 方法返回 enum 实例在声明时的次序，从 0 开始
+* name() 方法返回 enum 实例声明时的名字，与 toString() 方法效果一样。
+* valueOf() 根据给定的名字返回相应的 enum 实例
+* 如果打算定义 enum 实例定义方法，那么必须在 enum 实例序列的最后添加一个分号，enum 实例之间用逗号分隔，必须先定义 enum 实例，如果在定义 enum 实例之前定义了任何方法或属性，会编译错误
+* 只能在 enum 内部使用其构造器创建 enum 实例，一旦 enum 的定义结束，编译器就不允许使用构造器创建任何实例了
+
+可以在接口的内部，创建实现该接口的枚举，以此将元素进行分组。
+
+可以为 enum 实例编写方法，从而为每个 enum 实例赋予各自不同的行为，需要为 *Enum* 添加一个或多个 abstract 方法，然后为每个 enum 实例实现该方法
+
+######EnumSet
+
+SE 5 引入了 EnumSet，是为了通过 enum 创建一种替代品，以替代传统的基于 int 的 『位标志』，这种标志可以用来表示某种『开关』信息。
+
+EnumSet 中的元素必须来自一个 enum。EnumSet 的基础是 long，一个 enum 实例只需一位 bit 表示其是否存在，在不超过一个 long 的表达能力的情况下，EnumSet 可以应用于最多不超过 64 个元素的 enum，超过之后性能会下降。
+
+enum 实例定义时的次序决定了其在 EnumSet 中的顺序
+
+###### EnumMap
+
+EnumMap 是一种特殊的 Map，它要求其中的键必须来自一个 enum，EnumMap 内部由数组实现，性能很高。可以使用 enum 实例在 EnumMap 中进行查找操作，只能将 enum 的实例作为键来调用 put()
+
+enum 实例定义时的次序决定了其在 EnumMap 中的顺序
 

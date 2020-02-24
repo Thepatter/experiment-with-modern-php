@@ -87,7 +87,7 @@ thread.start();
 
 每当线程调度器有机会选择新线程时，它首先选择具有较高优先级的线程。线程优先级是高度依赖于系统的。当虚拟机依赖于宿主机平台的线程实现机制时，java 线程的优先级被映射到宿主机平台的优先级上，优先级个数也许会更多或更少
 
-Oracle 为 Linux 提供的 Java 虚拟机中，线程的优先级被忽略，所有的线程具有相同的优先级，不要将程序构建为功能的正确性依赖于优先级
+Oracle 为 Linux 提供的 java 虚拟机中，线程的优先级被忽略，所有的线程具有相同的优先级，不要将程序构建为功能的正确性依赖于优先级
 
 ###### 守护线程
 
@@ -260,13 +260,15 @@ private Lock wirteLock = rwl.wirteLock();
 
 ###### PriorityBlockingQueue
 
-优先级队列，没有容量上限。
+优先级队列，没有容量上限。具有可阻塞的读取操作。
 
 ###### DelayQueue
 
-实现了 Delayed 接口
+实现了 Delayed 接口，是一个无界的 *BlockingQueue*，用于放置实现 Delayed 接口的对象，其中的对象只能在其到期时才能从队列中取走。这种队列是有序的，即队列头的延迟到期的时间最长。如果没有任务延迟到期，那么就不会有任务头元素，并且 poll() 将返回 null（不能将 null 放回队列）
 
-getDelay() 方法返回对象的残留延迟，负值表示延迟已经结束。元素只有在延迟用完的情况下才能从 DelayQueue 移除。必须实现 compareTo 方法，DelayQueue 使用该方法对元素进行排序
+必须实现 compareTo 方法，DelayQueue 使用该方法对元素进行排序
+
+Delay 接口的 getDelay()，返回延迟到期时间，或者延迟在多长时间已到期（负值），在 getDelay() 中，希望使用的单位是作为 *TimeUnit* 传递进来的，使用它将当前时间与触发时间之间的差转换为调用者要求的单位，而无需知道这些单位是什么。
 
 ###### LinkedTransferQueue
 
@@ -291,43 +293,3 @@ java.util.concurrent 包提供了映射、有序集和队列：*ConcurrentHashMa
 ###### ConpyOnWriteArraySet
 
 线程安全的集合
-
-##### 线程池
-
-###### 线程池
-
-应该使用线程池代替创建线程，将 Runnable 对象交给线程池。线程池用于高效执行任务，线程池是管理并发执行任务个数的理想方法，java 提供 *Executors* 来执行线程池中的任务，提供 ExecutorService 来管理和控制任务，ExecutorService 是 Executor 的子接口 *java.util.concurrent.Executor.java*
-
-在使用连接池时应该做的事：
-
-1. 调用 *Executors* 类中静态方法创建 *ExecutorService*
-2. 调用 submit 提交  Runnable 或 Callable 对象
-3. 如果想要取消一个任务，或如果提供 Callable 对象，需要保存好返回的 Future 对象
-4. 当不再提及任何任务时，调用 shutdown
-
-######预定执行
-
-ScheduledExecutorService 接口具有为预定执行或重复执行任务而设计的方法。允许使用线程池机制的 java.util.Timer 的泛化。*Executors* 支持生成 ScheduledExecutorServlet 接口对象
-
-可以预定 Runnable 或 Callable 在初始的延迟之后只运行一次或周期性执行。
-
-#### 信号量（对共享资源进行访问控制的对象）
-
-可以使用信号量来限制访问一个共享资源的线程数，在访问资源前，线程必须从信号量获取许可。在访问完资源后，这个线程将许可返回给信号量
-*java.util.concurrent.Semaphore.java*
-
-```javascript 1.8
-Semaphore(numberOfPermits: int)         // 创建一个具有指定数目的许可的信号量。公平策略为假
-Semaphore(nunberOfPermits: int, fair: boolean)          // 创建一个具有指定数目的许可及公平策略的信号量
-acquire(): void             // 从该信号量获取一个许可，如果许可不可用，线程会阻塞等待
-release(): void             // 释放一个许可返回给信号量
-```
-
-
-
-
-
-
-
-
-

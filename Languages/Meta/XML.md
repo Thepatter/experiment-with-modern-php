@@ -141,9 +141,6 @@ XML 解析器将使用这个 DTD 文档来解析 XML 文档。XML 文件开头�
   </configuration>
   ```
 
-  
-
-
 
 ##### Schema
 
@@ -151,10 +148,24 @@ XML 解析器将使用这个 DTD 文档来解析 XML 文档。XML 文件开头�
 
 W3C 支持一种基于 XML 的 DTD 代替者，基于 XML 编写，支持数据类型和命名空间，即 XML Schema，可描述 XML 文档的结构，也可作为 XSD（XML Schema Definition）来引用。
 
+Schema 为每个元素都定义了类型。类型可以是简单类型，既有格式限制的字符串或复杂类型。一些简单类型已经被内建到 XML Schema 内，包括：
+
+* xsd:string
+
+* xsd:int
+
+* xsd:boolean
+
+使用前缀 xsd：或 xs：表示 XSL Schema 定义的命名空间
+
 ```xml
 <?xml version='1.0'>
-// xs 根元素
 <xs:schema>
+	<xsd:simpleType name="StyleType">
+			<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="BOLD">
+					<xsd:enumeration value="ITALIC">
+   		</xsd:restriction>
 </xs:schema>
 ```
 

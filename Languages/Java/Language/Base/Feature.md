@@ -348,138 +348,156 @@ Peel<Banana>[] za = new Peel<Banana>[10]; // error
 
 #### 注解
 
-##### 使用注解
+##### 注解机制
 
 注解是那些插入到源代码中使用其他工具可以对其进行处理的标签。这些工具可以在源码层次上进行操作，或者可以处理编译器在其中放置了注解的类文件。
 
-注解不会改变程序的编译方式。Java 编译器对于包含注解和不包含注解的代码会生成相同的虚拟机指令                                                                                  
+注解不会改变程序的编译方式，java 编译器对于包含注解和不包含注解的代码会生成相同的虚拟机指令                                                                                  
 
-为了能够受益于注解，需要选择一个处理工具，然后向处理工具可以理解的代码中插入注解，之后运用该处理工具处理代码。注解的一些可能的用法
+在 java 中，注解是当作一个修饰符来使用的，它被置于被注解项之前，中间没有分号，每一个注解的名称前都加了 @ 符号，类似于 Javadoc 的注释，Javadoc 注释出现在注释符内部，而注解是代码的一部分
 
-* 附属文件的自动生成，例如部署描述符或 `bean` 信息类
-* 测试、日志、事务语义等代码的自动生成
+除了方法外，还可以注解类、成员以及局部变量，这些注解可以存在于任何可以放置一个像 public 或者 static 这样的修饰符的地方。还可以注解包、参数变量、类型参数和类型用法。每个注解都必须通过一个注解接口进行定义，这些接口中的方法与注解中的元素相对应。
 
-在 Java 中，注解是当作一个修饰符来使用的，它被置于被注解项之前，中间没有分号，每一个注解的名称前都加了 `@` 符号，类似于 `Javadoc` 的注释，`Javadoc` 注释出现在注释符内部，而注解是代码的一部分
+###### 元注解
 
-除了方法外，还可以注解类、成员以及局部变量，这些注解可以存在于任何可以放置一个像 `public` 或者 `static` 这样的修饰符的地方。还可以注解包、参数变量、类型参数和类型用法。每个注解都必须通过一个注解接口进行定义，这些接口中的方法与注解中的元素相对应。
+定义注解时，需要一些『元注解』：
 
-`JUnit` 的注解 `Test` 可以用下面的接口进行定义：
+* @Taget
+
+  定义注解将应用于什么地方，一条没有 @Taget 限制的注解可以应用于任何项上。可选值为 *java.lang.annotation.ElementType* 枚举类实例
+
+  |    元素类型     |          注解适用场合          |
+  | :-------------: | :----------------------------: |
+  | ANNOTATION_TYPE |          注解类型声明          |
+  |     PACKAGE     |               包               |
+  |      TYPE       | 类（包含枚举）接口（包括注解） |
+  |     METHOD      |              方法              |
+  |   CONSTRUCTOR   |             构造器             |
+  |      FIELD      |      成员域包含 enum 常量      |
+  |    PARAMETER    |        方法或构造器参数        |
+  | LOCAL_VARIABLE  |            局部变量            |
+  | TYPE_PARAMETER  |            类型参数            |
+  |    TYPE_USE     |            类型用法            |
+
+* @Retention
+
+  定义该注解在哪一个级别可以用，可选值为 *java.lang.annotation.RetentionPolicy* 枚举类实例
+
+  |   值    |                             描述                             |
+  | :-----: | :----------------------------------------------------------: |
+  | SOURCE  |                   源码，注解将被编译器丢弃                   |
+  |  CLASS  |      类文件，注解在 class 文件中可用，但会被虚拟机丢弃       |
+  | RUNTIME | 运行时，虚拟机将在运行期也保留，可以通过反射记住读取注解的信息 |
+
+* @Documented
+
+  此注解包含在 Javadoc 中
+
+* @Inherited
+
+  允许子类继承父类中的注解
+
+###### 标准注解
+
+SE 在 java.lang、java.lang.annotation、javax.annotation 包中定义了大量的注解接口
+
+|       注解接口       |      应用场合      |                             目的                             |
+| :------------------: | :----------------: | :----------------------------------------------------------: |
+|     @Deprecated      |        全部        |                          标记为过时                          |
+|  @SuppressWarnings   |  除了包和注解之外  |                  阻止某个给定类型的警告信息                  |
+|     @SafeVarargs     |    方法和构造器    |                断言 varargs 参数可以安全使用                 |
+|      @Override       |        方法        |                      覆写超类或接口方法                      |
+| @FunctionalInterface |        接口        |           将接口标记为只有一个抽象方法的函数式接口           |
+|    @PostConstruct    |        方法        |             被标记的方法应该在构造之后立即被调用             |
+|     @PreDestroy      | 类，接口，方法，域 |             被标记的方法应该在移除之前立即被调用             |
+|      @Resource       | 类、接口、方法、域 | 在类或接口，标记为其他地方要用到的资源，在方法或域上为『注入』而标记 |
+|      @Resources      |      类，接口      |                         一个资源数组                         |
+|      Generated       |        全部        | 提供代码生成工具来使用，任何生成的源代码都可以被注解，从而与程序员提供的代码区分开。 |
+|        Target        |        注解        |                 指明可以应用这个注解的那些项                 |
+|      Retention       |        注解        |                   指明这个注解可以保留多久                   |
+|      Documented      |        注解        |             指明这个注解应该包含在注解项的文件中             |
+|      Inherited       |        注解        |     指明当这个注解应用于一个类的时候，能自动被它子类继承     |
+|      Repeatable      |        注解        |              指明这个注解可以在同一项上应用多次              |
+
+* 用于管理资源的注解
+
+  * @PostConstruct 和 @PreDestroy 注解用于控制对象生命周期的环境中，如 web 容器和应用服务器。标记这些注解的方法应该在对象被构建之后，或者在对象被移除之前，紧接着调用
+
+  * @Resource 注解用于资源注入。如，访问数据库的 web 应用。当然，数据库访问信息不应该被硬编码到 Web 应用中。而是应该让 Web 容器提供某种用户接口，以便设置连接参数和数据库资源的 JNDI 名字，当包含这个域的对象被构造时，容器会注入一个对该数据源的引用
+
+##### 自定义注解
+
+###### 定义注解接口
+
+@interface 声明创建了一个真正的 java 接口，与其他任何 java 接口一样，注解也将会编译成 class 文件。
+
+没有元素的注解为『标记注解』
 
 ```java
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Test {
-    long timeout() default 0L;
+public @interface UseCase {
+    int id();
+  	// 在注解某个方法时没有给出，则注解处理器使用默认值
+    String description() default "no description";
 }
 ```
 
-`@interface` 声明创建了一个真正的 Java 接口。处理注解的工具将接收那些实现了这个注解接口的对象。这类工具可以调用 `timeout` 方法来检索某个特定 `Test` 注解的 `timeout` 元素。注解 `Target` 和 `Retention` 是元注解。它们注解了 `Test` 注解，即将 `Test` 注解标识成一个只能运用到方法上的注解。并且当类文件载入到虚拟机的时候，仍可以保留下来。
+所有的注解接口都隐式地扩展 java.lang.annotation.Annotation 接口。这个接口是一个常规接口，不是一个注解接口。无法扩展注解接口，即所有的注解接口都直接扩展自 java.lang.annotation.Annotation
 
-##### 注解语法
+标签 @UseCase 由 UseCase.java 定义，其中包含 int 元素 id，以及一个 String 元素 description，注解元素可用的类型：
 
-##### 注解接口
+* 基本类型
+* String
+* Class
+* enum
+* Annotation
+* 以上类型的数组
 
-注解是由注解接口来定义的：
+如果使用了其他类型，编译器会报错，也不允许使用任何包装类型，元素不能有不确定的值（元素必须要么具有默认值，要么在使用注解时提供元素的值）
+
+对于非基本类型的元素，无论是在源代码中声明时，或是在注解接口中定义默认值时，都不能以 null 作为其值。
+
+###### 使用注解
 
 ```java
-mofifiers @interface AnnotationName {
-    elementDeclaration1
-    elementDeclaration2
+public class PasswordUtils {
+    @UseCase(id = 47, description = "Password must contain at least one numeric")
+    public boolean validatePassword(String password) {
+        return password.matches("\\w*\\d\\w*");
+    }
 }
 ```
 
-每个元素声明都具有下面这种形式：
+注解的元素在使用时表现为 key = value 形式
+
+###### 注解处理器
+
+如果没有用来读取注解的工具，那么注解也不会比注释更有用。使用注解的过程中，很主要的一个部分就是创建与使用『注解处理器』
 
 ```java
-type elementName();
+public static void trackUseCases(List<Integer> useCases, Class<?> cl) {
+        for (Method method : cl.getDeclaredMethods()) {
+            UseCase useCase = method.getAnnotation(UseCase.class);
+            if (useCase != null) {
+                System.out.println("Found Use Case:" + useCase.id() + " " + useCase.description());
+            }
+        }
+        for (int i: useCases) {
+            System.out.println("Warning: Missing use case-" + i);
+        }
+    }
 ```
 
-或者
+注解处理已经被集成到 java 编译器中，在编译过程中调用注解处理器
 
-```java
-type elementName() default value;
+```shell
+javac -processor ProcessorClassName1,ProcessorClassName2... sourceFiles
 ```
 
-```java
-// 下面这个注解具有两个元素：assignedTo 和 severity
-public @interface BugReport {
-    String assignedTo() default "[none]";
-    int severity;
-}
-```
+编译器会定位源文件中的注解，每个注解处理器会依次执行，并得到它表示感兴趣的注解。如果某个注解处理器创建了一个新的源文件，那么将重复执行这个处理过程。如果某次处理循环没有再产生任何新的源文件，那么就编译所有的源文件，注解处理器只能产生新的源文件，它无法修改已有的源文件
 
-所有的注解接口都隐式地扩展 `java.lang.annotation.Annotation` 接口。这个接口是一个常规接口，不是一个注解接口。无法扩展注解接口，即所有的注解接口都直接扩展自 `java.lang.annotation.Annotation`
-
-##### 注解类型用法
-
-声明注解提供了正在被声明的项的相关信息。
-
-##### 标准注解
-
-Java SE 在 `java.lang`、`java.lang.annotation`、`javax.annotation` 包中定义了大量的注解接口。其中四个是元注解，用于描述注解接口的行为属性，其他的三个是规则接口，用它们来注解源代码中的项
-
-`Deprecated`   应用于全部，将项标记为过时的
-
-`SuppressWarnings` 除了包和注解之外的所有情况，阻止某个给定类型的警告信息
-
-`SafeVarargs` 方法和构造器，断言 `varargs` 参数是安全使用
-
-`Override` 方法，检查该方法是否覆盖了某一个超类方法
-
-`FunctionalInterface`接口，将接口标记为只有一个抽象方法的函数式接口
-
-`PostConstruct` 、`PreDestroy` 方法，被标记的方法应该在构造之后或移除之前立即被调用
-
-`Resource` 类，接口、方法、域，在类或接口上；标记为在其他地方要用到的资源，在方法或域上；为注入而标记
-
-`Resources` 类、接口，一个资源数组
-
-`Generated` 全部
-
-`Target` 注解，指明可以应用这个注解的那些项
-
-`Retention` 注解，指明这个注解可以保留多久
-
-`Documented` 注解，指明这个注解应该包含在注解项的文档中
-
-`Inherited` 注解，指明当这个注解应用于一个类的时候，能够自动被它的子类继承
-
-`Repeatable` 注解，指明这个注解可以在同一个项上应用多次
-
-##### 用于编译的注解
-
-`@Deprecated` 注解可以被添加到任何不再鼓励使用的项上。所以，当你使用一个已过时的项时，编译器将会发出警告。这个注解与 `Javadoc` 标签 `@deprecated` 具有同等功效。
-
-`@SuppressWarnings` 注解会告知编译器阻止特定类型的警告信息
-
-`@Override` 这种注解只能应用到方法上。编译器会检查具有这种注解的方法是否真正覆盖了一个来自于超类的方法
-
-`@Generated` 注解的目的是提供代码生成工具来使用。任何生成的源代码都可以被注解，从而与程序员提供的代码区分开。
-
-##### 用于管理资源的注解
-
-`@PostConstruct` 和 `@PreDestroy` 注解用于控制对象生命周期的环境中，如 `web` 容器和应用服务器。标记这些注解的方法应该在对象被构建之后，或者在对象被移除之前，紧接着调用
-
-`@Resource` 注解用于资源注入。如，访问数据库的 `web` 应用。当然，数据库访问信息不应该被硬编码到 `Web` 应用中。而是应该让 `Web` 容器提供某种用户接口，以便设置连接参数和数据库资源的 `JNDI` 名字。
-
-```java
-@Resource(name="jdbc/mydb")
-private DataSource source;
-```
-
-当包含这个域的对象被构造时，容器会“注入”一个对该数据源的引用
-
-##### 元注解
-
-`@Target` 元注解可以应用于一个注解，以限制该注解可以应用到那些项上。一条没有 `@Target` 限制的注解可以应用于任何项上。编译器将检查是否将一条注解只应用到了某个允许的项上。
-
-`@Retention` 元注解用于指定一条注解应该保留多长时间
-
-`@Documented` 元注解为像 `Javadoc` 这样的归档工具提供了一些提示。
-
-`@Inherited` 元注解只能应用于对类的注解。如果一个类具有继承注解，那么它的所有子类都自动具有同样的注解，这使得创建一个与 `Serializable` 这样的标记接口具有相同运行方式的注解变得很容易
-
-实际上，`@Serializable` 注解应该比没有任何方法的 `Serializable` 标记接口更适用。一个类之所以可以被序列化，是因为存在着对它的成员域进行读写的运行期支持，而不是因为任何面向对象的设计原则。注解比接口继承更擅长描述这一事实
+注解处理器通常通过扩展 *AbstractProcessor* 类而实现 *Processor* 接口。
 
 #### lambda
 
@@ -547,339 +565,86 @@ java.util.function 包中定义了很多非常通用的函数式接口。
 
 Lambda 类似闭包作用域
 
-#### 时间日期
-
-##### 时间线
-
-Java 的 Date 和 Time API 规范要求 Java 使用的时间尺度为：
-
-- 每天 86400 秒
-- 每天正午与官方时间精确匹配
-- 在其他时间点上，以精确定义的方式与官方时间接近匹配
-
-在 Java 中，`Instant` 表示时间线上的某个点。被称为“新纪元”的时间线原点被设置为UNIX初始时间。从该原点开始，时间按照每天 86400 秒向前或向回度量，精确到纳秒。`Instant` 的值向回可追朔 10 亿年（`Instant.MIN`）。最大值 `Instant.MAX` 是公元 `1000000000` 年的 12 月 31 日
-
-静态方法调用 `Instant.now()` 会给出当前的时刻。可以按照常用的方式，用 `equals` 和 `compareTo` 方法来比较两个 `Instant` 对象，因此可以将 `Instant` 对象用作时间戳
-
-为了得到两个时刻之间的时间差，可以使用静态方法 `Duration.between` 
-
-```
-  // 获取算法的运算时间
-Instant start = Instant.now();
-runAlgorithm();
-Instant end = Instant.now();
-Duration timeElapsed = Duration.between(start, end);
-long millis = timeElapsed.toMillis();   
-LocalDate today = LocalDate.now();
-LocalDate alonzosBirthday = LocalDate.of(1903, 6, 14);
-alonzosBirthday = LocalDate.of(1903, Month.JUNE, 14);
-// 获取某个月的第一个星期二
-LocalDate firstTuesday = LocalDate.of(year, month, 1).with(TemporaAdjusters.nextOrSame(DayOfWeek.TUESDAY));
-// 计算下一个工作日的调整器
-TemporalAdjuster NEXT_WORKDAY = w -> {
-    LocalDate result = (LocalDate) w;
-    do {
-        result = result.plusDays(1);
-    }
-    while (result.getDayOfWeek().getValue() >= 6);
-    return result;
-}
-LocalDate backToWork = today.with(NEXT_WORKDAY);
-TemporalAdjuster Next_WORKDAY = TemporalAdjusters.ofDateAdjuster(w -> {
-    LocalDate result = w;
-    do {
-        result = result.plusDays(1);
-    }
-    while (result.getDayOfWeek().getValue() >= 6);
-    return result;
-})
-ZonedDateTime apollolllaunch = ZonedDateTime.of(1969, 7, 16, 9, 32, 0, 0, ZonedId.of("America/New_York"));
-String formatted = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(apollolllaunch);
-DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG);
-String formatted = formatter.format(apollolllaunch);
-formatted = formatter.withLocal(Locale.FRENCH).format(apollolllaunch);
-for (DayOfWeek w: DayOfWeek.values()) {
-    System.out.print(w.getDisplayName(TextStyle.SHORT, Locale.ENGLISH) + " ");
-}
-formatter = DateTimeFormatter.ofPattern("E yyyy-MM-dd HH:mm");
-LocalDate churchsBirthday = LocalDate.parse("1903-06-14");
-ZonedDateTime apollolllaunch = ZonedDateTime.parse("1969-07-16 03:32:00-0400", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss xx"))
-```
-
-​	![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/time%E7%B1%BB%E4%B8%8E%E9%81%97%E7%95%99%E7%B1%BB%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BD%AC%E6%8D%A2.png?lastModify=1581229804)
-
-​	*java.time类与遗留类之间的转换*
-
-另一个可用于日期和时间类的转换集位于 `java.sql` 包中。还可以传递一个 `DateTimeFormatter` 给使用 `java.text.Format` 的遗留代码
-
-类似的，`ZonedDateTime` 近似于 `java.util.GregorianCalendar` ，在 Java 8 中，这个类有细粒度的转换方法。`toZonedDateTime` 方法可以将 `GregorianCalendar` 转换为 `ZonedDateTime` ，而静态的 `from` 方法可以执行反方向的转换
-
-`Instant` 类近似于 `java.util.Date` 。在 Java 8 中，这个类有两个额外的方法：将 Date 转换为 `Instant` 的 `toInstant` 方法，以及反方向转换的静态的 `from` 方法
-
-作为全新的创造，`Java Date` 和 `Time API`  必须能够与已有类之间进行互操作，特别是无处不在的 `java.util.Date`、`java.util.GregorianCalendar` 、`java.sql.Date/Time/Timestamp`
-
-##### 与旧API交互
-
-第一个调用使用了标准的 `ISO_LOCAL_DATE` 格式器，而第二个调用使用的是一个定制的格式器
-
-为了解析字符串中的日期、时间值，可以使用众多的静态 `parse` 方法之一。
-
-​	![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/%E6%97%A5%E6%9C%9F%E6%97%B6%E9%97%B4%E6%A0%BC%E5%BC%8F%E5%8C%96%E7%AC%A6%E5%8F%B7.png?lastModify=1581229804)
-
-​	*常用的日期、时间格式的格式化符号*
-
-会将日期格式化 `Wed 1969-07-16 09:32` 的形式。每个字母都表示一个不同的时间域，而字母重复的次数对应于所选择的特定格式
-
-可以通过指定模式来定制自己的日期格式
-
-```
-java.time.format.DateTimeForMatter` 类被设计用来替代 `java.util.DateFormat` 如果为了向后兼容性而需要后者的示例，那么可以调用 `formatter.toFormat()
-```
-
-`DayOfWeek` 和 `Month` 枚举都有 `getDisplayName` 方法，可以按照不同的 `Locale` 和格式给出星期日期和月份的名字
-
-这些方法使用了默认的 `Locale` 。为了切换到不同的 `Locale` ，可以直接使用 `withLocale` 方法。
-
-静态方法 `ofLocalizedDate`、`ofLocalizedTime` 、`ofLocalizedDateTime` 可以创建这种格式器
-
-​	![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/Locale%E7%9B%B8%E5%85%B3%E7%9A%84%E6%A0%BC%E5%BC%8F%E5%8C%96%E9%A3%8E%E6%A0%BC.png?lastModify=1581229804)
-
-​	*Locale* 相关的格式化风格
-
-标准格式器主要是为了机器刻度的时间戳而设计的。为了向人类读者表示日期和时间，可以使用 `Locale` 相关的格式器。对于日期和时间而言，有 4 种与 `Locale` 相关的格式化风格，即 `SHORT`、`MEDIUM`、`LONG`、`FULL`
-
-要使用标准的格式器，可以直接调用其 `format` 方法
-
-- 预定义的格式器
-
-- `Locale` 相关的格式器
-
-- 带有定制模式的格式器
-
-  ​                   *预定义的格式器*
-
-  ![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/%E9%A2%84%E5%AE%9A%E4%B9%89%E7%9A%84%E6%A0%BC%E5%BC%8F%E5%99%A8.png?lastModify=1581229804)
-
-`DateTimeFormatter` 类提供了三种用于打印日期、时间值的格式器
-
-##### 格式化和解析
-
-还有一个 `OffsetDateTime` 类，表示与 `UTC` 具有偏移量的时间，但是没有时区规则的束缚。这个类被设计用于专用于专用应用，这些应用特别需要剔除这些规则的约束，例如某些网络协议。对于人类时间，还是应该使用 `ZonedDateTime` 类
-
-当夏令时开始时，时钟要向前一个小时。当构建的时间对象正好落入了跳过去的一个小时内。
-
-​		![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/ZonedDateTime%E7%9A%84%E6%96%B9%E6%B3%95.png?lastModify=1581229804)
-
-​		*ZonedDateTime的方法*
-
-`ZonedDateTime` 的许多方法都与  `LocalDateTime` 的方法相同，它们大多数都很直接，但在夏令时带来了一些复杂性
-
-这是一个具体的时刻，调用 `apollolllaunch.toInstant` 可以获得对应的 `Instant` 对象。反过来，如果有一个时刻对象，调用 `instant.atZone(ZoneId.of("UTC"))` 可以获得格林威治皇家天文台的 `ZonedDateTime` 对象，或者使用其他的 `ZoneId` 获得地球上其他地方的 `ZoneId`
-
-给定一个时区 ID，静态方法 `ZoneId.of(id)` 可以产生一个 `ZoneId` 对象。可以通过调用 `local.atZone(zoneId)` 用这个对象将 `LocalDateTime` 对象转换为 `ZoneDateTime` 对象，或者可以通过调用静态方法 `ZonedDateTime.of(year, month, day, hour, minute, second, nano, zoneId)` 来构造一个 `ZonedDateTime` 对象。
-
-每个时区都有一个 ID，例如 `America/New_York` 和 `Europe/Berlin`。要找出所有可用的时区，可以调用 `ZoneId.getAvailableZoneIds`。
-
-##### 时区时间
-
-还有一个表示日期和时间的 `LocalDateTime` 类。这个类适合存储固定时区的时间点。
-
-​		![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/LocalTime%E7%9A%84%E6%96%B9%E6%B3%95.png?lastModify=1581229804)
-
-​		*LocalTime的方法*
-
-```
-LocalTime bedtime = LocalTime.of(22, 30);
-LocalTime rightNow = LocalTIme.now()
-```
-
-`LocalTime` 表示当日时刻，如：15：30：30。可以用  `now` 或 `of` 方法创建其实例
-
-##### 本地时间
-
-`lambda` 表达式的参数类型为 `Temporal` ，它必须被强制转型为 `LocalDate`。可以用 `ofDateAdjuster` 方法来避免这种强制转型，该方法期望得到的参数是类型为 `UnaryOperator` 的 `lambda` 表达式
-
-还可以通过实现 `TemporalAdjuster` 接口来创建自己的调整器。
-
-​	![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/TemporalAdjusters%E7%B1%BB%E4%B8%AD%E7%9A%84%E6%97%A5%E6%9C%9F%E8%B0%83%E6%95%B4%E5%99%A8.png?lastModify=1581229804)
-
-​	*TemporalAdjusters类中的日期调整器*
-
-`with` 方法返回一个新的 `LocalDate` 对象，而不会修改原来的对象
-
-对于日程安排应用来说，经常需要计算诸如"每个月的第一个星期二"这样的日期。`TemporalAdjusters` 类提供了大量用于常见调整的静态方法。可以将调整方法的结果传给 `with` 方法
-
-##### 日期调整器
-
-​		![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/LocalDate%E7%9A%84%E6%96%B9%E6%B3%95.png?lastModify=1581229804)
-
-​		*LocalDate的方法*
-
-`LocalDate` 是带有年、月、日的日期。为了构建 `LocalDate` 对象，可以使用 `now` 或 `of` 静态方法：
-
-在 Java API 中有两种人类时间，本地日期/时间和时区时间。本地日期/时间包含日期和当天的时间，但是与时区信息没有任何关联。1903 年 6 月 14 日就是一个本地日期的实例。因为这个日期既没有当天的时间，也没有时区信息，因此它并不对应精确的时刻。1969 年 7 月 16 日 09：32：00 EDT 是一个时区日期/时间，表示的是时间线上的一个精确的时刻
-
-##### 本地时间
-
-`Instant` 和 `Duration` 类都是不可修改的类，所以 `multipliedBy` 和 `minus` 这样的方法都会返回一个新的实例
-
-![img](file:///Users/zhangyaowen/notes/Languages/Java/Language/Images/%E7%94%A8%E4%BA%8E%E6%97%B6%E9%97%B4%E7%9A%84Instant%E5%92%8CDuration%E8%BF%90%E7%AE%97.png?lastModify=1581229804)
-
-​			*用于时间的Instant和Duration的算术运算*
-
-```
-Duration` 对象的内部存储所需的空间超过了一个 `long` 的值，因此秒数存储在一个 `long` 中，而纳秒数存储在一个额外的 `int` 中。如果想要让计算精确到纳秒级，那么实际上需要整个 `Duration` 的存储内容。如果不需要这么高的精度，可以用 long 的值来执行计算，然后调用 `toNanos
-```
-
-`Duration` 是两个时刻之间的时间量。可以通过调用 `toNanos` 、`toMillis`、`getSeconds`、`toMinutes`、`toHours` 和 `toDays` 来获得 `Duration` 按照传统单位度量的时间长度
-
 #### 国际化
 
-##### Locale 对象
+##### *Locale*
 
-##### 数字格式
+标识或获得地区，语言，是国际化的基础
 
-数字和货币的格式高度依赖于 `locale` 。Java 类库提供了一个格式器对象的集合，可以对 `java.text` 包中的数字值进行格式化和解析。可以通过下面的步骤对特定 `Locale` 的数字进行格式化：使用一个工厂方法得到一个格式器对象，使用这个格式器对象来完成格式化和解析工作
+##### *NumberFormat*
 
-工厂方法是 `NumberFormat` 类的静态方法，它们接受一个 `Locale` 类型的参数。总共有 3 个工厂方法：`getNumberInstance` 、`getCurrencyInstance` 、`getPercentInstance`，这些方法返回的对象可以分别对数字、货币量和百分比进行格式化和解析。
+数字格式化，依赖于 *Locale*，getNumberInstance() 、getCurrencyInstance() 、getPercentInstance()，这些方法返回的对象可以分别对数字、货币量和百分比进行格式化和解析。
 
-```java
-// 对德语中的货币进行格式化
-Locale loc = Locale.GERMAN;
-NumberFormat currFmt = NumberFormat.getCurrencyInstance(loc);
-double amt = 123456.78;
-String result = currFmt.format(amt);
-```
+##### Currency
 
-如果要读取一个按照某个 `Locale` 的惯用法而输入或存储的数字，那么就需要使用 `parse` 方法。`parse` 方法能处理小数点和分隔符以及其他语言中的数字
+格式化货币值，可以使用 *NumberFormat*.getCurrencyInstance() 方法。但是这个方法灵活性不好，它返回的是一个只针对一种货币的格式器。
 
-```java
-TextField inputField;
-NumberFormat fmt = NumberFormat.getNumberInstance();
-Number input = fmt.parse(inputField.getText().trim());
-double x = input.doubleValue();
-```
+使用 *Currency* 类来控制被格式器所处理的货币。可以通过将一个货币标识符传给静态的 *Currency*.getInstance() 方法来得到一个 *Currency* 对象，然后对每一个格式器都调用 setCurrency() 方法
 
-`parse` 的返回类型是抽象类型的 `Number`。返回的对象是一个 `Double` 或 `Long` 的包装器类对象，这取决于被解析的数字是否是浮点数。如果不关心两者的差异。可以直接使用 `Number` 类中的 `doubleValue` 方法来读取被包装的数字
-
-`Number` 类型的对象并不能自动转换成相关的基本类型，因此，不能直接将一个 `Number` 对象赋给一个基本类型，而应该使用 `doubleValue` 或 `intValue` 方法
-
-如果数字文本的格式不正确，该方法会抛出一个 `ParseException` 异常。（字符串以空白字符开头是不允许的，但是任何跟在数字之后的字符都将被忽略，所以这些跟在后面的字符是不会引起异常的）
-
-由  `getXxxInstance` 工厂方法返回的类并非是 `NumberFormat` 类型的。`NumberFormat` 类型是一个抽象类，而我们实际上得到的格式器是它的一个子类。工厂方法只知道如何定位属于特定 `locale` 的对象
-
-可以用静态的 `getAvailableLocales` 方法得到一个当前所支持的 `Locale` 对象列表。这个方法返回一个 `Locale` 对象数组，从中可以获得针对它们的数字格式器对象
-
-##### 货币
-
-为了格式化货币值，可以使用 `NumberFormat.getCurrencyInstance` 方法。但是这个方法灵活性不好，它返回的是一个只针对一种货币的格式器。处理这样的情况，应该使用 `Currency` 类来控制被格式器所处理的货币。可以通过将一个货币标识符传给静态的 `Currency.getInstance` 方法来得到一个 `Currency` 对象，然后对每一个格式器都调用 `setCurrency` 方法
+货币标识符由 ISO 4217 定义，美元：USD，人民币：CNY
 
 ##### 日期和时间
 
-当格式化日期和时间时，需要考虑 4 个与 `Locale` 相关的问题
+当格式化日期和时间时，需要考虑 4 个与 Locale 相关的问题
 
 * 月份和星期应该用本地语言来表示
 * 年月日的顺序要符号本地习惯
 * 公历可能不是本地首选的日期表示方法
 * 必须要考虑本地的时区
 
-`java.time` 包中的 `DateTimeFormatter` 类可以处理这些问题。可以使用 `LocalDate`、`LocalDateTime`、`LocalTime` 和 `ZonedDateTme` 的静态的 `parse` 方法之一来解析字符串中的日期和时间
+*java.time.DateTimeFormatter* 类可以处理这些问题。
 
-```java
-LocalTime time = LocalTime.parse("9:32 AM", formatter);
-```
+#### 排序和范化
 
-##### 排序和范化
+##### 字符校对与范化
 
-`compareTo` 方法使用的是字符串的 `UTF-16` 编码值，这会导致很荒唐的结果，即使在英文比较中也是如此。为了获得 `Locale` 敏感的比较符，可以调用静态的 `Collator.getInstance` 方法：
+###### Collator
 
-```java
-Collator coll = Collator.getInstance(locale);
-words.sort(coll);
-```
+compareTo() 方法使用的是字符串的 UTF-16 编码值，这会导致很荒唐的结果，即使在英文比较中也是如此。为了获得 *Locale* 敏感的比较符，可以调用静态的 *Collator*.getInstances() 方法，获得本地排序器
 
-因为 `Collator` 类实现了 `Comparator` 接口，因此，可以传递一个 `Collator` 对象给 `list.sort(Comparator)` 方法来对一组字符串进行排序
+排序器有几个高级设置项。可以设置排序器的强度以此来选择不同的排序行为。字符间的差别可以被分为首要的（primary）、其次的（secondary）和再次的（tertiary）。
 
-排序器有几个高级设置项。可以设置排序器的强度以此来选择不同的排序行为。字符间的差别可以被分为首要的、其次的和再次的。如果将排序器的强度设置成 `Collator.PRIMARY`，那么排序器将只关注 `primary` 级的差别。如果设置成 `Collator.SECONDARY`，排序器将把 `secondary` 级的差别也考虑进去。即，两个字符串在 `secondary` 或 `tertiary` 强度下更容易被区分开来。如果强度被设置为 `Collator.IDENTICAL` 则不允许有任何差异。这种设置与排序器的第二种具有相当技术性的设置，即分解模式，联合使用时，就会显得非常有用
+如果将排序器的强度设置成 Collator.PRIMARY，那么排序器将只关注 primary 级的差别。如果设置成 Collator.SECONDARY，排序器将把 secondary 级的差别也考虑进去。
 
-让排序器去多次分解一个字符串是很浪费的。如果一个字符串要和其他字符串进行多次比较，可以将分解的结果保存在一个排序键对象中。`getCollationKey` 方法返回一个 `CollationKey` 对象，可以用它来进行更进一步的、更快速的比较操作。
+如果强度被设置为 Collator.IDENTICAL 则不允许有任何差异。这种设置与排序器的第二种具有相当技术性的设置，即分解模式，联合使用时，就会显得非常有用
 
-```java
-String a = ...;
-CollationKey akey = coll.getCollationKey(a);
-if (akey.compareTo(coll.getCollationKey(b)) == 0) {
-    
-}
-```
+###### Unicode 范化机制
 
-在将字符串存储到数据库中，或与其他程序进行通信时。`java.text.Normalizer` 类实现了对范化的处理
+字符或字符串被表述为Unicode 时有多种形式（ffi 可以用代码 U+FB03 描述成单个拉丁字符，也可以被描述成三个小写字母）。Unicode 标准字符串定义了四种范化形式：
 
-```java
-String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
-```
+* D
 
-#### 消息格式化
+  重音符号被分解为基字符和组合重音字符
 
-Java 类库中有一个 `MessageFormat` 类，它与用 `printf` 方法进行格式化很类似，但是它支持 `Locale` ，并且会对数字和日期进行格式化。
+* KD
 
-##### 格式化数字和日期
+  完全分解字符
 
-典型的消息格式化字符串
+* C
 
-```java
-"On {2}, a {0} destroyed {1} houses and caused {3} of damage."
-```
+  重音符号总是组合的，如带音标字母被组合成一个字母
 
-括号中的数字是占位符，可以用实际的名字和值来替换它们。使用静态方法 `MessageFormat.format` 可以用实际的值来替换这些占位符。它是一个 "varargs" 方法，可以通过下面的方法提供参数
+* KC
 
-```java
-String msg = MessageFormat.format("On {2}, a {0} destroyed {1} houses and caused {3} of damage.", "hurricane", 99, new GregorianCalendar(1999, 0, 1).getTime(), 10.0E8);
-```
+  分解字符
 
-上面例子中，占位符 `{0}` 被 "hurricane" 替换，`{1}` 被 99 替换。
+指定排序器使用的范化程度：*Collator*.NO_DECOMPOSITION 表示不对字符串做任何范化，默认值 *Collator*.CANONICAL_DECOMPOSITION 使用 D 形式。
 
-占位符索引后面可以跟一个类型（type）和一个风格（style）, 它们之间用逗号隔开。类型是：`number` , `time`、`date` 、`choice` 如果类型是 `number` 那么风格可以是 `integer` 、`currency`、`percent`，如果类型是 `time` 或 `date` ，风格可以是 `short` ，`medium`、`long`、`full` 或者是一个日期格式模式，就像 `yyyy-MM-dd` 
+###### Normalizer
 
-静态的 `MessageFormat.format` 方法使用当前的 `locale` 对值进行格式化。要用任意的 `locale` 进行格式化，还有一些工作要做，因为这个类还没有提供任何可以使用的 "varargs" 方法。需要把将要格式化的值置于 `Object[]` 数组中。
+在将字符串存储到数据库中，或与其他程序进行通信时。*java.text.Normalizer* 类实现了对范化的处理
 
-```java
-MessageFormat mf = new MessageFormat(pattern, loc);
-String msg = mf.format(new Object[] {});
-```
+##### 消息格式化
 
-##### 文本文件和字符集
+###### *MessageFormat*
 
-##### 源文件的字符编码
+java 类库中 *MessageFormat*，与用 printf() 方法进行格式化很类似，但是它支持 *Locale* ，并且会对数字和日期进行格式化。
 
-作为程序员，要与 Java 编译器交互，这种交互需要通过本地系统的工具来完成。例如，可以使用中文版的记事本来写 Java 源代码文件，但这样写出来的源码不是随处可用的，因为它们使用的是本地的字符编码，只有编译后的 `class` 文件才能随处使用，它们会自动地使用 `modified UTF-8` 编码来处理标识符和字符串。即在程序编译和运行时，依然有3种字符编码参与其中：
+支持在字符串中使用大括号里加数字索引占位，占位符索引后面可以跟一个类型（type）和一个风格（style）, 它们之间用逗号隔开。
 
-* 源文件：本地编码
-* 类文件：`modified UTF-8`
-* 虚拟机：`UTF-16`
+类型是：number , time、date 、choice。类型是 number 那么风格可以是 integer 、currency、percent，如果类型是 time 或 date ，风格可以是 short，medium、long、full 或者是一个日期格式模式，就像 yyyy-MM-dd。choice 类型指定了消息能够随占位符的值而变化。
 
-使用 `-encoding` 标记来设定源文件的字符编码
-
-```shell
-javac -encoding UTF-8 Myfile.java
-```
-
-为了使源文件能够到处使用，必须使用普通的 `ASCII` 编码。即，需要将所有非 `ASCII` 字符转换成等价的 `Unicode` 编码。JDK 包含一个工具---native2ascii, 可以用它来将本地字符编码转换成普通的 ASCII。这个工具直接将输入中的每一个非 ASCII 字符替换为一个  \u 加 4 位十六进制数字的 Unicode 值。使用 `native2ascii` 时，需要提供输入和输出文件的名字
-
-```shell
-native2ascii Myfile.java Myfile.temp
-```
-
-用 `-reverse` 选项来进行逆向转换
-
-```
-native2ascii -reverse Myfile.temp Myfile.java
-```
-
-用 `-encoding` 选项指定另一种编码
-
-```java
-native2ascii -encoding UTF-8 Myfile.java Myfile.temp
-```
+静态的 *MessageFormat*.format() 方法使用当前的 *Locale* 对值进行格式化，可以实例化带 *Locale* 的 *MessageFormat*
 
 #### 正则表达式
 
@@ -980,9 +745,119 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
   将上次替换过的内容连接后面未替换过的内容，并放入 `StringBuffer`（通常在调用 `appendReplacement()` 之后调用 `appendTail()`，即获取原始`StringBuffer`
 
-  
+#### 时间
 
-  
+##### SE 8 之前
 
+###### Date
 
+1.0 中，对日期和时间的支持智能依赖 *java.util.Date* 类，只能以毫秒的精度表示时间，年份从 1900 年开始，月份从 0 开始，且对象可变。
+
+###### Time
+
+1.0 时间类
+
+###### Calendar
+
+1.1 中，*Date* 类的很多方法被废弃了，使用 *Calendar* 类代替，修改了时间，但月份还是从 0 开始，对象可变
+
+###### DateFormat
+
+格式化和解析日期或时间，非线程安全，只在 Date 类中提供
+
+##### SE 8
+
+SE 8 中引入了 *java.time* 包以提供日期和时间支持
+
+###### LocalDate 与 LocalTime
+
+该类实例是一个不可变对象，它只提供了简单的日期，并不包含当天的时间信息和任何与时区相关的信息。可以通过 getYear() 等方法或直接传递一个 *TemporalField* 参数给 get() 方法拿到相关信息（*TemporalField* 是一个接口，它定义了如何访问 *Temporal* 对象某个字段的值，枚举 *ChronoField* 实现了该接口）
+
+###### LocalDateTime
+
+是 *LocalDate* 和 *LocalTime* 复合类。同时表示了日期和时间，但不带有时区信息，可以直接创建，也可以合并日期和对象创建，支持从中提取 *LocalDate* 和 *LocalTime*
+
+###### Instant
+
+类似 UNIX_TIMESTAMP，包含秒和纳秒（0～999999999）
+
+```java
+// instant 构建local time
+Instant instant = Instant.now();
+LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(instant.getEpochSecond(),
+                instant.getNano(),
+                ZoneOffset.ofTotalSeconds(28800));
+```
+
+###### Duration
+
+*Duration* 类主要用于秒和纳秒衡量时间的长短，定义了两个 *Temporal* 对象时间段。但不能创建 *LocalDateTime* 和 *Instant* 两类对象的 *Duration*。会触发 *DateTimeException* 异常。
+
+*用于时间的 Instant 和 Duration 算术运算*
+
+|                             方法                             |                             描述                             |
+| :----------------------------------------------------------: | :----------------------------------------------------------: |
+|                         plus，minus                          |      在当前的 Instant 或 Duration 上加/减一个 Duration       |
+| plusNanos，plusMillis，plusSeconds，minusNanos，minusMillis，minusSeconds |    在当前的 Instant 或 Duration 上加/减给定时间单位的数值    |
+| plusMinutes，plusHours，plusDays，minusMinutes，mi nusHours，minusDays |          在当前 Duration 上加/减给定时间单位的数值           |
+|               multipliedBy，dividedBy，negated               | 返回由当前 Duration 乘/除给定 long 或 -1 而得到 Duration，可以缩放 Duration 但不能缩放 Instant |
+|                      isZero，isNegative                      |             检查当前的 Duration 是否是 0 或负值              |
+
+*Instant* 和 *Duration* 类都是不可修改的类
+
+###### Period
+
+如果需要以年，月，日等周期性的方式对多个时间单位建模，可以使用 *Period* 类。
+
+###### ZonedDateTime
+
+互联网编码分配管理机构（Internet Assigned Numbers Authority，IANA）保存着一个数据库，里面存储着世界上所有已知的时区，它每年会更新数次，而批量更新会处理夏令时的变更规则，java 使用了 IANA数据库
+
+每个时区都有一个 ID，*ZonedDateTime* 与 *LocalDateTime* 有大量相同的方法
+
+###### DateTimeFormatter
+
+*预定义格式器*
+
+|        格式器        |                             描述                             |                    示例                     |
+| :------------------: | :----------------------------------------------------------: | :-----------------------------------------: |
+|    BASIC_ISO_DATE    |            年、月、日、时区偏移量，中间没有分隔符            |                19690716-0500                |
+|    ISO_LOCAL_DATE    |                      分隔符为：-、：、T                      |                 1969-07-16                  |
+|    ISO_LOCAL_TIME    |                        以 ：为分隔符                         |                  09:32:00                   |
+| ISO_LOCAL_DATE_TIME  |                          以 T 分隔                           |             1969-07-16T09:32:00             |
+|   ISO_OFFSET_DATE    |             类似 ISO_LOCAL_XXX 但是有时区偏移量              |              1969-07-16-05:00               |
+|   ISO_OFFSET_TIME    |                                                              |               09:32:00-05:00                |
+| ISO_OFFSET_DATE_TIME |                                                              |          1969-07-16T09:32:00-05:00          |
+| ISO_ZONED_DATE_TIME  |                    有时区偏移量和时区 ID                     | 1969-07-16T09:32:00-05:00[America/New_York] |
+|     ISO_INSTANT      |                在 UTC 中，用 Z 时区 ID 来表示                |            1969-07-16T14:32:00Z             |
+|       ISO_DATE       |            类似 ISO_OFFSET_DATE，但时区信息是可选            |              1969-07-16-05:00               |
+|       ISO_TIME       |                     类似 ISO_OFFSET_TIME                     |               09:32:00-05:00                |
+|    ISO_DATE_TIME     |                   类似 ISO_ZONED_DATE_TIME                   | 1969-07-16T09:32:00-05:00[America/New_York] |
+|   ISO_ORDINAL_DATE   |                    LocalDate 的年和年日期                    |                  1969-197                   |
+|    ISO_WEEK_DATE     |                LocalDate 的年，星期和星期日期                |                 1969-W29-3                  |
+|  RFC_1123_DATE_TIME  | 用于邮件时间戳的标准，RFC822，并在 RFC1123 中将年份更新到 4 位 |       Web, 16 Jul 1969 09:32:00 -0500       |
+
+标准格式器主要是为了机器刻度的时间戳设计的。对人类可以使用与 Locale 相关的格式化风格：SHORT、MEDIUM、LONG、FULL
+
+可以通过指定模式来定制自己的日期格式
+
+*常用的日期/时间格式的格式化符号*
+
+|    时间域或目的     |                             示例                             |
+| :-----------------: | :----------------------------------------------------------: |
+|         ERA         |                            G: AD                             |
+|     YEAR_OF_ERA     |                      yy:69，yyyy: 1969                       |
+|    MONTH_OF_YEAR    |         M: 7，MM: 07，MMM： Jul，MMM：July，MMMM：J          |
+|    DAY_OF_MONTH     |                          d:6，dd:06                          |
+|     DAY_OF_WEEK     |            e:3，E：Wed，EEEE：Wednesday，EEEEE：W            |
+|     HOUR_OF_DAY     |                         H：9，HH：09                         |
+| CLOCK_HOUR_OF_AM_PM |                         K：9，KK：09                         |
+|     AMPM_OF_DAY     |                            a：AM                             |
+|   MINUTE_OF_HOUR    |                            mm：02                            |
+|  SECOND_OF_MINUTE   |                            ss: 00                            |
+|   NANO_OF_SECOND    |                        nnnnnn：000000                        |
+|       时区 ID       |                     VV：America/New_York                     |
+|       时区名        |             z：EDT，zzzz：Eastern Daylight time              |
+|     时区偏移量      | x：-04，xx：-0400，xxx：-4:00，XXX：与 xxx 相同，但 z 表示为 0 |
+| 本地化的时区偏移量  |                   0:GMT-4，0000:GMT-04:00                    |
 
