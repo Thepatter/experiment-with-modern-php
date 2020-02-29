@@ -127,22 +127,21 @@ Java 编程语言已经实现了 `MD5`、`SHA-1`、`SHA-256`、`SHA-384`、`SHA-
 * 作为所有消息摘要算法的超类
 
 ```java
-// 计算 SHA-1 指纹的对象
-MessageDigest alg = MessageDigest.getInstance("SHA-1");
-// 计算 hash
-byte[] hash = alg.digest(byte[] input);
-StringBuilder hashHexString = new StringBuilder("");
+ MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
+byte[] hashString = messageDigest.digest(origin);
+StringBuilder hBuilder = new StringBuilder();
 int n;
-for (int i = 0; i < hash.length; i++) {
-  n = hashString[i];
-  if (n < 0) {
-    n += 256;
-  }
-  if (n < 16) {
-    hashHexString.append("0");
-  }
-  hBuider.append(Integer.toHexString(n));
+for (byte b : hashString) {
+    n = b;
+    if (n < 0) {
+        n += 256;
+    }
+    if (n < 16) {
+        hBuilder.append("0");
+    }
+    hBuilder.append(Integer.toHexString(n));
 }
+return hBuilder.toString();
 ```
 
 #### 消息签名

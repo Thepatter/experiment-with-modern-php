@@ -381,6 +381,18 @@ Bound to phase 会显示该目标默认绑定的生命周期阶段
 </build>
 ```
 
+###### 导入 jar 到本地仓库
+
+```shell
+mvn install:install-file -Dfile=/path/to/ojdbc8.jar -DgroupId=com.oracle -DartifactId=oracle -Dversion=8.0.0 -Dpackaging=jar
+```
+
+* -Dfile：文件位置
+* -DgroupId：依赖的 groupId
+* -DartifactId：依赖的 artifactId
+* -Dversion：依赖版本号
+* -Dpacking：类型
+
 ### maven 构建 web 应用
 
 #### 概述

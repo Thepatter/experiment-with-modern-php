@@ -2,13 +2,11 @@
 
 ### bean 的生命周期
 
-在传统的 Java 应用中，bean 的生命周期很简单。使用 Java 关键字 new 进行 bean 实例化，然后该 bean 就可以使用了。一旦该 bean 不再被使用，则由 Java 自动进行垃圾回收。
-
 *Spring bean 生命周期*
 
 ![](./Images/SpringBean生命周期.png)
 
-每个阶段都可以针对 Spring 如果管理 bean 进行个性化定制
+每个阶段都可以针对 Spring 如何管理 bean 进行个性化定制
 
 * Spring 对 bean 进行实例化
 * Spring 将值和 bean 的引用注入到 bean 对应的属性中
