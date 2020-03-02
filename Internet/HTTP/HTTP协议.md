@@ -1,8 +1,10 @@
 ### HTTP 相关概念
 
-#### URI/URL
+#### 组成部分
 
-##### URI
+##### 资源定位符
+
+###### URI
 
 URI Uniform Resource Identifier 统一资源标识符，使用它能够唯一地标记互联网上资源，URI 主要有三个基本的部分构成：
 
@@ -12,13 +14,13 @@ URI Uniform Resource Identifier 统一资源标识符，使用它能够唯一地
 
   表示登录主机时的用户名和密码，但现在不推荐使用这种形式了，它会将敏感信息以明文形式暴露出来
 
-* 协议名 `Scheme`
+* 协议名 Scheme
 
-  即访问该资源应当使用的协议，如 `http`、`ftp`
+  即访问该资源应当使用的协议，如 http、ftp
 
-* 主机名 `authority`
+* 主机名 authority
 
-  即互联网上的标记，可以是域名或 IP 地址，表示资源所在的主机名，通常为 `host:port`
+  即互联网上的标记，可以是域名或 IP 地址，表示资源所在的主机名，通常为 host:port
 
 * 路径 `path`
 
