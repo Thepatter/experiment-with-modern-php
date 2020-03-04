@@ -122,6 +122,15 @@ Set 接口等同于 Collection 接口，不过其方法的行为有更严谨的�
 
 ##### Map
 
+主要的 Map 类集合
+
+|    Map 集合类     |      Key      |     Value     |    Super    | JDK  |             说明              |
+| :---------------: | :-----------: | :-----------: | :---------: | :--: | :---------------------------: |
+|     Hashtable     | 不允许为 null | 不允许为 null | Dictionary  | 1.0  |       线程安全（过时）        |
+| ConcurrentHashMap | 不允许为 null | 不允许为 null | AbstractMap | 1.5  |   锁分段技术或 CAS（JDK 8）   |
+|      TreeMap      | 不允许为 null |  允许为 null  | AbstractMap | 1.2  |      线程不安全（有序）       |
+|      HashMap      |  允许为 null  |  允许为 null  | AbstractMap | 1.2  | 线程不安全（resize 死链问题） |
+
 使用键来查找与之对应的元素，映射用来存放键、值对，如果提供了键，就能够查找到值。使用视图访问映射中键集、值集、实体集，现在可以直接使用 forEach() 的 lambda 来实现实体集访问
 
 ###### HashMap
@@ -130,7 +139,7 @@ Set 接口等同于 Collection 接口，不过其方法的行为有更严谨的�
 
 ###### TreeMap
 
-*TreeMap* 实现了 Map 接口，用键的整体顺序对元素进行排序，并将其组织成搜索树
+*TreeMap* 实现了 Map 接口，用键的整体顺序对元素进行排序，并将其组织成搜索树。 
 
 ###### WeakHashMap
 

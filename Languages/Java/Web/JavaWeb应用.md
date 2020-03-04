@@ -39,16 +39,16 @@ Java Web 应用的生命周期是由 Servlet 容器来控制的。包括：
 ##### 启动
 
 1. 把 web.xml 文件中的数据加载到内存中
-2. 为该应用创建一个 `ServletContext` 对象
-3. 对所有的 `Filter` 进行初始化
-4. 对那些需要在 Web 应用启动时就初始化的 `Servlet` 进行初始化
+2. 为该应用创建一个 ServletContext 对象
+3. 对所有的 Filter 进行初始化
+4. 对那些需要在 Web 应用启动时就初始化的 Servlet 进行初始化
 
 ##### 运行时
 
-最主要的生命阶段，所有 Servlet 都处于待命状态，随时可以提供服务。如果请求的 `Servlet` 还未加载，Servlet 容器会先加载并初始化 `Servlet`，然后调用对应的 `service()` 方法。
+最主要的生命阶段，所有 Servlet 都处于待命状态，随时可以提供服务。如果请求的 Servlet 还未加载，Servlet 容器会先加载并初始化 Servlet，然后调用对应的 service() 方法。
 
 ##### 终止
 
-1. 销毁所有处于运行时状态的 `Servlet`
-2. 销毁所有处于运行时状态的 `Filter`
+1. 销毁所有处于运行时状态的 Servlet
+2. 销毁所有处于运行时状态的 Filter
 3. 销毁所有与该 web 应用相关的对象，并释放 web 应用所占用的相关资源

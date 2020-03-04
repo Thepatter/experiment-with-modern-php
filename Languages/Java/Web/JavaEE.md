@@ -24,11 +24,11 @@ Enterprise Java Bean EJB 是应用服务器方的组件，实现了企业应用�
 
 * Remote 接口
 
-  定义了客户可以调用的业务方法，@Remote 注解标注接口为 Remote，Oracle EJB 规范规定，如果在 Remote 接口中声明的方法的参数类型或返回类型为对象，那么该对象类必须实现 `java.io.Serializable` 接口
+  定义了客户可以调用的业务方法，@Remote 注解标注接口为 Remote，Oracle EJB 规范规定，如果在 Remote 接口中声明的方法的参数类型或返回类型为对象，那么该对象类必须实现 *java.io.Serializable* 接口
 
 * Enterprise Bean 类
 
-  实现 Remote 接口。当客户程序访问 EJB 组件的业务方法时，这些方法的参数以及返回值都会在网络上传输。使用 `@Stateless` 注解声明为无状态会话 Bean
+  实现 Remote 接口。当客户程序访问 EJB 组件的业务方法时，这些方法的参数以及返回值都会在网络上传输。使用 @Stateless 注解声明为无状态会话 Bean
 
 EJB 组件运行在 EJB 容器中，是一种 JNDI 资源。
 
@@ -54,16 +54,16 @@ EJB 组件运行在 EJB 容器中，是一种 JNDI 资源。
 
 #### 部署描述符
 
-部署描述符是用于描述 Web 应用程序的元数据，并为 Java EE Web 应用程序服务器部署和运行 Web 应用程序提供指令。传统来说，所有元数据都来自于部署描述符文件 `/WEB-INF/web.xml`。该文件通常包含 Servlet、监听器和过滤器的定义，以及 HTTP 会话、JSP 和应用程序的配置选项。
+部署描述符是用于描述 Web 应用程序的元数据，并为 Java EE Web 应用程序服务器部署和运行 Web 应用程序提供指令。传统来说，所有元数据都来自于部署描述符文件 /WEB-INF/web.xml。该文件通常包含 Servlet、监听器和过滤器的定义，以及 HTTP 会话、JSP 和应用程序的配置选项。
 
-Java EE 6 中 Servlet 3.0 添加了使用注解和 Java Configuration API 配置 Web 应用程序的能。还增加了 Web 片段的概念（应用程序中的 JAR 文件可以包含 Servlet、过滤器和监听器的配置，这些配置将被添加到必要 JAR 文件的部署描述符文件 `/META-INF/web-fragment.xml`）Web 片段也可以使用注解和 Java Configuration API
+Java EE 6 中 Servlet 3.0 添加了使用注解和 Java Configuration API 配置 Web 应用程序的能。还增加了 Web 片段的概念（应用程序中的 JAR 文件可以包含 Servlet、过滤器和监听器的配置，这些配置将被添加到必要 JAR 文件的部署描述符文件 /META-INF/web-fragment.xml）Web 片段也可以使用注解和 Java Configuration API
 
 可以配置 Web 片段的顺序，从而按照特定的顺序扫描和激活它们。可以通过下面两种方式实现：
 
-* 每个 Web 片段的 `web-fragment.xml` 文件中可以包含一个 `<ordering>` 元素，该元素可以使用嵌套的 `<before>` 和 `<after>` 标签来控制该 web 片段在哪个 web 片段之前或之后激活。这些标签包含嵌套的 `<name>` 元素用于指定与当前片段有顺序关系的 Web 片段。`<before>` 和 `<after>` 也可以包含嵌套的 `<others>` 元素，表示该片段应该在任何未指定的片段之前或之后激活。
-* 如果未创建特定的 Web 片段，并且不能控制它的内容，那么仍然可以在应用程序的部署描述符中控制 Web 片段的顺序。通过使用 `/WEB-INF/web.xml` 中的 `<absolute-ordering>` 元素与它的嵌套的 `<name>` 和 `<orders>` 元素，可以配置绑定的 Web 片段的绝对顺序，该配置将覆盖来自于 Web 片段的任何顺序指令
+* 每个 Web 片段的 web-fragment.xml 文件中可以包含一个 <ordering> 元素，该元素可以使用嵌套的 <before> 和 <after> 标签来控制该 web 片段在哪个 web 片段之前或之后激活。这些标签包含嵌套的 <name> 元素用于指定与当前片段有顺序关系的 Web 片段。<before> 和 <after> 也可以包含嵌套的 <others> 元素，表示该片段应该在任何未指定的片段之前或之后激活。
+* 如果未创建特定的 Web 片段，并且不能控制它的内容，那么仍然可以在应用程序的部署描述符中控制 Web 片段的顺序。通过使用 /WEB-INF/web.xml 中的 <absolute-ordering> 元素与它的嵌套的 <name> 和 <orders> 元素，可以配置绑定的 Web 片段的绝对顺序，该配置将覆盖来自于 Web 片段的任何顺序指令
 
-默认情况下，Servlet 3.0 及更高版本的环境将扫描 Web 应用程序和 Web 片段中的 Java EE Web 应用程序注解，用于配置 Servlet、监听器、过滤器等。如果需要，可以在根 `<web-app>` 或 `<web-fragment>` 元素中添加特性 `metadata-complete="true"`，禁止扫描和注解配置。还可以在部署描述符中添加元素 `<absolute-ordering>` （不包含任何嵌套元素），禁止应用程序中的所有 Web 片段。
+默认情况下，Servlet 3.0 及更高版本的环境将扫描 Web 应用程序和 Web 片段中的 Java EE Web 应用程序注解，用于配置 Servlet、监听器、过滤器等。如果需要，可以在根 <web-app> 或 <web-fragment> 元素中添加特性 metadata-complete="true"，禁止扫描和注解配置。还可以在部署描述符中添加元素 <absolute-ordering>（不包含任何嵌套元素），禁止应用程序中的所有 Web 片段。
 
 #### 类加载器架构
 
