@@ -4,15 +4,23 @@
 
 ##### java I/O 系统
 
+###### 普通 IO
+
 存在各种 I/O 端和想要与之通信的接收端（文件、控制台、网络等），而且还需要以多种不同的方式与它们进行通信（顺序、随机存取、缓冲、二进制、按字符、按行、按字等）。
 
-java 通过创建大量的类来解决 I/O 问题，自 1.0 开始，在原来面向字节的类中添加了面向字符和基于 Unicode 的类。jdk 1.4 中，添加了 nio 类改进性能及功能。
+java 通过创建大量的类来解决 I/O 问题，自 1.0 开始，在原来面向字节的类中添加了面向字符和基于 Unicode 的类。
+
+###### New IO
+
+jdk 1.4 中，添加了 nio 类改进性能及功能。
 
 #### 文件体系
 
 ##### *File*
 
 <u>既能代表一个特定文件的名称，又能代表一个目录下的一组文件的名称。</u>如果它指一个文件集，可以对此集合调用 list() 方法。可以用 *File* 对象创建新的目录或整个目录路径。
+
+*File* 不仅代表存在的目录和文件，也可以用 *File* 对象创建新的目录或尚不存在的目录路径和查看文件特性
 
 <u>如果以 *FileOutputStream* 或 *FileWriter* 打开，那么它肯定会被覆盖，应该先使用 *File* 判断</u>
 
@@ -80,6 +88,15 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 
 用来表示那些从不同数据源产生输入的类。每一种数据源都有相应的子类。
 
+|           类            |                        功能                         |                            构造器                            |       使用       |
+| :---------------------: | :-------------------------------------------------: | :----------------------------------------------------------: | :--------------: |
+|  ByteArrayInputStream   |            将内存缓冲区当作 InputStream             |                    缓冲区，字节将从中取出                    |  作为一种数据源  |
+| StringBufferInputStream |            将 String 转换成 InputStream             |                            字符串                            |      数据源      |
+|     FileInputStream     |                     用于文件读                      |                      字符串，表示文件名                      |      数据源      |
+|            F            |  产生用于写入 PipedOutputStream 的数据，实现管道化  |                      PipedOutputStream                       | 作为多线程数据源 |
+|   SequenceInputStream   | 将两个或多个 InputStream 对象转换成单一 InputStream | 两个 InputStream 对象或一个容纳 InputStream 对象的容器 Enumeration |    作为数据源    |
+|   FileterInputStream    |               抽象类，作为装饰器接口                |                                                              |                  |
+
 ###### *ByteArrayInputStream*
 
 内存缓冲区
@@ -104,7 +121,23 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 
 抽象类，作为装饰器接口，为其他 *InputStream* 类提供有用功能
 
+*FilterInputStream* 属于一种 *InputStream*，为“装饰器”类提供基类，“装饰器”类可以把属性或有用的接口与输入流连接在一起。
+
+|          类           |                       功能                       | 构造器参数  |              使用              |
+| :-------------------: | :----------------------------------------------: | :---------: | :----------------------------: |
+|    DataInputStream    |                 读取基本数据类型                 | InputStream | 博涵用于读取基本类型的全部接口 |
+|  BufferedInputStream  |                    使用缓冲区                    | InputStream |        向进程添加缓冲区        |
+| LineNumberInputStream |                跟踪输入流中的行号                | InputStream |           仅增加行号           |
+|  PushbashInputStream  | 能弹出一个字节的缓冲区，将读到的最后一个字符回退 | InputStream |         编译器的扫描器         |
+
 ##### *OutputStream*
+
+|          类           |                          功能                          |          构造器           |         使用         |
+| :-------------------: | :----------------------------------------------------: | :-----------------------: | :------------------: |
+| ByteArrayOutputStream |                   在内存中创建缓冲区                   |         初始大小          |    指定数据目的地    |
+|   FileOutputStream    |                        写入文件                        | 字符串，文件名，File 对象 |   指定数据的目的地   |
+|   PipedOutputStream   | 任何写入其中的信息都会自动作为相关PipeInputStream 输出 |     PipedInputStream      | 指定多线程数据目的地 |
+|  FilterOutputStream   |                 抽象类，作为装饰器接口                 |                           |                      |
 
 ###### *ByteArrayOutputStream*
 
@@ -121,6 +154,12 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 ###### *FilterOutputStream*
 
 抽象类，作为装饰器接口
+
+| 类                   | 功能                         | 构造参数     | 使用                 |
+| -------------------- | ---------------------------- | ------------ | -------------------- |
+| DataOutputStream     | 向流中写入基本类型数据       | OutputStream | 写入基本数据全部接口 |
+| PrintStream          | 用于产生格式化输出，处理显示 | OutputStream |                      |
+| BufferedOutputStream | 使用缓冲区                   | OutputStream |                      |
 
 ##### ReaderWriter
 
@@ -220,7 +259,7 @@ jdk 1.4 的 java.nio.* 包中引入了新的 java I/O 类库，其目的在于�
 
 ​    *缓冲区的典型结构*
 
-​    ![](/Users/zhangyaowen/notes/Languages/Java/Language/Images/buffer缓冲区结构.png)
+​    ![](../Images/buffer缓冲区结构.png)
 
 * 一个容量，它永远不能改变
 * 一个读写位置，下一个值将在此进行读写

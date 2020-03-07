@@ -87,6 +87,8 @@ Spring Boot 包括以下模板引擎的自动配置文件，在默认配置下�
 
 https://www.cnblogs.com/itdragon/archive/2018/04/13/8724291.html
 
+在运行时，Spring Boot 的自动配置功能会发现 Thymeleaf 在类路径中，因此会为 Spring MVC 创建支撑 Thymeleaf 视图的 bean。
+
 ##### FreeMarker
 
 ###### mvn
@@ -187,3 +189,25 @@ public JsonData download(HttpServletResponse response, @PathVariable String file
 }
 ```
 
+#### Rest 端点
+
+Spring 提供了 RestTemplate 能够作为 Rest 端点请求
+
+*RestTemplate中独立操作*
+
+|       方法        |                             描述                             |
+| :---------------: | :----------------------------------------------------------: |
+|     delete()      |          在特定的 URL 上对资源进行 HTTP DELETE 操作          |
+|    exchange()     | 在 URL 上执行特定的 HTTP 方法，返回包含对象的 ResponseEntity，该对象从响应体中映射得到 |
+|     execute()     | 在 URL 上执行特定的 HTTP 方法，返回一个从响应体映射得到的对象 |
+|  getForEntity()   | 发送一个 HTTP GET 请求，返回 ResponseEntity 包含了响应体所映射成的对象 |
+|  getForObject()   |     发送一个 HTTP GET 请求，返回的请求体将映射为一个对象     |
+| headForHeaders()  |   发送 HTTP HEAD 请求，返回包含特定资源 URL 的 HTTP 头信息   |
+| optionsForAllow() |     发送 HTTP OPTIONS 请求，返回特定 URL 的 Allow 头信息     |
+| patchForObject()  |     发送 HTTP PATCH 请求，返回一个从响应体映射得到的对象     |
+|  postForEntity()  | POST 数据到一个 URL，返回包含一个对象的 ResponseEntity，这个对象是从响应体中映射得到的 |
+| postForLocation() |          POST 数据到一个 URL，返回新创建资源的 URL           |
+|  postForObject()  |      POST 数据到一个 URL，返回根据响应体匹配形成的对象       |
+|       put()       |                     PUT 资源到特定的 URL                     |
+
+除了 TRACE 以外，RestTemplate 对每种标准的 HTTP 方法都提供了至少一个方法。除此之外，execute() 和 exchange() 提供了较低层的通用方法，可以进行任意的 HTTP 操作

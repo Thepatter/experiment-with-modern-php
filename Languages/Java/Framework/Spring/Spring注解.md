@@ -1,12 +1,16 @@
-## Spring 注解
+### 注解
 
-### Controller 注解类型
+#### Spring 内置注解
 
-`org.springframework.stereotype.Controller` 注解类型用于指示 `Spring` 类的实例是一个控制器。Spring 使用扫描机制来找到应用程序中所有基于注解的控制器类。
+##### 类级别注解
 
-### RequestMapping 注解
+###### @Controller
 
-`org.springframework.web.bind.annotation.RequestMapping` 注释类型映射的 URI 与方法
+将类识别为控制器，并且将其作为组件扫描的候选者
+
+###### @RequestMapping 
+
+指定请求 url，并定制相关属性，可以应用在类级别和方法级别，部分属于与方法级别 mapping 注解通用
 
 * value
 
@@ -19,23 +23,28 @@
   ```java
   @RequestMapping(value="/order_process", method={RequestMethod.POST, RequestMethod.PUT)
   ```
+  
+  如果 @RequestMapping 注解类型用来注解一个控制器类，这种情况下，所有的方法都将映射为相对于类级别的请求
+  
+* produces
 
-如果 RequestMapping 注解类型用来注解一个控制器类，这种情况下，所有的方法都将映射为相对于类级别的请求
+  指定输出，只会处理 Accept 头信息保护该值的请求，它不仅会限制 API 只会生成 JSON 结果，同时还允许其他的控制器处理具有相同路径的请求，只要这些请求不要求 JSON 格式的输出就可以
 
-```java
-@Controller
-@RequestMapping("/customer")
-public class CustomerController {
-	@RequestMapping(value="/delete", method={RequestMethod.POST, RequestMethod.PUT})
-	public String deleteCustomer() {
-		...
-	}
-}
-```
+  ```java
+  @RequestMapping(path="/design", produces={"application/json", "text/xml"})
+  ```
 
-由于控制器类的映射使用 `/customer`，而 `deleteCustomer` 方法映射为 `/delete`，则 `http://domain/context/customer/delete` 将会映射在 `deleteCustomer` 方法上
+* consumes
 
-### 依赖注入 @Autowired@Service
+  指定请求输入
+
+  ```java
+  @PostMapping(consumes="application/json")
+  ```
+
+  该方法只会处理 Content-type 与 application/json 相匹配的请求
+
+###### @Autowired@Service
 
 `@Autowired` 属于 `org.springframework.beans.factory.annotation` 包，通过注解 `@Autowired` 到字段或方法来实现依赖注入。为了能被注入，类必须要注明为 `@Service`，该类型是 `org.springframework.stereotype` 包的成员。`@Service` 注解类型指示类是一个服务。此外，在配置文件中，还需要添加一个 `<component-scan/>` 元素来扫描依赖基本包：
 
@@ -43,7 +52,55 @@ public class CustomerController {
 <context:component-scae base-package="dependencyPackage"/>
 ```
 
-### 注解方法参数
+###### @Repository
+
+组件扫描会发现它，并且会将其初始化为 spring 上下文中的 bean
+
+@SessionAttributes
+
+类级别的 @SessionAttributes 能够指定模型对象要保存在 session 中
+
+###### @RestController
+
+类似于 @Controller 和 @Service 的构造型注解，能够让类被组件扫描功能发现。且控制器中的所有处理方的返回值都要直接写入响应体中，而不是将值放到模型中并传递给一个试图以便于进行渲染
+
+###### @Component
+
+##### 方法级别注解
+
+###### @CrossOrigin
+
+允许跨域
+
+```
+@CrossOrigin(origins = "*")
+```
+
+###### @GetMapping
+
+在 Spring 4.3 引入处理 HTTP GET 请求
+
+###### @PostMapping
+
+处理 POST 请求
+
+###### @PutMapping
+
+处理 PUT 请求
+
+###### @DeleteMapping
+
+处理 DELETE 请求
+
+###### @PatchMapping
+
+处理 PATCH 请求
+
+###### @PathVariable
+
+指定 url 占位符
+
+###### @RequestParam
 
 使用 `org.springframework.web.bind.annotation.RequestParam` 注解类型来注解方法参数。
 
@@ -63,7 +120,7 @@ public String viewProduct(@PathVariable Long id, Model model) {
 }
 ```
 
-#### @ModelAttribute
+###### @ModelAttribute
 
 Spring MVC  在每次调用请求处理方法时，都会创建 Model 类型的一个实例。若打算使用该实例，则可以在方法中添加一个 Model 类型的参数。还可以在方法中添加 `ModelAttribute` 注解类型来访问 Model 实例。可以用 `@ModelAttribute` 来注解方法参数或方法。带 `@ModelAttribute` 注解的方法会将其输入的或创建的参数对象添加到 Model 对象中（若方法中没有显式添加）。
 
@@ -80,4 +137,103 @@ public String submitOrder(@ModelAttribute("newOrder") Order order, Model model) 
 @ModelAttribute
 public void populateModel(@RequestParam String id, Model mode.addAttribute(new Account(id))) {}
 ```
+
+###### @Valid
+
+###### @Bean
+
+会初始化 bean 并立即为它的属性设置值
+
+###### @ResponseStatus
+
+指定响应状态码
+
+###### @RequestBody
+
+请求应该被转换为一个 Book 对象并绑定到该参数上
+
+```
+public Book store(@RequestBody Book book) {}
+```
+
+##### Spring Data JPA
+
+###### @Entity
+
+类级别，声明 JPA 实体
+
+###### @Id
+
+属性上声明该属性为数据库表主键
+
+###### @GeneratedValue
+
+属性上声明该值为数据库自增值
+
+```java
+@GeneratedValue(startegy=GenerationType.AUTO)
+```
+
+###### @ManyToMany
+
+指定多对多
+
+```java
+@ManyToMany(targetEntity=Ingredient.class)
+```
+
+###### @PrePersist
+
+方法注解，声明在持久化之前调用
+
+```java
+@PrePersist
+void createdAt() {
+	this.createdAt = new Date();
+}
+```
+
+###### @Table
+
+类级别注解，指定表名
+
+###### @Query
+
+方法注解，声明方法调用时要执行的查询
+
+#### 其他组件
+
+##### Lombok
+
+###### @Data
+
+类级别的 @Data 会生成缺省方法：equals()、getter()、setter()、hashCode()、toString()，同时还会生成所有以 final 属性作为参数的构造器
+
+###### @Slf4j
+
+运行时，会在这个类中自动生成一个 SLF4J（Simple Logging Facade for java）Logger。等效于在类中
+
+```java
+private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Current.class);
+```
+
+###### @NoArgsConstructor
+
+类级别注解，实现一个无参构造器，会移除 @Data 添加的有参构造器
+
+###### @RequiredArgsConstructor
+
+除了 private 的无参构造器之外，还会有一个有参构造器
+
+##### Hibernate Validator
+
+###### @NotNull
+
+###### @Size
+
+###### @CreditCardNumber
+
+###### @Digits
+
+###### @NotBlank
 
