@@ -29,44 +29,13 @@ public class HelloController {
 }
 ```
 
-##### Webflux
+#### 检验输入
 
-###### mvn 依赖
+Spring 支持 java 的 Bean  检验 API（Bean Validation API，JSR-303）。能声明检验规则，而不必在应用程序中显式编写声明逻辑。
 
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-webflux</artifactId>
-</dependency>
-```
+Spring boot web starter 传递依赖会自动将 Hibernate Validation 添加进来。
 
-###### controller
-
-* 使用注解方式
-
-  ```java
-  @RestController
-  @RequestMapping("/users")
-  public class MyFluxController {
-      @GetMapping("/{user}")
-      public Mono<User> getUser(@PathVariable int user) {
-          return Mono.just(User.USERS.get(user));
-      }
-      @GetMapping("/list/{page}")
-      public Mono<List<User>> index(@PathVariable int page) {
-          int pageSize = 3;
-          int startId = (page - 1) * 3 + 1;
-          List<User> users = new LinkedList<>();
-          for (int i = startId; i < startId + pageSize; i++) {
-              users.add(User.USERS.get(i));
-          }
-          return Mono.just(users);
-      }
-  }
-  
-  ```
-
-* 函数式
+Validation API 提供了可以添加到域对象上的注解，以声明校验。
 
 #### 页面模板
 

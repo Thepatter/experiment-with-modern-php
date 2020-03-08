@@ -102,18 +102,27 @@ SE 5 的 java.util.concurrent 包中的执行器（Executor）管理 Thread 对�
   允许的创建线程数量为 Integer.MAX_VALUE，可能会创建大量的线程，从而导致OOM。
 
 ```java
-// Positive example 1：
-//org.apache.commons.lang3.concurrent.BasicThreadFactory
-ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1,
-        new BasicThreadFactory.Builder().namingPattern("example-schedule-pool-%d").daemon(true).build());
-//Positive example 2：
-ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("demo-pool-%d").build();
-//Common Thread Pool
-ExecutorService pool = new ThreadPoolExecutor(5, 200,
-        0L, TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<Runnable>(1024), namedThreadFactory, new ThreadPoolExecutor.AbortPolicy());
-    pool.execute(()-> System.out.println(Thread.currentThread().getName()));
-    pool.shutdown();//gracefully shutdown     
+public class UserThreadFactory implements ThreadFactory {
+    private final String namePrefix;
+    private final AtomicInteger nextId = new AtomicInteger(1);
+    UserThreadFactory(String whatFeatureOfGroup) {
+        namePrefix = "From UserThreadFactory's " + whatFeatureOfGroup + "-Worker-";
+    }
+    @Override
+    public Thread newThread(Runnable task) {
+        String name = namePrefix + nextId.getAndIncrement();
+        return new Thread(null, task, name, 0, false);
+    }
+    public static void main(String[] args) {
+        ExecutorService executor = new ThreadPoolExecutor(6, 12, 60, TimeUnit.SECONDS,
+                        new LinkedTransferQueue<>(), new UserThreadFactory("mine"));
+        for (int i = 0; i < 5; i++) {
+            executor.execute(() ->
+                    System.out.println("THREAD NAME :" + Thread.currentThread().getName() + " ID: " + Thread.currentThread().getId()));
+        }
+        executor.shutdown();
+    }
+}
 ```
 
 ```xml
@@ -122,7 +131,7 @@ ExecutorService pool = new ThreadPoolExecutor(5, 200,
         <property name="corePoolSize" value="10" />
         <property name="maxPoolSize" value="100" />
         <property name="queueCapacity" value="2000" />
-    <property name="threadFactory" value= threadFactory />
+    	<property name="threadFactory" value= threadFactory />
         <property name="rejectedExecutionHandler">
             <ref local="rejectedExecutionHandler" />
         </property>

@@ -53,7 +53,7 @@
 
 java 不支持析构器。可以为任何一个类添加 finalize 方法。finalize 方法将在垃圾回收器清除对象之前调用。在实际应用中，不要依赖于使用 finalize 方法回收任何短缺的资源，因为很难知道这个方法什么时候才能够调用。调用 *System*.runFinalizersOnExit(true) 能够确保 finalizer 方法在 java 关闭前被调用。不过这个方法并不安全，替代的方法是使用方法 *Runtime*.addShutdownHook 添加关闭钩（shutdown hook）。
 
-######对象引用
+###### 对象引用
 
 * 对象是通过对象引用变量来访问的，该变量包含对对象的引用，从本质上来说，一个类是一个程序员定义的类型。类是一种引用类型对象引用变量中只包含了对该对象的引用，严格来说，对象引用变量和对象是不同的，但是大多数情况下，这种差异是可以忽略的
 * 数组被看作是对象，数组是用 new 操作符创建的，一个数组变量实际上是一个包含数组引用的变量
@@ -78,7 +78,7 @@ java 不支持析构器。可以为任何一个类添加 finalize 方法。final
 | :------------: | :--------------: | :--------------: | :------------: | :------------: |
 |     public     |        是        |        是        |       是       |       是       |
 |   protected    |        是        |        是        |       是       |   不同包子类   |
-|    defaule     |        是        |        是        |       是       |       否       |
+|    default     |        是        |        是        |       是       |       否       |
 |    private     |        是        |        否        |       否       |       否       |
 
 如果一个变量或方法依赖于类的某个具体实例，那就应该将它定义为实例变量或实例方法。如果一个变量或方法不依赖于类的某个具体实例，就应该将它定义为静态变量或静态方法
@@ -209,7 +209,7 @@ javac 编译器总是在当前的目录中查找文件，但 java 虚拟机仅�
 
 * 类关系的 UML 符号
 
-![](/Users/zhangyaowen/notes/Languages/Java/Language/Images/类关系UML符号.png)
+<img src="../Images/类关系UML符号.png" style="zoom:67%;" />
 
 ###### super 关键字
 
@@ -387,6 +387,14 @@ SE 8 中，允许在接口中增加静态方法。
 
 ##### 基本的 enum 特性
 
+对于有限集合的变量取值，可以自定义枚举类型，枚举类型包括有限个命名的值，枚举只能存储声明的枚举值或 null 值。
+
+```java
+enum Size {SMALL, MEDIUM, LARGE, EXTRE_LARGE};
+// 声明枚举变量
+Size s = Size.MEDIUM;
+```
+
 ###### *Enum* 
 
 * values() 方法返回 enum 实例的数组，而且该数组中的元素严格保持其在 enum 中声明的顺序，values() 是由编译器添加的 static 方法
@@ -415,3 +423,56 @@ EnumMap 是一种特殊的 Map，它要求其中的键必须来自一个 enum，
 
 enum 实例定义时的次序决定了其在 EnumMap 中的顺序
 
+#### 常用对象类型
+
+##### 数组
+
+数组是对象，存储同一类型的值。通过整型下标访问数组中的值。数组初始化后不能改变大小。如果需要动态扩展数组，使用 *ArrayList*。数组传递采用引用传递
+
+```java
+int[] a = new int[100];
+int[] smallPrimes = {2, 3, 5, 7, 11, 13};
+// 不创建新变量的情况下重新初始化一个数组
+smallPrimes = new int[]{17, 19, 23, 31, 37};
+```
+
+* 数组初始化
+
+  创建一个整形数组时，所有元素都初始化为 0，boolean 数组的元素会初始化为 false，对象数组的元素会初始化为 null
+
+* 遍历
+
+  ```java
+  // foreach 类型遍历
+  for (type element: array) {
+      ...
+  }
+  // for 遍历
+  for (int i = 0; i < array.size; i++) {
+  		...
+  }
+  ```
+
+* 可以向导出类型的数组赋予基类型的数组引用。数组对象可以保留有关它们包含的对象类型的规则。因此在编译检查和运行时检查之间，不能滥用
+
+##### 字符串
+
+java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 编码表中码点，可能需要1个或2个代码单元表示）。使用 + 拼接字符串。*String* 类实例不可变。
+
+* 空串
+
+  空串是一个 java 对象，有自己的串长度 0 和内容空。
+
+* null
+
+  *String* 变量可以存放一个特殊的值 null，表示目前没有任何对象与该变量关联
+
+使用索引访问用 String 的 split 方法得到的数组时，需做最后一个分隔符后有无内容的检查，否则会有抛 *IndexOutOfBoundsException* 的风险
+
+##### BigDecimal
+
+为了防止精度损失，禁止使用构造方法 BigDecimal(double) 的方式把 double 值转化为 BigDecimal 对象
+
+BigDeciaml(double) 存在精度损失风险，再精确计算或值比较的场景中可能会导致业务逻辑异常。
+
+优先推荐入参数为 String 的构造方法，或使用 BigDecimal 的 valueOf 方法

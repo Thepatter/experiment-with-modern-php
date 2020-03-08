@@ -64,6 +64,22 @@ Set 接口等同于 Collection 接口，不过其方法的行为有更严谨的�
 
 <img src="../Images/集合框架中类.png" style="zoom:87%;" />
 
+##### Collections
+
+*Collections* 类返回的对象，如 emptyList()/singletionList() 等都是 immutablelist，不可对其进行添加或删除元素，会抛出 *UnsupportedOperationException* 如果查询无结果，返回 Collections.emptyList() 空集合对象。
+
+<u>使用集合转数组的方法，必须使用集合的 toArray(T[] array)，传入的是类型完成一致，长度为 0 的空数组</u>
+
+使用无参 toArray() 会泛型丢失，若强转其他类型数组将 *ClassCastException* 错误。对于 toArray 带参数方法，数组空间大小的 length：等于 0，动态创建于 size 相同的数组，性能最好，大于 0 但小于 size，重新创建大于等于 size 的数组，增加 GC 负担，等于 size，在高并发情况下，数组创建完成后，size 正在变大的情况下，会增加 GC 负担。大于 size，空间浪费，且在 size 处插入 null 值，存在 NPE 隐患。
+
+<u>数组转集合的过程中，注意是否使用了视图方式直接返回数组中的数据。Arrays.asList() 返回集合不能对其使用修改集合元素个数的相关方法，会抛出 *UnsupportedOperationException*，但可以进行赋值操作</u>
+
+asList() 返回对象是一个 Arrays 内部类，并没有实现集合的修改方法。Arrays.asList 体现的是适配器模式，只是转换接口，后台的数据仍是数组
+
+在使用 Collection 接口任何实现类的 addAll() 方法时，都需要对输入的集合参数进行 NPE 判断。
+
+在无泛型限制定义的集合赋值给泛型限制的集合时，在使用集合元素时，需要进行 instanceof 判断，避免抛出 *ClassCastException* 异常
+
 ##### List
 
 ###### LinkedList
@@ -76,9 +92,15 @@ Set 接口等同于 Collection 接口，不过其方法的行为有更严谨的�
 
 为了避免发生并发修改的异常：可以根据需要给容器附加许多的迭代器，但是这些迭代器只能读取列表。另外，在单独附加一个既能读又能写的迭代器。集合可以跟踪改写操作（诸如添加或删除元素）的次数。每个迭代器都维护一个独立的计数值。在每个迭代器方法的开始处检查自己改写操作的计算值是否与集合的改写操作计数值一致。如果不一致，抛出一个 ConcurrentModificationException 异常
 
+在 subList 场景中，对原集合元素的增加或删除，均会导致子列表的遍历，增加，删除产生 *ConcurrentModificationException*
+
 ###### ArrayList
 
 使用数组实现的有序集合，适合随机访问。
+
+* ArrayList 的 subList 结果不可强转成 ArrayList，否则会抛出 *ClassCastException*
+
+  subList 返回的是 ArrayList 的内部类 SubList，并不是 ArrayList 而是 ArrayList 的一个视图，对于 SubList 子列表的所有操作最终都会反映到原列表上。
 
 ##### Set
 
@@ -132,6 +154,10 @@ Set 接口等同于 Collection 接口，不过其方法的行为有更严谨的�
 |      HashMap      |  允许为 null  |  允许为 null  | AbstractMap | 1.2  | 线程不安全（resize 死链问题） |
 
 使用键来查找与之对应的元素，映射用来存放键、值对，如果提供了键，就能够查找到值。使用视图访问映射中键集、值集、实体集，现在可以直接使用 forEach() 的 lambda 来实现实体集访问
+
+使用 Map 的方法 keySet()、values()、entrySet() 返回集合对象时，不可以对其进行添加元素操作，否则会抛出 *UnsupportedOperationException* 异常
+
+使用 entrySet 遍历 Map 类集合 KV，如果是 JDK 8 使用 Map.forEach()
 
 ###### HashMap
 

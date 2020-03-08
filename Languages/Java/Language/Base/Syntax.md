@@ -23,10 +23,37 @@
 所有的浮点数值计算都遵循 IEEE 754 规范。表示溢出和出错情况的三个常量：
 
 * 正无穷大：常量 **Double.POSITIVE_INFINITY**
-
 * 负无穷大：常量 **Double.NEGATIVE_INFINITY**
-
 * NaN （不是一个数字）：常量 **Double.NaN**
+
+###### 比较
+
+浮点数之间的等值判断，基本数据类型不能用 == 来比较，包装数据类型不能用 equlas 来判断（浮点数采用 ”尾数 + 阶码“ 的编码方式，类似于科学计数法的 ”有效数字 + 指数“ 的表示方式。二进制无法精确表示大部分的十进制小数）。比较方式：
+
+* 指定一个误差范围，两个浮点数的差值在此范围之内，则认为是相等的
+
+  ```java
+  float a = 1.0f - 0.9f;
+  float b = 0.9f - 0.8f;
+  float diff = 1e-6f;
+  if (Math.abs(a - b) < diff) {
+      System.out.print("true");
+  }
+  ```
+
+* 使用 *BigDecimal* 来定义值，再进行浮点数的运算操作
+
+  ```java
+  BigDecimal a = new BigDecimal("1.0");
+  BigDecimal b = new BigDecimal("0.9");
+  BigDecimal c = new BigDecimal("0.8");
+  BigDecimal x = a.subtract(b);
+  BigDecimal y = b.subtract(c);
+  if (x.compareTo(y) == 0) {
+	System.out.println("true");
+  }
+  ```
+  
 
 ##### char
 
@@ -121,58 +148,6 @@ String = "jaca";
 处理整数类型时，可以直接对组成整形数值的各个位完成操作。可以使用掩码得到整数中的各个位。
 
 左移或右移（会用符号位填充高位，要完成模 32 的位运算，除非左操作数是 long 类型，此时要对右操作数模 64 ）操作符在需要建立位模式来完成位掩码时很方便。>>> 运算符会用 0 填充高位
-
-#### 常用对象类型
-
-##### 数组
-
-数组是对象，存储同一类型的值。通过整型下标访问数组中的值。数组初始化后不能改变大小。如果需要动态扩展数组，使用 *ArrayList*。数组传递采用引用传递
-
-```java
-int[] a = new int[100];
-int[] smallPrimes = {2, 3, 5, 7, 11, 13};
-// 不创建新变量的情况下重新初始化一个数组
-smallPrimes = new int[]{17, 19, 23, 31, 37};
-```
-
-* 数组初始化
-
-  创建一个整形数组时，所有元素都初始化为 0，boolean 数组的元素会初始化为 false，对象数组的元素会初始化为 null
-
-* 遍历
-
-  ```java
-  // foreach 类型遍历
-  for (type element: array) {
-      ...
-  }
-  // for 遍历
-  for (int i = 0; i < array.size; i++) {
-  		...
-  }
-  ```
-
-##### 枚举
-
-对于有限集合的变量取值，可以自定义枚举类型，枚举类型包括有限个命名的值，枚举只能存储声明的枚举值或 null 值。
-
-```java
-enum Size {SMALL, MEDIUM, LARGE, EXTRE_LARGE};
-// 声明枚举变量
-Size s = Size.MEDIUM;
-```
-
-##### 字符串
-
-java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 编码表中码点，可能需要1个或2个代码单元表示）。使用 + 拼接字符串。*String* 类实例不可变。
-
-* 空串
-
-  空串是一个 java 对象，有自己的串长度 0 和内容空。
-
-* null
-
-  *String* 变量可以存放一个特殊的值 null，表示目前没有任何对象与该变量关联
 
 #### 规范
 
