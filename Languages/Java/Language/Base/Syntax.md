@@ -99,13 +99,27 @@ boolean 类型有两个值: false 和 true，用来判定逻辑条件。<u>整�
 
 基本数据类型值不是一个对象，可用包装类来包装成一个对象，根据上下文环境，基本数据类型值可以使用包装类自动转换成一个对象，将基本类型值转换为包装类的过程为装箱，将包装类转换为基本类型为开箱，java 支持自动装开箱
 
+基本类型对应装箱类型：
+
 * 包装类没有无参构造方法，所有包装类都是不可变的，一旦创建该对象，它们内部值就不能再改变
 * 每一个数值包装类都有常量 **MAX_VALUE** 和 **MIN_VALUE** 表示对象基本数据类型的最大值和最小值
 * 数值包装类中包含 compareTo 方法用于比较两个数值，如果该数值大于，等于，小于另外一个数值时，分别返回 1，0，-1
 
+jvm 默认会缓存 -128 ~ 127 之间的对象，因此建议使用 equals 比较
+
+```java
+   Integer a = 17;
+   Integer b = 17;
+   System.out.println(a == b); // true
+   Integer c = 273;
+   Integer d = 273;
+   System.out.println(c == d); // false
+   System.out.println(c.equals(d)); // true
+```
+
 #### 变量
 
-每个变量都有一个类型。在声明变量时，变量的类型位于变量名之前。大小写敏感，没有长度限制。声明一个变量之后，必须用赋值语句对变量进行赋值。不能使用未初始化的变量。变量的声明尽可能地靠近变量第一次使用的地方。
+每个变量都有一个类型。在声明变量时，变量的类型位于变量名之前。大小写敏感，没有长度限制。声明一个变量之后，必须用赋值语句对变量进行赋...值。不能使用未初始化的变量。
 
 ```java
 // 声明变量
@@ -283,19 +297,19 @@ Jdk 包含 javadoc 工具，它可以由源文件生成一个 HTML 文件。java
 
 ###### 注释抽取
 
-假定 HTML 文件将被存放在目录 docDirectory 下。执行以下步骤：
+假定 HTML 文件将被存放在目录 /doc 下。执行以下步骤：
 
 1）切换到包含想要生成文档的源文件目录。如果有嵌套的包要生成文档，如 com.horstmann.corejava，就必须切换到包含子目录 com 的目录
 
 2）如果是一个包，执行命令：
 
 ```shell
-javadoc -d docDirectory nameOfPackage
+javadoc -d doc nameOfPackage
 # 或对于多个包生成文档
-javadoc -d docDirectory nameOfPackage1 nameOfPackage2
+javadoc -d doc nameOfPackage1 nameOfPackage2
 # 如果文件在默认包中，就应该运行
-javadoc -d docDirectory *.java
+javadoc -d doc *.java
 ```
 
-如果省略了 -d docDirectory 选项，HTML 文件就会被提取到当前目录下。
+如果省略了 -d doc 选项，HTML 文件就会被提取到当前目录下。
 

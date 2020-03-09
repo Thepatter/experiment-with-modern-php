@@ -48,7 +48,6 @@ Spring 从两个角度来实现自动化装配：
 ```java
 import org.springframework.context.annotation.compoentScan;
 import org.springframework.context.annotation.Con;
-
 @Configuration
 @ConponentScan
 public class CDPlayerConfig() {}

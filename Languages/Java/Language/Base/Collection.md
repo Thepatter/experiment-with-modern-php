@@ -68,11 +68,11 @@ Set 接口等同于 Collection 接口，不过其方法的行为有更严谨的�
 
 *Collections* 类返回的对象，如 emptyList()/singletionList() 等都是 immutablelist，不可对其进行添加或删除元素，会抛出 *UnsupportedOperationException* 如果查询无结果，返回 Collections.emptyList() 空集合对象。
 
-<u>使用集合转数组的方法，必须使用集合的 toArray(T[] array)，传入的是类型完成一致，长度为 0 的空数组</u>
+<u>使用集合转数组的方法，必须使用集合的 toArray(T[] array)，传入的是类型完成一致，长度为 0 的空数组</u>，集合转数组后修改数组或集合不会改变对应集合或数组
 
 使用无参 toArray() 会泛型丢失，若强转其他类型数组将 *ClassCastException* 错误。对于 toArray 带参数方法，数组空间大小的 length：等于 0，动态创建于 size 相同的数组，性能最好，大于 0 但小于 size，重新创建大于等于 size 的数组，增加 GC 负担，等于 size，在高并发情况下，数组创建完成后，size 正在变大的情况下，会增加 GC 负担。大于 size，空间浪费，且在 size 处插入 null 值，存在 NPE 隐患。
 
-<u>数组转集合的过程中，注意是否使用了视图方式直接返回数组中的数据。Arrays.asList() 返回集合不能对其使用修改集合元素个数的相关方法，会抛出 *UnsupportedOperationException*，但可以进行赋值操作</u>
+<u>数组转集合的过程中，注意是否使用了视图方式直接返回数组中的数据。Arrays.asList() 返回集合不能对其使用修改集合元素个数的相关方法，会抛出 *UnsupportedOperationException*，但可以进行赋值操作</u>，修改源数组的值会映射到转换集合，修改转换集合中元素的值会映射到转换源数组
 
 asList() 返回对象是一个 Arrays 内部类，并没有实现集合的修改方法。Arrays.asList 体现的是适配器模式，只是转换接口，后台的数据仍是数组
 

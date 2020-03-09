@@ -6,7 +6,15 @@
 
 ###### @Controller
 
-将类识别为控制器，并且将其作为组件扫描的候选者
+构造型注解，将类识别为控制器，并且将其作为组件扫描的候选者
+
+###### @Repository
+
+构造型注解，标识当前类由 Spring 容器管理，Spring 的组件扫描会自动发现它，并且会将其初始化为 Spring 应用上下文中的 bean
+
+###### @Component
+
+构造型注解，把普通 POJO 实例化到 Spring 容器中
 
 ###### @RequestMapping 
 
@@ -168,11 +176,39 @@ public Book store(@RequestBody Book book) {}
 
 ###### @GeneratedValue
 
-属性上声明该值为数据库自增值
+属性上声明，提供了主键的生成策略
 
-```java
-@GeneratedValue(startegy=GenerationType.AUTO)
-```
+* strategy
+
+  1. *GenerationType*.TABLE
+
+      使用一个特定的数据库表格来保存主键，持久化引擎通过关系数据库的一张特定的表格来生成主键，这种策略的好处就是不依赖于外部环境和数据库的具体实现，在不同数据库间可以很容易的进行移植。
+
+     但由于其不能充分利用数据库的特性，所以不会优先使用。
+
+     该策略一般与另外一个注解一起使用 @TableGenerator，@TableGenerator 注解指定了生成主键的表(可以在实体类上指定也可以在主键字段或属性上指定)，然后 JPA 将会根据注解内容自动生成一张表作为序列表(或使用现有的序列表)。如果不指定序列表，则会生成一张默认的序列表，表中的列名也是自动生成。数据库上会生成一张名为 sequence 的表（SEQ_NAME，SEQ_COUNT）。序列表一般只包含两个字段：第一个字段是该生成策略的名称，第二个字段是该关系表的最大序号，它会随着数据的插入逐渐累加
+
+  2. *GenerationType*.SEQUENCE
+
+     在某些数据库中，不支持主键自增长，比如 Oracle，其提供了”序列（sequence）“的机制生成主键。
+
+     该策略的不足之处正好与 TABLE 相反，由于只有部分数据库 (Oracle，PostgreSQL，DB2) 支持序列对象，所以该策略一般不应用于其他数据库。
+
+     类似的，该策略一般与另外一个注解一起使用 @SequenceGenerator，@SequenceGenerator 注解指定了生成主键的序列，然后 JPA 会根据注解内容创建一个序列（或使用一个现有的序列）。如果不指定序列，则会自动生成一个序列 SEQ_GEN_SEQUENCE。
+
+     @SequenceGenerator 可以理解为将数据库中存在的序列进行了一个映射，在 @GeneratedValue 注解中的 generator 属性可以根据此标识来声明主键生成器。
+
+  3. *GenerationType*.IDENTITY
+
+     数据库主键自增
+
+  4. *GenerationType*.AUTO
+
+     默认，主键生成策略由 JPA 提供，持久化引擎会根据数据库在以上三种主键生成策略中选择其中一种
+
+* generator
+
+  属性值为一个字符串，默认为""，声明了主键生成器的名称（对应于同名的主键生成器 @Sequence 和 @TableGenerator）
 
 ###### @ManyToMany
 
@@ -199,7 +235,7 @@ void createdAt() {
 
 ###### @Query
 
-方法注解，声明方法调用时要执行的查询
+Repository 接口方法注解，声明方法调用时要执行的查询
 
 #### 其他组件
 
