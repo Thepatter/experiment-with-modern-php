@@ -16,6 +16,10 @@
 
 构造型注解，把普通 POJO 实例化到 Spring 容器中
 
+###### @Service
+
+构造型注解，表明这个类要包含到 Spring 的组件扫描中，不需要再明确将这个类声明为 bean 了，Spring 将会自动发现它并将其初始化为一个 bean
+
 ###### @RequestMapping 
 
 指定请求 url，并定制相关属性，可以应用在类级别和方法级别，部分属于与方法级别 mapping 注解通用
@@ -74,13 +78,17 @@
 
 ###### @Component
 
+###### @Configuration
+
+指示一个类声明一个或多个 @Bean 方法，并且可以由 Spring 容器处理，以便在运行时为这些 bean 生成 BeanDefinition 和服务请求
+
 ##### 方法级别注解
 
 ###### @CrossOrigin
 
 允许跨域
 
-```
+```java
 @CrossOrigin(origins = "*")
 ```
 
