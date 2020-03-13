@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS table_name(
     field_gender ENUM('M','F'),
     field_birthday DATE,
 	PRIMARY KEY (field_primary_key),
-)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
 ENGINE 设置存储引擎(`Myisam`,` Innodb`), CHARSET 设置编码
@@ -198,12 +198,12 @@ SELECT 命令可以读取一条或者多条记录
 
 #### 导致错误的语句及错误
 
-|  错误原因   |                   错误提示                   |
-| :-----: | :--------------------------------------: |
-|  主键不唯一  | `error 1062(23000):Duplicate entry '1' for key 'PRIMARY'` |
-|  不存在外键  | `error 1452(23000): Cannot add or update a child row: a foreign key constraint` |
-|  列值不合法  | `error 1265(01000): Data truncated for column "field_name" at row 1` |
-| 无效的日期转换 | `error 1292(22007):Incorrect date value: "date_value" for column "field_name"` |
+|    错误原因    |                           错误提示                           |
+| :------------: | :----------------------------------------------------------: |
+|   主键不唯一   |    error 1062(23000):Duplicate entry '1' for key 'PRIMARY    |
+|   不存在外键   | error 1452(23000): Cannot add or update a child row: a foreign key constraint |
+|   列值不合法   | error 1265(01000): Data truncated for column "field_name" at row 1 |
+| 无效的日期转换 | error 1292(22007):Incorrect date value: "date_value" for column "field_name" |
 
 时间转换可以采用显示地指定字符串格式,使用`str_to_date`函数指定所用字符串格式
 

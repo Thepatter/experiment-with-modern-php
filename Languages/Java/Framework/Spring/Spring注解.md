@@ -243,7 +243,7 @@ void createdAt() {
 
 ###### @Query
 
-Repository 接口方法注解，声明方法调用时要执行的查询
+Repository 接口方法注解，声明方法调用时要执行的查询，Spring Data JPA 写的 SQL 是 JPQL，需要使用 JAP 对象实体查询，不支持部分 SQL 功能，如 limit，可以使用参数 nativeQuery = true，来写原生 SQL
 
 #### 其他组件
 
@@ -280,4 +280,12 @@ private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Cu
 ###### @Digits
 
 ###### @NotBlank
+
+##### Rest Data
+
+###### @RepositoryRestController
+
+所有映射将会具有和 spring.data.rest.base-path 属性值一样的前缀。但没有和 @RestControllerr 相同的语义。不能保证处理器方法返回的值会自动写入响应体。
+
+
 

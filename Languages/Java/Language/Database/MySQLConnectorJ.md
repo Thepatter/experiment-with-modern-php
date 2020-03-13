@@ -5,8 +5,8 @@
 ```xml
 <dependency>
 	<groupId>mysql</groupId>
-  <artifactId>mysql-connector-java</artifactId>
-  <version>x.y.z</version>
+  	<artifactId>mysql-connector-java</artifactId>
+  	<version>x.y.z</version>
 </dependency>
 ```
 
@@ -84,7 +84,7 @@ Hosts 部分可以仅由主机名组成，也可以是由各种元素组成的�
 
 * 该 _hosts_ 部分的格式为 _host:port_ 
 
-  ```http
+  ```
   jdbc:mysql://host:33060/sakila
   ```
 
@@ -96,17 +96,15 @@ Hosts 部分可以仅由主机名组成，也可以是由各种元素组成的�
 
   地址等于形式：
 
-  ```http
+  ```
   address=(host=host_or_ip)(port=port)(key1=value1)(key2=value2)...(keyN=valueN)
-  
   jdbc:mysql://address=(host=myhost)(port=1111)(key1=value1)/db
   ```
-
-  键值形式：
-
-  ```http
-  (host=host,port=port,key1=value1,key2=value2,...,keyN=valueN)
   
+键值形式：
+  
+```
+  (host=host,port=port,key1=value1,key2=value2,...,keyN=valueN)
   jdbc:mysql://(host=myhost,port=1111,key1=value1)/db
   ```
 
@@ -114,21 +112,19 @@ Hosts 部分可以仅由主机名组成，也可以是由各种元素组成的�
 
 * 以逗号分隔列表列出主机
 
-  ```http
+  ```
   host1,host2,...,hostN
-  
   jdbc:mysql://myhost1:1111,myhost2:2222/db
   jdbc:mysql://address=(host=myhost1)(port=1111)(key1=value1),address=(host=myhost2)(port=2222)(key2=value2)/db
   jdbc:mysql://(host=myhost1,port=1111,key1=value1),(host=myhost2,port=2222,key2=value2)/db
   jdbc:mysql://myhost1:1111,(host=myhost2,port=2222,key2=value2)/db
   mysqlx://(address=host1:1111,priority=1,key1=value1),(address=host2:2222,priority=2,key2=value2)/db
   ```
-
+  
 * 用逗号分隔列表列出主机，然后用方括号将列表括起来
 
-  ```http
+  ```
   [host1,host2,...,hostN]
-  
   jdbc:mysql://sandy:secret@[myhost1:1111,myhost2:2222]/db
   jdbc:mysql://sandy:secret@[address=(host=myhost1)(port=1111)(key1=value1),address=(host=myhost2)(port=2222)(key2=value2)]/db
   jdbc:mysql://sandy:secret@[myhost1:1111,address=(host=myhost2)(port=2222)(key2=value2)]/db
@@ -142,15 +138,13 @@ Hosts 部分可以仅由主机名组成，也可以是由各种元素组成的�
 
   ```
   user:password@host_or_host_sublist
-  
   mysqlx://sandy:secret@[(address=host1:1111,priority=1,key1=value1),(address=host2:2222,priority=2,key2=value2))]/db
   ```
-
+  
 * 使用密钥 user 并 password 为每个主机指定凭据
 
   ```
   (user=sandy)(password=mypass)
-  
   jdbc:mysql://[(host=myhost1,port=1111,user=sandy,password=secret),(host=myhost2,port=2222,user=finn,password=secret)]/db
   jdbc:mysql://address=(host=myhost1)(port=1111)(user=sandy)(password=secret),address=(host=myhost2)(port=2222)(user=finn)(password=secret)/db
   ```

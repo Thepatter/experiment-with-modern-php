@@ -29,6 +29,32 @@ public class HelloController {
 }
 ```
 
+#### 超媒体
+
+在 API 客户端编码中，使用硬编码模式和字符串操作是很常见的。超媒体作为应用状态引擎（Hypermedia as the Engine of Application State，HATEOAS）是一种创建自描述 API 的方式。API 所返回的资源中会包含相关资源的链接，客户端只需要了解最少的 API URL 信息就能导航整个 API。这种方式能够掌握 API 所提供的资源之间的关系，客户端能够基于 API 的 URL 中所发现的关系对它们进行遍历，是一种在 JSON 响应中嵌入超链接的简单通用格式。
+
+依赖
+
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-hateoas</artifactId>
+</dependency>
+```
+
+添加超链接：
+
+```java
+@GetMapping("/recent")
+public Resources<Resource<Entity>> recent() {
+	PageRequest page = PageRequest.of(0, 12, Sort.by("id").descentding());
+	List<Entity> entities = repo.findAll(page).getContent();
+	Resource<Resource<Entity>> recentResources = Resourcess.wrap(entities);
+	recentResources.add(new Link("http://localhost:8080/entity/recents"))
+	return recentRResources;
+}
+```
+
 #### 检验输入
 
 Spring 支持 java 的 Bean  检验 API（Bean Validation API，JSR-303）。能声明检验规则，而不必在应用程序中显式编写声明逻辑。

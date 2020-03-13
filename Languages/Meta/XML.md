@@ -266,13 +266,15 @@ XML 正文包含根元素，根元素包含其他元素，元素可以有子元�
 
   ```xml
   <data>
-  		<![CDATA[<&> are my favorite delimiters]]>
+  	<![CDATA[<&> are my favorite delimiters]]>
   </data>
   ```
 
 * 处理指令（processing instruction）是那些专门在处理 XML 文档的应用程序中使用的指令，由 <? 和 ?>  来限定其界限。每个 XML 都以一个处理指令开头
 
 * 注释（comment）用 <!- 和 --> 限定其界限，注释不应该含有字符串 --
+
+* 转义使用 and 代替 &&，使用 or 代替 || 使用 not 代替 |
 
 #### 解析 XML 文档
 
