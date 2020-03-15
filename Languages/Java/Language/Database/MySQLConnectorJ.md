@@ -101,12 +101,13 @@ Hosts 部分可以仅由主机名组成，也可以是由各种元素组成的�
   jdbc:mysql://address=(host=myhost)(port=1111)(key1=value1)/db
   ```
   
+
 键值形式：
-  
+
 ```
   (host=host,port=port,key1=value1,key2=value2,...,keyN=valueN)
   jdbc:mysql://(host=myhost,port=1111,key1=value1)/db
-  ```
+```
 
 多台主机
 
