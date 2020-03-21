@@ -294,15 +294,15 @@ docker network connect fronted container2
 
 在启动容器时，如果不指定对应参数，在容器外部时无法通过网络来访问容器内的网络应用和服务的， `-P` ，docker 会随机映射一个 49000 ~ 49900 的端口到内部容器开发的网络端口，`-f` 指定要映射的端口，且在一个指定端口上只可以绑定一个容器，支持的格式有 `IP:HostPort:ContainerPort|IP:ContainerPort|HostPort:ContainerPort`，多次使用 `-p` 标记可以绑定多个端口
 
-### 容器间通信
+#### 容器间通信
 
 通过容器向外界进行端口映射的方式可以实现通信，但不够安全，其需要 NAT，效率不高。docker 的连接系统可以在两个容器之间建立一个安全的通道。
 
-#### 传统 link 通信
+##### 传统 link 通信
 
 1.9 之后，网络操作独立成为一个命令组，link 系统也与原来不同，若容器使用默认的 bridge 模式网络，则会默认使用传统的 link 系统；而使用用户自定义的网络，则会使用新的 link 系统
 
-##### 使用 link 通信
+###### 使用 link 通信
 
 link 是在容器创建过程中通过 `--link <name or id>:alias` 参数创建的
 
@@ -325,7 +325,7 @@ docker run -d -P --name web --link db:webdb traiging/webapp python app.py
 
 * 建立 iptables 规则通信
 
-#### 新 link 通信
+###### 新 link 通信
 
 相对于传统的 link 系统提供的名字和别名的解析、容器间网络隔离以及环境变量的注入，1.9 之后为用户提供了自定义网络提供了 DNS 自动名字解析，同一个网络中容器间的隔离，可以动态加入或者退出多个网络、支持 `--link` 为源容器设定别名等服务。在新的网络模型中，link 系统只是源容器起了一个别名，并且这个别名只对接收容器有效。新 link 系统在创建一个 link 时并不要求源容器已经创建或启动。
 
@@ -338,3 +338,16 @@ docker run --net=isolated_nw -it --name=container1 --link container2:c2 busybox
 docker run --net=isolated_nw -itd --name=container2 busybox
 ```
 
+#### 容器与宿主机通信
+
+###### 使用宿主机 ip
+
+在宿主机下查看 en0 获取 ip 地址，在容器中使用该 ip 地址访问宿主机服务，Linux 下一般为 172.17.0 macOS 下一般为 192.168.65
+
+###### 使用 host 网络
+
+docker 容器运行时指定网络为 host 即使用宿主网络，此时容器内的 localhost 既是宿主机的 localhost
+
+###### 使用宿主机IP别名
+
+docker 18.03 中加入了一个 feature，在容器中可以通过 host.docker.internal 来访问主机
