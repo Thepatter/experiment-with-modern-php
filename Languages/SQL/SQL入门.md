@@ -28,11 +28,6 @@ SQL 在 Oracle 中执行流程：
 
   ![](./Images/Oracle12c数据库架构.png)
 
-* MySQL
-
-  ![](./Images/MySQL数据库结构.png)
-
-  
 
 #### SQL92 中是如何使用连接的
 

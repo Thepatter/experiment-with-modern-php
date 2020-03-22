@@ -107,7 +107,14 @@ MySQL 中的 `completion_type` 参数的作用 `set @@completion_type = 1`
 
 脏读、不可重复读、幻读这三种异常情况，是在 SQL-92 标准中定义的，同时 SQL-92 标准还定义了 4 种隔离级别来解决这些异常情况。解决异常数量从少到多的顺序决定了隔离级别的高低：**读未提交（READ UNCOMMITTED）**、**读已提交（READ COMMITTED）**、**可重复读（REPEATABLE READ）**、**可串行化（SERIALIZABLE）**。这些隔离级别能解决的异常情况：
 
-![](./Images/事务隔离级别及异常情况.png)
+*ANSI SQL 隔离级别*
+
+|     隔离级别     | 脏读可能性 | 不可重复读可能性 | 幻读可能性 | 加锁读 |
+| :--------------: | :--------: | :--------------: | :--------: | :----: |
+| READ UNCOMMITTED |    Yes     |       Yes        |    Yes     |   No   |
+|  READ COMMITED   |     No     |       Yes        |    Yes     |   No   |
+| REPEATABLE READ  |     No     |        No        |    Yes     |   No   |
+|   SERIALIZABLE   |     No     |        No        |     No     |  Yes   |
 
 * 读未提交
 
@@ -116,6 +123,8 @@ MySQL 中的 `completion_type` 参数的作用 `set @@completion_type = 1`
 * 读已提交
 
   只能读到已提交的内容，可以避免脏读的产生，（SQL Server 和 Oracle 的默认隔离级别），但如果想要避免不可重复读或幻读，就需要在 SQL 查询的时候编写带加锁的 SQL 语句
+
+  一个事务从开始直到提交前，所做的任何修改对其他事务都是不可见的。这个级别有时候也叫做不可重复读，因为两次执行同样的查询，可能会得到不一样的结果
 
 * 可重复读
 
