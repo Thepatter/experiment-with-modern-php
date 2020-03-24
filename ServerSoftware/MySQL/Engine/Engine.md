@@ -148,3 +148,7 @@ Memory 表支持 Hash 索引，因此查找操作非常快。虽然 Memory 表�
 #### Merge
 
 Merge引擎是MyISAM引擎的一个变种。Merge表是由多个MyISAM表合并而来的虚拟表。如果将MySQL用于日志或者数据仓库类应用，该引擎可以发挥作用。但是引入分区功能后，该引擎已经被放弃
+
+#### XtraDB
+
+基于 InnoDB 引擎的改进版本，包含在 Persona 和 MariaDB 中，主要改进在性能、可测量性和操作灵活性。可以替代 InnoDB，兼容读写 InnoDB 的数据，支持 InnoDB 的所有查询

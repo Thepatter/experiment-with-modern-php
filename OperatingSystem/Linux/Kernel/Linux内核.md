@@ -17,5 +17,4 @@
 |    CDROM/DVDROM    | /dev/scd[0-1] 「通用」，/dev/sr[0-1] 「通用 CentOS 较常见」，/dev/cdrom 「当前 CDROM」 |
 |       磁带机       | /dev/ht0 「IDE 界面」，/dev/st0 「SATA/SCSI 界面」，/dev/tape 「当前磁带」 |
 |     IDE 硬盘机     |                 /dev/hd[a-p] 「旧系统专用」                  |
-|                    |                                                              |
 
