@@ -237,6 +237,14 @@ void createdAt() {
 }
 ```
 
+###### @JoinTable
+
+指定中间表的表名字以及关联两个表的字段
+
+```
+@JoinTable(name = "UserRole", joinColumns = {$JoinColumn(name = "userId")}, inverseJoinColumns = {$JoinColumn(name = "roleId")})
+```
+
 ###### @Table
 
 类级别注解，指定表名
