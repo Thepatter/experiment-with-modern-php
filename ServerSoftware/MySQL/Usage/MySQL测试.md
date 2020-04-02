@@ -1,12 +1,81 @@
-## MySQL 测试
+### MySQL 基准测试
 
-### 单组件式测试工具
+#### 基准测试
 
-#### **mysqlslap**
+##### 策略
 
-`mysqlslap` 可以模拟服务器的负载，并输出计时信息。测试时可以执行并发连接数，并指定 SQL 语句（可以在命令行上执行，也可以把 SQL 语句写入到参数中），如果没有指定 SQL 语句，`mysqlslap` 会自动生成查询 `schema` 的 `select` 语句
+基准测试主要有两种策略：针对整个系统的整体测试；单独测试 MySQL
 
-#### MySQL Benchmark Suite (sql-bench)
+###### 整体测试
+
+测试整个应用系统
+
+###### 单独测试 MySQL
+
+不需要了解整个应用的情况，只需要关注 MySQL 的性能，基于以下情况，可以选择只测试 MySQL：
+
+* 需要比较不同的 schema 或查询的性能
+* 针对应用中某个具体问题的测试
+* 测试某些调整后的效果
+
+##### 指标
+
+测试目标决定了选择什么样的测试工具和技术，有时候需要用不同的方法测试不同的指标
+
+###### 吞吐量
+
+<u>吞吐量指的是单位时间内的事务处理数</u>。这类基准测试主要针对在线事务处理（OLTP）的吞吐量，非常适用于多用户的交互式应用。常用的测试单位是 TPS（每秒事务数），TPM（每分钟事务数）
+
+###### 响应时间
+
+用于测试任务所需的整体时间，根据具体的应用，测试的时间单位可能是微秒、毫秒、秒、分钟。根据不同的时间单位可以计算出平均响应时间、最小响应时间、最大响应时间和所占百分比。
+
+最大响应时间通常意义不大，因为测试时间越长，最大响应时间也可能越大。而且其结果通常不可重复，每次测试都可能得到不同的最大响应时间。通常可以使用百分比响应时间（percentile response time）来替代最大响应时间。
+
+###### 并发性
+
+并发性基准测试需要关注的是正在工作中的并发操作，或者是同时工作中的线程数或连接数。当并发性增加时，需要测量吞吐量是否下降，响应时间是否变长。
+
+并发性的测量完全不同于响应时间和吞吐量。它不像是一个结果，而更像是设置基准测试的一种属性。并发性测试通常不是为了测试应用能达到的并发度，而是为了测试应用在不同并发下的性能。当然，数据库的并发性还是需要测量的。可以通过 sysbench 指定 32、64 或者 128 个线程的测试，然后在测试期间记录 MySQL 数据库的Threads_running 状态
+
+###### 可扩展性
+
+系统增加一倍的资源（比如两倍的 CPU 数），就可以获得两倍的吞吐量。当然，同时性能（响应时间）也必须在可以接受的范围内。大多数系统是无法做到如此理想的线性扩展的。随着压力的变化，吞吐量和性能都可能越来越差
+
+#### 基准测试工具
+
+##### 集成测试工具
+
+###### *ab*
+
+ab 是一个 Apache HTTP 服务器基准测试工具。它可以测试 HTTP 服务器每秒最多可以处理多少请求。如果测试的是 Web 应用服务，这个结果可以转换成整个应用每秒可以满足多少请求。这是个非常简单的工具，用途也有限，只能针对单个 URL 进行尽可能快的压力测试
+
+###### *http_load*
+
+这个工具概念上和 ab 类似，也被设计为对 Web 服务器进行测试，但比 ab 要更加灵活。可以通过一个输入文件提供多个 URL，http_load 在这些 URL 中随机选择进行测试。也可以定制 http_load，使其按照时间比率进行测试，而不仅仅是测试最大请求处理能
+
+简单实用
+
+1. 创建 url 列表文件 urls.txt
+
+2. 测试
+
+   ```shell
+   # 循环请求
+   http_load -parallel l -seconds 10 urls.txt
+   # 模拟 5 个并发用户
+   http_load -parallel 5 -seconds 10 urls.txt
+   # 每秒 20 次请求
+   http_load -rate 20 -seconds 10 urls.txt
+   ```
+
+##### 单组件式测试工具
+
+###### mysqlslap
+
+mysqlslap 可以模拟服务器的负载，并输出计时信息。测试时可以执行并发连接数，并指定 SQL 语句（可以在命令行上执行，也可以把 SQL 语句写入到参数中），如果没有指定 SQL 语句，*mysqlslap* 会自动生成查询 schema的 select 语句
+
+###### *MySQL Benchmark Suite* (*sql-bench*)
 
 可以用于在不同数据库服务器上进行比较测试。它是单线程的，主要用于测试服务器执行查询的速度。结果会显示那种类型的操作在服务器上执行的更快。
 
@@ -14,76 +83,39 @@
 
 缺点是，单用户模式，测试的数据集很小且用户无法使用指定的数据。并且同一个测试多次运行的结果可能会相差很大。因为是单线程且串行执行的，所以无法测试多 CPU 的能力，只能用于比较单 CPU 服务器的性能差别。
 
-#### sysbench
+###### *Super Smack*
 
-多线程系统压测工具。可以根据影响数据库服务器性能的各种因素来评估系统的性能。
+是一款用于 MySQL 和 PostgreSQL 的基准测试工具，可以提供压力测试和负载生成。可以模拟多用户访问，可以加载测试数据到数据库，并支持使用随机数据填充测试表。测试定义在 smack 文件中，smack 文件使用一种简单的语法定义测试的客户端、表、查询等测试要素。
 
-#### BENCHMARK 函数
+###### *sysbench*
 
-内置 BENCHMARK 函数，可以测试某些特定操作的执行速度。参数可以是需要执行的次数和表达式。表达式可以是任何的标量表达式（返回值是标量的子查询或者函数）可以很方便的测试某些特定操作的性能。执行后的返回值永远是 0，但可以通过客户端返回的时间来判断执行的时间。使用 BENCHMARK 函数来测试性能，表达式必须包含用户定义的变量，否则多次执行同样的表达式会因为系统缓存命中而影响结果
+多线程系统压测工具。可以根据影响数据库服务器性能的各种因素来评估系统的性能。可以用来测试文件I/O、操作系统调度器、内存分配和传输速度、POSIX线程，以及数据库服务器等。sysbench 支持 Lua 脚本语言 Lua 对于各种测试场景的设置可以非常灵活。sysbench 是我们非常喜欢的一种全能测试工具，支持 MySQL、操作系统和硬件的硬件测试。
+
+```shell
+# 测试 cpu 计算素数
+sysbench --test=cpu --cpu-max-prime=20000 run
+# 准备测试 IO 数据，至少比内存大。
+sysbench --test=fileio --file-total-size=150G prepare
+# io 支持测试选项：seqwr 顺序写入 seqrewr 顺序重写 seqrd 顺序读取 rndrd 随机读取 rndwr 随机写入 rdnrw 混合随机读/写
+sysbench --test=fileio --file-total-size=150G --file-test-mode=rndrw --init-rng=on 
+--max-time=300 --max-requests=0 run
+# 清理文件
+sysbench --test=fileio --file-total-size=150G cleanup
+# 测试 OLTP，生成 1000000 万记录
+sysbench --test=oltp --oltp-table-size=1000000 --mysql-db=test --mysql-user=root prepare
+# 只读模式，8 并发线程，测试 60 秒
+sysbench --test=oltp --oltp-table-size=1000000 --mysql-db=test --mysql-user=root --max-time=60 --oltp-read-only=on --max-requests=0 --num-threads=8 run
+```
+
+###### BENCHMARK 函数
+
+内置 BENCHMARK 函数，可以测试某些特定操作的执行速度。参数可以是需要执行的次数和表达式。表达式可以是任何的标量表达式（返回值是标量的子查询或者函数）可以很方便的测试某些特定操作的性能。
+
+执行后的返回值永远是 0，但可以通过客户端返回的时间来判断执行的时间。使用 BENCHMARK 函数来测试性能，表达式必须包含用户定义的变量，否则多次执行同样的表达式会因为系统缓存命中而影响结果
 
 ```mysql
 SET @input := 'hello world';
 SELECT BENCHMARK(100000, MD5(@input));
 ```
 
-### 测试实例
-
-#### http_load
-
-* 循环请求给定的 URL 列表。
-
-  ```shell
-  http_load -parallel 1 -seconds 10 urls.txt
-  ```
-
-* 模拟同时5个并发用户进行请求
-
-  ```shell
-  http_load -parallel 5 -seconds 10 urls.txt
-  ```
-
-* 预估访问请求率（每秒5次）来做压力模拟测试
-
-  ```shell
-  http_load -rate 5 -seconds 10 urls.txt
-  ```
-
-#### sysbench
-
-* CPU 测试计算素数
-
-  ```shell
-  sysbench --test=cpu --cpu-max-prime=20000 run
-  ```
-
-* 文件 I/O 基准测试
-
-  测试的第一步是准备阶段，生成测试用到的数据文件，生成的数据文件至少要比内存大。如果文件中的数据能完全放入内存中，则操作系统缓存大部分的数据，导致测试结果无法体现I/O密集型的工作负载。
-
-  ```shell
-  sysbench --test= fileio --file- total- size= 150G prepare
-  ```
-
-  `seqwr`: 顺序写入
-
-  `seqrewr`: 顺序重写
-
-  `seqrd`: 顺序读取
-
-  `rndrd`: 随机读取
-
-  `rndwr`: 随机写入
-
-  `rdnrw`: 混合随机读/写
-
-  ```shell
-  // 运行文件I/O 混合随机读写基准测试
-  sysbench --test=fileio --file-total-size=150G --file-test-mode=rndrw/ --init-rng=on--max-time=300--max-requests=0 run
-  // 删除生成的测试文件
-  sysbench --tesst=fileio --file-total-size=150G cleanup
-  ```
-
-* OLTP 基准测试
-
-  模拟简单的事务处理系统的工作负载
+这个函数只是简单地返回服务器执行表达式的时间，而不会涉及分析和优化的开销。而且表达式必须像这个例子一样包含用户定义的变量，否则多次执行同样的表达式会因为系统缓存命中而影响结果。不合适用来做真正的基准测试
