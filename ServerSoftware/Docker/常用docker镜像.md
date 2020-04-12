@@ -10,7 +10,7 @@
     "https://reg-mirror.qiniu.com",
     "https://hub-mirror.c.163.com",
     "https://mirror.ccs.tencentyun.com"
-  ]
+  ] 
 }
 ```
 

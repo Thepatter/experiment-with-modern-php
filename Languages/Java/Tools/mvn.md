@@ -68,32 +68,34 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- 配置 java 版本编码等属性，等价于下面 build 插件作用 -->
     <properties>
-      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
-      <java.version>11</java.version>
-      <maven.compiler.source>11</maven.compiler.source>
-      <maven.compiler.target>11</maven.compiler.target>
+      	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      	<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+      	<java.version>11</java.version>
+      	<maven.compiler.source>11</maven.compiler.source>
+      	<maven.compiler.target>11</maven.compiler.target>
     </properties>
+  
     <groupId>com.local.product</groupId>
     <artifactId>base</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>this is test project</name>
+  
   	<build>
       <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <source>11</source>
-            <target>11</target>
-          </configuration>
-        </plugin>
+        	<plugin>
+          		<groupId>org.apache.maven.plugins</groupId>
+          		<artifactId>maven-compiler-plugin</artifactId>
+          		<configuration>
+            			<source>11</source>
+            			<target>11</target>
+          		</configuration>
+        	</plugin>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-resources-plugin</artifactId> 
-            <configuration>
-              <encoding>UTF-8</encoding>
-            </configuration>
+            	<groupId>org.apache.maven.plugins</groupId>
+            	<artifactId>maven-resources-plugin</artifactId> 
+            	<configuration>
+              		<encoding>UTF-8</encoding>
+            	</configuration>
           </plugin>	
         </plugins>
 		</build>
@@ -156,7 +158,7 @@ mvn archetype:generate -B \
 
 ###### 坐标
 
-任何一个构件都可以使用 Maven 坐标唯一标识，Maven 坐标的元素包括 groupId、artifactId、version、packaging、classifier。groupId、artifactId、version 必须定义的，packaging 可选，classifier 不能直接定义的。项目构件的文件名是与坐标相对应的，一般的规则为 artifactId-version [-classifier].packaging。maven 仓库的布局也是基于 maven 坐标。
+Maven 使用坐标标识构建，坐标的元素包括 groupId、artifactId、version、packaging、classifier。groupId、artifactId、version 必须定义的，packaging 可选，classifier 不能直接定义的。项目构件的文件名是与坐标相对应的，一般的规则为 artifactId-version [-classifier].packaging。maven 仓库布局也是基于 maven 坐标。
 
 * groupId
 
@@ -200,13 +202,13 @@ mvn archetype:generate -B \
 
 ```xml
 <dependencies>
-  <dependency>
-    <groupId>junit</groupId>
-    <artifactId>junit</artifactId>
-    <version>4.7</version>
-    <!-- 默认值为 compile，该依赖对主代码和测试代码都有效 -->
-    <scope>test</scope>
-  </dependency>
+    <dependency>
+      	<groupId>junit</groupId>
+      	<artifactId>junit</artifactId>
+      	<version>4.7</version>
+      	<!-- 默认值为 compile，该依赖对主代码和测试代码都有效 -->
+      	<scope>test</scope>
+    </dependency>
 </dependencies>
 ```
 
@@ -235,9 +237,7 @@ mvn archetype:generate -B \
 
 ###### 依赖范围
 
-maven 在编译项目主代码的时候需要使用一套 classpath，在编译和执行测试的时候会使用另外一套 classpath，实际运行 maven 项目的时候，又会使用另外一套 classpath。
-
-依赖范围就是用来控制与这三种 classpath（编译、测试、运行）的关系，maven 有以下几种依赖范围：
+Maven 在编译、测试、运行时会使用不同的 classpath，依赖范围就是用来控制三种 classpath 的关系，maven 有以下几种依赖范围：
 
 * compile
 
@@ -253,7 +253,7 @@ maven 在编译项目主代码的时候需要使用一套 classpath，在编译�
 
 * runtime
 
-  运行时依赖范围。使用此依赖范围的 maven 依赖，对于测试和运行 classpath 有效，但在编译主代码时无效（如 JDBC 驱动实现，项目主代码的编译只需要 jdk 提供的 JDBC 接口，只有在执行测试或运行项目时候才需要实现上述接口的具体 JDBC 驱动）
+  运行时依赖范围。使用此依赖范围的 maven 依赖，对于测试和运行 classpath 有效，但在编译主代码时无效（如 JDBC 驱动实现，项目主代码的编译只需要 jdk 提供的 JDBC 接口，只有在执行测试或运行项目时才需要实现上述接口的具体 JDBC 驱动）
 
 * system
 
@@ -325,13 +325,13 @@ maven 引入的传递性依赖机制，大部分情况下只需要关心项目�
 
 ```xml
 <properties>
-	<springframework.version>4.3.18</springframework.version>
+	  <springframework.version>4.3.18</springframework.version>
 </properties>
 <dependencies>
-	<dependency>
-    	<groupId>org.springframework</groupId>
-    	<artifactId>spring-beans</artifactId>
-    	<version>${springframwrok.version}</version>
+	  <dependency>
+    	  <groupId>org.springframework</groupId>
+    	  <artifactId>spring-beans</artifactId>
+    	  <version>${springframwrok.version}</version>
     </dependency>
 </dependencies>
 ```
@@ -363,7 +363,7 @@ mvn dependency:analyze
 
 ###### 自定义属性
 
-通过 properties 元素可以自动移一个或多个 maven 属性，然后在 POM 的其他地方使用 ${属性名} 的方式引用该属性，可以消除重复
+通过 properties 元素可以自定义一个或多个 maven 属性，然后在 POM 的其他地方使用 ${属性名} 的方式引用该属性，可以消除重复
 
 ###### 内置属性
 
@@ -417,7 +417,7 @@ mvn dependency:analyze
 
 ###### settings 属性
 
-使用该属性引入 settings. 开头的属性引用 settings.xml 文件中 XML 元素的值
+使用该属性引入 settings. 开头的属性，引用 settings.xml 文件中 XML 元素的值
 
 * ${settings.localRepository}
 
@@ -429,13 +429,13 @@ mvn dependency:analyze
 
 ###### 环境变量属性
 
-所有环境变量可以使用以 evn.属性名形式引用
+所有环境变量可以使用以 ${evn.属性名} 形式引用
 
 ##### profiles
 
 ###### 构建文件 profile
 
-为了能让构建在各个环境下方便的移植，maven 引入了 profile 的概念。profile 能够在构建的时候修改 POM 的一个子集，或者添加额外的配置元素，用户可以使用很多方式激活 profile，以实现构建在不同环境下的移植。
+为了能让构建在各个环境下方便移植，maven 引入了 profile 的概念。profile 能够在构建的时候修改 POM 的一个子集，或者添加额外的配置元素，用户可以使用很多方式激活 profile，以实现构建在不同环境下的移植。
 
 构建配置文件是一系列的配置项的值，用来设置或者覆盖 maven 构建默认值。使用构建配置文件，可以为不同的环境，定制构建方式。配置文件在 POM 文件中使用 activeProfiles 或者 profiles 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 POM，并且用来给参数设定不同的目标环境
 
@@ -470,14 +470,14 @@ mvn help:all-profiles
 
   ```xml
   <profiles>
-  	<profile>
-    	<artivation>
-      	<property>
-        	<name>test</name>
-          <value>x</value>
-        </property>
-      </artivation>
-    </profile>
+  		<profile>
+    			<artivation>
+      				<property>
+        					<name>test</name>
+          				<value>x</value>
+        			</property>
+      		</artivation>
+    	</profile>
   </profiles>
   ```
 
@@ -490,14 +490,14 @@ mvn help:all-profiles
 
   ```xml
   <activation>
-    <os>
-      <!-- name arch version 对应系统属性 os.name、os.arch、os.version -->
-      <name>mac</name>
-      <!-- 包括 Windows、UNIX、Mac -->
-      <family>Mac OS X</family>
-      <arch>x86_64</arch>
-      <version>10.14</version>
-    </os>
+      <os>
+        	<!-- name arch version 对应系统属性 os.name、os.arch、os.version -->
+        	<name>mac</name>
+        	<!-- 包括 Windows、UNIX、Mac -->
+        	<family>Mac OS X</family>
+        	<arch>x86_64</arch>
+        	<version>10.14</version>
+      </os>
   </activation>
   ```
 
@@ -505,10 +505,10 @@ mvn help:all-profiles
 
   ```xml
   <activation>
-    <file>
-      <missing>x.properties</missing>
-      <exists>y.properties</exists>
-    </file>
+      <file>
+        	<missing>x.properties</missing>
+        	<exists>y.properties</exists>
+      </file>
   </activation>
   ```
 
@@ -516,11 +516,11 @@ mvn help:all-profiles
 
   ```xml
   <activation>
-  	<activeByDefault>true</activeByDefault>
+  		<activeByDefault>true</activeByDefault>
   </activation>
   ```
 
-  优先级最低，如果其其他方式激活了 profile，则默认激活失效
+  优先级最低，如果以其他方式激活了 profile，则默认激活失效
 
 ###### 不同构建环境
 
@@ -530,27 +530,27 @@ maven 支持针对不同的环境生成不同的构建
 
 2. 指定不同环境的 profile，并在该 profile 中声明 maven 属性
 
+   ```xml
+<profiles>
+   		<profile>
+     			<id>dev</id>
+       		<properties>
+       				<db.url>jdbc:mysql://127.0.0.1:3306/test</db.url>
+       		</properties>
+     	</profile>
+   </profiles>
+   ```
+   
+3. 开启过滤
+
    maven 属性只在 POM 中才会被解析，使用 maven-resources-plugin 插件过滤并解析
 
    ```xml
-   <profiles>
-   	<profile>
-     	<id>dev</id>
-       <properties>
-       	<db.url>jdbc:mysql://127.0.0.1:3306/test</db.url>
-       </properties>
-     </profile>
-   </profiles>
-   ```
-
-3. 开启过滤
-
-   ```xml
    <resources>
-     <resource>
-     	<directory>${project.basedir}/src/main/resources</directory>
-       <filtering>true</filtering>
-     </resource>
+     	<resource>
+     			<directory>${project.basedir}/src/main/resources</directory>
+       		<filtering>true</filtering>
+     	</resource>
    </resources>
    ```
 
@@ -574,7 +574,7 @@ maven 支持针对不同的环境生成不同的构建
 
 1. 基于构件的 groupId 准备路径，将 groupId 中的句点分隔符转换成路径分隔符
 2. 基于构件的 artifactId 准备路径，在 groupId 路径基础上加 artifactId 以及一个路径分隔符
-3. 使用版本信息，在前面的基础上加伤 version 和分隔符
+3. 使用版本信息，在前面的基础上加 version 和分隔符
 4. 如果构件有 classifier，就加上构件分隔符和 classifier
 5. 检查构件的 extension，若 extension 存在，则加上句点分隔符和 extension
 
@@ -592,20 +592,20 @@ maven 支持针对不同的环境生成不同的构建
 
 ```xml
 <project>
-	<repositories>
-  	<respository>
-      <id>jboss</id>
-      <name>JBoss Repository</name>
-      <url>http://repository.jboss.com/maven2/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <layout>default</layout>
-    </respository>
-  </repositories>
+    <repositories>
+        <respository>
+          	<id>jboss</id>
+          	<name>JBoss Repository</name>
+          	<url>http://repository.jboss.com/maven2/</url>
+          	<releases>
+            		<enabled>true</enabled>
+          	</releases>
+          	<snapshots>
+            		<enabled>false</enabled>
+          	</snapshots>
+          	<layout>default</layout>
+        </respository>
+    </repositories>
 </project>
 ```
 
@@ -633,11 +633,11 @@ layout 元素值表示仓库的布局是 maven2 或 maven3 的默认布局，而
 
 ```xml
 <settings>
-	<servers>
+	  <servers>
   	    <server>
-    	    <id>my-proj</id>
-          <username>repo-user</username>
-          <password>repo-pwd</password>
+    	      <id>my-proj</id>
+            <username>repo-user</username>
+            <password>repo-pwd</password>
         </server>
     </servers>
 </settings>
@@ -682,12 +682,12 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
   ```xml
   <mirrors>
-  	<mirror>
-      <id>alimaven</id>
-      <name>aliyun maven mirror</name>
-      <url>https://maven.aliyun.com/repository/central</url>
-      <mirrorOf>central</mirrorOf>
-    </mirror>
+  		<mirror>
+      		<id>alimaven</id>
+      		<name>aliyun maven mirror</name>
+      		<url>https://maven.aliyun.com/repository/central</url>
+      		<mirrorOf>central</mirrorOf>
+    	</mirror>
   </mirrors>
   ```
 
@@ -697,11 +697,11 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
   ```xml
   <repositories>
-    <repository>
-      <id>alimaven</id>
-      <name>aliyun maven</name>
-      <url>https://maven.aliyun.com/repository/central</url>
-    </repository>
+      <repository>
+        	<id>alimaven</id>
+        	<name>aliyun maven</name>
+        	<url>https://maven.aliyun.com/repository/central</url>
+      </repository>
   </repositories>
   ```
 
@@ -713,7 +713,7 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
 ```xml
 <settings>
-	<localRepository>D:\java\repository\</localRepository>
+		<localRepository>D:\java\repository\</localRepository>
 </settings>
 ```
 
@@ -732,7 +732,7 @@ maven 的生命周期就是为了对所有的构建过程进行抽象和统一�
 
 生命周期抽象了构建的各个步骤，定义了它们的次序，生命周期本身不做任何实际的工作，实际的任务都交由插件完成，每个构建步骤可以绑定一个或多个插件行为，为大多数构建步骤编写了并绑定了默认插件。
 
-在 maven 的日常使用中，命令行的输入往往对应了生命周期。maven 生命周期周期是抽象的，其实际行为都由插件来完成。
+在 maven 的日常使用中，命令行的输入往往对应了生命周期。maven 生命周期是抽象的，其实际行为都由插件来完成。
 
 ##### 种类
 
@@ -752,7 +752,7 @@ maven 拥有三套相互独立的生命周期
 
 每个生命周期包含一些阶段，这些阶段是有顺序的，并且后面的阶段依赖于前面的阶段，用户和 maven 直接交互方式就是调用这些生命周期阶段。
 
-三套生命周期本身是相互独立的，用户可以仅仅调用 clean 生命周期的某个阶段，或者仅仅调用 default 生命周期的某个阶段，而不会对其他生命周期产生任何影响。
+三套生命周期本身是相互独立的，用户可以仅调用生命周期的某个阶段，而不会对其他生命周期产生任何影响。
 
 ###### clean 生命周期
 
@@ -891,22 +891,22 @@ maven 生命周期（某个阶段）与插件相互绑定，用以完成实际�
 
 ```xml
 <build>
-	<plugins>
-    <plugin>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-source-plugin</artifactId>
-      <version>2.1.1</version>
-      <executions>
-        <exectution>
-          <id>attach-sources</id>
-          <phase>verify</phase>
-          <goals>
-            <goal>jar-no-fork</goal>
-          </goals>
-        </exectution>
-      </executions>
-    </plugin>
-  </plugins>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1.1</version>
+            <executions>
+              	<exectution>
+                		<id>attach-sources</id>
+                		<phase>verify</phase>
+                		<goals>
+                  			<goal>jar-no-fork</goal>
+                		</goals>
+              	</exectution>
+            </executions>
+        </plugin>
+    </plugins>
 </build>
 ```
 
@@ -920,13 +920,13 @@ maven 生命周期（某个阶段）与插件相互绑定，用以完成实际�
 
 ```shell
 # 获取插件详细信息可以省略版本
-mvn help:describe-Dplugin = org.apache.maven.plugins:maven-source-plugin:2.1.1-Ddetail
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-source-plugin:2.1.1-Ddetail
 # 使用插件目标前缀代替坐标
-mvn help:describe-Dplugin = compiler
+mvn help:describe -Dplugin=compiler
 # 插件目标信息
-mvn help:describe-Dplugin = compiler-Dgoal = compile
+mvn help:describe -Dplugin=compiler -Dgoal=compile
 # 插件详情
-mvn help:describe-Dplugin = compiler-Ddetail
+mvn help:describe -Dplugin=compiler -Ddetail
 ```
 
 Bound to phase 会显示该目标默认绑定的生命周期阶段
@@ -955,28 +955,28 @@ Bound to phase 会显示该目标默认绑定的生命周期阶段
   ```xml
   # 将 maven-antrun-plugin: run 绑定到多个生命周期阶段上
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.3</version>
-        <executions>
-          <execution>
-            <id>ant-validate</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <!-- configuration在execution下即特定任务配置，在plugin下即插件整体配置 -->
-            <configuration>
-              <tasks>
-                <echo>I'm bound to validate phase</echo>
-              </tasks>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
+      <plugins>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-antrun-plugin</artifactId>
+              <version>1.3</version>
+              <executions>
+                  <execution>
+                      <id>ant-validate</id>
+                      <phase>validate</phase>
+                      <goals>
+                        	<goal>run</goal>
+                      </goals>
+                      <!-- configuration在execution下即特定任务配置，在plugin下即插件整体配置 -->
+                      <configuration>
+                          <tasks>
+                            	<echo>I'm bound to validate phase</echo>
+                          </tasks>
+                      </configuration>
+                  </execution>
+              </executions>
+          </plugin>
+      </plugins>
   </build>
   ```
 
@@ -994,22 +994,22 @@ mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin
 
 与依赖构件一样，插件构件同样基于坐标存储在 maven 仓库中，在需要的时候，maven 会从本地仓库寻找插件，如果插件不存在，则从远程仓库查找，找到插件后，再下载到本地仓库使用。
 
-maven 会区别对待依赖的远程仓库和插件的远程仓库，插件的远程仓库使用 pluginRepositories 和 pluginRepository 配置，除此之外子元素表达的含义与依赖仓库一致
+maven 会区别对待构件的远程仓库和插件的远程仓库，插件的远程仓库使用 pluginRepositories 和 pluginRepository 配置，除此之外子元素表达的含义与依赖仓库一致
 
 ```xml
 <pluginRepositories>
-	<pluginRepository>
-    <id>central</id>
-    <name>maven plugin repository</name>
-    <url>http://repo1.maven.org/maven2</url>
-    <layout>default</layout>
-    <snapshots>
-      <enabled>false</enabled>
-    </snapshots>
-    <releases>
-      <updatePolicy>never</updatePolicy>
-    </releases>
-  </pluginRepository>
+    <pluginRepository>
+        <id>central</id>
+        <name>maven plugin repository</name>
+        <url>http://repo1.maven.org/maven2</url>
+        <layout>default</layout>
+        <snapshots>
+          	<enabled>false</enabled>
+        </snapshots>
+        <releases>
+          	<updatePolicy>never</updatePolicy>
+        </releases>
+    </pluginRepository>
 </pluginRepositories>
 ```
 
@@ -1041,17 +1041,17 @@ maven 提供了 pluginManagement 元素帮助管理插件，在该元素中配�
 
 ```xml
 <project>
-  <groupId>com.project.test</groupId>
-  <artifactId>account-aggregator</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-  <!-- 打包方式必须为 pom -->
-  <packaing>pom</packaing>
-  <name>Account Aggregator</name>
-  <!-- 声明 module 实现模块聚合，module 值为当前 POM 的相对目录 -->
-  <modules>
-    <module>../account-email</module>
-    <module>../account-persist</module>
-  </modules>
+    <groupId>com.project.test</groupId>
+    <artifactId>account-aggregator</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <!-- 打包方式必须为 pom -->
+    <packaing>pom</packaing>
+    <name>Account Aggregator</name>
+    <!-- 声明 module 实现模块聚合，module 值为当前 POM 的相对目录 -->
+    <modules>
+      	<module>../account-email</module>
+      	<module>../account-persist</module>
+    </modules>
 </project>
 ```
 
@@ -1065,12 +1065,12 @@ maven 提供了 pluginManagement 元素帮助管理插件，在该元素中配�
 
 ```xml
 <project>
-  <groupId>com.project.test</groupId>
-  <artifactId>project-parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-  <!-- 打包类型必须为 POM -->
-  <packaging>pom</packaging>
-  <name>Account Parent</name>
+    <groupId>com.project.test</groupId>
+    <artifactId>project-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <!-- 打包类型必须为 POM -->
+    <packaging>pom</packaging>
+    <name>Account Parent</name>
 </project>
 ```
 
@@ -1078,14 +1078,14 @@ maven 提供了 pluginManagement 元素帮助管理插件，在该元素中配�
 
 ```xml
 <project>
-	<parent>
-    <!-- groupId、artifactId、version 必须存在，指定父模块的坐标 -->
-    <groupId>com.project.test</groupId>
-    <artifactId>account-parent</artifactId>
-    <version>1.0.0</version>
-    <!-- 指定父模块相对路径 -->
-    <relativePath>../account-parent/pom.xml</relativePath> 
-  </parent>
+    <parent>
+      <!-- groupId、artifactId、version 必须存在，指定父模块的坐标 -->
+      <groupId>com.project.test</groupId>
+      <artifactId>account-parent</artifactId>
+      <version>1.0.0</version>
+      <!-- 指定父模块相对路径 -->
+      <relativePath>../account-parent/pom.xml</relativePath> 
+    </parent>
 </project>
 ```
 
@@ -1117,7 +1117,7 @@ maven 提供了 pluginManagement 元素帮助管理插件，在该元素中配�
 |         build          |               构建配置               |
 |       reporting        | 项目的报告输出目录配置，报告插件配置 |
 
-依赖管理
+###### 依赖继承管理
 
 maven 提供的 dependencyManagement 元素既能让子模块继承到父模块的依赖配置，又能保证子模块依赖使用的灵活性
 
@@ -1131,15 +1131,15 @@ maven 提供的 dependencyManagement 元素既能让子模块继承到父模块�
 
 ```xml
 <dependencyManagement>
-	<dependencies>
-    <dependency>
-      <groupId>com.project.test</groupId>
-      <artifactId>account-parent</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
-      <type>pom</type>
-      <scope>import</scope>
-    </dependency>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>com.project.test</groupId>
+            <artifactId>account-parent</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
 </dependencyManagement>
 ```
 
