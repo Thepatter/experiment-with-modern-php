@@ -1,4 +1,4 @@
-####Collection Framework
+#### Collection Framework
 
 ##### 原始容器
 
@@ -12,7 +12,7 @@ java 最初版本只为最常用的数据结构提供了很少的一组类：*Ve
 
 旧版迭代器，比 Iterator 接口小，只有 hasMoreElements() 和 nextElement()。
 
-######*Hashtable*
+###### *Hashtable*
 
 类似 *HashMap*
 

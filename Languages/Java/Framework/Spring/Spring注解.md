@@ -66,7 +66,7 @@
 
 ###### @Repository
 
-组件扫描会发现它，并且会将其初始化为 spring 上下文中的 bean
+组件扫描会发现它，并且会将其初始化为 spring 上下文中的 bean，spring 应该将这个接口视为存储库并为它生成动态代理
 
 @SessionAttributes
 

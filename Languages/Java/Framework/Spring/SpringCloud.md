@@ -25,6 +25,10 @@
 * Hystrix 组件
 
   提供了服务调用失败的保障及监控机制
+  
+* Actuator
+
+  服务检查
 
 ##### 开发流程
 
@@ -189,7 +193,7 @@ Feign 是一个接口驱动的 REST 客户端，类似 repository。
 
 对于不太可能发生变化或者应用特定的属性，将它们放到 application.yml 或 application.properties 中，随着打包的应用一起部署是一种很好的方案。
 
-当在环境变量或 java 系统属性中设置配置属性时，修改这些属性需要应用重启，如果选择将属性到爆道要部署的 JAR 或 WAR 文件中，那么在属性变更时，必须要完全重新构建和重新部署应用。
+当在环境变量或 java 系统属性中设置配置属性时，修改这些属性需要应用重启，如果选择将属性打包到要部署的 JAR 或 WAR 文件中，那么在属性变更时，必须要完全重新构建和重新部署应用。
 
 ##### 基于微服务架构配置
 
@@ -206,7 +210,7 @@ Config Server 暴露了 REST API，客户端可以通过它来消费配置属性
    ```xml
    <dependency>
    	<groupId>org.springframework.cloud</groupId>
-     <artifactId>spring-cloud-config-server</artifactId>
+     	<artifactId>spring-cloud-config-server</artifactId>
    </dependency>
    ```
 
@@ -222,32 +226,35 @@ Config Server 暴露了 REST API，客户端可以通过它来消费配置属性
 
    * default
 
-     处于激活状态的 Spring profile
+     处于激活状态的 Spring profile，请求特定环境的 profile 时，将返回所请求的 profile 和默认的 profile
 
    * master
 
      git 标签/分支（可选）默认 master
 
-###### 配置
+###### 配置中心配置
 
-可以将配置放到相对于 git 仓库子目录下来组织配置，只需在 config-server 的 properties 下指定搜索路径
+* 将配置放到相对于 git 仓库子目录下来组织配置，只需在 config-server 的 properties 下指定搜索路径
 
-```yml
-spring:
-	cloud:
-		config:
-			server:
-				git:
-				 	# git 配置仓库 url，支持各种 git 协议
-					uri: http://github.com/cloud/config
-					# 搜索路径,搜索 config 目录和 more 开头的目录
-					search-paths: config,more*
-					# 指定默认 git 分支
-					default-label: v1
-					# auth
-					username: admin
-					password: secret
-```
+  ```properties
+  spring.cloud.config.server.git.uri=http://github.com/cloud/config
+  # 指定搜索路径，搜索 config 目录和 more 开头的目录
+  spring.cloud.config.server.git.search-paths=config,more*
+  # 指定默认 git 分支
+  spring.cloud.config.server.git.default-label: v1
+  # git auth
+  spring.cloud.config.server.git.username=admin
+  spring.cloud.config.server.git.password=secret
+  ```
+
+* 使用文件系统组织配置
+
+  ```properties
+  # 指定存储配置的后端存储库为文件系统
+  spring.profiles.active=native
+  # 文件存储位置的路径，支持逗号分隔文件夹列表。file:/// 协议
+  spring.cloud.config.server.native.search-locations=file:///path/to/app/config
+  ```
 
 ###### 提供特定应用的属性
 
@@ -275,32 +282,24 @@ Spring cloud config server 提供了一个客户端库，会包含在 spring boo
    ```xml
    <dependency>
    	<groupId>org.springframework.cloud</groupId>
-     <artifactId>spring-cloud-starter-config</artifactId>
+     	<artifactId>spring-cloud-starter-config</artifactId>
    </dependency>
    ```
 
 2. 配置
 
-   ```yml
-   spring:
-   	cloud:
-   		config:
-   			uri: http://localhost:8888
-   	application:
-   		name: product-service
+   配置信息可以在 bootstrap.yml 和 application.yml 两个配置文件之一中设置。
+   
+   在其他所有配置信息被使用之前，bootstrap.yml 文件要先读取应用程序属性。一般来说，bootstrap.yml 文件包含服务的应用程序名称、应用程序 profile 和连接的 Spring Cloud Config 服务器的 URI
+   
+   希望保留在本地服务的其他配置，都可以在服务中的 application.yml 文件中进行本地设置
+   
+   ```properties
+   spring.cloud.config.uri=http://cloud.service.com:8888
+   spring.application.name=product-service
    ```
 
 当应用启动时，Config Server Client 会对 Config Server 发送请求，接收的属性将会放到应用环境中，并缓存起来，即便 Config Server 停机也依然可用
-
-##### 注册中心配置中心
-
-* 微服务中，通过 Config Server 了解 Eureka 服务注册中心。
-
-* 还可将 Config Server 本身注册到 Eureka 中，让微服务发现去查找 Config Server。
-
-  这种模式，需要将Config Server 变成服务发现的客户端，并将 spring.cloud.config.discovery.enabled 属性设置为 false。这样的话，Config Server 会将自身以 “configserver” 名称注册到 Eureka 中。
-
-  这种方式下，每个服务在启动的时候都要调用两次外部的服务：第一次调用 Eureka 发现 Config Server 的位置，第二次调用 Config Server 获取配置数据
 
 ##### 存储加密属性
 
@@ -308,11 +307,10 @@ ConfigServer 可以借助存储在 Git 中的属性文件提供加密值
 
 ###### 使用对称密钥加密
 
-使用一个加密密钥来配置 ConfigServer，在将属性提供给客户端应用之前，ConfigServer 要使用这个密钥对数值进行解密。在 ConfigServer 中将 encrypt.key 属性设置为加密和解密密钥的值，这个属性要设置到 bootstrap 配置中（bootstrap.properties 或 bootstrap.yml，在自动配置功能启用 Config Server 之前，才会加载和启用）
+使用一个密钥来配置 ConfigServer，在将属性提供给客户端应用之前，ConfigServer 使用这个密钥对数值进行解密。在 ConfigServer 中将 encrypt.key 属性设置密钥值，这个属性要设置到 bootstrap 配置中（bootstrap.properties 或 bootstrap.yml，在自动配置功能启用 Config Server 之前，才会加载和启用）
 
 ```yml
-encrypt:
-	key: secretmd5sum
+encrypt.key: secretmd5sum
 ```
 
 ###### 使用非对称秘钥
@@ -354,13 +352,30 @@ encrypt:
    spring:
    	datasource:
    		username: root
-   		# 使用 '{cipher}' 标识该字符串为秘闻
+   		# 使用 '{cipher}' 标识该字符串为密文
    		password: '{cipher}01f4376a3ca7a72cd05da52e08cf6407fd4714f432899374e85bbb9b78004352'
    ```
 
 3. 请求属性时 ConfigServer 会自动解密
 
    默认情况下，ConfigServer 提供的所有加密值只是在后端 git 仓库中处于加密状态，它们在对外提供之前会解密，如果需要以未解密的形式对外提供加密属性，配置 spring.cloud.config.server.encrypt.enabled = false，则 ConfigServer 会返回秘文
+
+###### 客户端解密
+
+1. 配置 Spring Cloud Config 不要在服务器端解密属性
+
+2. 在许可证服务器上设置对称密钥
+
+3. 将 spring-security-rsa 依赖添加到客户端
+
+   ```xml
+   <dependency>
+   	<groupId>org.springframework.security</groupId>
+       <artifactId>spring-security-rsa</artifactId>
+   </dependency>
+   ```
+
+   
 
 ##### 运行时刷新配置
 
@@ -371,7 +386,7 @@ encrypt:
 ```xml
 <dependency>
 	<groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-actuator</artifactId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
 </dependency>
 ```
 
@@ -394,7 +409,7 @@ curl localhost:53419/actuator/refresh -X POST
    ```xml
    <dependency>
    	<groupId>org.springframework.cloud</groupId>
-     <artifactId>spring-cloud-config-monitor</artifactId>
+       <artifactId>spring-cloud-config-monitor</artifactId>
    </dependency>
    ```
 
@@ -427,6 +442,16 @@ curl localhost:53419/actuator/refresh -X POST
    ```
 
    修改配置以适应 kafka 或 rabbit
+
+##### 注册中心配置中心
+
+* 微服务中，通过 Config Server 了解 Eureka 服务注册中心。
+
+* 还可将 Config Server 本身注册到 Eureka 中，让微服务发现去查找 Config Server。
+
+  这种模式，需要将Config Server 变成服务发现的客户端，并将 spring.cloud.config.discovery.enabled 属性设置为 false。这样的话，Config Server 会将自身以 “configserver” 名称注册到 Eureka 中。
+
+  这种方式下，每个服务在启动的时候都要调用两次外部的服务：第一次调用 Eureka 发现 Config Server 的位置，第二次调用 Config Server 获取配置数据
 
 #### 服务失败与延迟
 
