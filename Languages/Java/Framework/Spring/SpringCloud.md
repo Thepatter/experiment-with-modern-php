@@ -37,15 +37,55 @@
 3. 搭建微服务端点，作为 Spring Cloud Eureka Client 和 Spring Cloud Client 端点消费服务中心与服务配置
 4. 搭建 Hystrix Dashboard 监控流，作为 Spring Cloud Config Server Client 和 Spring Cloud Eureka Client
 
-#### Eureka
+#### 服务发现
 
-##### Server
+服务发现对于微服务和基于云的应用提供了：
+
+* 可以快速地对在环境中运行的服务实例数量进行水平伸缩，通过服务发现，服务消费者能够将服务的物理位置抽象出来。由于服务消费者不知道实际服务实例的物理位置，因此可以从可用服务池中添加或移除服务实例
+* 有助于提高应用程序的弹性，当微服务实例变得不健康或不可用时，大多数服务发现引擎将从内部可用服务列表中移除该实例。由于服务发现引擎会在路由时绕过不可用服务，因此能够使不可用服务造成的损害最小
+
+##### 服务发现架构
+
+1. 启动一个或多个服务发现节点，这些服务发现实例通常是独立的，在它们之前一般不会有负载均衡器
+2. 当服务实例启动时，它们将通过一个或多个服务发现实例来注册它们可以访问的物理位置、路径和端口（每个服务实例都将以相同的服务 ID 进行注册）
+3. 服务通常只在一个服务发现实例中进行注册。大多数服务发现的实现使用数据传播的点对点模型，每个服务实例的数据都被传递到服务发现集群中的所有其他节点
+4. 每个服务实例将通过服务发现服务去推送服务实例的状态，或者服务发现服务从服务实例拉取状态。任何未能返回良好的健康检查信息的服务都将从可用服务实例池中删除
+5. 服务在向服务发现服务进行注册之后，这个服务就可以被需要使用这项服务功能的应用程序或其他服务使用。客户端可以使用不同的模型来发现服务，在每次调用服务时，客户端可以只依赖于服务发现引擎来解析服务位置。（每次调用注册的微服务实例时，服务发现引擎就会被调用，但很脆弱，服务客户端完全依赖于服务发现引擎来查找和调用服务，更健壮的方法是使用客户端负载均衡）
+
+客户端服务调用流程：
+
+1. 当服务客户端需要调用服务时，它将检查本地缓存的服务实例 IP。服务实例之间的负载均衡会发生在该服务上
+2. 如果客户端在缓存中找到一个服务 IP，那么客户端将使用它，否则，客户端将会联系服务发现
+3. 客户端缓存将定期使用服务发现层进行刷新。客户端缓存最终是一致的，但是始终存在这样的风险（在客户端联系服务发现实例以进行刷新和调用时，调用可能会被定向到不健康的服务实例上）
+4. 如果在调用服务的过程中，服务调用失败，那么本地的服务发现缓存失效，服务发现客户端将尝试从服务发现代理刷新数据
+
+###### 服务注册
+
+服务如何使用服务发现代理进行注册：一个服务上线时，这个服务会向服务发现代理注册它的 IP 地址 
+
+###### 服务地址的客户端查找
+
+服务客户端查找服务信息的方法：客户端不会直接指导服务的 IP 地址，从服务发现代理那里获取服务的 IP 地址，可以通过逻辑名称从服务发现代理查找服务的位置
+
+###### 信息共享
+
+如何跨节点共享服务信息：服务发现节点共享服务实例的健康信息
+
+###### 健康监测
+
+服务如何将它的健康信息传回给服务发现代理：服务向服务发现代理发送心跳包。如果服务死亡，服务发现层将移除死亡的实例的 IP
+
+##### Eureka
+
+###### Server
 
 在微服务应用中，Eureka 会担当所有服务的注册中心。Eureka 本身也可以视为一个微服务，在整体应用中它的目的是让其他的服务能够互相发现
 
 当服务实例启动时，它会按照名称将自己注册到 Eureka 中。Eureka 希望服务实例能够注册上来，并且每隔 30 秒向它发送一次注册更新请求。通常，如果 Eureka 在 3 个更新周期内没有收到服务的更新请求，就会将该服务注销。
 
 自我保护模式下，不会注销服务实例，在生产环境中，自我保护模式可以防止在网络出现故障时更新请求无法发送至 Eureka 所导致的活跃服务被注销。自我保护模式会将已停止服务的注册项保留下来。
+
+使用 `http://eureka.service:8761/eureka/apps/<APPID>` 查看单个服务信息
 
 使用 Eureka
 
@@ -67,9 +107,12 @@ eureka:
 	instance:
 		hostname: localhost
 	client:
-		fetch-registry: false # 生产环境为 true
-		register-with-eureka: false  # 生产环境为 true 从其他 eureka 获取信息
+		# 生产环境为 true, eureka 客户端获取注册表的本地副本，ture 将在本地缓存注册表，而不是每次查找 eureka 服务
+		fetch-registry: false 
+		# 生产环境为 true，注册自身，从其他 eureka 获取信息
+		register-with-eureka: false  
 		service-url:
+			# 包含客户端用于解析服务位置的 Eureka 服务的列表
 			defaultZone: 
 				http://${eureka.instance.hostname}:${server.port}/eureka
 	server:
@@ -78,23 +121,27 @@ server:
 	port: 8761 # Eureka 客户端默认监听端口
 ```
 
-##### Client
+###### Client
 
 为了让应用成为服务注册中心的客户端，需要将 Eureka 客户端添加到服务应用的构建文件中
 
-```xml
-<dependency>
-  <groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-</dependency>
-```
+1. 依赖
 
-```properties
-server.port=0
-# 服务名称
-spring.application.name=order-service
-eureka.client.service-url.defaultZone=http://eurekal.tacocloud.com:8761/eureka/,http://eurekal.taocloud.com:8761/eureka/
-```
+   ```xml
+   <dependency>
+   	<groupId>org.springframework.cloud</groupId>
+       <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+   </dependency>
+   ```
+
+2. properties 配置
+
+   ```properties
+   server.port=0
+   # 服务名称
+   spring.application.name=order-service
+   eureka.client.service-url.defaultZone=http://eurekal.tacocloud.com:8761/eureka/,http://eurekal.taocloud.com:8761/eureka/
+   ```
 
 #### Ribbon
 
@@ -112,7 +159,7 @@ eureka.client.service-url.defaultZone=http://eurekal.tacocloud.com:8761/eureka/,
 @Bean
 @LoadBalanced
 public RestTemplate restTemplate() {
-		return new RestTemplate();
+	return new RestTemplate();
 }
 ```
 
@@ -121,13 +168,12 @@ public RestTemplate restTemplate() {
 ```java
 @Component
 public class IngredientServiceClient {
-		private RestTemplate rest;
-		public IngredientServiceClient(@LoadBalanced RestTemplate rest) {
-				this.rest = rest;
-		}
-		public Ingredient getIngredientById(String ingredientId) {
-				return rest.getForObject("http://ingredient-service/ingredients/{id}", Ingredient.class, ingredientId);
-		}
+	private RestTemplate rest;
+	public IngredientServiceClient(@LoadBalanced RestTemplate rest) {							this.rest = rest;
+	}
+	public Ingredient getIngredientById(String ingredientId) {
+		return rest.getForObject("http://ingredient-service/ingredients/{id}", Ingredient.class, ingredientId);
+	}
 }
 ```
 
@@ -140,7 +186,7 @@ Feign 是一个接口驱动的 REST 客户端，类似 repository。
 ```xml
 <dependency>
 	<groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-starter-openfeign</artifactId>
+    <artifactId>spring-cloud-starter-openfeign</artifactId>
 </dependency>
 ```
 
@@ -282,7 +328,7 @@ Spring cloud config server 提供了一个客户端库，会包含在 spring boo
    ```xml
    <dependency>
    	<groupId>org.springframework.cloud</groupId>
-     	<artifactId>spring-cloud-starter-config</artifactId>
+     	<artifactId>spring-cloud-config-client</artifactId>
    </dependency>
    ```
 
