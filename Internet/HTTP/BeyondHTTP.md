@@ -1,5 +1,13 @@
 ### Beyond HTTP
 
+#### 超越 HTTP
+
+##### HTTP 改善
+
+###### 协议栈
+
+<img src="../Images/超越HTTP协议栈.png" style="zoom:50%;" />
+
 #### HTTPS
 
 ##### 协议
@@ -30,11 +38,7 @@ HTTPS 协议规定了协议名为 https，默认端口号 443。
 
 请求-应答，报文结构，请求方法，URI，头字段，连接管理等都完全沿用 HTTP。
 
-HTTPS 将 HTTP 下层的传输协议由 TCP/IP 换成了 SSL/TLS，由 HTTP over TCP/IP 变成了 HTTP over SSL/TLS，让 HTTP 运行在安全的 SSL/TLS 协议上，收发报文不再使用 Socket API ，而是调用专门的安全接口
-
-*HTTPS通信流程* 
-
-![](../Images/HTTPS通信流程.png)
+HTTPS 将 HTTP 下层的传输协议由 TCP/IP 换成了 SSL/TLS，由 HTTP over TCP/IP 变成了 HTTP over SSL/TLS，让 HTTP 运行在安全的 SSL/TLS 协议上，收发报文不再使用 Socket API ，而是调用专门的安全接口 SSL/TLS 
 
 ##### SSL/TLS
 
@@ -313,3 +317,50 @@ HTTP/2 为此定义了一个“流”（Stream）的概念，它是二进制帧�
 ###### 安全性
 
 支持明文和密文，密文版本必须是 TLS 1.2  以上，还要支持前向安全和 SNI
+
+#### HTTP 3
+
+##### HTTP 2 缺点
+
+###### 传输层队头阻塞
+
+HTTP 2 解决了应用层队头堵塞，但由于下层传输协议使用 TCP，无法解决 TCP 的队头阻塞
+
+TCP 的丢包重传机制要求丢失的包必须要等待重新传输确认，其他的 TCP 段即使已经收到了，也只能放在内核缓存区等待。
+
+##### 新特性
+
+###### QUIC 协议
+
+基于 UDP，因为 UDP 是无序的，包之间没有依赖关系，不存在阻塞。
+
+QUIC 也基于 UDP 实现了可靠传输，保证数据一定能够抵达目的地。它还引入了类似 HTTP/2 的“流”和“多路复用”，单个“流”是有序的，可能会因为丢包而阻塞，但其他流不会受到影响。
+
+QUIC 全面采用加密通信，应用 TLS 1.3 ，但 QUIC 并不是建立在 TLS 之上，而是内部包含了 TLS。它使用自己的帧接管了 TLS 里的记录，握手消息、警报消息都不使用 TLS 记录，直接封装成 QUIC 的帧发送，省掉了一次开销。
+
+QUIC 基本数据传输单位是包（packet）和帧（frame），一个包由多个帧组成，包面向连接，帧面向流。QUIC 使用不透明的连接ID来标记通信两个端点，客户端和服务器可以自行选择一组 ID 来标记自己，这样解除了 TCP 里四元绑定。支持连接迁移
+
+*QUIC包结构*
+
+<img src="../Images/QUIC包结构.png" style="zoom:50%;" />
+
+*QUIC帧结构*
+
+<img src="../Images/QUIC帧结构.png" style="zoom:50%;" />
+
+*HTTP 3 帧结构*
+
+<img src="../Images/HTTP3帧结构.png" style="zoom:50%;" />
+
+HTTP/3 里的帧仍然分成数据帧和控制帧两类，HEADERS 帧和 DATA 帧传输数据，但其他一些帧因为在下层的 QUIC 里有了替代，所以在 HTTP/3 里就都消失了，比如 RST_STREAM、WINDOW_UPDATE、PING 等。
+
+头部压缩算法在 HTTP/3 里升级成了 QPACK，使用方式上也做了改变。虽然也分成静态表和动态表，但在流上发送 HEADERS 帧时不能更新字段，只能引用，索引表的更新需要在专门的单向流上发送指令来管理，解决了 HPACK 的队头阻塞问题
+
+###### HTTP 3 服务发现
+
+HTTP/3 没有指定默认的端口号，也就是说不一定非要在 UDP 的 80 或者 443 上提供 HTTP/3 服务。
+
+浏览器需要先用 HTTP/2 协议连接服务器，然后服务器可以在启动 HTTP/2 连接后发送一个 Alt-Svc 帧，包含一个 h3=host:port 的字符串，告诉浏览器在另一个端点上提供等价的 HTTP/3 服务
+
+浏览器收到 Alt-Svc 帧，会使用 QUIC 异步连接指定的端口，如果连接成功，就会断开 HTTP/2 连接，改用新的 HTTP/3 收发数据
+
