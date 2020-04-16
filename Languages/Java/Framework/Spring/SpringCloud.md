@@ -94,7 +94,7 @@
 ```xml
 <dependency>
 	<groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+    <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
 </dependency>
 ```
 
@@ -143,15 +143,13 @@ server:
    eureka.client.service-url.defaultZone=http://eurekal.tacocloud.com:8761/eureka/,http://eurekal.taocloud.com:8761/eureka/
    ```
 
-#### Ribbon
-
-作为客户端的负载均衡器能够按照客户的的数据成比例伸缩，每个负载均衡器都可以配置成最适合对应客户端的负载算法，而不必对所有服务都使用相同的配置
-
 #### 消费服务
 
 支持负载均衡的 RestTemplate，Feign 生成的客户端接口来进行消费
 
-##### RestTemplate
+##### Ribbon
+
+作为客户端的负载均衡器能够按照客户的的数据成比例伸缩，每个负载均衡器都可以配置成最适合对应客户端的负载算法，而不必对所有服务都使用相同的配置
 
 为带有 @Bean 注解的方法添加 @LoadBalanced 注解可以声明支持负载均衡的 RestTemplate bean
 
@@ -181,7 +179,9 @@ public class IngredientServiceClient {
 
 ##### Feign
 
-Feign 是一个接口驱动的 REST 客户端，类似 repository。
+Feign 是启用 Ribbon 的 RestTemplate 类替代方案，Feign 库采用不同的方法来调用 REST 服务，方法是让开发人员定义一个 Java 接口，然后使用 Spring Cloud 注解来标注接口，以映射 Ribbon 将要调用的基于 Eureka 的服务。
+
+Spring Cloud 框架将动态生成一个代理类，用于调用目标 REST 服务。除了编写接口定义，开发人员不需要编写调用服务的代码
 
 ```xml
 <dependency>
@@ -501,13 +501,39 @@ curl localhost:53419/actuator/refresh -X POST
 
 #### 服务失败与延迟
 
-##### 断路器模式
+##### 服务失败处理
+
+###### 客户端弹性模式
+
+在远程服务发生错误或表现不佳时保护远程资源的客户端免于崩溃。目标是让客户端快速失败，而不消耗诸如资源，并且可以防止远程服务的问题向客户端的消费者上游传播。
+
+常见客户端弹性模式：
+
+*   客户端负载均衡（Client load balance）
+
+    客户端负载均衡涉及让客户端从服务发现代理查找服务的所有实例，然后缓存服务实例的物理位置。每当消费者需要调用该服务实例时，客户端负载均衡器将从它维护的服务位置池中返回一个位置。
+
+    负载均衡器可以检测服务实例是否抛出错误或表现不佳。如果客户端负载均衡器检测到问题，它可以从可用服务位置池中移除该服务实例，并防止将来的服务调用访问该服务实例。
+
+*   断路器（circuit breaker）
+
+    当远程服务被调用时，断路器将监视这个调用。如果调用时间太长，断路器将会介入并中断调用。断路器将监视所有对远程资源的调用，如果对某一个远程资源的调用失败次数足够多的，那么断路器实现就会出现并采取快速失败，阻止将来调用失败的远程资源
+
+*   后备（fallback）
+
+    当远程服务调用失败时，服务消费者将执行替代代码路径，并尝试通过其他方式执行操作
+
+*   舱壁（bulkhead）
+
+    可以把远程资源的调用分到线程池中，并降低一个缓慢的远程资源调用拖垮整个应用程序的风险。线程池充当服务的舱壁，每个远程资源都是隔离的，并分配给线程池。如果一个服务响应缓慢，那么这种服务调用的线程池就会饱和并停止处理请求，而对其他服务的服务调用则不会变的饱和，它们会被分配给其他线程池
+
+###### 断路器模式
 
 软件中的断路器起初会处于关闭状态，允许方法调用，如果方法调用失败，断路器就会打开，就不会对失败的方法再执行调用，提供了后备行为和自校正功能
 
-如果被保护的方法再给定的失败阈值内发生了失败，那么可以调用一个后备方法代替它的位置，在断路器处于打开状态之后，几乎始终都会调用后备方法。处于打开状态的断路器偶尔会进入半开状态，并尝试调用发生失败的方法，如果依然失败，断路器就恢复为打开状态；如果调用成功，它会认为问题已经解决，断路器会回到闭合状态
+如果被保护的方法在给定的失败阈值内发生了失败，那么可以调用一个后备方法代替它的位置，在断路器处于打开状态之后，几乎始终都会调用后备方法。处于打开状态的断路器偶尔会进入半开状态，并尝试调用发生失败的方法，如果依然失败，断路器就恢复为打开状态；如果调用成功，它会认为问题已经解决，断路器会回到闭合状态
 
-断路器是应用到方法上的，在给定的一个微服务中，决定在代码的什么地方声明断路器其实就是识别那些方法易于出现失败，当遇到失败时，微服务应用：在微服务中发生的事情，就留在微服务中
+断路器是应用到方法上的，在给定的一个微服务中，决定在代码的什么地方声明断路器其实就是识别那些方法易于出现失败，当遇到失败时，对于微服务应用，应在微服务中发生的事情，就留在微服务中
 
 如下方法是断路器保护首选：
 
@@ -525,16 +551,22 @@ curl localhost:53419/actuator/refresh -X POST
 
 ##### Hystrix
 
+构建断路器模式、后备模式和舱壁模式的实现需要对线程和线程管理有深入的理解。
+
 Netflix Hystrix 是断路器模式的 java 实现，为一个切面，会在目标方法发生失败的时候触发后备方法，还会追踪目标方法失败的频率，如果失败超过了某个阈值，那么所有的请求都会转发至后备方法
 
-###### 使用断路器
+在配置 Hystrix 时，可以使用 Application、class、function 级别的配置。每个 Hystrix 属性都有默认设置的值，这些值将被应用程序中每个 @HystrixCommand 注解所使用，除非这些属性值在 java  类级别被设置，或者被类中单个 Hystrix 线程池级别的值覆盖
+
+###### 使用
+
+Hystrix 实现了后备、断路器、舱壁模式
 
 1. 依赖
 
    ```xml
    <dependency>
    	<groupId>org.springframework.cloud</groupId>
-     <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+       <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
    </dependency>
    ```
 
@@ -545,54 +577,39 @@ Netflix Hystrix 是断路器模式的 java 实现，为一个切面，会在目�
 3. 使用
 
    使用 @HystrixCommand 注解在方法上声明断路器切面
-
-###### 断路器注解
-
-* @HystrixCommand
-
-  |       属性        |                             含义                             |
-  | :---------------: | :----------------------------------------------------------: |
-  |  fallbackMethod   | 后备方法，要与原始方法具有相同的签名（除了方法名称），支持嵌套备用方法 |
-  | commandProperties | 一个或多个 @HystrixProperty 注解组成数组，指定了要设置的属性名和值 |
-  |                   |                                                              |
-
-  默认情况下，所有带有 @HystrixCommand 注解的方法都会在 1 秒后超时，并调用它们声明的后备方法。
-
-  commandProperties 支持属性名
-
-  |                       属性                       |           含义           |
-  | :----------------------------------------------: | :----------------------: |
-  | execution.isolation.thread.timeoutInMilliseconds |     指定超时时间毫秒     |
-  |            execution.timeout.enabled             |      false 取消超时      |
-  |     metrics.rollingState.timeInMilliseconds      | 设置断路器在时间段内操作 |
-  |      circuitBreaker.requestVolumeThreshold       |                          |
-
-  如果在 metrics.rollingState.timeInMilliseconds 设定的时间范围内超出了 ci rcuitBreaker.requestValuemThreshold 和 circuitBreaker.errorThresholdPercentage 设置的值，那么断路器将会进入打开状态。在circuitBreaker.sleepWindowInMilliseconds 限定的时间范围内，它会一直处于打开状态，在此之后将进入半打开状态，进入半打开状态后，将会再次尝试失败的原始方法
-
-  ```java
-  @HystrixCommand(fallbackMethod="getDefaultIngredients",
-                  // 调整失败设置，20 秒内调用超过 30 次，且失败率超过 25%
-                 commandProperties={
-                   @HystrixProperty(
-                     name="circuitBreaker.requestVolumeThreshold",
-                     value="30"
-                   ),
-                   @HystrixProperty(
-                   	 name="circuitBreaker.errorThresholdPercentage",
-                     value="25"
-                   ),
-                   @HystrixProperty(
-                   	 name="metrics.rollingStats.timeInMilliseconds",
-                     value="20000"
-                   )
-                   // 处于打开状态后断路器必须保持 1 分钟，然后才进入半开状态
-                   @HystrixProperty(
-                   	 name="ciruitBreaker.sleepWindowInMillseconds",
-                     value="60000"
-                   )
-                 })
-  public list<User> getAllIngredients() {}
-  ```
+   
+   ```java
+     @HystrixCommand(
+         fallbackMethod="getDefaultIngredients",
+         threadPoolKey="services" // 定义唯一线程池名称
+         threadPoolProperties={  // 定义线程池属性
+             @HystrixProperty(name="coreSize", value=30),
+             @HystrixProperty(name="maxQueueSize", value=20)
+         }
+         // 调整失败设置，20 秒内调用超过 30 次，且失败率超过 25%
+         commandProperties={
+             @HystrixProperty(
+                 name="circuitBreaker.requestVolumeThreshold",
+                 value="30"
+             ),
+             @HystrixProperty(
+                 name="circuitBreaker.errorThresholdPercentage",
+                 value="25"
+             ),
+             @HystrixProperty(
+                 name="metrics.rollingStats.timeInMilliseconds",
+                 value="20000"
+             )
+             // 处于打开状态后断路器必须保持 1 分钟，然后才进入半开状态
+             @HystrixProperty(
+                 name="ciruitBreaker.sleepWindowInMillseconds",
+                 value="60000"
+             )
+         })
+     public list<User> getAllIngredients() {}
+   ```
+   
+   默认情况下，指定不带属性的 @HystrixCommand 注解时，这个注解会将所有远程服务调用都放在同一线程池下。
 
 ##### 监控
 

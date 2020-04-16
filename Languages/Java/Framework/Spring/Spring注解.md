@@ -4,6 +4,12 @@
 
 ##### 类级别注解
 
+###### @SpringBootApplication
+
+复合注解，SpringBoot 使用这个注解来告诉 Spring 容器，这个类是 Spring 中使用的 bean 定义的源。声明 Spring Boot 服务入口点。
+
+该注解将入口类标记为配置类，然后开始自动扫描 Java 类路径上所有的类以形成其他 Spring Bean
+
 ###### @Controller
 
 构造型注解，将类识别为控制器，并且将其作为组件扫描的候选者
@@ -295,5 +301,73 @@ private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Cu
 
 所有映射将会具有和 spring.data.rest.base-path 属性值一样的前缀。但没有和 @RestControllerr 相同的语义。不能保证处理器方法返回的值会自动写入响应体。
 
+#### SpringCloud 组件
 
+##### Ribbon
+
+###### @LoadBalanced
+
+为带有 @Bean 注解的方法添加 @LoadBalanced 注解可以声明支持负载均衡的 RestTemplate bean
+
+它会作为一个注入限定符，可以在注入的地方声明此处想要支持负载均衡的 RestTemplate
+
+##### Eureka
+
+###### @EnableEurekaServer
+
+应用主引导类声明该项目为服务注册中心
+
+##### Feign
+
+###### @EnableFeignClients
+
+在 @Configuration 配置类上声明或在主引导类上声明启用 Feign 客户端
+
+###### @FeignClient
+
+Feign 接口声明，属性为服务名
+
+##### Hystrix
+
+###### @EnableHystrix 
+
+在主引导类上使用该注解声明启用
+
+###### @HystrixCommand
+
+将 java 类方法标记为由 Hystrix 断路器进行管理。Spring 对 @HystrixCommand 标记的方法将动态生成一个代理，该代理将包装该方法，并通过专门用于处理远程调用的线程池来管理对该方法的所有调用
+
+|         属性         |                             含义                             |
+| :------------------: | :----------------------------------------------------------: |
+|    fallbackMethod    | 后备方法，要与原始方法具有相同的签名（除了方法名称），支持嵌套备用方法 |
+|  commandProperties   | 一个或多个 @HystrixProperty 注解组成数组，指定了要设置的属性名和值，配置断路器属性 |
+|    threadPoolKey     |                     定义线程池的唯一名称                     |
+| threadPoolProperties |                 定义和定义 threadPool 的行为                 |
+
+默认情况下，所有带有 @HystrixCommand 注解的方法都会在 1 秒后超时，并调用它们声明的后备方法。
+
+commandProperties 支持属性名
+
+|                       属性                       |                    含义                    |
+| :----------------------------------------------: | :----------------------------------------: |
+| execution.isolation.thread.timeoutInMilliseconds |           指定超时时间，单位毫秒           |
+|            execution.timeout.enabled             |               false 取消超时               |
+|     metrics.rollingState.timeInMilliseconds      |      设置断路器观察时间段时长单位毫秒      |
+|      circuitBreaker.requestVolumeThreshold       |          断路器观察时间段调用次数          |
+|      ciruitBreaker.sleepWindowInMillseconds      | 设置断路器打开时长单位毫秒，之后会进行半开 |
+|     circuitBreaker.errorThresholdPercentage      |      设置断路器观察时间段内最低失败率      |
+
+如果在 metrics.rollingState.timeInMilliseconds 设定的时间范围内超出了 ci rcuitBreaker.requestValuemThreshold 和 circuitBreaker.errorThresholdPercentage 设置的值，那么断路器将会进入打开状态。
+
+在circuitBreaker.sleepWindowInMilliseconds 限定的时间范围内，它会一直处于打开状态，在此之后将进入半打开状态，进入半打开状态后，将会再次尝试失败的原始方法
+
+###### @HystrixProperty
+
+设置 @HystrixCommand 属性。属性为 name 和 value 的键值对
+
+###### @DefaultProperties
+
+类级别注解，指定对应级别的 Hystrix 属性
+
+##### Config
 
