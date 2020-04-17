@@ -421,7 +421,6 @@ encrypt:
    </dependency>
    ```
 
-   
 
 ##### 运行时刷新配置
 
@@ -580,7 +579,7 @@ Hystrix 实现了后备、断路器、舱壁模式
    
    ```java
      @HystrixCommand(
-         fallbackMethod="getDefaultIngredients",
+         fallbackMethod="getDefaultIngredients", // 后备方法调用链底部必须有一个不会失败的方法
          threadPoolKey="services" // 定义唯一线程池名称
          threadPoolProperties={  // 定义线程池属性
              @HystrixProperty(name="coreSize", value=30),
@@ -681,7 +680,87 @@ management:
    	cluster-name-expression: "'default'"
    ```
 
-   
+#### 服务网关
 
+服务网关充当服务客户端和被调用的服务之间的中介。服务客户端仅与服务网关管理的单个 URL 进行连接。服务网关从服务客户端调用中分离出路径，并确定服务客户端正在尝试调用那个服务。服务网关充当应用程序内所有微服务调用的入站流量的入口。服务客户端永远不会直接调用单个服务的 URL，而是将所有调用都放到服务网关上
 
+将横切关注点抽象成一个独立且作为应用程序中所有微服务调用的过滤器和路由器的服务。这种横切关注点被称为服务网关（service gatervay）。服务客户端不再直接调用服务，服务网关作为单个策略执行点（Policy Enforcement Point，PEP），所有调用都通过服务网关进行路由，然后被路由到最终目的地
+
+##### Zuul
+
+是 Netflix 开源服务网关，Spring Cloud 组合 Zuul 完成一下工作：
+
+1.  将所有服务调用放在一个 URL 后面，并使用服务发现将这些调用映射到实际的服务实例
+2.  将关联 ID 注入流经服务网关的每个服务调用中
+3.  在从客户端发回的 HTTP 响应中注入关联 ID
+4.  构建一个动态路由机制，将各个具体的组织路由到服务实例端点，该端点与其他人使用的服务实例端点不同
+
+###### 快速开始
+
+1.  依赖
+
+    ```xml
+    <dependency>
+    	<groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-zuul</artifactId>
+    </dependency>
+    ```
+
+2.  使用 @EnableZuulProxy 注解声明 Zuul（Zuul 服务器默认设计为在 Spring 产品上工作，Zuul 将自动使用 Eureka 来通过服务 ID 查找服务，然后使用 Netflix Ribbon 对来自 Zuul 的请求进行客户端负载均衡）
+
+3.  配置 erueka
+
+###### 配置路由
+
+Zuul 核心是一个反向代理。在微服务架构下，Zuul 从客户端接收微服务调用并将其转发给下游服务。
+
+*   通过服务发现自动映射路由
+
+    Zuul 的所有路由映射都是通过在 Zuul 的配置文件中定义路由来完成，Zuul 可以根据其服务 ID 自动路由请求，而无需配置，如果没有指定任何路由，Zuul 将自动使用正在调用的服务的 Eureka 服务 ID，并将其映射到下游服务实例。
+
+    ```
+    # uri 组成 Zuul + server_id + origin_uri
+    http://zuul_service/app_service/v1/user/1
+    # 列出所有路由
+    http://zuul_service/routes
+    ```
+
+    使用 Eureka 与 Zuul 的优点在于，可以添加和删除服务的实例，而无须修改 Zuul。使用自动路由时，Zuul 只基于 Eureka 服务 ID 来公开服务，如果服务的实例没有在运行，Zuul 将不会公开该服务的路由
+
+*   使用服务发现手动映射路由
+
+    Zuul 允许在配置文件中明确定义路由映射
+
+    ```yml
+    zuul:
+    	ignored-services: 'organizationservice' // 排除的 Eureka 服务 ID 列表逗号分隔
+    	prefix: /api		// 所有已定义的服务都将添加前缀 /api
+    	routes:
+    		organizationservice: /organization/&shy;**
+    ```
+
+    如果在没有使用 Eureka 注册服务实例的情况下，手动将路由映射到服务发现 ID，那么 Zuul 仍然会显示这条路由，如果尝试为不存在的路由调用路由，Zuul 将返回 500 错误
+
+*   使用静态 URL 手动映射路由
+
+###### 过滤器
+
+提供网关内的过滤器构建自定义逻辑。支持以下过滤器：
+
+*   前置过滤器
+
+    可以在 HTTP 请求到达实际服务之前对 HTTP 请求进行检查和修改，前置过滤器不能将用户重定向到不同的端点或服务
+
+*   后置过滤器
+
+*   路由过滤器
+
+    用于在调用目标服务之前拦截调用，通常使用路由过滤器来确定是否进行某些级别的动态路由，路由过滤器可以更改服务所指向的目的地，路由过滤器可以将服务调用重定向到 Zuul 服务器被配置的发送路由以外的位置。Zuul 路由过滤器不会执行 HTTP 重定向，而是会终止传入的 HTTP 请求，然后代表原始调用者调用路由。
+
+所有 Zuul 过滤器必须扩展 ZuulFilter 类，并覆盖以下方法：
+
+*   filterType（返回过滤器类型）
+*   filterOrder（返回一个整数值，指示不同的过滤器的执行顺序）
+*   shouldFilter（返回一个布尔值，指示该过滤器是否要执行）
+*   run（每次服务通过过滤器时执行的代码）
 

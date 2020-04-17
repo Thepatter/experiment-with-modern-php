@@ -371,3 +371,17 @@ commandProperties 支持属性名
 
 ##### Config
 
+##### @EnableConfigServer
+
+使用该注解在主引导类声明该项目是注册中心服务
+
+##### Zuul
+
+###### @EnableZuulProxy
+
+使用该注解在主引导类声明该项目为一个 Zuul 服务器
+
+###### @EnableZuulServer
+
+使用此注解创建一个 Zuul 服务器，它不会加载任何 Zuul 反向代理过滤器，也不会使用 Netflix Eureka 进行服务发现，如果想要构建自己的路由服务，而不使用任何 Zuul 预置的功能时会使用 @EnableZuulServer（如与 Consul 集成）
+

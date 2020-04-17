@@ -36,7 +36,18 @@ DTD（Document Type Definition）是一套定义 XML 标记如何使用的规则
 
 *E-mail的DTD文件*
 
-![](./Images/E-mail的DTD文件.jpeg)
+```dtd
+<!ELEMENT Mail (From, To, Cc?, Date?, Subject, Body)>
+<!ELEMENT From (#PCDATA)>
+<!ELEMENT To (#PCDATA)>
+<!ELEMENT Cc (#PCDATA)>
+<!ELEMENT Date (#PCDATA)>
+<!ELEMENT Subject (#PCDATA)>
+<!ELEMENT Body (#PCDATA | P | Br) *>
+<!ELEMENT P (#PCDATA | Br) *>
+<!ATTLIST P align (left | right | justify) "left">
+<!ELEMENT Br EMPTY>
+```
 
 对应的 XML 文档具备如下特征：
 
