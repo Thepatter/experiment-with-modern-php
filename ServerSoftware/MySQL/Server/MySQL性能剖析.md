@@ -115,17 +115,6 @@ mysql -e 'show processlist\G' | grep State: | sort | uniq -c | sort -rn
 
 #### 慢查询定位
 
-```mysql
-# 查看慢查询是否开启
-show variables like '%slow_query_log%';
-# 开启慢查询
-set global slow_query_log = 'ON';
-# 查询慢查询时间阈值
-show variables like '%long_query_time%';
-# 修改慢查询记录时间
-set global long_query_time = 3;
-```
-
 使用 MySQL 自带的 mysqlddumpslow 工具统计慢查询日志（依赖 Perl），myjsqlddumpslow 命令参数：
 
 * `-s` ：采用 order 排序的方式，排序方式可以有：c（访问次数）、t（查询时间）、l（锁定时间）、r（返回时间）、ac（平均查询次数）、al（平均锁定时间）、ar（平均返回记录数）、at（平均查询时间，默认）
@@ -162,16 +151,11 @@ EXPLAIN 命令是查看查询优化器是如何决定执行查询的主要方法
 
 #### EXPLAIN 扩展
 
-- EXPLAIN EXTENDED 和正常 EXPLAIN 一样，但会告诉服务器”逆向编译“执行计划为一个 SELECT 语句。可以通过紧接其后运行 `SHOW WARNINGS` 看到生成的这个语句。这个语句直接来自执行计划， 而不是原 SQL 语句。大部分场景下与原语句不同。（**已废弃**）
-- EXPLAIN PRITITIONS 会显示查询将访问的分区，如果查询时基于分区表的话
+- 
 
 #### EXPLAIN 局限性
 
-- 如果查询在 FROM 子句中包括子查询，MySQL 实际会执行子查询，将其结果放在临时表中，然后完成外层查询优化。必须在完成外层查询优化之前处理类似的子查询。在 5.6 中取消该限制
-- EXPLAIN 是近似结果
-- 不区分具有相同名字的事物。内存排序和临时文件都使用 `filesort`，磁盘和内存临时表都显示 `Using temporary`
-- 不会显示执行计划的所有信息，及特定优化，不支持存储过程。
-- 不支持非 SELECT 语句
+- 
 
 #### EXPLAIN 中的列
 
