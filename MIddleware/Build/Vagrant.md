@@ -1,9 +1,17 @@
+### 使用 vagrant 打造可移动开发环境
+
+#### 安装配置
+
+##### 快速开始
+
+###### vagrantfile
+
+vagrantfile 是一个 ruby 脚本，用于配置如何构建虚拟机
+
+```ruby
 # -*- mode: ruby -*-
+
 # vi: set ft=ruby :
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
 Vagrant.configure("2") do |config|
 config.vm.box = "ubuntu/xenial64"
 config.vm.box_check_update = false
@@ -54,20 +62,35 @@ config.vm.define :elasticnode3 do |nginx|
       v.cpus = "6"
   end
 end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-  # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
-  # such as FTP and Heroku are also available. See the documentation at
-  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
-  # config.push.define "atlas" do |push|
-  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
-  # end
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline: <<-SHELL
-  #   apt-get update
-  #   apt-get upgrade
-  # SHELL
 end
+```
+
+###### 启动
+
+```shell
+vagrant init ubuntu/bionic64
+# 或直接在包含 vagrantfile 文件夹下运行，Windows 下 provider 为 hyperV 是需要管理员权限运行
+vagrant up && vagrant ssh
+```
+
+###### 导出盒子
+
+  ```shell
+vagrant package --base <source_box_name> --output <target_box_name.box> --vagrantfile=/vagrantfile/path --include=/include/file
+  ```
+
+###### 导入盒子
+
+  ```shell
+# 在一个新文件夹下放入盒子文件执行 
+vagrant init box_name.box
+# 配置 vagrantfile 
+vagrant up
+# 使用账户 vagrant 默认密码 vagrant 登录
+  ```
+
+  
+
+  
+
+   
