@@ -82,23 +82,31 @@
   
   	<build>
       <plugins>
-        	<plugin>
-          		<groupId>org.apache.maven.plugins</groupId>
-          		<artifactId>maven-compiler-plugin</artifactId>
-          		<configuration>
-            			<source>11</source>
-            			<target>11</target>
-          		</configuration>
-        	</plugin>
           <plugin>
-            	<groupId>org.apache.maven.plugins</groupId>
-            	<artifactId>maven-resources-plugin</artifactId> 
-            	<configuration>
-              		<encoding>UTF-8</encoding>
-            	</configuration>
-          </plugin>	
-        </plugins>
-		</build>
+              <groupId>org.apache.maven.plugins</groupId>
+          	  <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+            	  <source>11</source>
+            	  <target>11</target>
+          	  </configuration>
+          </plugin>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-resources-plugin</artifactId> 
+              <configuration>
+                  <encoding>UTF-8</encoding>
+              </configuration>
+          </plugin>
+          <!-- 配置 jar 入口 -->
+          <plugin>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-maven-plugin</artifactId>
+              <configuration>
+                  <mainClass>com.example.business.Application</mainClass>
+              </configuration>
+          </plugin>
+      </plugins>
+    </build>
 </project>
 ```
 
@@ -325,13 +333,13 @@ maven 引入的传递性依赖机制，大部分情况下只需要关心项目�
 
 ```xml
 <properties>
-	  <springframework.version>4.3.18</springframework.version>
+	<springframework.version>4.3.18</springframework.version>
 </properties>
 <dependencies>
-	  <dependency>
-    	  <groupId>org.springframework</groupId>
-    	  <artifactId>spring-beans</artifactId>
-    	  <version>${springframwrok.version}</version>
+	<dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${springframwrok.version}</version>
     </dependency>
 </dependencies>
 ```
@@ -470,13 +478,13 @@ mvn help:all-profiles
 
   ```xml
   <profiles>
-  		<profile>
-    			<artivation>
-      				<property>
-        					<name>test</name>
-          				<value>x</value>
-        			</property>
-      		</artivation>
+      <profile>
+          <artivation>
+              <property>
+                  <name>test</name>
+                  <value>x</value>
+              </property>
+          </artivation>
     	</profile>
   </profiles>
   ```
@@ -516,7 +524,7 @@ mvn help:all-profiles
 
   ```xml
   <activation>
-  		<activeByDefault>true</activeByDefault>
+  	<activeByDefault>true</activeByDefault>
   </activation>
   ```
 
@@ -532,11 +540,11 @@ maven 支持针对不同的环境生成不同的构建
 
    ```xml
 <profiles>
-   		<profile>
-     			<id>dev</id>
-       		<properties>
-       				<db.url>jdbc:mysql://127.0.0.1:3306/test</db.url>
-       		</properties>
+       <profile>
+           <id>dev</id>
+           <properties>
+               <db.url>jdbc:mysql://127.0.0.1:3306/test</db.url>
+           </properties>
      	</profile>
    </profiles>
    ```
@@ -548,8 +556,8 @@ maven 支持针对不同的环境生成不同的构建
    ```xml
    <resources>
      	<resource>
-     			<directory>${project.basedir}/src/main/resources</directory>
-       		<filtering>true</filtering>
+           <directory>${project.basedir}/src/main/resources</directory>
+           <filtering>true</filtering>
      	</resource>
    </resources>
    ```
@@ -633,9 +641,9 @@ layout 元素值表示仓库的布局是 maven2 或 maven3 的默认布局，而
 
 ```xml
 <settings>
-	  <servers>
-  	    <server>
-    	      <id>my-proj</id>
+    <servers>
+        <server>
+            <id>my-proj</id>
             <username>repo-user</username>
             <password>repo-pwd</password>
         </server>
@@ -682,11 +690,11 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
   ```xml
   <mirrors>
-  		<mirror>
-      		<id>alimaven</id>
-      		<name>aliyun maven mirror</name>
-      		<url>https://maven.aliyun.com/repository/central</url>
-      		<mirrorOf>central</mirrorOf>
+      <mirror>
+          <id>alimaven</id>
+          <name>aliyun maven mirror</name>
+          <url>https://maven.aliyun.com/repository/central</url>
+          <mirrorOf>central</mirrorOf>
     	</mirror>
   </mirrors>
   ```
@@ -713,16 +721,16 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
 ```xml
 <settings>
-		<localRepository>D:\java\repository\</localRepository>
+	<localRepository>D:\java\repository\</localRepository>
 </settings>
 ```
 
-导入 jar 到本地仓库
+*   导入 jar 到本地仓库
 
-```shell
-# file 文件位置、packing 类型
-mvn install:install-file -Dfile=/path/to/ojdbc8.jar -DgroupId=com.oracle -DartifactId=oracle -Dversion=8.0.0 -Dpackaging=jar
-```
+    ```shell
+    # file 文件位置、packing 类型
+    mvn install:install-file -Dfile=/path/to/ojdbc8.jar -DgroupId=com.oracle -DartifactId=oracle -Dversion=8.0.0 -Dpackaging=jar
+    ```
 
 #### 生命周期
 
@@ -898,11 +906,11 @@ maven 生命周期（某个阶段）与插件相互绑定，用以完成实际�
             <version>2.1.1</version>
             <executions>
               	<exectution>
-                		<id>attach-sources</id>
-                		<phase>verify</phase>
-                		<goals>
-                  			<goal>jar-no-fork</goal>
-                		</goals>
+                    <id>attach-sources</id>
+                    <phase>verify</phase>
+                    <goals>
+                        <goal>jar-no-fork</goal>
+                    </goals>
               	</exectution>
             </executions>
         </plugin>
@@ -967,7 +975,7 @@ Bound to phase 会显示该目标默认绑定的生命周期阶段
                       <goals>
                         	<goal>run</goal>
                       </goals>
-                      <!-- configuration在execution下即特定任务配置，在plugin下即插件整体配置 -->
+                      <!-- configuration在execution为特定任务配置，在plugin为插件整体配置 -->
                       <configuration>
                           <tasks>
                             	<echo>I'm bound to validate phase</echo>

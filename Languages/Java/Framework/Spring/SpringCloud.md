@@ -435,7 +435,7 @@ encrypt:
 </dependency>
 ```
 
-在 ConfigServer 客户端添加 actuator 后，可以在任意时间发送 HTTP POST 请求到 “/actuator/refresh"，通知它从后端仓库刷新配置属性
+在 ConfigServer 客户端添加 actuator 后，可以在任意时间发送 HTTP POST 请求到 /actuator/refresh，通知它从后端仓库刷新配置属性
 
 ```shell
 curl localhost:53419/actuator/refresh -X POST
@@ -443,13 +443,15 @@ curl localhost:53419/actuator/refresh -X POST
 
 ###### 使用消息通知自动刷新
 
+Config Server 能够使用 Spring-Cloud Bus 的 Spring-Cloud 项目将配置变更自动通知到每个客户端
+
 1. 创建 webhook
 
    使用 gogs 创建 webhook，PayloadURL 为 ConfigServer 的 /monitor 端点，ContentType 为 application/json。
 
 2. 在 ConfigServer 中处理 webhook 更新
 
-   ConfigServer 中添加依赖，自动启用 /monitor 端点
+   Config-Server 中添加依赖，自动启用 /monitor 端点
 
    ```xml
    <dependency>
@@ -463,7 +465,7 @@ curl localhost:53419/actuator/refresh -X POST
    ```xml
    <dependency>
    	<groupId>org.springframework.cloud</groupId>
-     <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+       <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
    </dependency>
    ```
 
@@ -482,7 +484,7 @@ curl localhost:53419/actuator/refresh -X POST
    ```xml
    <dependency>
    	<groupId>org.springframework.cloud</groupId>
-     <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+       <artifactId>spring-cloud-starter-bus-amqp</artifactId>
    </dependency>
    ```
 
