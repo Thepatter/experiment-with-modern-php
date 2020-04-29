@@ -611,7 +611,27 @@ conn.setAutoCommit(autoCommit);
 
 *JDBC支持的SQL数据类型在Java语言中对应的数据类型*
 
-![](../Images/SQL数据类型对应Java类型.png)
+|               SQL Type               |      Java Type       |
+| :----------------------------------: | :------------------: |
+|            INTEGER or INT            |         int          |
+|               SAMLLINT               |        short         |
+| NUMERIC(m,n)，DECIMAL(m,n)，DEC(m,n) | java.math.BigDecimal |
+|               FLOAT(n)               |        double        |
+|                 REAL                 |        float         |
+|                DOUBLE                |        double        |
+|       CHARACTER(n) or CHAR(n)        |        String        |
+|       VARCHAR(n), LONG VARCHAR       |        String        |
+|               BOOLEAN                |       boolean        |
+|                 DATE                 |    java.sql.Date     |
+|                 TIME                 |    java.sql.Time     |
+|              TIMESTAMP               |  java.sql.Timestamp  |
+|                 BLOB                 |    java.sql.Blob     |
+|                 CLOB                 |    java.sql.Clob     |
+|                ARRAY                 |    java.sql.Array    |
+|                ROWID                 |    java.sql.RowId    |
+| NCHAR(n)，NVARCHAR(n)，LONG NVARCHAR |        String        |
+|                NCLOB                 |    java.sql.NClob    |
+|                SQLXML                |   java.sql.SQLXML    |
 
 SQL ARRAY （SQL 数组）指的是值的序列。从数据库中获得一个 LOB 或数组并不等于获取了它的实际内容，只有在访问具体的值时它们才会从数据库中被读取出来。
 

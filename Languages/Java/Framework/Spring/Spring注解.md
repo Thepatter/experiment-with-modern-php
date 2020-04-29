@@ -2,6 +2,92 @@
 
 #### Spring 内置注解
 
+##### 通用注解
+
+既可以用在类级别上，也可以用在方法级别，也可以用在类级别
+
+###### @Primary
+
+标识首选 bean，避免装配歧义，能够与 @Component 组合用在组件扫描的 bean 上，也可以与 @Bean 组合用在 Java 配置的 bean 声明中。
+
+@Primary 无法将可选方案的范围限定到唯一一个无歧义的选择中，只能标示一个优先的可选方案。
+
+###### @Qualifier
+
+声明限定符
+
+*   与 @Autowired 和 @Inject 协同使用，在注入的时候指定想要注入进去的是那个 bean（所引用的 bean 要具有 String 类型的限定符，如果没有指定其他的限定符，所有的 bean 都会给定一个 默认的限定符，这个限定符与 bean 的 ID 相同）
+
+*   与 @Component 和 @Bean 协同使用，声明 @Bean 限定符，在注入时使用 @Qualifier 引用 @Bean 限定符
+
+###### @Scope
+
+声明 @Bean 作用域，可以与 @Component 或 @Bean 使用，Spring 定义了多种作用域，可以基于这些作用域创建 bean。
+
+1.  value 属性指定作用域
+
+    *   Singleton
+
+        单例，常量：**ConfigurableBeanFactory.SCOPE_SINGLETON** 或 Singleton
+
+    *   Prototype
+
+        每次注入或者通过 Spring 应用上下文获取的时候，都会创建一个新的 bean 实例 **ConfigurableBeanFactory.SCOPE_PROTOTYPE** 或 Prototype
+
+    *   Session
+
+        在 Web 应用中，为每个会话创建一个 bean 实例，**WebApplicationContext.SCOPE_SESSION** 或 session
+
+    *   Request
+
+        在 Web 应用中，为每个请求创建一个 bean 实例，**WebApplicationContext.SCOPE_REQUEST** 或 request
+
+2.  proxyMode 属性声明代理
+
+    *   **ScopedProxyMode.INTERFACES**
+
+        表明这个代理要实现对应接口，并将调用委托给实现 bean
+
+    *   **ScopedProxyMode.TARGET_CLASS**
+
+        表明代理要实现对应类（即 bean 类型是具体类）
+
+###### @RequestMapping
+
+指定请求 url，并定制相关属性，可以应用在类级别和方法级别，部分属于与方法级别 mapping 注解通用
+
+* value
+
+    指定 url，如果只有该属性，可以省略属性名称
+
+* method
+
+    指示该方法的 HTTP 方法
+
+    ```java
+    @RequestMapping(value="/order_process", method={RequestMethod.POST, RequestMethod.PUT)
+    ```
+
+    如果 @RequestMapping 注解类型用来注解一个控制器类，这种情况下，所有的方法都将映射为相对于类级别的请求
+
+* produces
+
+    指定输出，只会处理 Accept 头信息保护该值的请求，它不仅会限制 API 只会生成 JSON 结果，同时还允许其他的控制器处理具有相同路径的请求，只要这些请求不要求 JSON 格式的输出就可以
+
+    ```java
+    @RequestMapping(path="/design", produces={"application/json", "text/xml"})
+    ```
+
+* consumes
+
+    指定请求输入
+
+    ```java
+    @PostMapping(consumes="application/json")
+    ```
+
+    该方法只会处理 Content-type 与 application/json 相匹配的请求
+
 ##### 类级别注解
 
 ###### @SpringBootApplication
@@ -26,43 +112,7 @@
 
 构造型注解，表明这个类要包含到 Spring 的组件扫描中，不需要再明确将这个类声明为 bean 了，Spring 将会自动发现它并将其初始化为一个 bean
 
-###### @RequestMapping 
-
-指定请求 url，并定制相关属性，可以应用在类级别和方法级别，部分属于与方法级别 mapping 注解通用
-
-* value
-
-  指定 url，如果只有该属性，可以省略属性名称
-
-* method
-
-  指示该方法的 HTTP 方法
-
-  ```java
-  @RequestMapping(value="/order_process", method={RequestMethod.POST, RequestMethod.PUT)
-  ```
-  
-  如果 @RequestMapping 注解类型用来注解一个控制器类，这种情况下，所有的方法都将映射为相对于类级别的请求
-  
-* produces
-
-  指定输出，只会处理 Accept 头信息保护该值的请求，它不仅会限制 API 只会生成 JSON 结果，同时还允许其他的控制器处理具有相同路径的请求，只要这些请求不要求 JSON 格式的输出就可以
-
-  ```java
-  @RequestMapping(path="/design", produces={"application/json", "text/xml"})
-  ```
-
-* consumes
-
-  指定请求输入
-
-  ```java
-  @PostMapping(consumes="application/json")
-  ```
-
-  该方法只会处理 Content-type 与 application/json 相匹配的请求
-
-###### @Autowired@Service
+###### @Autowired
 
 `@Autowired` 属于 `org.springframework.beans.factory.annotation` 包，通过注解 `@Autowired` 到字段或方法来实现依赖注入。为了能被注入，类必须要注明为 `@Service`，该类型是 `org.springframework.stereotype` 包的成员。`@Service` 注解类型指示类是一个服务。此外，在配置文件中，还需要添加一个 `<component-scan/>` 元素来扫描依赖基本包：
 
@@ -83,6 +133,8 @@
 类似于 @Controller 和 @Service 的构造型注解，能够让类被组件扫描功能发现。且控制器中的所有处理方的返回值都要直接写入响应体中，而不是将值放到模型中并传递给一个试图以便于进行渲染
 
 ###### @Component
+
+在类级别声明，使用类路径扫描自动检测和配置 bean，在已用的类和 Bean（即每个类一个 Bean）之间存在一个隐含的一对一映射。Bean 的 ID 为首字符小写的类名
 
 ###### @Configuration
 
@@ -164,7 +216,7 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 
 ###### @Bean
 
-会初始化 bean 并立即为它的属性设置值
+显式声明单个 Bean，将 Bean 的声明与类的定义分离，并允许自定义方法创建和配置 Bean。
 
 ###### @ResponseStatus
 

@@ -256,17 +256,49 @@ MySQL Connector/J 作为 JDBC API 的严格实现，JDBC 规范在应如何实�
 
   Connector/J 会发出 JDBC 规范要求的警告或抛出 DataTruncation 异常。除非设置连接属性 `jdbcCompliantTruncatio=false`
 
-  |                        MySQL 数据类型                        |                 始终可以转换为这些 Java 类型                 |
-  | :----------------------------------------------------------: | :----------------------------------------------------------: |
-  |             CHAR、VARCHAR、BLOB、TEXT、ENUM、SET             | java.lang.String、java.io.InputStream、java.io.Reader、java.sql.Blob、java.sql.Clob |
-  | FLOAT、REAL、DOUBLE、PRECISION、NUMBERIC、DECIMAL、TINYINT、SMALLINT、MEDIUMINT、INTEGER、BIGINT | java.lang.String、java.lang.Short、java.lang.Integer、java.lang.Long、java.lang.Double、java.math.BigDecimal |
-  |               DATA、TIME、DATETIME、TIMESTAMP                |     java.lang.String、java.sql.Date、java.sql.Timestamp      |
+  | These MySQL Data Types                                       | Can always be converted to these Java types                  |
+  | ------------------------------------------------------------ | ------------------------------------------------------------ |
+  | `CHAR, VARCHAR, BLOB, TEXT, ENUM, and SET`                   | `java.lang.String, java.io.InputStream, java.io.Reader, java.sql.Blob, java.sql.Clob` |
+  | `FLOAT, REAL, DOUBLE PRECISION, NUMERIC, DECIMAL, TINYINT, SMALLINT, MEDIUMINT, INTEGER, BIGINT` | `java.lang.String, java.lang.Short, java.lang.Integer, java.lang.Long, java.lang.Double, java.math.BigDecimal` |
+  | `DATE, TIME, DATETIME, TIMESTAMP`                            | `java.lang.String, java.sql.Date, java.sql.Timestamp`        |
 
   如果要转换的数据类型容量不一致，可能导致溢出或精度损失
 
   *MySQL Types and Return Values for ResultSetMetaData.GetColumnTypeName()and ResultSetMetaData.GetColumnClassName()*
 
-  ![](../Images/mysql_type_resultset_metatype.png)
+  | MySQL Type Name                | Return value of `GetColumnTypeName` | Return value of `GetColumnClassName`                         |
+  | ------------------------------ | ----------------------------------- | ------------------------------------------------------------ |
+  | `BIT(1)` (new in MySQL-5.0)    | `BIT`                               | `java.lang.Boolean`                                          |
+  | `BIT( > 1)` (new in MySQL-5.0) | `BIT`                               | `byte[]`                                                     |
+  | `TINYINT`                      | `TINYINT`                           | `java.lang.Boolean` if the configuration property `tinyInt1isBit` is set to `true` (the default) and the storage size is 1, or `java.lang.Integer` if not. |
+  | `BOOL`, `BOOLEAN`              | `TINYINT`                           | See `TINYINT`, above as these are aliases for `TINYINT(1)`, currently. |
+  | `SMALLINT[(M)] [UNSIGNED]`     | `SMALLINT [UNSIGNED]`               | `java.lang.Integer` (regardless of whether it is `UNSIGNED` or not) |
+  | `MEDIUMINT[(M)] [UNSIGNED]`    | `MEDIUMINT [UNSIGNED]`              | `java.lang.Integer` (regardless of whether it is `UNSIGNED` or not) |
+  | `INT,INTEGER[(M)] [UNSIGNED]`  | `INTEGER [UNSIGNED]`                | `java.lang.Integer`, if `UNSIGNED` `java.lang.Long`          |
+  | `BIGINT[(M)] [UNSIGNED]`       | `BIGINT [UNSIGNED]`                 | `java.lang.Long`, if UNSIGNED `java.math.BigInteger`         |
+  | `FLOAT[(M,D)]`                 | `FLOAT`                             | `java.lang.Float`                                            |
+  | `DOUBLE[(M,B)]`                | `DOUBLE`                            | `java.lang.Double`                                           |
+  | `DECIMAL[(M[,D])]`             | `DECIMAL`                           | `java.math.BigDecimal`                                       |
+  | `DATE`                         | `DATE`                              | `java.sql.Date`                                              |
+  | `DATETIME`                     | `DATETIME`                          | `java.sql.Timestamp`                                         |
+  | `TIMESTAMP[(M)]`               | `TIMESTAMP`                         | `java.sql.Timestamp`                                         |
+  | `TIME`                         | `TIME`                              | `java.sql.Time`                                              |
+  | `YEAR[(2|4)]`                  | `YEAR`                              | If `yearIsDateType` configuration property is set to `false`, then the returned object type is `java.sql.Short`. If set to `true` (the default), then the returned object is of type `java.sql.Date` with the date set to January 1st, at midnight. |
+  | `CHAR(M)`                      | `CHAR`                              | `java.lang.String` (unless the character set for the column is `BINARY`, then `byte[]` is returned. |
+  | `VARCHAR(M) [BINARY]`          | `VARCHAR`                           | `java.lang.String` (unless the character set for the column is `BINARY`, then `byte[]` is returned. |
+  | `BINARY(M)`                    | `BINARY`                            | `byte[]`                                                     |
+  | `VARBINARY(M)`                 | `VARBINARY`                         | `byte[]`                                                     |
+  | `TINYBLOB`                     | `TINYBLOB`                          | `byte[]`                                                     |
+  | `TINYTEXT`                     | `VARCHAR`                           | `java.lang.String`                                           |
+  | `BLOB`                         | `BLOB`                              | `byte[]`                                                     |
+  | `TEXT`                         | `VARCHAR`                           | `java.lang.String`                                           |
+  | `MEDIUMBLOB`                   | `MEDIUMBLOB`                        | `byte[]`                                                     |
+  | `MEDIUMTEXT`                   | `VARCHAR`                           | `java.lang.String`                                           |
+  | `LONGBLOB`                     | `LONGBLOB`                          | `byte[]`                                                     |
+  | `LONGTEXT`                     | `VARCHAR`                           | `java.lang.String`                                           |
+  | `ENUM('value1','value2',...)`  | `CHAR`                              | `java.lang.String`                                           |
+  | `SET('value1','value2',...)`   | `CHAR`                              | `java.lang.String`                                           |
+  
 
 ##### 字符集
 
@@ -278,7 +310,29 @@ Connector/J 支持客户端和服务器之间的单一字符编码，以及在 R
 
 *Mysql to Java Encoding Name Translations*
 
-<img src="../Images/mysql与java字符集转换.png" style="zoom:67%;" />
+|                   MySQL Character Set Name                   | Java-Style Character Encoding Name |
+| :----------------------------------------------------------: | :--------------------------------: |
+|                           `ascii`                            |             `US-ASCII`             |
+|                            `big5`                            |               `Big5`               |
+|                            `gbk`                             |               `GBK`                |
+|                            `sjis`                            |          `SJIS or Cp932`           |
+|                           `cp932`                            |          `Cp932 or MS932`          |
+|                           `gb2312`                           |              `EUC_CN`              |
+|                            `ujis`                            |              `EUC_JP`              |
+|                           `euckr`                            |              `EUC_KR`              |
+|                           `latin1`                           |              `Cp1252`              |
+|                           `latin2`                           |            `ISO8859_2`             |
+|                           `greek`                            |            `ISO8859_7`             |
+|                           `hebrew`                           |            `ISO8859_8`             |
+|                           `cp866`                            |              `Cp866`               |
+|                           `tis620`                           |              `TIS620`              |
+|                           `cp1250`                           |              `Cp1250`              |
+|                           `cp1251`                           |              `Cp1251`              |
+|                           `cp1257`                           |              `Cp1257`              |
+|                          `macroman`                          |             `MacRoman`             |
+|                           `macce`                            |         `MacCentralEurope`         |
+| *For 8.0.12 and earlier*: `utf8`*For 8.0.13 and later*: `utf8mb4` |              `UTF-8`               |
+|                            `ucs2`                            |            `UnicodeBig`            |
 
 对于 Connector/J 8.0.12 及之前版本，为了使用 utf8mb4 字符集连接，服务器必须配置为 `character_set_server=utf8mb4`，如果未在服务器配置，仅在连接 URL 字符串中指定 `characterEncoding=UTF-8`，则将映射为 MySQL 字符集 `utf8`（它是`utf8mb3`的别名）
 
