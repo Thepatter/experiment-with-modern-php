@@ -227,19 +227,19 @@ public class RootConfig {
 
   ```java
   @Test
-      public void shouldShowPageSpittles() throws Exception {
-          List<Spittle> expectedSpittles = createSpittleList(50);
-          SpittleRepository mockRepository = mock(SpittleRepository.class);
-          when(mockRepository.findSpittles(238900, 50)).thenReturn(expectedSpittles);
-          SpittleController controller = new SpittleController(mockRepository);
-          MockMvc mockMvc = standaloneSetup(controller)
-                  .setSingleView(new InternalResourceView("/WEB-INF/views/spittles.jsp"))
-                  .build();
-          mockMvc.perform(get("/spittles?max=238900&count=50"))
-                  .andExpect(view().name("spittles"))
-                  .andExpect(model().attributeExists("spittleList"))
-                  .andExpect(model().attribute("spittleList", hasItems(expectedSpittles.toArray())));
-      }
+  public void shouldShowPageSpittles() throws Exception {
+      List<Spittle> expectedSpittles = createSpittleList(50);
+      SpittleRepository mockRepository = mock(SpittleRepository.class);
+      when(mockRepository.findSpittles(238900, 50)).thenReturn(expectedSpittles);
+      SpittleController controller = new SpittleController(mockRepository);
+      MockMvc mockMvc = standaloneSetup(controller)
+          .setSingleView(new InternalResourceView("/WEB-INF/views/spittles.jsp"))
+          .build();
+      mockMvc.perform(get("/spittles?max=238900&count=50"))
+          .andExpect(view().name("spittles"))
+          .andExpect(model().attributeExists("spittleList"))
+          .andExpect(model().attribute("spittleList", hasItems(expectedSpittles.toArray())));
+  }
   ```
 
 #### controller 响应
@@ -248,10 +248,10 @@ public class RootConfig {
 
   ```java
   @RequestMapping(value = "/{spittleId}", method = RequestMethod.GET)
-      public String showSpittle(@PathVariable int spittleId, Model model) {
-          model.addAttribute(spittleRepository.findOne(spittleId));
-          return "spittle";
-      }
+  public String showSpittle(@PathVariable int spittleId, Model model) {
+      model.addAttribute(spittleRepository.findOne(spittleId));
+      return "spittle";
+  }
   ```
 
   返回 spring 对应视图，`redirect:` 前缀为重定向规则，`forward:` 前缀为请求该 url
@@ -451,12 +451,12 @@ Spring 的表单绑定 JSP 标签库包含了 14 个标签，大多数都用来�
 ```jsp
 <%@ taglib prefix="sf" uri="http://www.springframework.org/tags/form" %>
 <sf:form method="POST" commandName="spitter">
-        First Name: <sf:input path="firstName"/><br>
-        Last Name: <label><sf:input path="lastName"/><br>
-        Username: <label><sf:input path="username"/></label><br>
-        Password: <sf:password path="password"/><br>
-        Email: <label><sf:input type="email" path="email"/></label><br>
-        <input type="submit" value="Register">
+    First Name: <sf:input path="firstName"/><br>
+    Last Name: <label><sf:input path="lastName"/><br>
+    Username: <label><sf:input path="username"/></label><br>
+    Password: <sf:password path="password"/><br>
+    Email: <label><sf:input type="email" path="email"/></label><br>
+    <input type="submit" value="Register">
 </sf:form>
 ```
 

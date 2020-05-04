@@ -230,7 +230,7 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 public Book store(@RequestBody Book book) {}
 ```
 
-##### Spring Data JPA
+##### SpringDataJPA
 
 ###### @Entity
 
@@ -347,7 +347,7 @@ private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Cu
 
 ###### @NotBlank
 
-##### Rest Data
+##### RestData
 
 ###### @RepositoryRestController
 
@@ -423,7 +423,7 @@ commandProperties 支持属性名
 
 ##### Config
 
-##### @EnableConfigServer
+###### @EnableConfigServer
 
 使用该注解在主引导类声明该项目是注册中心服务
 
