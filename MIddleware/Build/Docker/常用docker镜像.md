@@ -1,19 +1,5 @@
 ### 常用 docker 镜像
 
-#### mirros
-
-```json
-{
-  "registry-mirrors" : [
-    "https://docker.mirrors.ustc.edu.cn/",
-    "https://dockerhub.azk8s.cn",
-    "https://reg-mirror.qiniu.com",
-    "https://hub-mirror.c.163.com",
-    "https://mirror.ccs.tencentyun.com"
-  ] 
-}
-```
-
 #### MySQL
 
 ##### 启动服务
@@ -220,11 +206,7 @@ docker tag ubuntu:18 registry.com:5000/ubuntu:18
 docker push registry:5000/ubuntu:18
 ```
 
-需要在客户端 `daemon.json` 添加：
-
-```json
-{"insecure-registries" : ["home.com:5000"]}
-```
+需要在客户端 daemon.json 添加安全仓库
 
 并重启 docker 客户端
 
