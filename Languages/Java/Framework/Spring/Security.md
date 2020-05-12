@@ -2,8 +2,6 @@
 
 #### Spring Security
 
-##### 配置
-
 ###### mvn 依赖
 
 ```xml
@@ -13,9 +11,9 @@
 </dependency>
 ```
 
-默认会产生一个 basic 保护，初始用户为 user，密码为随机生成在日志中。
+##### 用户配置
 
-##### 使用
+默认会产生一个 basic 保护，初始用户为 user，密码为随机生成在日志中。
 
 spring security 的基础配置类
 
@@ -32,18 +30,18 @@ Spring Security 为配置用户存储提供了多个可选方案，通过覆盖 
 覆写 config 方法
 
 ```java
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-            .passwordEncoder(new BCryptPasswordEncoder())
-            .withUser("admin")
-            .password(new BCryptPasswordEncoder().encode("secret"))
-            .authorities("ROLE_USER")
-            .and()
-            .withUser("zyw")
-            .password(new BCryptPasswordEncoder().encode("123456"))
-            .authorities("ROLE_USER");
-    }
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    auth.inMemoryAuthentication()
+        .passwordEncoder(new BCryptPasswordEncoder())
+        .withUser("admin")
+        .password(new BCryptPasswordEncoder().encode("secret"))
+        .authorities("ROLE_USER")
+        .and()
+        .withUser("zyw")
+        .password(new BCryptPasswordEncoder().encode("123456"))
+        .authorities("ROLE_USER");
+}
 ```
 
 ###### JDBC
@@ -70,6 +68,21 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 1. 指定实体实现 Spring Security 的 UserDetails 接口
 2. 实现 UserDetailsService 接口的 UserDetails loadUserByUsername(String username) throws UsernameNotFoundException 方法
 3. 覆写配置类的 configure 方法
+
+##### Web 拦截
+
+###### 保护请求
+
+```java
+// 保护 web 请求
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests()
+        .antMatchers("/design", "/orders") // 需要验证
+        .hasRole("ROLE_USER")
+        .antMatchers("/", "/**").permitAll();
+}
+```
 
 
 

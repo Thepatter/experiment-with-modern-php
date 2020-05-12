@@ -22,38 +22,42 @@
 
 所有的浮点数值计算都遵循 IEEE 754 规范。表示溢出和出错情况的三个常量：
 
-* 正无穷大：常量 **Double.POSITIVE_INFINITY**
-* 负无穷大：常量 **Double.NEGATIVE_INFINITY**
-* NaN （不是一个数字）：常量 **Double.NaN**
+* 正无穷大：**Double.POSITIVE_INFINITY**
+* 负无穷大：**Double.NEGATIVE_INFINITY**
+* NaN （不是一个数字）：**Double.NaN**
 
 ###### 比较
 
-浮点数之间的等值判断，基本数据类型不能用 == 来比较，包装数据类型不能用 equlas 来判断（浮点数采用 ”尾数 + 阶码“ 的编码方式，类似于科学计数法的 ”有效数字 + 指数“ 的表示方式。二进制无法精确表示大部分的十进制小数）。比较方式：
+浮点数之间的等值判断：
 
-* 指定一个误差范围，两个浮点数的差值在此范围之内，则认为是相等的
+比较方式：
 
-  ```java
-  float a = 1.0f - 0.9f;
-  float b = 0.9f - 0.8f;
-  float diff = 1e-6f;
-  if (Math.abs(a - b) < diff) {
-      System.out.print("true");
-  }
-  ```
+指定一个误差范围，两个浮点数的差值在此范围之内，则认为是相等的
 
-* 使用 *BigDecimal* 来定义值，再进行浮点数的运算操作
+```java
+float a = 1.0f - 0.9f;
+float b = 0.9f - 0.8f;
+float diff = 1e-6f;
+if (Math.abs(a - b) < diff) {
+    System.out.print("true");
+}
+```
 
-  ```java
-  BigDecimal a = new BigDecimal("1.0");
-  BigDecimal b = new BigDecimal("0.9");
-  BigDecimal c = new BigDecimal("0.8");
-  BigDecimal x = a.subtract(b);
-  BigDecimal y = b.subtract(c);
-  if (x.compareTo(y) == 0) {
+使用 *BigDecimal* 来定义值，再进行浮点数的运算操作
+
+```java
+BigDecimal a = new BigDecimal("1.0");
+BigDecimal b = new BigDecimal("0.9");
+BigDecimal c = new BigDecimal("0.8");
+BigDecimal x = a.subtract(b);
+BigDecimal y = b.subtract(c);
+if (x.compareTo(y) == 0) {
 	System.out.println("true");
-  }
-  ```
-  
+}
+```
+
+*   基本类型不能用 == 来比较
+*   包装数据类型不能用 equlas 来判断（浮点数采用 ”尾数 + 阶码“ 的编码方式，类似于科学计数法的 ”有效数字 + 指数“ 的表示方式。二进制无法精确表示大部分的十进制小数）
 
 ##### char
 
@@ -117,9 +121,11 @@ jvm 默认会缓存 -128 ~ 127 之间的对象，因此建议使用 equals 比�
    System.out.println(c.equals(d)); // true
 ```
 
-#### 变量
+#### 语法
 
-每个变量都有一个类型。在声明变量时，变量的类型位于变量名之前。大小写敏感，没有长度限制。声明一个变量之后，必须用赋值语句对变量进行赋...值。不能使用未初始化的变量。
+##### 变量
+
+每个变量都有一个类型。在声明变量时，变量的类型位于变量名之前。大小写敏感，没有长度限制。声明一个变量之后，必须用赋值语句对变量进行赋值。不能使用未初始化的变量。
 
 ```java
 // 声明变量
@@ -130,13 +136,13 @@ size = 32;
 String = "jaca";
 ```
 
-#### 常量
+##### 常量
 
 使用关键字 final 指示常量，关键字 final 表示这个变量只能被赋值一次。一旦被赋值之后，就不能再修改。习惯上常量名使用全大写蛇形。
 
 类常量使用 static final  定义，当类常量被声明为 public 时，其他类也可以该常量​     
 
-#### 运算符号
+运算符号
 
 元素符优先级递减
 
@@ -162,18 +168,6 @@ String = "jaca";
 处理整数类型时，可以直接对组成整形数值的各个位完成操作。可以使用掩码得到整数中的各个位。
 
 左移或右移（会用符号位填充高位，要完成模 32 的位运算，除非左操作数是 long 类型，此时要对右操作数模 64 ）操作符在需要建立位模式来完成位掩码时很方便。>>> 运算符会用 0 填充高位
-
-#### 规范
-
-##### 语法规范
-
-* 类名采用大驼峰
-* 源代码的文件名必须与公共类的名字相同，用 .java 作为扩展名
-* 每个 java 应用必须有 main 方法且必须是 public 和 static
-
-##### 块级作用域
-
-块指由一对大括号括起来的若干条简单的 java 语句。块确定了变量的作用域。块可以嵌套，但不能在嵌套的两个块中声明同名的变量。
 
 ##### 关键字
 
