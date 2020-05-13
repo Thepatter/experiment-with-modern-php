@@ -62,18 +62,16 @@ cat ubuntu-18.04-x86_64-minimal.tar.gz | docker import - ubuntu:18.04
 
 ##### Dockerfile
 
-Dockerfile 使用 DSL 语言定义，在构建上下文（指定位置的 PATH 或 Git 仓库位置，上下文是递归处理的）中构建镜像。构建由 Dockerd 进行，流程：
+Dockerfile 使用 DSL 语言定义，在构建上下文（本地 PATH 或 Git 仓库位置，上下文是递归处理的）中构建镜像。构建由 Dockerd 进行，流程：
 
 1. 将整个构建上下文递归发送到守护程序
 2. Dockerd 验证 Dockerfile 文件，失败则返回错误
-3. Dockerd 逐一执行指令，如有必有，将每个指令的结果提交到新映像，最终输出新映像的 ID
-4. Dockerd 自动清理构建上下文
+3. Dockerd 逐一执行指令，如有必要，将每个指令的执行结果提交到新映像，最终输出新映像的 ID
+4. Dockerd 构建完成后自动清理构建过程中产生的中间镜像上下文
 
-18.09 开始 Docker 支持由 moby/buildkit 提供的新构建组件（支持并行构建独立阶段等），使用 BuildKit 后端，
+18.09 开始 Docker 支持由 moby/buildkit 提供的新构建组件（支持并行构建独立阶段等），使用 BuildKit 后端（需要在命令行设置环境变量 **DOCKER_BUILDKIT=1**）
 
-Dockerfile 中指令的一般格式为指令后跟参数，需要在命令行设置环境变量 **DOCKER_BUILDKIT=1**
-
-Dockerfile 命令格式
+Dockerfile 中指令的一般格式为指令后跟参数
 
 ```dockerfile
 # 指令不区分大小写，约定大写
@@ -84,7 +82,7 @@ INSTRUCTION arguments
 
 可选指令，会影响 Dockerfile 后续行的处理方式，解析器指令不会在构建中添加层，也不会显示为构建步骤。单个解析器指令只能使用一次。
 
-不区分大小写，约定：使用小写，在任何解析器指令之后包行一个空白行。不支持行继续符
+不区分大小写，约定：使用小写，在任何解析器指令之后包含一个空白行。不支持行继续符
 
 ```dockerfile
 # directive=value
@@ -117,20 +115,20 @@ INSTRUCTION arguments
 
 ```dockerfile
 # ${variable_name} 或 $variable_name 来引用变量，支持修饰符，可以使用转义字符转义来表示字面意思
-# word 可以是任何字符串，包含其他环境变量
-# ${variable:-word} # 如果 variable 设置，将使用设置值，未设置，则使用 word
-# ${variable:+word} # 如果 variable 设置，则使用 word，否则为空字符串
+# 如果 variable 设置，将使用设置值，未设置，则使用 word（word 可以是任何字符串，包含其他环境变量）
+${variable:-word}
+# 如果 variable 设置，则使用 word，否则为空字符串
+${variable:+word} 
 FROM busybox
 ENV foo /bar
 WORDIR ${foo}  # WORKDIR /bar
 COPY \$foo /quux # COPY $foo /quux
-# def = hello ghi = abc
 ENV abc=hello
-ENV abc=byte def=$abc
-ENV ghi=$abc
+ENV abc=bye def=$abc # def = hello
+ENV ghi=$abc # ghi = bye
 ```
 
-###### 忽略文件
+###### 上下文忽略文件
 
 在 docker 将上下文发送到 dockerd 之前，会在上下文中扫描 *.dockerignore* 文件，如果此文件存在，则 CLI 会修改上下文以排除与其中的模式匹配的文件和目录。可以避免使用 ADD 或 COPY 将不需要的文件添加到镜像中。语法类似 ignore 语法。
 
@@ -142,13 +140,15 @@ ENV ghi=$abc
 FROM [--platform=<platform>] <image> [AS <name>]
 FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]
 FROM [--platform=<platform>] <image>[@<digest>] [AS <name>]
+ARG VERSION=8.0
+FROM openjdk:${version:-11}
 ```
 
 初始化一个构建阶段，并为后续的指令设置基本镜像。有效的 Dockerfile 必须从 FROM 指令开始，可以指定任何有效镜像。
 
-* --platform 指定映像平台，如 linux/amd64、linux/arm64、windows/amd64
+* --platform 指定镜像平台，如 linux/amd64、linux/arm64、windows/amd64
 * tag 或 digest 值是可选的，默认为 latest
-* ARG 可以在 FROM 之前声明（FROM 之前的 ARG 声明的变量作用域为构建之外，只能 FROM 指令中使用，构建阶段使用需要 FROM 之后声明）
+* ARG 可以在 FROM 之前声明（FROM 之前的 ARG 声明的变量作用域为构建之外，只能 FROM 指令中使用，构建阶段使用变量需要在 FROM 之后声明）
 
 ###### RUN
 
