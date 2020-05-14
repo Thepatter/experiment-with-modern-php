@@ -228,7 +228,9 @@ ADD --chown=10:11 files* /somedir/
 
 将复制指定的 src 路径下内容到容器中的 desc 路径下 
 
-* src 可以是 Dockerfile 所在目录的一个相对路径（文件或目录），也可以是一个 URL，还可以是一个 tar 文件（自动解压为目录）
+* src 可以是 Dockerfile 所在目录的一个相对路径（文件或目录），URL，tar
+
+    *   如果为一个 tar 文件将自动解压为目录
 
     * 如果 src 是远程文件 URL，则目标具有 600 的权限。
     * 如果 src 是目录，则将复制目录的整个内容，包括文件系统元数据（仅复制内容，自身不会被复制）
@@ -242,7 +244,7 @@ ADD --chown=10:11 files* /somedir/
 
 * --chown 仅在用于构建 Linux 容器的 Dockerfiles 上受支持。除非使用该标志指定用户或用户组来对添加内容指定所有权，否则所有新文件和目录的 UID 和 GID 均为 0。
 
-    允许使用用户名和组名字符串，或直接整数UID 和 GID 的任意组合。提供不带组名的用户名或不带 GID 的 UID 将使用与 GID 相同的数字 UID。如果提供了用户名或组名，则将使用容器的根文件系统 /etc/passwd和 /etc/group 文件来分别执行从名称到整数 UID 或 GID 的转换
+    允许使用用户名和组名字符串，或整数UID 和 GID 的任意组合。提供不带组名的用户名或不带 GID 的 UID 将使用与 GID 相同的数字 UID。如果提供了用户名或组名，则将使用容器的根文件系统 /etc/passwd 和 /etc/group 文件来分别执行从名称到整数 UID 或 GID 的转换
 
     如果容器根文件系统不包含 /etc/passwd 或 /etc/group 文件，并且在 --chown 标志中使用了用户名或组名，则该构建将在 ADD 操作上失败，使用数组 ID 不需要查找，并且不依赖于容器根文件系统内容
 
@@ -270,10 +272,9 @@ ENTRYPOINT command param1 param2
 
 指定镜像的默认入口命令，该入口命令会在启动容器时作为根命令执行，所有传入值作为该命令的参数。每个 Dockerfile 中只能有一个 ENTRYPOINT，当指定多个时，只有最后一个起效，在运行时，可以被 --entrypoint 参数覆盖掉
 
-* Dockerfile 应该指定 CMD 或 ENTRYPOINT 命令中的一个
+* Dockerfile 至少应该指定 CMD 或 ENTRYPOINT 命令中的一个
 * ENTRYPOINT 使用容器作为可执行文件时应定义
 * CMD 应该用做 ENTRYPOINT 在容器中定义命令或执行临时命令的默认参数的方式
-* 
 
 ###### VOLUME
 
@@ -390,7 +391,7 @@ FROM、ADD/COPY、RUN、CMD 指令会生成一层新的镜像。最终如果创�
 |     `--build-arg list`     |           添加创建时的变量           |
 |   `--cache-from strings`   |        使用指定镜像作为缓存源        |
 | `--cgroups-parent strings` |          继承的上层 cgroup           |
-|        `--compress`        |     使用gzip来压缩创建上下文数据     |
+|        `--compress`        |    使用 gzip 来压缩创建上下文数据    |
 |     `--cpu-period int`     |        分配的 CFS 调度器时长         |
 |     `--cpu-quota int`      |           CFS 调度器总份额           |
 |   `-c, --cpu-shares int`   |               CPU 权重               |
@@ -411,7 +412,7 @@ FROM、ADD/COPY、RUN、CMD 指令会生成一层新的镜像。最终如果创�
 |       `-q, --quiet`        | 如果成功，则禁止生成输出并打印映像id |
 |           `--rm`           | 成功构建后删除中间容器 (默认为true)  |
 |  `--security-opt strings`  |               安全设置               |
-|     `--shm-size bytes`     |  设置 /dev/shm 大小以 bytes 为单位   |
+|     `--shm-size bytes`     | 设置 /dev/shm 大小，以 bytes 为单位  |
 |         `--squash`         |       将新建的层压缩成一个新层       |
 |         `--stream`         |    流附加到服务器以协商构建上下文    |
 |      `-t, --tag list`      |             指定构建 tag             |
@@ -744,7 +745,7 @@ network 在 docker 命令中是一级公民
 
 *控制层管理层数据层关系*
 
-<img src="/Users/zhangyaowen/Documents/notes/MIddleware/Build/Docker/Images/控制层管理层数据层关系.png" style="zoom:75%;" />
+<img src="./Images/控制层管理层数据层关系.png" style="zoom:75%;" />
 
 每个驱动都负责其上所有网络资源的创建和管理，Linnetwork 支持同时激活多个网络驱动
 
