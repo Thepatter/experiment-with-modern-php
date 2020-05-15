@@ -1,6 +1,8 @@
 ### 使用 docker 提供服务
 
-#### compose 文件
+#### compose
+
+Docker Compose 能够在 Docker 节点上，以单引擎模式进行多容器应用的部署和管理
 
 ##### 结构
 
@@ -1032,19 +1034,182 @@ docker-compose -h | --help
 
 *options*
 
-|      options      | comment |
-| :---------------: | :-----: |
-| `-f, --file FILE` |  声明   |
-|                   |         |
-|                   |         |
-|                   |         |
-|                   |         |
-|                   |         |
-|                   |         |
-|                   |         |
-|                   |         |
-|                   |         |
-|                   |         |
+|           options           |                           comment                            |
+| :-------------------------: | :----------------------------------------------------------: |
+|      `-f, --file FILE`      |                             声明                             |
+|  `-p, --project-name Name`  |         指定项目名称，默认将使用所在目录名作为项目名         |
+|         `--verbose`         |                         输出调试信息                         |
+|       `-v, --version`       |                        打印版本并退出                        |
+|      `-H, --host HOST`      |                   指定 docker deamon 地址                    |
+|           `--tls`           |         启用 TLS，如果指定 `--tlsverify` 则默认开启          |
+|    `--tlscacert CA_PATH`    |                     信任的 TLS CA 的证书                     |
+| `--tlscert CLENT_CERT_PATH` |                    客户端使用的 TLS 证书                     |
+|   `--tlskey TLS_KEY_PATH`   |                      TLS 的私钥文件路径                      |
+|        `--tlsverify`        |                    使用 TLS 校验连接对方                     |
+|   `--skip-hostname-check`   |                不使用 TLS 证书校验对方主机名                 |
+| `--project-directory PATH`  |          指定工作目录，默认为 Compose 文件所在路径           |
+|      `--compatibility`      | 如果设置，Compose 将尝试转换密钥，在v3文件中将其替换为非Swarm等效文件 |
+|      `--env-file PATH`      |                 什么 env 文件，默认当前路径                  |
+
+###### build
+
+```shell
+docker-compose build [options] [--build-arg key=val...] [SERVICE...]
+```
+
+构建镜像
+
+*options*
+
+|         选项          |                             含义                             |
+| :-------------------: | :----------------------------------------------------------: |
+| `--build-arg key=val` |                        设置构建时变量                        |
+|     `--compress`      |                   使用 gzip 压缩构建上下文                   |
+|     `--force-rm`      |               始终删除构建过程中产生的中间容器               |
+|  `-m, --memory MEM`   |                      设置构建容器的内存                      |
+|     `--no-cache`      |                     构建镜像时不使用缓存                     |
+|       `--no-rm`       |                   构建成功后不删除中间容器                   |
+|     `--parallel`      |                         并行构建镜像                         |
+|  `--progress string`  | 设置进度输出类型（auto、plain、tty）实验特性，启用 `COMPOSE_DOCKER_CLI_BUILD=1` |
+|       `--pull`        |                     始终拉取镜像最新版本                     |
+|     `-q,--quiet`      |                     不在标准输出打印结果                     |
+
+###### config
+
+```shell
+docker-compose config [options]
+```
+
+*options*
+
+|           选项            |            描述             |
+| :-----------------------: | :-------------------------: |
+| `--resolve-image-digests` |        声明图片摘要         |
+|    `--no-interpolate`     |       不插入环境变量        |
+|       `-q, --quiet`       |         验证并退出          |
+|       `--services`        | 打印 service 信息，一行一个 |
+|        `--volumes`        |    打印 volume 一行一个     |
+|       `--hash="*"`        |      打印服务 hash 值       |
+
+###### down
+
+```shell
+docker-compose down [options]
+```
+
+停止所有容器，并删除容器、网络、卷、和启动服务中创建的镜像。默认只移除容器、网络（不会删除外部定义的网络和卷）
+
+|          选项           |                      含义                       |
+| :---------------------: | :---------------------------------------------: |
+|      `--rmi type`       | 删除图像 all 删除所有服务图像，local 仅删除本地 |
+|     `-v, --volumes`     |          删除在 volumes 中声明的命名卷          |
+|   `--remove-orphans`    |      删除 compose file 中未定义服务的容器       |
+| `-t, --timeout TIMEOUT` |             声明关闭时间，默认 10s              |
+
+###### events
+
+```shell
+docker-compose events [options] [SERVICE...]
+```
+
+实时订阅服务状态
+
+*options*
+
+|   选项   |        含义        |
+| :------: | :----------------: |
+| `--json` | 状态流为 json 格式 |
+
+###### exec
+
+```shell
+docker-compose exec [options] [-e KYE=VAL...] SERVICE COMMAND [ARGS...]
+```
+
+在运行的容器中执行一条命令
+
+|        选项         |                   含义                    |
+| :-----------------: | :---------------------------------------: |
+|   `-d, --detach`    |         在后台以分离模式运行命令          |
+|   `--privileged`    |             赋予进程更多特权              |
+|  `-u, --user USER`  |               执行命令用户                |
+|        `-T`         |     禁用 tty 分配，默认情况下分配 tty     |
+|   `--index=index`   | 容器索引，如果服务实例有多个容器，默认 1  |
+| `-e, --env KEY=VAL` | 设置环境变量，可以设置多个，1.25 版本支持 |
+| `-w, --workdir DIR` |            指定命令的工作目录             |
+
+###### help
+
+```shell
+docker-compose help [COMMAND]
+```
+
+###### images
+
+```shell
+docker-compose images [options] [SERVICE...]
+```
+
+列出创建容器使用的镜像
+
+###### kill
+
+```shell
+docker-compose kill [options] [SERVICE...]
+```
+
+强制停止服务容器
+
+|    选项     |              含义              |
+| :---------: | :----------------------------: |
+| `-s SIGNAL` | 发送到容器的信号，默认 SIGKILL |
+
+###### logs
+
+```
+docker-compose logs [options] [SERVICE...]
+```
+
+查看容器输出
+
+|        选项        | 含义 |
+| :----------------: | :--: |
+|    `--no-color`    |      |
+|   `-f, --follow`   |      |
+| `-t, --timestamps` |      |
+|   `--tail="all"`   |      |
+
+
+
+###### pause
+
+###### port
+
+###### ps
+
+###### pull
+
+###### push
+
+###### restart
+
+###### rm
+
+###### run
+
+###### scale
+
+###### start
+
+###### stop
+
+###### top
+
+###### unpause
+
+###### up
+
+###### version
 
 #### Machine
 

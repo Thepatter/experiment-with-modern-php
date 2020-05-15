@@ -11,46 +11,84 @@
 
 ###### 配置
 
-###### daemon.json
+*   daemon.json
 
-配置 dockerd 运行时
+    配置 dockerd 运行时
 
-*/etc/docker/daemon.json*
+    */etc/docker/daemon.json*
 
-```json
-{
-	// 指定镜像
-	"registry-mirrors" : [
-        "https://docker.mirrors.ustc.edu.cn/",
-        "https://dockerhub.azk8s.cn",
-        "https://reg-mirror.qiniu.com",
-        "https://hub-mirror.c.163.com",
-        "https://mirror.ccs.tencentyun.com"
-  	],
-    // 指定 images 目录
-    "graph": "/var/data/docker",
-	// 指定安全仓库地址
-    "insecure-registries" : ["home.com:5000"],
-}
-```
+    ```json
+    {
+    	// 指定镜像
+    	"registry-mirrors" : [
+            "https://docker.mirrors.ustc.edu.cn/",
+            "https://dockerhub.azk8s.cn",
+            "https://reg-mirror.qiniu.com",
+            "https://hub-mirror.c.163.com",
+            "https://mirror.ccs.tencentyun.com"
+      	],
+        // 指定 images 目录
+        "graph": "/var/data/docker",
+    	// 指定安全仓库地址
+        "insecure-registries" : ["home.com:5000"],
+        // 修改存储驱动
+        "storage-driver": "overlay2"
+    }
+    ```
 
-###### docker.service
+*   docker.service
 
-配置 dockerd 启动时
+    配置 dockerd 启动时
 
-*/lib/systemd/system/docker.service* 或 */etc/systemd/system/docker.service.d/startup_options.conf*
+    */lib/systemd/system/docker.service* 或 */etc/systemd/system/docker.service.d/startup_options.conf*
 
-```ini
-# 添加或修改
-[Service]
-ExecStart=
-# 使用 —H 指定多个套接字，默认 -H fd
-ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:2375
-```
+    ```ini
+    # 添加或修改
+    [Service]
+    ExecStart=
+    # 使用 —H 指定多个套接字，默认 -H fd
+    ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:2375
+    ```
+
+##### 引擎组件
+
+docker 引擎是用来运行和管理容器的核心软件，采用了模块化的设计，其组件是可替换的，引擎大致工作流程为：
+
+1.  docker 客户端将命令提交到 docker daemon 执行
+2.  docker daemon 解析并执行命令，调用（通过 gRPC 通信） containerd 管理 docker 对象
+3.  containerd 调用（将 docker 镜像转为为 OCI bundle）与操作系统绑定的 runc 来创建容器
+4.  runc 与操作系统内核接口进行通信，基于所有必要的工具（Namespace、CGroup）来创建容器
+5.  容器进程作为 runc 的子进程启动，启动完毕后，runc 将会退出
+
+###### Docker 客户端
+
+提供 docker 命令
+
+###### Docker 守护进程
+
+API 和其他特性。
+
+###### containerd
+
+容器 Supervsor。管理所有容器的执行逻辑，用于容器生命周期（start|stop|pause|rm...）管理。在 Linux 和 Windows 中以 damon 的方式运行，在 Docker 引擎技术栈中 containerd 位于 damon 和 runc 之间
+
+kubernetes 也可以通过 cri-containerd 使用 containerd
+
+###### runc
+
+容器运行时内核原语接口。是 OCI 容器运行时规范的参考实现，只用来创建容器。
+
+##### 服务组件
+
+###### 存储驱动
+
+每个 docker 容器都有一个本地存储空间，用于保存层叠的镜像层以及挂载的容器文件系统。默认情况下，容器的所有读写操作都发生在其镜像层上或挂载的文件系统中。
+
+本地存储是通过存储驱动进行管理的，存储驱动在上层抽象中都采用了栈式镜像层存储和写时复制。存储驱动的选择是节点级别的。每个 docker 主机只能选择一种存储驱动，不能为每个容器选择不同的存储驱动。修改存储引擎后，现有的镜像和容器在重启之后将不可用。
 
 #### 镜像
 
-镜像即创建容器的模版，类似面向对象中的类，镜像提供二进制程序或程序运行环境，dockerd 负责操作镜像
+镜像即创建容器的模版，类似面向对象中的类，镜像提供二进制程序或程序运行环境，dockerd 负责操作镜像。docker 镜像由一些松耦合的只读镜像层组成
 
 ##### 基于本地模板导入
 
