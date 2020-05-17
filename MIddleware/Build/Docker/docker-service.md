@@ -965,6 +965,8 @@ secrets:
 
 ##### 变量
 
+###### 构建时环境变量
+
 支持使用环境变量，compose 使用 运行时的 shell 环境中的变量值
 
 ```yaml
@@ -973,6 +975,25 @@ db:
 ```
 
 可以使用 compose 自动查找的 *.env* 文件来为环境变量设置默认值，在 shell 中设置的值将覆盖 *.env* 文件中设置的值（*.env* 文件仅支持 compose up 命令，swarm 模式不支持 *.env* 文件）
+
+###### compose 环境变量
+
+环境变量用来配置 Compose 的行为，以 DOCKER_ 开头的变量和用来配置 Dockers 命令行客户端的使用一样
+
+|            变量            |                             说明                             |
+| :------------------------: | :----------------------------------------------------------: |
+|    COMPOSE_PROJECT_NAME    | 设置 Compose 的项目名称，默认是当前工作目录（docker-compose.yml文件目录）的名字，compose 会为每个启动的容器前添加的项目名称 |
+|        COMPOSE_FILE        | 设置docker-compose.yml路径，如果不指定，默认会先查找当前目录 |
+|    COMPOSE_API_VERSION     |               指定 API 版本以兼容dockers服务端               |
+|        DOCKER_HOST         | 设置docker服务端监听地址，默认 `unix://var/run/docker.sock`  |
+|     DOCKER_TLS_VERIFY      |    如果该变量不为空，则与docker服务端交互都通过 TLS 协议     |
+|      DOCKER_CERT_PATH      | 配置 TLS 通信所需要的验证文件（ca.pem,cert.pem,key.pem）的路径，默认`~/.docker` |
+|    COMPOSE_HTTP_TIMEOUT    |         compose 向 docker 服务器发送请求超时默认60s          |
+|    COMPOSE_TLS_VERSION     |                指定与dockers服务交互的TLS版本                |
+|   COMPOSE_PATH_SEPARATOR   |           指定 COMPOSE_FILE 环境变量中的路径间隔符           |
+|   COMPOSE_IGNORE_ORPHANS   |                       是否忽略孤儿容器                       |
+|   COMPOSE_PARALLEL_LIMIT   |              设置 Compose 可以执行进程的并发数               |
+| COMPOSE_INTERACTIVE_NO_CLI |        尝试不适用 Docker 命令来执行 run 和 exec 指令         |
 
 ##### 扩展字段
 
@@ -1172,46 +1193,395 @@ docker-compose logs [options] [SERVICE...]
 
 查看容器输出
 
-|        选项        | 含义 |
-| :----------------: | :--: |
-|    `--no-color`    |      |
-|   `-f, --follow`   |      |
-| `-t, --timestamps` |      |
-|   `--tail="all"`   |      |
-
-
+|        选项        |               含义               |
+| :----------------: | :------------------------------: |
+|    `--no-color`    |            单颜色输出            |
+|   `-f, --follow`   |             跟随输出             |
+| `-t, --timestamps` |             显示时间             |
+|   `--tail="all"`   | 对每个容器，日志末尾开始显示行数 |
 
 ###### pause
 
+```shell
+docker-compose pause [SERVICE...]
+```
+
+挂起服务
+
 ###### port
+
+```shell
+docker-compose port [options] SERVICE PRIVATE_PORT
+```
+
+打印端口
+
+|        选项        |          含义          |
+| :----------------: | :--------------------: |
+| `--protocol=proto` |     协议，默认 tcp     |
+|  `--index=index`   | 服务的容器索引，默认 1 |
 
 ###### ps
 
+```shell
+docker-compose ps [options] [SERVICE...]
+```
+
+列出容器
+
+|        选项        |                    含义                    |
+| :----------------: | :----------------------------------------: |
+|    `-q, --quit`    |                 仅显示 ID                  |
+|    `--services`    |                  列出服务                  |
+| `--filter KEY=VAL` |              根据属性筛选服务              |
+|    `-a, --all`     | 显示所有容器（包含创建用于执行命令的容器） |
+
 ###### pull
+
+```shell
+docker-compose pull [options] [SERVICE...]
+```
+
+拉取 compose file 中定义的所有镜像，但不会启动容器
+
+|           选项           |             含义             |
+| :----------------------: | :--------------------------: |
+| `--ignore-pull-failures` |        拉取时忽略失败        |
+|       `--parallel`       | 废弃，现在已默认启用并行拉取 |
+|     `--no-parallel`      |         关闭并行拉取         |
+|      `-q, --quiet`       |          不打印信息          |
+|     `--include-deps`     |   拉取声明为依赖服务的镜像   |
 
 ###### push
 
+```shell
+docker-compose push [options] [SERVICE...]
+```
+
+|           选项           |      含义      |
+| :----------------------: | :------------: |
+| `--ignore-push-failures` | 推送时忽略失败 |
+
+推送服务镜像
+
 ###### restart
+
+```shell
+docker-compose restart [options] [SERVICE...]
+```
+
+重启运行中的容器
+
+|          选项           |            含义            |
+| :---------------------: | :------------------------: |
+| `-t, --timeout TIMEOUT` | 设置重启超时时间，默认 10s |
 
 ###### rm
 
+```shell
+docker-compose rm [options] [SERVICE...]
+```
+
+删除停止服务的容器，默认不善删除附加到容器的匿名卷
+
+|     选项      |          含义          |
+| :-----------: | :--------------------: |
+| `-f, --force` |    不确认，直接删除    |
+| `-s, --stop`  | 移除容器前，先停止服务 |
+|     `-v`      | 移除附加到容器的匿名卷 |
+|  `-a, --all`  |         已弃用         |
+
 ###### run
+
+```shell
+docker-compose run [options] [-v VOLUME...] [-p PORT...] [-e KEY=VAL...] [-l KEY=VAL..] SERVICE [COMMAND] [ARGS...]
+```
+
+在服务上运行一次性命令
+
+|         选项          |                  含义                  |
+| :-------------------: | :------------------------------------: |
+|    `-d, --detach`     | 分离模式，在后台运行容器，打印新容器名 |
+|     `--name NAME`     |             为容器分配名称             |
+|  `--entrypoint CMD`   |              覆盖镜像命令              |
+|     `-e KEY=VAL`      |              设置环境变量              |
+| `-l, --label KEY=VAL` |               设置 label               |
+|    `-u, --user=""`    |         设置运行命令的人或uid          |
+|      `--no-deps`      |             不启动关联服务             |
+|        `--rm`         |      运行后删除容器，分离模式忽略      |
+|  `-p, --publish=[]`   |            声明容器暴露端口            |
+|   `--service-ports`   |  在启用和映射服务端口的情况下运行命令  |
+|    `--use-aliases`    |      容器连接到服务网络时使用别名      |
+|   `-v, --volume=[]`   |                 绑定卷                 |
+|         `-T`          |              不分配伪 tty              |
+|  `-w, --workdir=""`   |            设置容器工作目录            |
 
 ###### scale
 
+```shell
+docker-compose scale [options] [SERVICE=NUM...]
+```
+
+设置服务运行的容器个数，**已弃用，使用 UP 命令时使用 --scale 选项代替**
+
+|          选项           |          含义          |
+| :---------------------: | :--------------------: |
+| `-t, --timeout TIMEOUT` | 声明超时时间，默认 10S |
+
 ###### start
+
+```
+docker-compose start [SERVICE...]
+```
+
+启用已存在的容器
 
 ###### stop
 
+```
+docker-compose stop [options] [SERVICE...]
+```
+
+停止运行的容器，但不移除他们
+
+|          选项           |          含义          |
+| :---------------------: | :--------------------: |
+| `-t, --timeout TIMEOUT` | 声明超时时间，默认 10S |
+
 ###### top
+
+```
+docker-compose top [SERVICE...]
+```
+
+列出运行的服务进程
 
 ###### unpause
 
+```
+docker-compose unpause [SERVICE...]
+```
+
+取消挂起的服务
+
 ###### up
+
+```
+docker-compose up [options] [--scale SERVICE=NUM...] [SERVICE]
+```
+
+构建、创建（或重建）、启动、将容器附在服务上，还会启动所有链接的服务（除非已运行），会聚合输出所有容器
+
+|            选项             |                             含义                             |
+| :-------------------------: | :----------------------------------------------------------: |
+|       `-d, --detach`        |                以分离在后台运行，打印新容器名                |
+|        `--no-color`         |                           单色输出                           |
+|       `--quiet-pull`        |                     拉取时不打印进度信息                     |
+|         `--no-deps`         |                       不启动链接的服务                       |
+|     `--force-recreate`      |           强制重建容器（配置改变，镜像不必情况下）           |
+|  `--always-recreate-deps`   |         始终重建依赖容器（与 `--no-recreate` 互斥）          |
+|       `--no-recreate`       | 如果容器已存在，不要重建容器（与 `--force-recreate & -v`  互斥） |
+|        `--no-start`         |                       创建完毕后不启动                       |
+|          `--build`          |                     在启动容器前构建镜像                     |
+| `--abort-no-container-exit` |                 如果有容器退出则停止所有容器                 |
+|   `--attach-dependencies`   |                        附在依赖的容器                        |
+|   `-t, --timeout TIMEOUT`   |                         设置超时时间                         |
+| `-V, --renew-anon-volumes`  |                        重建任何匿名卷                        |
+|     `--remove-orphans`      |              删除未在 compose file 中定义的容器              |
+| `--exit-code-from SERVICE`  |   返回退出服务的 code，与 `--abort-on-container-exit` 使用   |
+|    `--scale SERVICE=NUM`    |      设置服务实例，会覆盖 compose file 中的 scale 设置       |
 
 ###### version
 
+```
+docker-compose version [--short]
+```
+
 #### Machine
+
+负责实现对 Docker 运行环境进行安装和管理，在管理多个 Docker 环境时，使用 Machine 很高效，Machine 的定位是：在本地或云环境中创建 docker 主机，基本功能包含：在指定节点或平台上安装 docker 引起，配置其为可用的 docker 环境，集中管理（包括启动，查看等）所安装的 docker 环境
+
+所有的客户端配置数据会自动存放在 *~/.docker/machine/machines/* 路径下，该路径下内容仅为客户端侧的配置和数据，删除其下内容不会影响到已创建的 docker 环境
+
+##### 创建虚拟机
+
+###### virtualbox
+
+```
+# 通过 virtualbox 驱动支持本地启动一个虚拟机环境，并配置 docker 主机
+docker-machine create --driver=virtualbox test
+# 查看访问所创建 docker 环境所需要的配置信息
+docker-machine env test
+# 停止
+docker-machine stop test
+```
+
+###### hyperv
+
+前置条件为必须配置虚拟交换机和管理员权限
+
+```
+# 使用 hyper-v 驱动并引用创建的虚拟交换机
+docker-machine create -d hyperv --hyperv-virtual-switch <NameOfVirtualSwitch> <nameOfNode>
+```
+
+###### 本地驱动
+
+这种驱动适合主机操作系统和 SSH 服务已安装，需要对其安装 docker 引擎，首先确保本地主机可以通过 user 账号的 key 直接 ssh 到目标主机，使用 `generic` 类型驱动，注册一台 docker 主机
+
+```
+# 命名为 test
+docker-machine create -d generic --generic-ip-address=10.0.100.102 --generic-ssh-user=user test
+```
+
+##### 客户端命令
+
+###### active
+
+```
+docker-machine active [options] [arg...]
+```
+
+打印活动的机器
+
+|         选项          |          含义          |
+| :-------------------: | :--------------------: |
+| `--tiemeout, -t "10"` | 指定超时时间，默认 10s |
+
+###### config
+
+```
+# arg is machine name
+docker-machine config [options] [arg...]
+```
+
+打印连接机器的配置
+
+|   选项    |                    含义                    |
+| :-------: | :----------------------------------------: |
+| `--swarm` | 显示 swarm 配置，而不是 docker daemon 配置 |
+
+###### create
+
+```
+docker-machine create [OPTIONS] [arg...]
+# 获取驱动帮助
+docker-machine create --driver name --help
+```
+
+|                             选项                             |                       含义                       |
+| :----------------------------------------------------------: | :----------------------------------------------: |
+|                 `--driver, -d "virtualbox"`                  |       指定创建机器时驱动 [$MACHINE_DRIVER]       |
+|      `--engine-env [--engine-env --engine-env option]`       |                   声明引擎变量                   |
+| `--engine-insecure-registry [--engine-insecure-registry option]` |              声明容许注册的 engine               |
+|       `--engine-install-url "https://get.docker.com"`        | 指定引擎下载的 URL [$MACHINE_DOCKER_INSTALL_URL] |
+|                   `--engine-label options`                   |                  声明引擎 label                  |
+|                    `--engine-opt option`                     |          以 key=value 形式声明引擎选项           |
+|                  `--engine-registry-mirror`                  |                   声明仓库镜像                   |
+|                  `--engine-storage-driver`                   |                 声明引擎存储驱动                 |
+|                          `--swarm`                           |             配置机器加入 swarm 集群              |
+|                        `--swarm-addr`                        |         通知 swarm  的 addr，默认机器 IP         |
+|                     `--swarm-discovery`                      |               使用 swarm 发现服务                |
+|                    `--swarm-experimental`                    |               启用 swarm 实验特性                |
+|             `--swarm-host "tcp://0.0.0.0:3376"`              |              swarm  master 监听地址              |
+|                `--swarm-image "swarm:latest"`                |      声明 swarm 镜像 [$MACHINE_SWARM_IMAGE]      |
+|                  `--swarm-join-opt option`                   |               指定 swarm-join 选项               |
+|                       `--swarm-master`                       |             配置机器为 swarm master              |
+|                     `--swarm-opt option`                     |              定义 swarm master 选项              |
+|                 `--swarm-strategy "spread"`                  |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+|                                                              |                                                  |
+
+创建机器
+
+###### env
+
+显示环境
+
+###### inspect
+
+显示机器详情
+
+###### ip
+
+获取机器 ip
+
+###### kill
+
+杀死一个机器
+
+###### ls
+
+列出所有机器
+
+###### provision
+
+重新设置已存在机器
+
+###### regenerate-certs
+
+为某个注解重新生成 TLS  认证信息
+
+###### restart
+
+重启机器
+
+###### rm
+
+删除机器
+
+###### ssh
+
+使用 ssh 链接主机
+
+###### scp
+
+使用 scp 拷贝文件
+
+###### mount
+
+在机器上管理 SSHFS 卷
+
+###### start
+
+启动机器
+
+###### status
+
+获取机器状态
+
+###### stop
+
+停止机器
+
+###### upgrade
+
+升级机器上的 docker
+
+###### url
+
+获取机器 URL
+
+###### version
+
+显示版本信息
+
+###### help
 
 #### SWARM
 

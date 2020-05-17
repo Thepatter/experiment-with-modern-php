@@ -524,6 +524,22 @@ javac -processor ProcessorClassName1,ProcessorClassName2... sourceFiles
 
 注解处理器通常通过扩展 *AbstractProcessor* 类而实现 *Processor* 接口。
 
+###### 常用注解
+
+|    注解     |      含义      |     用法      |
+| :---------: | :------------: | :-----------: |
+| @Deprecated | 声明不建议使用 | 方法/类上声明 |
+|             |                |               |
+|             |                |               |
+|             |                |               |
+|             |                |               |
+|             |                |               |
+|             |                |               |
+|             |                |               |
+|             |                |               |
+
+
+
 #### lambda
 
 ##### lambda 表达式语法
