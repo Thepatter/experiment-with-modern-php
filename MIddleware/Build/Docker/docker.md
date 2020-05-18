@@ -869,25 +869,17 @@ Docker 为覆盖网络提供了本地驱动 overlay
 
 ##### image
 
-##### network
-
 ##### node
 
 ##### plugin
 
 ##### secret
 
-##### service
-
 ##### stack
-
-##### swarm
 
 ##### system
 
 ##### trust
-
-##### volume
 
 
 

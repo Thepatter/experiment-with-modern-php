@@ -859,6 +859,7 @@ networks: # 使用主机的网络栈 host 或 none，定义一个别名来让服
 driver_opts:
   foo: "bar"
   baz: 1
+  encrypt: "yes" # 数据加密
 ```
 
 传递给驱动的选项
@@ -1469,111 +1470,239 @@ docker-machine create [OPTIONS] [arg...]
 docker-machine create --driver name --help
 ```
 
-|                             选项                             |                       含义                       |
-| :----------------------------------------------------------: | :----------------------------------------------: |
-|                 `--driver, -d "virtualbox"`                  |       指定创建机器时驱动 [$MACHINE_DRIVER]       |
-|      `--engine-env [--engine-env --engine-env option]`       |                   声明引擎变量                   |
-| `--engine-insecure-registry [--engine-insecure-registry option]` |              声明容许注册的 engine               |
-|       `--engine-install-url "https://get.docker.com"`        | 指定引擎下载的 URL [$MACHINE_DOCKER_INSTALL_URL] |
-|                   `--engine-label options`                   |                  声明引擎 label                  |
-|                    `--engine-opt option`                     |          以 key=value 形式声明引擎选项           |
-|                  `--engine-registry-mirror`                  |                   声明仓库镜像                   |
-|                  `--engine-storage-driver`                   |                 声明引擎存储驱动                 |
-|                          `--swarm`                           |             配置机器加入 swarm 集群              |
-|                        `--swarm-addr`                        |         通知 swarm  的 addr，默认机器 IP         |
-|                     `--swarm-discovery`                      |               使用 swarm 发现服务                |
-|                    `--swarm-experimental`                    |               启用 swarm 实验特性                |
-|             `--swarm-host "tcp://0.0.0.0:3376"`              |              swarm  master 监听地址              |
-|                `--swarm-image "swarm:latest"`                |      声明 swarm 镜像 [$MACHINE_SWARM_IMAGE]      |
-|                  `--swarm-join-opt option`                   |               指定 swarm-join 选项               |
-|                       `--swarm-master`                       |             配置机器为 swarm master              |
-|                     `--swarm-opt option`                     |              定义 swarm master 选项              |
-|                 `--swarm-strategy "spread"`                  |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-|                                                              |                                                  |
-
 创建机器
+
+*options*
+
+|                             选项                             |                             含义                             |
+| :----------------------------------------------------------: | :----------------------------------------------------------: |
+|                 `--driver, -d "virtualbox"`                  |             指定创建机器时驱动 [$MACHINE_DRIVER]             |
+|      `--engine-env [--engine-env --engine-env option]`       |                         声明引擎变量                         |
+| `--engine-insecure-registry [--engine-insecure-registry option]` |                    声明容许注册的 engine                     |
+|       `--engine-install-url "https://get.docker.com"`        |       指定引擎下载的 URL [$MACHINE_DOCKER_INSTALL_URL]       |
+|                   `--engine-label options`                   |                        声明引擎 label                        |
+|                    `--engine-opt option`                     |                以 key=value 形式声明引擎选项                 |
+|                  `--engine-registry-mirror`                  |                         声明仓库镜像                         |
+|                  `--engine-storage-driver`                   |                       声明引擎存储驱动                       |
+|                          `--swarm`                           |                   配置机器加入 swarm 集群                    |
+|                        `--swarm-addr`                        |               通知 swarm  的 addr，默认机器 IP               |
+|                     `--swarm-discovery`                      |                     使用 swarm 发现服务                      |
+|                    `--swarm-experimental`                    |                     启用 swarm 实验特性                      |
+|             `--swarm-host "tcp://0.0.0.0:3376"`              |                    swarm  master 监听地址                    |
+|                `--swarm-image "swarm:latest"`                |            声明 swarm 镜像 [$MACHINE_SWARM_IMAGE]            |
+|                  `--swarm-join-opt option`                   |                     指定 swarm-join 选项                     |
+|                       `--swarm-master`                       |                   配置机器为 swarm master                    |
+|                     `--swarm-opt option`                     |                    定义 swarm master 选项                    |
+|                 `--swarm-strategy "spread"`                  |                 为 swarm 定义默认的调度策略                  |
+|                     `--tls-san options`                      |                 支持扩展 SANs 用于 TLS cert                  |
+|                `--virtualbox-boot2docker-url`                |      指定 boot2docker url [$VIRTUALBOX_BOOT2DOCKER_URL]      |
+|                 `--virtualbox-cpu-count "1"`                 | 指定机器 CPU 个数，-1 为所有活动 CPU [$VIRTUALBOX_CPU_COUNT] |
+|               `--virtualbox-disk-size "20000"`               |         指定机器磁盘大小 MB [$VIRTUALBOX_DISK_SIZE]          |
+|               `--virtualbox-host-dns-resolver`               |        指定机器的 DNS [$VIRTUALBOX_HOST_DNS_RESOLVER]        |
+|        `--virtualbox-hostonly-cidr "192.168.99.1/24"`        |         指定机器的 CIDR [$VIRTUALBOX_HOSTONLY_CIDR]          |
+|          `--virtualbox-hostonly-nicpronisc "deny"`           | 声明仅主机网络时的混合模式 [$VIRTUALBOX_HOSTONLY_NIC_PRONISC] |
+|          `--virtualbox-hostonly-nictype "82540EM"`           |     声明仅主机网络的类型 [$VIRTUALBOX_HOSTONLY_NIC_TYPE]     |
+|                `--virtualbox-hostonly-nodhcp`                |   禁用 hostonly 的 DHCP 服务 [VIRTUALBOX_HOSTONLY_NO_DHCP]   |
+|             `--virtualbox-import-boot2docker-vm`             |                     导入 boot2docker vm                      |
+|                 `--virtualbox-memory "1024"`                 |          声明机器内存 MB [$VIRTUALBOX_MEMORY_SIZE]           |
+|             `--virtualbox-nat-nictype "82540EM"`             |                      声明网络提供者类型                      |
+|                 `--virtualbox-no-dns-proxy`                  |   禁止将所有 DNS 请求代理到主机 [$VIRTUALBOX_NO_DNS_PROXY]   |
+|                   `--virtualbox-no-share`                    |             禁止挂载家目录[$VIRTUALBOX_NO_SHARE]             |
+|                 `--virtualbox-no-vtx-check`                  | 在启动虚拟机之前禁用硬件虚拟化可用性检查[$VIRTUALBOX_NO_VTX_CHECK] |
+|                 `--virtualbox-share-folder`                  |       挂载指定目录 dir:name [$VIRTUALBOX_SHARE_FOLDER]       |
+|              `--virtualbox-ui-type "headless"`               | 声明 UI 类型（gui\|sdl\|headless\|separate）[$VIRTUALBOX_UI_TYPE] |
 
 ###### env
 
-显示环境
+```
+# argument is a machine name
+docker-machine env [OPTIONS] [arg...]
+```
+
+在命令行显示 docker 客户端 env
+
+*options*
+
+|     选项      |                             含义                             |
+| :-----------: | :----------------------------------------------------------: |
+|   `--swarm`   |               显示 swarm 环境而非 daemon 环境                |
+|   `--shell`   | 强制环境使用声明的 shell [fish,cmd,powershell,tcsh,emacs]，默认自带 shell |
+| `--unset, -u` |                           卸载设置                           |
+| `--no-proxy`  |               增加机器 IP 到 NO_PROXY 环境变量               |
 
 ###### inspect
 
+```
+# argument is machine name
+docker-machine inspect [OPTIONS] [arg...]
+```
+
 显示机器详情
+
+|      选项      |    含义    |
+| :------------: | :--------: |
+| `--format, -f` | 格式化输出 |
 
 ###### ip
 
-获取机器 ip
+```
+# arguments are one or more  machine names
+docker-machine ip [arg...]
+```
+
+获取机器 IP
 
 ###### kill
+
+```
+# arguments are one or more machine name
+docker-machine kill [arg...]
+```
 
 杀死一个机器
 
 ###### ls
 
+```
+docker-machine ls [options] [arg..]
+```
+
 列出所有机器
 
+*options*
+
+|         选项         |          含义          |
+| :------------------: | :--------------------: |
+|    `--quiet, -q`     |      启用快速模式      |
+|  `--filter option`   |        过滤输出        |
+| `--timeout, -t "10"` | 指定超时时间，默认 10s |
+|    `--format, -f`    | 使用 go 模板格式化输出 |
+
 ###### provision
+
+```
+docker-machine provision [arg...]
+```
 
 重新设置已存在机器
 
 ###### regenerate-certs
 
-为某个注解重新生成 TLS  认证信息
+```
+# arguments are one or more machine name
+docker-machine regenerate-certs [options] [arg...]
+```
+
+为某个主机重新生成 TLS  认证信息
+
+| 选项             | 含义                        |
+| ---------------- | --------------------------- |
+| `--force, -f`    | 强制重新生成                |
+| `--client-certs` | 重新生成包含客户端证书和 CA |
 
 ###### restart
+
+```
+# args are one or more machine names
+docker-machine restart [arg...]
+```
 
 重启机器
 
 ###### rm
 
+```
+docker-machine rm [options] [arg...]
+```
+
 删除机器
+
+|     选项      |               含义               |
+| :-----------: | :------------------------------: |
+| `--force, -f` | 即使无法删除机器，也删除本地配置 |
+| `-y assumes ` |             自动确认             |
 
 ###### ssh
 
-使用 ssh 链接主机
+```
+# arguments are [machine-name] [command]
+docker-machine ssh [arg...]
+```
+
+使用 ssh 登录主机或执行命令
 
 ###### scp
 
-使用 scp 拷贝文件
+```
+# arguments are [[user@]machine:][path] [[user@]machine:][path]
+docker-machine scp [options] [arg...]
+```
+
+*options*
+
+|       选项        |            含义            |
+| :---------------: | :------------------------: |
+| `--recursive, -r` |  递归复制文件（用于目录）  |
+|   `--delta, -d`   |  仅发送差异（uses rsync）  |
+|   `--quiet, -q`   | 禁用进度显示和警告诊断信息 |
+
+使用 scp 在机器之间拷贝文件
 
 ###### mount
 
+```
+# arguments are [machine:][path] [mountpoint]
+docker-machine mount [options] [arg...]
+```
+
 在机器上管理 SSHFS 卷
 
+|      选项      | 含义 |
+| :------------: | :--: |
+| `--unmout, -u` | 卸载 |
+
 ###### start
+
+```
+# args are one or more machine name
+docker-machine start [arg...]
+```
 
 启动机器
 
 ###### status
 
+```
+# arg is machine name
+docker-machine status [arg...]
+```
+
 获取机器状态
 
 ###### stop
+
+```
+# arg are one or more machine names
+docker-machine stop [arg...]
+```
 
 停止机器
 
 ###### upgrade
 
+```
+# 升级机器上的 docker
+docker-machine upgrade [arg...]
+```
+
 升级机器上的 docker
 
 ###### url
+
+```
+# args is a machine name
+docker-machine url [arg...]
+```
 
 获取机器 URL
 
@@ -1585,5 +1714,213 @@ docker-machine create --driver name --help
 
 #### SWARM
 
-##### 配置服务发现
+swarm 提供集群管理和容器编排，基于 raft 算法。swarm 管理节点，并在节点上运行服务（管理节点也会运行服务）
 
+##### 网络模式
+
+###### Ingress
+
+通过 Ingress 模式发布的服务，可以 swarm 集群内任一节点（即使没有运行服务的副本）都能访问该服务，通过 -p 指定端口时，默认都是 Ingress 模式
+
+*   在底层，Ingress 模式采用名为 Service Mesh 或 Swarm Mode Service Mesh 的四层路由网络来实现
+*   如果存在多个运行中的副本，流量会平均到每个副本之上
+
+###### host
+
+以 host 模式发布的服务职能通过运行服务副本的节点来访问
+
+```
+# 必须使用完整语法
+--publish published=5000,target=80,mode=host
+```
+
+##### swarm 指令
+
+###### ca
+
+```
+docker swarm ca [options]
+```
+
+展示或轮换 root ca
+
+|            选项             |                           含义                           |
+| :-------------------------: | :------------------------------------------------------: |
+|    `--ca-cert pem-file`     |           用于新群集的PEM格式的根CA证书的路径            |
+|     `--ca-key pem-file`     |           用于新集群的PEM格式的根CA密钥的路径            |
+|  `--cert-expiry duration`   |  节点证书的有效期（ns\|us\|ms\|s\|m\|h）默认 2160h0m0s   |
+|       `-d, --detach`        |                  退出，不等待 root 轮换                  |
+| `--external-ca external-ca` |                       声明节点签名                       |
+|        `-q, --quiet`        |                       启动控制输出                       |
+|         `--rotate`          | 轮换集群 CA 如果未提供证书或密钥，则将生成新的证书或密钥 |
+
+###### init
+
+```
+docker swarm init [options]
+```
+
+初始化 swarm
+
+|                   选项                   |                             含义                             |
+| :--------------------------------------: | :----------------------------------------------------------: |
+|        `--advertise-addr string`         |                        暴露地址（for                         |
+|               `--autolock`               |    启用管理节点自动锁定（需要密钥才能启动或停止管理节点）    |
+|         `--availability string`          |             显示节点状态（active\|pause\|drain）             |
+|         `--cert-expiry duration`         |   节点证书的有效期（ns\|us\|ms\|s\|m\|h，默认 2160h0m0s）    |
+|        `--data-path-addr string`         |   用于数据路径通信的地址或接口（format：<ip\|interface>）    |
+|        `--data-path-port uinit32`        |                用于数据路径端口号，默认 4789                 |
+|     `--default-addr-pool ipNetSlice`     |       default address pool in CIDR format (default [])       |
+| `--default-addr-pool-mask-length uint32` |     default address pool subnet mask length (default 24)     |
+|       `--external-ca external-ca`        | Specifications of one or more certificate signing endpoints  |
+|          `--force-new-cluster`           |        Force create a new cluster from current state         |
+|        `--listen-addr node-addr`         |               Listen address ( 0.0.0.0:2377）                |
+|          `--max-snapshots uint`          |        Number of additional Raft snapshots to retain         |
+|        `--snapshot-interval uint`        | Number of log entries between Raft snapshots（default 10000） |
+|        `--task-history-limit int`        |           Task history retention limit (default 5)           |
+
+##### service 指令
+
+是 docker 支持复杂容器协作场景工具，一个服务可以由若干个任务组成，每个任务为某个具体的应用。服务还包括对应的存储、网络、端口映射、副本个数、访问配置、升级配置等附加参数。
+
+集群中服务分为：
+
+*   复制服务（replicated services）模式：默认，每个任务在集群中会有若干副本，这些副本会被管理节点按照调度策略分发到集群中的工作节点上。此模式下可以使用 `-replicas` 参数设置副本数量
+
+*   全局服务（global services）模式：调度器将在每个可用节点都执行一个相同的任务。该模式适合运行节点的检查，如监控应用等
+
+###### create
+
+```
+docker service create [OPTIONS] IMAGE [COMMAND] [ARG]
+```
+
+*options*
+
+|           选项           |                          含义                           |
+| :----------------------: | :-----------------------------------------------------: |
+|    `--config config`     |                    指定给服务的配置                     |
+|   `--constraint list`    |           应用实例在集群中被放置时的位置限制            |
+|      `-d, --detach`      |            不等待创建后对应用进行探测即返回             |
+|       `--dns list`       |                       自定义 dns                        |
+| `--endpoint-mode string` | 指定外部访问模式，vip（虚地址字段负载）dnsrr（DNS轮训） |
+|     `-e, --env list`     |                      环境变量列表                       |
+|  `--health-cmd string`   |                   进行健康检查的指令                    |
+|    `-l, --label list`    |                     指定服务的标签                      |
+|     `--mode string`      |         服务模式，包括 replicated 默认或 global         |
+|    `--replicas uint`     |                    指定实例复制份数                     |
+|    `--secret secret`     |                  向服务暴露的秘密数据                   |
+|    `-u,--user string`    |                  指定用户信息，UID:GID                  |
+|  `-w,--workdir string`   |                指定容器中的工作目录位置                 |
+
+###### inspect
+
+```
+docker service inspect[OPTIONS]SERVIVE[SERVICE...]
+```
+
+*options*
+
+|         选项          |            含义            |
+| :-------------------: | :------------------------: |
+| `-f, --format string` | 使用 go 模版指定格式化输出 |
+|      `--pretty`       |      适合阅读格式输出      |
+
+###### logs
+
+```
+docker service logs [OPTIONS] SERVICE|TASK
+```
+
+*options*
+
+|        选项        |             含义             |
+| :----------------: | :--------------------------: |
+|    `--details`     |           所有细节           |
+|   `-f,--follow`    |         持续跟随输出         |
+|   `--no-resolve`   | 输出中不将对象的ID映射为名称 |
+|  `--no-task-ids`   |   输出中不包括任务的ID信息   |
+|    `--no-trunc`    |        不截断输出信息        |
+|      `--raw`       |       输出原始格式信息       |
+|  `--since string`  |   输出自指定时间开始的日志   |
+|  `--tail string`   | 只输出给定行数的最新日志信息 |
+| `-t, --timestamps` |        打印日志时间戳        |
+
+###### ls
+
+```
+docker service ls [options]
+```
+
+|         选项          |       含义       |
+| :-------------------: | :--------------: |
+| `-f, --filter filter` |  只输出过滤信息  |
+|   `--format string`   | 按照 go 模版输出 |
+|     `-q, --quit`      |    只输出 id     |
+
+###### ps
+
+```
+docker service ps [options] service [service...]
+```
+
+*options*
+
+|       选项        |        含义        |
+| :---------------: | :----------------: |
+|   `-f --filter`   |        过滤        |
+| `--format string` |       格式化       |
+|   `-no-resolve`   | 不将 id 映射为名称 |
+|   `--no-trunc`    |       不截断       |
+|   `-q, --quiet`   |      输出 id       |
+
+###### rollback
+
+```
+docker service rollback [options] service
+```
+
+*options*
+
+|      选项      |                含义                |
+| :------------: | :--------------------------------: |
+| `-d, --detach` | 执行后返回，不等待服务状态校验完整 |
+|  `-q,--quiet`  |           不显示执行信息           |
+
+###### update
+
+```
+docker service update [options] service
+```
+
+更新服务
+
+*options*
+
+|            选项             |             含义             |
+| :-------------------------: | :--------------------------: |
+|      `--args command`       |         服务命令参数         |
+|    `--config-add config`    | 增加或更新一个服务的配置信息 |
+|     `--config-rm list`      |       删除一个配置文件       |
+|   `--constraint-add list`   |   增加或更新放置的限制条件   |
+|   `--constraint-rm list`    |       删除一个限制条件       |
+|       `-d, --detach`        |        不等待校验返回        |
+|      `--dns-add list`       |     增加或更新 dns 信息      |
+|       `--dns-rm list`       |        删除 dns 信息         |
+|  `--endpoint-mode string`   | 指定外部访问模式，vip，dnsrr |
+|    `--entrypont command`    |       指定默认入口命令       |
+|      `--env-add list`       |    添加或更新一组环境变量    |
+|       `--env-rm list`       |         删除环境变量         |
+|    `--health-cmd string`    |         进行检查检查         |
+|     `--no-healthcheck`      |        不进行健康检查        |
+|    `--publish-add port`     |    添加或更新外部端口信息    |
+|     `--publish-rm port`     |         删除端口信息         |
+|        `-q, --quiet`        |           简略信息           |
+|        `--read-only`        |    指定容器文件系统为只读    |
+|      `--replicas uint`      |    指定服务实例的复制份数    |
+|        `--rollback`         |        回滚到上次配置        |
+|    `--secret-add secret`    |      添加或更新秘密数据      |
+|     `--secret-rm list`      |         删除秘密数据         |
+| `--update-parallelism unit` |        更新执行并发数        |
+|     `-u, --user string`     |     指定用户信息 UID:GID     |
+|   `-w, --workdir string`    |    指定容器中工作目录信息    |
