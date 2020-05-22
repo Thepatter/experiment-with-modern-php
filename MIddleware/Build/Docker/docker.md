@@ -7,7 +7,7 @@
 典型的 C/S 应用程序，Docker Engine 运行方式：
 
 1. dockerd 作为服务端软件运行（创建和管理 docker 对象：网络，容器，卷），并提供调用接口，cli 客户端（docker）使用 socket 或 tcp 与服务端 dockerd 通信
-2. docker 命令行客户端调用接口或执行脚本与守护进程交互
+2. docker 命令行客户端调用接口与守护进程交互
 
 ###### 配置
 
@@ -19,13 +19,11 @@
 
     ```json
     {
-    	// 指定镜像
+    	// 指定仓库镜像
     	"registry-mirrors" : [
             "https://docker.mirrors.ustc.edu.cn/",
-            "https://dockerhub.azk8s.cn",
             "https://reg-mirror.qiniu.com",
             "https://hub-mirror.c.163.com",
-            "https://mirror.ccs.tencentyun.com"
       	],
         // 指定 images 目录
         "graph": "/var/data/docker",
@@ -35,7 +33,7 @@
         "storage-driver": "overlay2"
     }
     ```
-
+    
 *   docker.service
 
     配置 dockerd 启动时
@@ -95,8 +93,25 @@ kubernetes 也可以通过 cri-containerd 使用 containerd
 可以直接从一个操作系统模板文件导入一个镜像，使用
 
 ```shell
+# docker [image] import [OPTIONS] file|URL|- [REPOSITORY[:TAG]]
 cat ubuntu-18.04-x86_64-minimal.tar.gz | docker import - ubuntu:18.04
 ```
+
+##### 基于容器创建镜像
+
+```shell
+# docker [container] commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]
+docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]
+```
+
+根据容器的更改创建新映像
+
+|          选项          |                            含义                            |
+| :--------------------: | :--------------------------------------------------------: |
+| `-a, --author string`  | Author (e.g., "John Hannibal Smith <hannibal@a-team.com>") |
+|  `-c, --change list`   |             将 Dockerfile 指令应用于创建的镜像             |
+| `-m, --message string` |                          提交信息                          |
+|     `-p, --pause`      |              提交期间暂停容器（默认为 true）               |
 
 ##### Dockerfile
 
@@ -105,7 +120,7 @@ Dockerfile 使用 DSL 语言定义，在构建上下文（本地 PATH 或 Git �
 1. 将整个构建上下文递归发送到守护程序
 2. Dockerd 验证 Dockerfile 文件，失败则返回错误
 3. Dockerd 逐一执行指令，如有必要，将每个指令的执行结果提交到新映像，最终输出新映像的 ID
-4. Dockerd 构建完成后自动清理构建过程中产生的中间镜像上下文
+4. Dockerd 构建完成后自动清理构建过程中产生的中间镜像
 
 18.09 开始 Docker 支持由 moby/buildkit 提供的新构建组件（支持并行构建独立阶段等），使用 BuildKit 后端（需要在命令行设置环境变量 **DOCKER_BUILDKIT=1**）
 
@@ -136,7 +151,7 @@ INSTRUCTION arguments
 
     仅当使用 Buildkit 后端时才启用此功能
 
-    语法指令定义了用于构建当前 Dockerfile 的 Dockerfile 构建器的位置。Buildkit 后端允许无缝使用构建器的外部实现，这些构建器以 Docker 映像的形式分发并在容器沙箱环境中执行（解耦构建，确保所有用户都是用相同实现来构建 Dockerfile）
+    语法指令定义了用于构建当前 Dockerfile 的 Dockerfile 构建器的位置。Buildkit 后端允许无缝使用构建器的外部实现，这些构建器以 Docker 镜像的形式分发并在容器沙箱环境中执行（解耦构建，确保所有用户都是用相同实现来构建 Dockerfile）
 
 * escape
 
@@ -149,17 +164,17 @@ INSTRUCTION arguments
 
 ###### 变量
 
-可以在指令（ADD、COPY、ENV、EXPOSE、FROM、LABEL、STOPSIGNAL、USER、VOLUME、WORDIR、ONBUILD）中使用变量（在命令行或 ENV 指令中声明）
+可以在指令（ADD、COPY、ENV、EXPOSE、FROM、LABEL、STOPSIGNAL、USER、VOLUME、WORKDIR、ONBUILD）中使用变量（在命令行或 ENV 指令中声明）
 
 ```dockerfile
-# ${variable_name} 或 $variable_name 来引用变量，支持修饰符，可以使用转义字符转义来表示字面意思
+# ${variable_name} 或 $variable_name 来引用变量，支持修饰符，可以使用转义字符来表示字面意思
 # 如果 variable 设置，将使用设置值，未设置，则使用 word（word 可以是任何字符串，包含其他环境变量）
 ${variable:-word}
 # 如果 variable 设置，则使用 word，否则为空字符串
 ${variable:+word} 
 FROM busybox
 ENV foo /bar
-WORDIR ${foo}  # WORKDIR /bar
+WORKDIR ${foo}  # WORKDIR /bar
 COPY \$foo /quux # COPY $foo /quux
 ENV abc=hello
 ENV abc=bye def=$abc # def = hello
@@ -168,7 +183,7 @@ ENV ghi=$abc # ghi = bye
 
 ###### 上下文忽略文件
 
-在 docker 将上下文发送到 dockerd 之前，会在上下文中扫描 *.dockerignore* 文件，如果此文件存在，则 CLI 会修改上下文以排除与其中的模式匹配的文件和目录。可以避免使用 ADD 或 COPY 将不需要的文件添加到镜像中。语法类似 ignore 语法。
+在 docker 将上下文发送到 dockerd 之前，会在上下文中扫描 *.dockerignore* 文件，如果此文件存在，则 CLI 会排除与其中的模式匹配的文件和目录。可以避免使用 ADD 或 COPY 将不需要的文件添加到镜像中。语法类似 ignore 语法。
 
 使用 Go 的 *filepath.Match* 规则进行匹配，预处理步骤使用 Go 的 *filepath.clean* 删除开头和结尾空格
 
@@ -186,7 +201,7 @@ FROM openjdk:${version:-11}
 
 * --platform 指定镜像平台，如 linux/amd64、linux/arm64、windows/amd64
 * tag 或 digest 值是可选的，默认为 latest
-* ARG 可以在 FROM 之前声明（FROM 之前的 ARG 声明的变量作用域为构建之外，只能 FROM 指令中使用，构建阶段使用变量需要在 FROM 之后声明）
+* ARG 可以在 FROM 之前声明（FROM 之前的 ARG 声明的变量作用域为构建之外，只能在 FROM 指令中使用，构建阶段使用变量需要在 FROM 之后声明）
 
 ###### RUN
 
@@ -221,15 +236,6 @@ LABEL <key>=<value> <key>=<value> <key>=<value> ...
 ```
 
 为生成的镜像添加元数据标签信息，这些信息用来辅助过滤出特定镜像。会继承基础镜像的 LABEL，如果指定了相同的值则会覆盖
-
-###### MAINTAINER（deprecated）
-
-```dockerfile
-MAINTAINER <name>
-LABEL maintainer="SvenDowideit@home.org.au"
-```
-
-设置镜像作者名字，已弃用，使用 LABEL 替代
 
 ###### EXPOSE
 
@@ -384,17 +390,11 @@ HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost/ || exit 1
 
 OPTION 支持如下参数：
 
-* --interval=DURATION
-
-    过多久检查一次（默认 30s）
-
-* --timeout=DURATION
-
-    每次检查等待结果的超时（默认 30s）
-
-* --retries=N
-
-    如果失败了，重试几次才最终确定失败（默认 30s）
+|         选项          |                含义                |
+| :-------------------: | :--------------------------------: |
+| `--interval=DURATION` |      多久检查一次（默认 30s）      |
+| `--timeout=DURATION`  | 每次检查等待结果的超时（默认 30s） |
+|     `--retries=N`     |           失败时重试次数           |
 
 ###### SHELL
 
@@ -419,7 +419,7 @@ docker [image] build [OPTIONS] PATH|URL
 
 * 通过 STDIN 传递归档文件进行构建，归档文件 Dockerfile 需在根目录中，归档文件的其余部分将用作构建上下文
 
-FROM、ADD/COPY、RUN、CMD 指令会生成一层新的镜像。最终如果创建镜像成功，会返回最终镜像的 ID。
+FROM、ADD/COPY、RUN、CMD 指令会生成一层新的镜像。如果创建镜像成功，会返回镜像的 ID。
 
 *docker build 命令选项*
 
@@ -433,10 +433,10 @@ FROM、ADD/COPY、RUN、CMD 指令会生成一层新的镜像。最终如果创�
 |     `--cpu-period int`     |        分配的 CFS 调度器时长         |
 |     `--cpu-quota int`      |           CFS 调度器总份额           |
 |   `-c, --cpu-shares int`   |               CPU 权重               |
-|   `--cpuset-cpus string`   |        多 CPU 允许使用的 CPU         |
+|   `--cpuset-cpus string`   |      多核心 CPU 允许使用的 CPU       |
 |   `--cpuset-mems string`   |        多 CPU 允许使用的内存         |
 | `--disable-content-trust`  |       不进行镜像校验，默认为真       |
-|     `-f,-file string`      |           Dockerfile 路径            |
+|     `-f,--file string`     |           Dockerfile 路径            |
 |        `--force-rm`        |        总是删除中间过程的容器        |
 |     `--iidfile string`     |         将镜像 ID 写入到文件         |
 |    `--isolation string`    |            容器的隔离机制            |
@@ -482,21 +482,6 @@ CMD ["--spring.profiles.active=postgres"]
 
 COPY --from 指令，它从之前的阶段构建的镜像中仅复制生产环境相关的应用代码，而不会复制生产环境不需要的构件
 
-##### 使用容器创建镜像
-
-```shell
-docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]
-```
-
-根据容器的更改创建新映像
-
-|          选项          |                            含义                            |
-| :--------------------: | :--------------------------------------------------------: |
-| `-a, --author string`  | Author (e.g., "John Hannibal Smith <hannibal@a-team.com>") |
-|  `-c, --change list`   |             将 Dockerfile 指令应用于创建的镜像             |
-| `-m, --message string` |                          提交信息                          |
-|     `-p, --pause`      |              提交期间暂停容器（默认为 true）               |
-
 #### 容器
 
 ##### 运行容器
@@ -515,19 +500,19 @@ docker inspect --format='{{ .State.Running}}' <container.name/id>
 
 ###### 重启策略
 
---restart
+```shell
+docker run --restart=always --name daemon_dave -d ubuntu /bin/bash
+```
 
 * always（会在 daemon 重启时重启）
 * unless-stopped（不会在 daemon 重启时重启）
 * on-failure （退出容器且返回值不为 0 时重启容器，就算容器处于 stopped 状态，在 daemon 重启时，容器也会重启，还接受一个可选的重启次数 --restart=on-failure:5）
 
-```shell
-docker run --restart=always --name daemon_dave -d ubuntu /bin/bash
-```
-
 ###### 日志驱动
 
---log-driver
+```shell
+docker run —-log-driver="syslog" —-name daemon_dwayne -d ubuntu /bin/sh
+```
 
 守护进程和容器所用的日志驱动
 
@@ -543,17 +528,13 @@ docker run --restart=always --name daemon_dave -d ubuntu /bin/bash
 
     这个选项将会禁用所有容器中的日志，导致 docker logs 命令也被禁用
 
-```shell
-docker run —log-driver="syslog" —name daemon_dwayne -d ubuntu /bin/sh
-```
-
 ##### 数据卷
 
 是一个可供容器使用的特殊目录，它将主机操作系统目录直接映射进容器，类似于 linux 中的 mount 行为
 
 * 数据卷可以在容器之间共享和重用，容器间传递数据将变得高效与方便
 * 对数据卷内数据的修改会立马生效，无论是容器内操作还是本地操作
-* 对数据卷的更新不会影响镜像，解耦开应用和数据
+* 对数据卷的更新不会影响镜像，解耦应用和数据
 * 卷会一直存在，直到没有容器使用，可以安全地卸载它
 
 ###### 创建数据卷
@@ -648,12 +629,12 @@ docker run -it --volumes-from dbdata --name db1 ubuntu
 
 Docker 网络架构源自一种叫做容器网络模型（CNM）的方案，该方案是开源的并且支持插接式连接。Libnetwork 是 Docker 对 CNM 的一种实现，提供了 Docker 核心网络架构的全部功能。
 
-不同的驱动可以通过插拔的方式接入 Libnetwork 来提供定制化的网络拓扑。为了实现开箱即用的，Docker 封装了一系列本地驱动，覆盖了大部分常见的网络需求。
+不同的驱动可以通过插拔的方式接入 Libnetwork 来提供定制化的网络拓扑。为了实现开箱即用，Docker 封装了一系列本地驱动，覆盖了大部分常见的网络需求。
 
 * 单机桥接网络（Single-Host Bridge Network）
 * 多机覆盖网络（Multi-Host Overlay）、并且支持接入现有 VLAN。
 
-Libnetwork 提供了本地服务发现和基础的容器负载均衡解决方案。
+Libnetwork 提供了本地服务发现（内建 DNS）和基础的容器负载均衡解决方案。
 
 在顶层设计中，Docker 网络架构由 3 个主要部分构成
 
@@ -708,7 +689,7 @@ CNM 典型生命周期
 
 * Bridge
 
-    默认基于 Linux 网桥和 Iptabls 实现的单机网络
+    默认基于 Linux 网桥和 Iptables 实现的单机网络
 
 * Overlay
 
@@ -841,7 +822,7 @@ Docker 为覆盖网络提供了本地驱动 overlay
     docker run -d -P --name web --link db:webdb traiging/webapp python app.py
     ```
 
-    link 会将源容器（link 指定容器）连接到接收容器（当前容器），但不会讲接收容器连接到源容器。dockerd 在容器创建 link 阶段会进行：
+    link 会将源容器（link 指定容器）连接到接收容器（当前容器），但不会将接收容器连接到源容器。dockerd 在容器创建 link 阶段会进行：
 
     1. 设置接收容器的环境变量
     2. 更新接收容器的 */etc/hosts*（当容器重启后 hosts 文件和以自己为源容器的接收容器的 hosts 文件都会更新）
