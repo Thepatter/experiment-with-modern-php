@@ -34,5 +34,21 @@
 |    `-XX:MaxGCPauseMillis`    | ParallelScavenge 垃圾收集器的最大垃圾收集停顿时间（大于 0 的毫秒数） |
 |      `-XX:GCTimeRatio`       | ParallerScavenge 垃圾收集器的吞吐量大小（0 -100 的整数，默认 99 即允许最大 1% 的垃圾收集时间）垃圾收集时间占总时间的比率 |
 | `-XX:+UseAdaptiveSizePolicy` | 激活时不需要人工指定新生代的大小（-Xmn）、Eden与Survivor 区的比例（-XX:SurvivorRatio）、晋升老年代对象大小（-XX:PretenureSizeThreshold），虚拟机会根据运行情况动态调整 |
-|                              |                                                              |
+
+###### Concurrent Mark Sweep
+
+|                 选项                 |                             含义                             |
+| :----------------------------------: | :----------------------------------------------------------: |
+| `-XX:GMSInitiatingOccupancyFraction` |            提高 CMS 的触发百分比降低内存回收频率             |
+| `-XX:+UseCMSCompactAtFullCollection` | 默认开启，jdk 9 废弃，用于在 CMS 收集器不得不进行 Full GC 时开启内存碎片的合并整理过程 |
+|   `-XX:CMSFullGCsBeforeCompaction`   | jdk 9 废弃，要求 CMS 在执行若干次（数量由参数值决定，默认为 0）不整理空间的 FullGC 之后，下一次进入 FullGC 前会先进行碎片整理 |
+|      `-XX:+UseConcMarkSweepGC`       |              开启 GMC 收集器，Jdk 9 废弃1` wQA               |
+
+###### GarbageFirst
+
+|          选项          |                      含义                      |
+| :--------------------: | :--------------------------------------------: |
+| `-XX:MaxGCPauseMillis` |           允许停顿时间，默认 200 秒            |
+| `-XX:G1HeapRegionSize` | 设置堆中 Region 区域大小 1 ~ 32 M，2 的 N 次幂 |
+|                        |                                                |
 
