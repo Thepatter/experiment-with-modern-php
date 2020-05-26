@@ -67,70 +67,54 @@ javap -c ClassName
 
 ###### 归档
 
-java 归档（JAR）文件既可以包含类文件，也可以包含诸如图像和声音这些其他类型的文件。
+```shell
+# jar [OPTION...] [ [--release VERSION] [-C dir] files] ...
+# 创建包含两个类文件的名为 class.jar 的档案
+jar --create --file classes.jar Foo.class Bar.class
+# 使用现有的清单创建档案，其中包含 foo/ 中的所有文件
+jar --create --file classes.jar --manifest mymanifest -C foo/ .
+# 创建模块化 jar 档案，其中模块描述符位于 classes/module-info.class
+jar --create --file foo.jar --main-class com.foo.Main --module-version 1.0 -C foo/ module-info.class
+# 将现有的非模块化 jar 更新为模块化 jar
+jar --update --file foo.jar --main-class com.foo.Main --module-version 1.0 -C foo/ module-info.class
+# 创建包含多个发行版的 jar, 并将一些文件放在 META-INF/versions/9 目录中：
+jar --create --file mr.jar -C foo classes --release 9 -C foo9 classes
+# 可以在单独的文本文件中指定参数并使用 @ 符号作为前缀将此文件传递给 jar 命令
+jar --create --file my.jar @classes.list
+```
 
-*JAR程序选项*
+jar 创建类和资源的档案，并且可以处理档案中的单个类或资源或者从档案中还原单个类或资源。
 
-* c
+*主操作模式*
 
-    创建一个新的或空的存档文件并加入文件。如果指定的文件名是目录，将递归处理
+|            选项             |               含义               |
+| :-------------------------: | :------------------------------: |
+|        `-c,--create`        |             创建档案             |
+| `-i, --generate-index=FILE` |  为指定的 jar 档案生成索引信息   |
+|         `-t,--list`         |          列出档案的目录          |
+|        `-u,--update`        |        更新现有 jar 档案         |
+|       `-x, --extract`       | 从档案中提取指定的（或全部）文件 |
+|   `-d, --describe-module`   |   输出模块描述符或自动模块名称   |
 
-* C
+*在任意模式下有效的操作修饰符*
 
-    改变 classes 子目录，增加类文件
+|        选项         |                             含义                             |
+| :-----------------: | :----------------------------------------------------------: |
+|      `-C DIR`       |                    更改为指定的目录并包含                    |
+|  `-f, --file=FILE`  |       档案文件名，省略时，基于操作使用 stdin 或 stdout       |
+| `--release VERSION` | 将下面的所有文件都放在 jar 的版本化目录中（即 META-INF/versions/VERSION/） |
+|   `-v, --verbose`   |                   在标准输出中生成详细输出                   |
 
-    ```shell
-    jar cvf JARFileName.jar -C classes *.class
-    ```
+*在创建和更新模式下有效的操作修饰符*
 
-* e
-
-    在清单文件中创建一个条目
-
-* f
-
-    将 jar 文件名指定为第二个命令行参数。如果没有这个参数，jar 命令会将结果写到标准输出上（在创建 jar 文件时）或者从标准输入中读取它（在解压或列出 jar 文件内容时）
-
-* i
-
-    建立索引文件，用于加快对大型归档的查找
-
-* m
-
-    将一个清单文件（manifest）添加到 jar 文件中，清单是对存档内容和来源的说明。每个归档有一个默认的清单文件。如果想验证归档文件的内容，可以提供自己的清单文件
-
-    ```shell
-    // 添加清单文件并打包
-    jar cmf myJarFile.jar myManifestFile.mf *.class
-    ```
-
-* M
-
-    不为条目创建清单文件
-
-* t
-
-    显示内容表
-
-    ```
-    jar tf myJarFile.jar
-    ```
-
-* u
-
-    更新一个已有的 jar 文件
-
-* v
-
-    生成详细的输出结果
-
-* x
-
-    解压文件，如果提供一个或多个文件名，只解压这些文件，否则解压所有文件
-
-* 0
-
-    存储，不进行 zip 压缩
+|             选项             |                             含义                             |
+| :--------------------------: | :----------------------------------------------------------: |
+| `-e, --main-class=CLASSNAME` | 操作到模块化或可执行 jar 档案的独立应用程序的应用程序入口点  |
+|    `-m, --manifest=FILE`     |                 包含指定清单文件中的清单信息                 |
+|     `-M, --no-manifest`      |                     不为条目创建清单文件                     |
+|  `--module-version=VERSION`  |        创建模块化 jar 或更新非模块化 jar 时的模块版本        |
+|   `--hash-modules=PATTERN`   | 计算和记录模块的散列，这些模块按指定模式匹配并直接或间接依赖于所创建的模块化 jar 或所更新的非模块化 jar |
+|     `-p, --module-path`      |              模块被依赖对象的位置，用于生成散列              |
 
 ###### 清单文件
 
