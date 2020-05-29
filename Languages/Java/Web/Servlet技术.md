@@ -7,14 +7,14 @@ Servlet 缺点
 * 写在 Servlet 中的所有 HTML 标签必须包含 Java 字符串
 * 所有的文本和 HTML 标签是硬编码，导致即使是表现层的微小变化，也需要重新编译
 
-##### Servlet 组成包
+##### Servlet 结构
 
-Servlet API 有 4 个包：
-
-* `javax.servlet` ，其中包含定义 `Servlet` 和 `Servlet` 容器之间契约的类和接口
-* `javax.servlet.http`，其中包含定义 `HTTP Servlet` 和 `Servlet` 容器之间契约的类和接口
-* `javax.servlet.annotation`，其中包含 `Servlet`，`Filter`，`Listener` 的注解。它还为被注解元件定义元数据
-* `javax.servlet.descriptor`，其中包含提供程序化登录 web 应用程序的配置信息的类型
+|             包             |                   内容                    |
+| :------------------------: | :---------------------------------------: |
+|      `javax.servlet`       | 定义了 *Servlet* 和容器之间关联的类和接口 |
+|    `javax.servlet.http`    |     定义了 HTTP Servlet 相关类和接口      |
+| `javax.servlet.annotation` | 定义了 Servlet、Filter、Listener 相关注解 |
+| `javax.servlet.descriptor` |              描述符相关接口               |
 
 Servlet 技术的核心是 `Servlet` 接口，它是所有 Servlet 类必须直接或间接实现的一个接口。在编写 `Servlet` 和 `Servlet` 类时，直接实现它。在扩展实现这个接口的类时，间接实现它。`Servlet` 接口定义了 `Servlet` 与 Servlet 容器之间的契约：Servlet 容器将 `Servlet` 类载入内存，并在 `Servlet` 实例上调用具体的方法。在一个应用程序中，每种 `Servlet` 类型只能有一个实例。
 
@@ -26,46 +26,41 @@ Servlet 技术的核心是 `Servlet` 接口，它是所有 Servlet 类必须直�
 
 ##### Servlet 接口
 
-###### Servlet
+###### *Servlet*
 
-Servlet 接口中定义了以下 5 个方法
+*Servlet* 接口是 Servlet 规范的核心接口，是所有 *Servlet* 类必须实现的接口，定义了以下 5 个方法
 
 ```java
+// init、service、destroy 是生命周期方法
+// 当该 Servlet 第一次被请求时，容器会调用该方法，后续请求中不再被调用，可以利用该方法执行相应的初始化工作。调用该方法时容器会传入一个 ServletConfig
 void init(ServletConfig config) throws ServletException
+// 每次请求 Servlet 时都会调用该方法
 void service(ServletRequest request, ServletResponse response) throws ServletException, java.io.IOException
+// 当要销毁 Servlet 时，Servlet 容器就会调用这个方法。当要卸载应用程序，或者要关闭 Servlet 容器时，就会发生这种情况。一般会在这个方法中编写清除代码
 void destroy()
+// 返回 Servlet 的描述，可以返回任何有用的字符串或 null
 java.lang.String getServletInfo()
+// 返回容器传给 init 方法的 ServletConfig
 ServletConfig getServletConfig()
 ```
 
-`init`、`service`、`destroy` 是生命周期方法。Servlet 容器根据以下规则调用：
+###### *ServletRequest*
 
-* `init`
+对于每个 HTTP 请求，Servlet 容器都会创建一个 *ServletRequest* 实例（封装了客户端请求的所有信息），并将它传给 *Servlet*.Service() 方法
 
-  当该 `Servlet` 第一次被请求时，Servlet 容器会调用这个方法。这个在后续请求中不会再被调用。可以利用这个方法执行相应的初始化工作。调用这个方法时，Servlet 容器会传入一个 `ServletConfig`。
+*ServletRequest* 接口的对象只在  *Servlet.Service()* 或 *Filter.doFilter()* 方法作用域内有效；除非启用了异步处理以调用 *ServletRequest*.startAsync()，此时会一直有效，直到调用 *AsyncContext.complete()*
 
-* `service` 
-
-  每当请求 `Servlet` 时，`Servlet` 容器就会调用这个方法。编写代码时，假设 `Servlet` 要在这里被请求。第一次请求 `Servlet` 时，`Servlet` 容器调用 `init` 方法和 `service` 方法。后续的请求将只调用 `service` 方法
-
-* `destroy`
-
-  当要销毁 `Servlet` 时，Servlet 容器就会调用这个方法。当要卸载应用程序，或者要关闭 `Servlet` 容器时，就会发生这种情况。一般会在这个方法中编写清除代码
-
-`getServletInfo` 、`getServletConfig` 为非生命周期方法
-
-* `getServletInfo`，这个方法会返回 `Servlet` 的描述。可以返回任何有用的字符串或 null
-* `getServletConfig`，这个方法会返回由 `Servlet` 容器传给 `init` 方法的 `ServletConfig`。但是，为了让 `getServletConfig` 返回一个非 null 值，必须将传给 `init` 方法的 `ServletConfig` 赋给一个类级变量，除非它们是只读的，或者是 `java.util.concurrent.atomic` 包的成员
-
-Servlet 规范提供了 `GenericServlet` 抽象类，可以通过扩展它来实现 Servlet。虽然 Servlet 规范并不在乎通信协议，但大多数的 Servlet 都是在 HTTP 环境中处理的，因此 Servlet 规范还提供了 `HttpServlet ` 来继承 `GenericServlet` ，并且加入了 HTTP 特性。这样可以通过继承 `HTTPServlet` 类来实现自己的 Servlet，不需要实现 `service` 方法，只需实现对应的 HTTP 方法
-
-###### ServletRequest
-
-对于每个 HTTP 请求，Servlet 容器都会创建一个 `ServletRequest` 实例，并将它传给 Servlet 的 `Service` 方法。`ServletRequest` 封装了关于这个请求的信息
+容器通常会出于性能重复使用 *ServletRequest* 对象
 
 ```java
+// 获取请求头 getHeader(); getHeaders();getHeaderNames();
 // 返回请求主体的字节数。失败 -1
 int getContentLength();
+// 获取请求路径 getContextPath; getServletPath; getPathInfo，对于路径变量，其中 requestURI=contextPath+servletPath+pathInfo;getRealPath方法则是获取某个相对路径对应的文件系统路径
+// 获取 Cookie getCookies();
+// 判断是否为 HTTPS isSecure();
+// 获取客户端语言环境 getLocale() getLocales() 对应 Accept-Language
+// 获取客户端编码 getCharacterEncoding()
 // 返回请求主题的 MIME 类型，失败 null
 String getConteneType();
 // 返回用于读取请求正文的输入流
@@ -88,9 +83,9 @@ Object getAttribute(String vr1);
 void removeAttribute(String name);
 ```
 
-###### ServletResponse
+###### *ServletResponse*
 
-`javax.servlet.ServletResponse` 接口表示一个 Servlet 响应，在调用 Servlet 的 `service` 方法前，Servlet 容器首先创建一个 `ServletResponse`，并将它作为第二个参数传给 `service` 方法。`ServletResponse` 隐藏了向浏览器发送响应的复杂过程。
+封装了服务器要返回客户端的所有信息
 
 ```java
 // 设置响应正文的字符编码，默认编码为 ISO-8859-1
@@ -139,11 +134,14 @@ ServletContext getServletContext();
 String getServletName();
 ```
 
-###### ServletContext
+###### *ServletContext*
 
-`ServletContext` 是 `Servlet` 和 `Servlet` 容器之间进行通信的接口。Servlet 容器为每个 Web 应用程序创建一个 `ServletContext`。在将一个应用程序同时部署到多个容器的分布式环境中，每台 Java 虚拟机上的 Web 应用都会有一个 `ServletContext`。有了 `ServletContext`，可以在 web 应用范围内存取共享数据，并且可以动态注册 Web 对象。`ServletContext` 将对象保存在 `ServletContext` 中的一个内部 Map 中。保存在 `ServletContext` 中的对象被称作属性。
+*ServletContext* 接口定义了应用运行的上下文，提供了 *Servlet* 与容器通信接口，*Servlet* 容器为每个 Web 应用程序创建一个 *ServletContext*，可以在应用范围内存取共享数据，并且可以动态注册 web 对象（*Filter*、*Servlet*、*Listener*），将对象保存在内部 Map 中
+
+所有 *Servlet* 及它们使用的类需要由一个单独的类加载器加载。每个实现 *ServletContext* 接口的对象都需要一个临时存储目录（容器会为每个 *ServletContext* 分配一个临时目录，在 *ServletContext* 接口中通过 javax.servlet.context.tempdir 属性获取该目录）
 
 ```java
+// 添加 Servlet、Filter、Listener 到 ServletContext addServlet、addFilter、addListener
 // 在 Web 应用范围内存取共享数据
 void setAttribute(String name, Object object);
 Object getAttribute(String name);
@@ -332,7 +330,9 @@ void invalidate();
 
 ###### GenericServlet
 
-`javax.servlet.GenericServlet` 抽象类实现了 `Servlet` 和 `ServletConfig` 接口，并作了：
+定义了一个通用的、协议无关的 *Servlet*
+
+javax.servlet.GenericServlet 抽象类实现了 *Servlet* 和 *ServletConfig* 接口，并作了：
 
 * 声明了类级变量 `ServletConfig config`，以保存 `init` 方法中传参
 
@@ -342,7 +342,9 @@ void invalidate();
 
 ###### HttpServlet
 
-`javax.servlet.http.HttpServlet` 继承自 `GenericServlet`，实现了 `Service` 方法。并重载了 `Service` 方法，使其基于 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServletResponse resp)` 来处理 HTTP 请求与响应。因此使用该抽象类时，处理对应请求动作的 HTTP 请求，只需覆盖对应的 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServeltResponse resp)` 方法。
+定义了 HTTP 的 *Servlet*
+
+javax.servlet.http.HttpServlet 继承自 `GenericServlet`，实现了 `Service` 方法。并重载了 `Service` 方法，使其基于 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServletResponse resp)` 来处理 HTTP 请求与响应。因此使用该抽象类时，处理对应请求动作的 HTTP 请求，只需覆盖对应的 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServeltResponse resp)` 方法。
 
 在开发 Web 应用时，自定义的 Servlet 类一般都继承该类。
 
