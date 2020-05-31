@@ -85,7 +85,7 @@ void removeAttribute(String name);
 
 ###### *ServletResponse*
 
-封装了服务器要返回客户端的所有信息
+封装了服务器要返回客户端的所有信息，*ServletResponse* 只在 *Servlet.service()* 或 *Filter*.doFilter() 方法作用域内有效，除非调用了 *startAsync* 方法启用异步处理，此时会一直有效，直到调用 complete() 方法，容器通常会出于性能重复利用 *ServletResponse* 对象
 
 ```java
 // 设置响应正文的字符编码，默认编码为 ISO-8859-1
@@ -110,15 +110,18 @@ ServletOutputStream getOutputStream();
 PrintWriter getWriter();
 ```
 
-`ServletOutputStream` 和 `PrintWriter` 先把数据写到缓冲区内，在以下情况下，缓冲区内的数据会被提交给客户：
+*ServletOutputStream* 和 *PrintWriter* 先把数据写到缓冲区内，在以下情况下，缓冲区内的数据会被提交给客户：
 
 * 缓冲区内数据已满时，会自动把缓冲区内的数据发送给客户端，并且清空缓冲区
-* Servlet 调用 `ServletResponse` 对象的 `flushBuffer()` 方法
-* Servlet 调用 `ServletOutputStream` 或 `PrintWriter` 对象的 `flush()` 方法或 `close()` 方法
+* Servlet 调用 *ServletResponse*.flushBuffer() 方法
+* Servlet 调用 *ServletOutputStream* 或 *PrintWriter* 对象的 flush() 方法或 close() 方法
 
-为了确保 `ServletOutputStream` 或 `PrintWriter` 输出的所有数据都会被提交给客户，比较安全的做法是在所有数据都输出完毕后，调用 `ServletOutputStream` 或 `PrintWriter` 的 `close()` 方法。
+为了确保 *ServletOutputStream* 或 *PrintWriter* 输出的所有数据都会被提交给客户，比较安全的做法是在所有数据都输出完毕后，调用 其对应的 close() 方法。
 
-如果要设置响应正文的MIME类型和字符编码，必须先调用 `ServletResponse` 对象的 `setContentType()` 和`setCharacterEncoding()` 方法，然后再调用 `ServletResponse` 的 `getOutputStream()` 或 `getWriter()` 方法，以及提交缓冲区内的正文数据。只有满足这样的操作顺序，所作的设置才能生
+如果要设置响应正文的 MIME 类型和字符编码，需要按以下顺序
+
+1. 先调用 *ServletResponse*.setContentType() 和 setCharacterEncoding() 方法
+2. 再调用 ServletResponse.getOutputStream() 或  getWriter() 方法，提交缓冲区内的正文数据
 
 ###### ServletConfig
 
@@ -173,11 +176,15 @@ void log(String var1, Throwable var2); // 向 Servlet 的日志文件中写错�
 ServletContext getContext(String uripath);
 ```
 
-###### RequestDispatcher
+###### *RequestDispatcher*
+
+请求分发负责把请求转发给另外一个 Servlet 处理，或在响应中包含另外一个 Servlet 的输出
 
 ```java
-// 把请求转发给目标组件
-// 处理流程：情况用于存放响应正文数据的缓冲区，如果目标组件为 Servlet 或 JSP，就调用它们的 service() 方法，把该方法的响应结果发送到客户端；如果目标组件为文件系统中的静态 HTML 文档，就读取文档中的数据并发送到客户端
+/**
+ * 把请求转发给目标组件
+ * 处理流程：
+         1.清空用于存放响应正文数据的缓冲区，如果目标组件为 Servlet 或 JSP，就调用它们的 service() 方法 把该方法的响应结果发送到客户端；如果目标组件为文件系统中的静态 HTML 文档，就读取文档中的数据并发送到客户端
 // 如果源组件在进行请求转发之前，已经提交了响应结果（ServletResponse 的 flushBuffer 方法，或与 ServletResponse 关联的输出六的 close 方法，会抛出 IllegalStateException 异常）
 void forward(ServletRequest request, ServletResponse response) throws ServletException, IOException;
 // 包含目标组件得响应结果
@@ -464,20 +471,22 @@ Filter 是干预过程的，它是过程的一部分，是基于过程行为的�
 
 ##### 过滤器简介
 
-过滤器能够对 Servlet 容器传给 web 组件的 `ServletRequest` 对象和 `ServletResponse` 对象进行检查和修改，过滤器本身不生成 `ServletRequest` 对象和 `ServletResponse` 对象，它只为 Web 组件（Servlet、JSP、HTML）提供过滤功能：
+过滤器能够对 Servlet 容器传给 web 组件的 *ServletRequest* 对象和 *ServletResponse* 对象进行检查和修改，过滤器本身不生成 *ServletRequest* 对象和 *ServletResponse* 对象，它只为 Web 组件（Servlet、JSP、HTML）提供过滤功能：
 
-* 过滤器能够在 Web 组件被调用之前检查 `ServletRequest` 对象，利用 ServletRequestWrapper 包装类修改请求头和请求正文，或对请求进行预处理
-* 过滤器能够在 Web 组件调用之后检查 `ServletResponse` 对象，利用 ServletResponseWrapper 包装类修改响应头和响应正文
+* 过滤器能够在 Web 组件被调用之前检查 *ServletRequest* 对象，利用 *ServletRequestWrapper* 包装类修改请求头和请求正文，或对请求进行预处理
+* 过滤器能够在 Web 组件调用之后检查 *ServletResponse* 对象，利用 *ServletResponseWrapper* 包装类修改响应头和响应正文
 
 *过滤器处理流程*
 
 ![](./Images/过滤器处理流程.png)
 
-可以在 `web.xml` 中或使用注解为过滤器映射特定的 URL。当客户请求访问此 URL 时，Servlet 容器会先触发过滤器。 Servlet 容器需要实例化 Filter 并把 Filter 链接成一个 `FilterChain`，当请求进来时，获取第一个 Filter 并调用 `doFilter` 方法，`doFilter` 方法负责调用这个 `FilterChain` 中的下一个 `Filter`（当一个资源或者某些资源需要被多个 Filter 所使用到，且它的触发顺序很重要时，只能通过部署描述符来配置）
+1. 在 web.xml 中或使用注解为过滤器映射特定的 URL
+2. 当客户请求访问此 URL 时，Servlet 容器会先触发过滤器
+3. Servlet 容器需要实例化 Filter 并把 Filter 链接成一个 FilterChain，当请求进来时，获取第一个 Filter 并调用 doFilter 方法，doFilter 方法负责调用这个 FilterChain 中的下一个 Filter（当一个资源或者某些资源需要被多个 Filter 所使用到，且它的触发顺序很重要时，只能通过部署描述符来配置）
 
-##### Filter API
+##### *Filter*
 
-所有自定义的过滤器类必须实现 `javax.servlet.Filter` 接口
+所有自定义的过滤器类必须实现 *javax.servlet.Filter* 接口
 
 ```java
 public interface Filter {
@@ -528,7 +537,7 @@ public interface FilterConfig {
 }
 ```
 
-###### 在 web.xml 文件中配置
+###### web.xml 文件
 
 在 web.xml 文件中，须先配置所有过滤器，再配置 Servlet
 
@@ -549,7 +558,7 @@ public interface FilterConfig {
 
 如果多个 Filter 应用于同一个资源，Filter 的触发顺序将变得非常重要，此时需要使用部署描述符来管理 Filter，指定那个 Filter 先被触发。Filter 会依照部署描述符中 Filter 配置顺序从上往下执行。每个 Filter 仅有一个实现，如果需要保持或改变 Filter 实现中的状态，需要考虑线程安全问题
 
-###### 使用 `@WebFilter` 注解配置
+###### @WebFilter 注解
 
 详情见 Servlet 注解中 WebFilter 注解
 
@@ -737,13 +746,17 @@ ServletRequest  Listeners
 
 #### Servlet 注解
 
-从 Servlet 3 开始，在 `javax.servlet.annotation` 包中引入了一组注解类型，可以注解包括 `servlet`，`filter`，`listener` 等 Web 对象，可以直接使用注解配置 web 应用
+从 Servlet 3 开始，在 javax.servlet.annotation 包中引入了一组注解类型，可以注解包括 servlet，filter，listener 等 Web 对象，可以直接使用注解配置 web 应用
 
-##### HandlesTypes
+##### @HandlesTypes
 
-这个注解用来声明 `ServletContainerInitializer` 可以处理的类。
+这个注解用来声明 ServletContainerInitializer 可以处理的类
 
-* 这个注解只有一个属性 `value`，该值为其可以处理的类
+*属性*
+
+| 属性  |     含义     |
+| :---: | :----------: |
+| value | 可以处理的类 |
 
 ```java
 // 该 initializer 可以处理 UsefulServlet
@@ -753,82 +766,70 @@ public class MyInitializer implements ServletContainerInitializer {
 }
 ```
 
-##### HttpConstraint
+##### @HttpConstraint
 
-表示施加到所有的 HTTP 协议方法的安全约束，且 HTTP 协议方法对应的 `@HttpMethodConstraint` 没有出现在 `@ServletSecurity` 注解中。此注解类型必须包含在 `ServletSecurity` 注解中
+表示施加到所有的 HTTP 协议方法的安全约束，且 HTTP 协议方法对应的 @HttpMethodConstraint 没有出现在 @ServletSecurity 注解中。此注解类型必须包含在 ServletSecurity 注解中
 
-* `rolesAllowed` 
+*属性*
 
-  包含授权角色的字符串数组
+|        属性        |                             含义                             |
+| :----------------: | :----------------------------------------------------------: |
+|    rolesAllowed    |                   包含授权角色的字符串数组                   |
+| transportGuarantee | 连接请求所必须满足的条件，有效值：ServletSecurity.TransportGuarantee 枚举成员 |
+|       value        |                           默认授权                           |
 
-* `transportGuarantee` 
+##### @HttpMethodConstraint
 
-  连接请求所必须满足的数据保护需求。有效值为 `ServletSecurity.TransportGuarantee` 枚举成员 `CONFIDENTIAL or NONE`
+特定的 HTTP 方法的安全性约束。只能出现在 @ServletSecurity 注解中
 
-* `value` 
+*属性*
 
-  默认授权
-
-##### HttpMethodConstraint
-
-特定的 HTTP 方法的安全性约束。只能出现在 `ServletSecurity` 注解中
-
-* `emptyRoleSemantic` 
-
-  当 `rolesAllowed` 返回一个空数组，应用默认授权语义。有效值为 `ServletSecurity.EmptyRoleSemantic` 枚举成员 `DENY or PERMIT`
-
-* `rolesAllowed` 
-
-  包含授权角色的字符串数组
-
-* `transportGuarantee` 
-
-  连接请求所必须满足的数据保护需求。有效值为 `ServletSecurity.TransportGuarantee` 枚举成员
-
-* `value` 
-
-  HTTP 协议方法
+|        属性        |                             含义                             |
+| :----------------: | :----------------------------------------------------------: |
+| emptyRoleSemantic  | 当 rolesAllowed 返回一个空数组，应用默认授权语义，有效值：ServletSecurity.EmptyRoleSemantic 枚举 |
+|    rolesAllowed    |                   包含授权角色的字符串数组                   |
+| transportGuarantee | 连接请求所必须满足的数据保护需求，有效值：ServletSecurity.TransportGuarantee 枚举 |
+|       value        |                        HTTP 协议方法                         |
 
 ```java
 // 该 servlet 可以被任何用户通过 GET 方法访问，但其他的 HTTP 方法只能被授予经理角色的用户访问
-@ServletSecurity(value = @HttpContraint(rolesAllowed = "manager"), httpMethodConstraints = {@HttpMethodConstraint("GET")})
+@ServletSecurity(
+    value = @HttpContraint(rolesAllowed = "manager"), 
+    httpMethodConstraints = {@HttpMethodConstraint("GET")}
+)
 // 该 Servlet 阻止所有通过 Get 方法的访问，但允许所有 member 角色的用户通过其他 HTTP 方法访问
-@ServletSecurity(value = @HttpConstraint(rolesAllowed = "member"), httpMethodConstraints = {@HttpMethodConstraint(value = "GET", emptyRoleSemantic = EmptyRoleSemantic.DENY)})
+@ServletSecurity(
+    value = @HttpConstraint(rolesAllowed = "member"), 
+    httpMethodConstraints = {
+        @HttpMethodConstraint(value = "GET", emptyRoleSemantic = EmptyRoleSemantic.DENY)
+    })
 ```
 
-##### MultipartConfig
+##### @MultipartConfig
 
-标注一个 Servlet 来指示该 Servlet 实例能够处理的 `multipart/form-data` 的 MIME 类型，在上传文件时通常会用到
+标注一个 Servlet 来指示该 Servlet 实例能够处理的 multipart/form-data 的 MIME 类型，在上传文件时通常会用到
 
-* `fileSizeThreshold`
+*属性*
 
-  当文件大小超过指定的大小后将写入到硬盘上
+|       属性        |                            含义                             |
+| :---------------: | :---------------------------------------------------------: |
+| fileSizeThreshold |          当文件大小超过指定的大小后将写入到硬盘上           |
+|     location      |                   文件保存在服务端的路径                    |
+|    maxFileSize    |          允许上传的文件最大值，默认 -1 即没有限制           |
+|  maxRequestSize   | 针对 multipart/form-data 请求的最大数量，默认 -1 即没有限制 |
 
-* `location`
+##### @ServletSecurity
 
-  文件保存在服务端的路径
+标注一个 Servlet 类在 Servlet 的应用安全约束
 
-* `maxFileSize`
+*属性*
 
-  允许上传的文件最大值。默认值为 -1，表示没有限制
+|         属性         |                             含义                             |
+| :------------------: | :----------------------------------------------------------: |
+| httpMethodConstrains |                   HTTP 方法的特定限制数组                    |
+|        value         | httpConstraint 定义了应用没有在 httpMethodConstraints 返回的数组中表示的所有 HTTP 方法保护 |
 
-* `maxRequestSize`
-
-  针对该 `multipart/form-data` 请求的最大数量，默认值为 -1，表示没有限制
-
-##### ServletSecurity
-
-标注一个 Servlet 类在 Servlet 的应用安全约束。出现在 `ServletSecurity` 注解的属性
-
-* `httpMethodConstrains` 
-
-  HTTP 方法的特定限制数组
-
-* `value`
-
-  `HttpConstraint` 定义了应用到没有在 `httpMethodConstraints` 返回的数组中表示的所有 HTTP 方法的保护
-
-##### WebFilter
+##### @WebFilter
 
 用于标注一个 Filter
 
@@ -868,27 +869,23 @@ dispatcherTypes 属性指定的调用过滤器模式（可以指定多个），�
 
   当待过滤的目标资源被异步访问时，Web 容器会先调用该过滤器
 
-##### WebInitParam
+##### @WebInitParam
 
-用于传递初始化参数到一个 `Servlet` 或过滤器。
+用于传递初始化参数到一个 Servlet 或 Filter
 
-* description
+*属性*
 
-  参数描述
+|    属性     |   含义   |
+| :---------: | :------: |
+| description | 参数描述 |
+|    name     |  参数名  |
+|    value    |  参数值  |
 
-* name
+##### @WebListener
 
-  初始化参数名
+标注一个 Listener，唯一属性为 value 是可选的，包括该 Listener 的描述，使用该注解的类必须实现以下接口之一：java.servlet.ServletContextListener、java.servlet.ServletContextAttributeListener、javax.servlet.ServletRequestListener、javax.servlet.ServletRequestAttributeListener、javax.servlet.http.HttpSessionListener、javax.servlet.http.HttpSessionAttributeListener、javax.servlet.http.HttpSessionIdListener
 
-* value
-
-  初始化参数值
-
-##### WebListener
-
-标注一个 Listener，唯一属性为 value 是可选的，包括该 Listener 的描述
-
-##### WebServlet
+##### @WebServlet
 
 标注一个 Servlet，标注的各个属性和 web.xml 文件中配置 Servlet 的特定元素对应。
 
@@ -938,7 +935,9 @@ Cookies 是一个很少的信息片段，可自动在浏览器和 Web 服务器�
 
 ##### Session
 
-Servlet 规范制定了基于 Java 的会话的具体运作机制。在 Servlet API 中定义了代表会话的 `javax.servlet.http.httpSession` 接口。Servlet 容器必须实现这一接口。当一个会话开始时，Servlet 容器将创建一个 `HttpSession` 对象，在 `HttpSession` 对象中可以存放表示客户状态的信息。Sevlet 容器为每个 `HttpSession` 对象分配一个唯一标识符，称为 Session ID
+Servlet 规范制定了基于 Java 的会话的具体运作机制。在 Servlet API 中定义了代表会话的 javax.servlet.http.H
+
+ttpSession 接口。Servlet 容器必须实现这一接口。当一个会话开始时，Servlet 容器将创建一个 `HttpSession` 对象，在 `HttpSession` 对象中可以存放表示客户状态的信息。Sevlet 容器为每个 `HttpSession` 对象分配一个唯一标识符，称为 Session ID
 
 * 当客户请求访问该 Web 组件时，Servlet 容器会自动查找 HTTP 请求中表示 Session ID 的 Cookie，以及向 HTTP 响应结果中添加表示 Session ID 的 Cookie。Servlet 容器还会创建新的 `HttpSession` 对象或者寻找已经存在的与 Session ID 对应的 `HttpSession` 对象
 * Web 组件可以访问代表当前会话的 `HttpSession` 对象
