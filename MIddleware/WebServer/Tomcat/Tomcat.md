@@ -8,94 +8,129 @@
 
 * 下载解压 Tomcat 安装包
 
-* 设置环境变量 
 
-  ```shell
-  export JAVA_HOME=/usr/local/tomcat
-  export CATALINA_HOME=/usr/local/tomcat
-  ```
+###### 配置环境变量
+
+```shell
+export JAVA_HOME=/path/to/jdk
+// Tomcat 安装的根目录（包含二进制文件等）
+export CATALINA_HOME=/path/to/tomcat
+// 当需要运行多个 Tomcat 实例时配置，表示特定 Tomcat 实例的运行时配置的根目录（包含配置文件、日志文件、已部署的应用及依赖的 jar）
+export CATALINA_BASE=/path/to/tomcat
+```
 
 ##### 目录结构
 
-*目录结构*
+###### CATALINA_HOME
 
-![](./Images/tomcat目录结构.png)
+|  目录   |                             描述                             |
+| :-----: | :----------------------------------------------------------: |
+|   bin   |                   操作 tomcat 的二进制程序                   |
+| webapps |       web 应用目录，默认情况下把 web 应用放在这个目录        |
+|  conf   |                     tomcat 配置文件目录                      |
+|   lib   |       tomcat 及所有 web 应用都可以访问的 jar 文件目录        |
+|  logs   | 存放 tomcat 执行时产生的日志文件：<br />catalina.Y-m-d.log 记录 Tomcat 启动过程的信息，包含启动 JVM 参数及操作系统日志，<br />localhost.Y-m-d.log 记录 web 应用在初始化过程中遇到的未处理异常，会被 Tomcat 捕获输出到这个日志文件<br />localhost_access_log Tomcat 的请求日志，包括 IP 地址，请求路径，事件，协议及状态码<br />manager/host-manager Tomcat 自带的 manager 项目日志信息 |
+|  work   |    Tomcat 工作目录，把项目运行时生成的目录存放在此目录下     |
 
-* `bin` 目录，启动和终止 Tomcat 的二进制程序
+###### CATALINA_BASE 目录
 
-* `webapps` Tomcat 的 Web 应用目录，默认情况下把 Web 应用放在这个目录
+在使用 CATALINA_BASE 之前，如果不创建所有建议的目录，Tomcat 会自动创建目录，如果无法创建必要的目录，Tomcat 将无法启动或无法运行
 
-* `conf` 配置文件目录，包括 `server.xml` 和 `tomcat-users.xml`；
+|                 目录                  |          用途          |                             备注                             |
+| :-----------------------------------: | :--------------------: | :----------------------------------------------------------: |
+|                 conf                  |          配置          | 必须包含 conf/server.xml、conf/web.xml，建议所有配置文件都复制到该目录 |
+|                  lib                  |       外部库依赖       |    推荐提供，首先查找 CATALINA_BASE，再查找 CATALINA_HOME    |
+|                 logs                  |          日志          |             推荐提供，特定于实例的日志文件的目录             |
+|                webapps                |        应用目录        |            推荐提供，查找顺序只查找 CATALINA_BASE            |
+|                 work                  |    web 应用工作目录    |                           推荐提供                           |
+|                  tmp                  | JVM 用于临时文件的目录 |                           推荐提供                           |
+| binsetenv.shsetenv.battomcat-juli.jar |       不推荐提供       |                                                              |
+|    tomcat-juli.jartomcat-juli.jar     |         不推荐         | 如果需要自己的日志实现，可在特定 Tomcat 实例 CATALINA_BASE 位置替换该文件 |
 
-* `lib` 存放 Tomcat 及所有 Web 应用都可以访问的 JAR 文件
+##### 启动
 
-* `logs` 存放 Tomcat 执行时产生的日志文件
+* Windows
 
-  `catalina.Y-m-d.log`：记录 Tomcat 启动过程的信息，可以看到启动的 JVM 参数及操作系统等日志
+    `startup.bat` 、`shutdown.bat`
 
-  `localhost.Y-m-d.log`：记录 Web 应用在初始化过程中遇到的未处理的异常，会被 Tomcat 捕获输出到这个日志文件
+* macos
 
-  `localhost_access_log`：Tomcat 的请求日志，包括 IP 地址，请求路径，事件，协议及状态码
+    ```shell
+    brew services tomcat
+    ```
 
-  `manager/host-manager`：Tomcat 自带的 manager 项目日志信息
+* linux
 
-* `work` Tomcat 的工作目录，在运行时把生成的一些工作文件放于此目录下。（默认存放 JSP 编译后产生的 Servlet 类文件）
+    ```shell
+    catalina.sh run
+    ```
 
-* 将 `JAVA_HOME` 环境变量设为 JDK 安装目录
+#### 组件结构
 
-##### server.xml
-
-Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Servlet 容器组件，它是所有其他 Tomcat 组件的顶层容器。Tomcat 的各个组件可以在 `<CATALINA_HOME>/conf/server.xml` 文件进行配置
+Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Server 容器组件，它是所有其他 Tomcat 组件的顶层容器。Tomcat 的各个组件可以在 *<CATALINA_HOME>/conf/server.xml* 文件进行配置
 
 *各Tomcat组件之间关系*
 
-```xml
-<Server>
-  <Service>
-  	<Connector/>
-    <Engine>
-      <Host>
-        <Context></Context>
-      </Host>
-    </Engine>
-  </Service>
-</Server>
-```
+<img src="./Images/tomcat组件.jpg" style="zoom:80%;" />
 
-*Tomcat组件之间嵌套关系*
+在 server.xml 文件中，每个元素都代表一种 tomcat 组件
 
-![](./Images/Tomcat各个组件之间的嵌套关系.jpeg)
+##### 顶级组件
 
-##### 组件
+###### Server
 
-在 server.xml 文件中，每个元素都代表一种 tomcat 组件：
+代表整个 Tomcat 的运行实例，在一个 jvm 中只会包含一个 Server，由 *org.apache.catalina.Server* 接口来定义。
 
-###### 顶层组件
+可以包含一个或多个 Service 组件，一个或多个 Listener 组件（Tomcat 整个生命周期中对不同事件进行处理），一个 GlobalNamingResources 组件（负责集成 JNDI，Tomcat 全局的命名资源实现）
 
-包括 `<Server>` 元素和 `<Service>` 元素
+*server 属性*
 
-* Server 元素
+|   属性    |                             描述                             |
+| :-------: | :----------------------------------------------------------: |
+| className | 指定实现 *org.apache.catalina.Server* 接口的类，默认为 *org.apache.catalina.core.StandardServer* |
+|   port    |     指定 Tomcat 监听 shutdown 命令的端口，必须设置该属性     |
+| shutdown  | 终止Tomcat服务器运行时，发送给监听端口的字符串，必须设置该属性 |
 
-  代表整个 Servlet 容器组件，可以包含一个或多个 Service 组件。由 `org.apache.catalina.Server` 接口来定义。
+Tomcat 的整个生命周期存在很多阶段：初始化前、初始化中、初始化后、启动前、启动中、启动后、停止前、停止中、停止后、销毁中、销毁后，为了在 Server 组件的某阶段执行某些逻辑，Tomcat 提供了监听器机制。
 
-  |   属性    |                             描述                             |
-  | :-------: | :----------------------------------------------------------: |
-  | className | 指定实现 `org.apache.catalina.Server` 接口的类，默认为 `org.apache.catalina.core.StandardServer` |
-  |   port    |     指定 Tomcat 监听 shutdown 命令的短裤，必须设置该属性     |
-  | shutdown  | 终止Tomcat服务器运行时，发送给监听端口的字符串，必须设置该属性 |
+在 Tomcat 中实现一个生命周期监听器只需实现 *LifecycleListener* 接口即可，在 lifecycleEvent 方法中对感兴趣的生命周期事件进行处理
 
-* Service 元素
+*   *org.apache.catalina.core.AprLifecycleListener*
 
-  Service 元素中包含一个 Engine 元素，以及一个或多个 Connector 元素，这些 Connector 元素共享同一个 Engine 元素。由 `org.apache.catalina.Service` 接口定义
+    使用 APR 本地库进行优化，通过 JNI 方式调用本地库能提高对静态文件的处理能力，在 Tomcat 初始化前，该监听器会尝试初始化 APR 库，假如能初始化成功，则会使用 APR 接受客户端的请求并处理请求，在 Tomcat 销毁后，该监听器会做 APR 的清理工作
 
-  |   属性    |                             描述                             |
-  | :-------: | :----------------------------------------------------------: |
-  | className | 指定实现接口类，默认 `org.apache.catalina.core.StandardService` |
-  |   name    |                      定义 Service 名字                       |
+*   *org.apache.catalina.core.JasperListener*
 
-###### 连接器类组件
+    在 Tomcat 初始化前，该监听器会初始化 Jasper 组件，Jasper 是 Tomcat 的 JSP 编译器核心引擎，用于在 Web 应用启动前初始化 Jasper
 
-为 `<Connector>` 元素，代表客户与服务器之间的通信接口，负责将客户的请求发送给服务器，并将服务器的响应结果发送给客户。
+*   *org.apache.catalina.core.JreMemoryLeakPreventionListener*
+
+    该监听器主要提供解决 jre 内存泄漏和锁文件的一种措施，该监听器会在 Tomcat 初始化时使用系统类加载器先加载一些类和设置缓存属性，以避免内存泄漏和锁文件（一种 jre 内存泄漏是因为上下文类加载器导致的内存泄漏。在 jre 库中某些类在运行时会以单例对象的形式存在，并且它们会存在很长一段时间，基本上是从 java 程序启动到关闭。jre 库的这些类使用上下文类加载器进行加载，并且保留了上下文类加载器的引用，所以将导致被引用的类加载器无法被回收，而 Tomcat 在重加载一个 Web 应用时正是通过实例化一个新的类加载器来实现的，旧的类加载器无法被垃圾回收器回收，导致内存泄漏）
+
+*   *org.apache.catalina.mbeans.GlobalResourcesLifecycleListener*
+
+    该监听器主要负责实例化 Server 组件里 JNDI 资源的 MBean，并提交由 JMX 管理，它会在启动时为 JNDI 创建 MBean，在停止时销毁 MBean
+
+*   *org.apache.catalina.core.ThreadLocalLeakPreventionListener*
+
+    主要解决 ThreadLocal 的使用可能带来的内存泄漏问题。该监听器会在 Tomcat 启动后将 Web 应用重加载的监听器注册到每个 Web 应用上，当 Web 应用重加载时，该监听器会将所有工作线程销毁并再创建，以避免 ThreadLocal 引起的内存泄漏
+
+###### Service
+
+是服务的抽象，代表请求从接收到处理的所有组件的集合，由 *org.apache.catalina.Service* 接口定义
+
+Service 组件包含若干用于接收客户端消息的 Connector 组件和一个处理请求的 Engine 组件
+
+|   属性    |                             描述                             |
+| :-------: | :----------------------------------------------------------: |
+| className | 指定实现接口类，默认 *org.apache.catalina.core.StandardService* |
+|   name    |                      定义 Service 名字                       |
+
+##### 连接器类组件
+
+###### Connector
+
+接收客户端连接并接收消息报文，消息报文经由它解析后送往容器中处理，每种协议对应一个 Connector 组件，目前支持 HTTP、HTTPS、AJP
 
 ```xml
 <!-- 通过 8080 接收 HTTP 请求 -->
@@ -118,8 +153,8 @@ Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Servle
 |       属性        |                             描述                             |
 | :---------------: | :----------------------------------------------------------: |
 |      address      | 如果服务器有两个以上 IP 地址，该属性可以设定端口监听的 IP 地址，默认情况下，端口会监听服务器上所有 IP 地址 |
-|    maxThreads     | 设定处理客户请求的线程的最大数目，这个值苦厄定了服务器可以同时响应客户请求的最大数目，默认值为 200 |
-|    acceptCount    | 客户请求队列中存放了等待被服务器处理的客户请求。该属性用于设定在客户请求队列中的最大客户请求数。默认 100.如果队列已满，新的客户请求将被拒绝 |
+|    maxThreads     | 设定处理客户请求的线程的最大数目，这个值设定了服务器可以同时响应客户请求的最大数目，默认值为 200 |
+|    acceptCount    | 客户请求队列中存放了等待被服务器处理的客户请求。该属性用于设定在客户请求队列中的最大客户请求数。默认 100 如果队列已满，新的客户请求将被拒绝 |
 | connectionTimeout |   建立客户链接超时时间，单位毫秒， -1 为无限制。默认 20000   |
 |  maxConnections   | 设定在任何时刻服务器会接受并处理的最大连接数。当服务器接受和处理的连接数达到这个上限时，新的连接将被阻塞。 |
 |  maxCookieCount   | 指定对于一个客户请求所允许的最大 Cookie 数目。默认 200，如果设为一个负数，则无限制 |
@@ -127,13 +162,19 @@ Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Servle
 |  maxSwallowSize   | 指定请求正文的最大长度，以字节为单位，默认 2097152（2mb）。为负，则无限制 |
 |     executor      |                    指定所使用执行器的名字                    |
 
-###### 执行器组件
+每个 Connector 都将指定一个端口进行监听，分别负责对请求报文解析和对响应报文组装，解析过程生成 Request 对象。再同个 Service 实例内可以配置若干 Connector 实例，端口必须不同，但协议可以相同。HTTP Connector 包含的协议处理组件有 Http11Protocol（Java BIO 模式），Http11NioProtocol（Java NIO 模式）和 Http11AprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式。
 
-执行器类元素 `<Executor>` 代表可以被 Tomcat 的其他组件共享的线程池。由于 `<Connector>` 元素可能会引用 `<Executor>` 元素配置的执行器，因此需放在需要引用元素前面。
+AJP Connector 组件用于支持 AJP 协议通信，AJP Connector 包含的协议处理组件有 AjpProtocol（Java BIO 模式），AjpNioProtocol（Java NIO 模式），AjpAprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式
 
-|      属性       |                              --                              |
+##### 执行器组件
+
+###### Executor
+
+代表可以被 Tomcat 的其他组件共享的线程池。由于 Connector 元素可能会引用 Executor 元素配置的执行器，因此需放在需要引用元素前面。
+
+|      属性       |                             含义                             |
 | :-------------: | :----------------------------------------------------------: |
-|    className    | 指定实现类，默认 `org.apache.catalina.StandardThreadExecutor` |
+|    className    | 指定实现类，默认 *org.apache.catalina.StandardThreadExecutor* |
 |      name       |             执行器名字，其他配置元素会引用该名字             |
 | threadPriority  | 设定线程池中线程的优先级别，默认值为 5（Thread.NORM_PRIORITY）取值 |
 |     daemon      |        设置线程池中的线程是否为后台线程，默认为 true         |
@@ -141,142 +182,161 @@ Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Servle
 |   maxThreads    |           设定线程池中线程的最大数目，默认值为 200           |
 | minSpareThreads |  设定线程池中处于空闲或运行状态的线程的最小数目，默认为 25   |
 |   maxIdleTime   | 设定一个线程允许处理闲置状态的最长时间，单位毫秒，默认 60000，当线程池中的线程数超过了属性值，会关闭限制时间超过该值线程 |
-|  maxQueueSize   | 可运行任务队列中存放了等待运行的任务，此属性设定存放在该队列中任务的最大数目，默认值为 `Integer.MAX_VALUE` |
+|  maxQueueSize   | 可运行任务队列中存放了等待运行的任务，此属性设定存放在该队列中任务的最大数目，默认值为 *Integer*.MAX_VALUE |
 
-###### 容器类组件
+##### 容器类组件
 
-代表处理客户请求并生成响应结果的组件，有四种容器类元素，分别为 ：`<Engine>`、`<Host>`、`<Context>`、`<Cluster>` 元素
+代表处理客户请求并生成响应结果的组件
 
-* Engine
+###### Engine
 
-  为特定的 Service 组件处理所有客户请求，处理在同一个 Service 中的所有 Connector 元素接收到的客户请求。由 `org.apache.catalina.Engine` 接口定义
+为特定的 Service 组件处理所有客户请求，处理在同一个 Service 中的所有 Connector 元素接收到的客户请求，由 *org.apache.catalina.Engine* 接口定义
 
-  |    描述     |                             属性                             |
-  | :---------: | :----------------------------------------------------------: |
-  |  className  |  指定实现类，默认 `org.apache.catalina.core.StandardEngine`  |
-  | defaultHost | 指定处理客户请求的默认主机名，在 Engine 的 Host 子元素中必须定义该主机 |
-  |    name     |                      定义 Engine 的名字                      |
+|    描述     |                             属性                             |
+| :---------: | :----------------------------------------------------------: |
+|  className  |  指定实现类，默认 *org.apache.catalina.core.StandardEngine*  |
+| defaultHost | 指定处理客户请求的默认主机名，在 Engine 的 Host 子元素中必须定义该主机 |
+|    name     |                      定义 Engine 的名字                      |
 
-  Engine 中可以包含 `<Realm>`、`<Value>`、`<Host>` 子元素
+Engine 中可以包含 Realm、Value、Host 子元素
 
-* Host
+###### Host
 
-  为特定的虚拟主机处理所有客户请求，一个 Engine 元素中可以包含多个 Host 元素，每个 host 元素定义一个虚拟主机，可以包含一个或多个 web 应用。由 `org.apache.catalina.Host` 接口定义。
+代表虚拟主机，处理特定虚拟主机的所有客户请求，由 *org.apache.catalina.Host* 接口定义，可以存放若干代表 Web 应用的 Context 组件，可以有一个或多个 alias 元素，指定别名
 
-  |      属性       |                             描述                             |
-  | :-------------: | :----------------------------------------------------------: |
-  |    className    |     指定实现类，默认 `org.apache.catalina.StandardHost`      |
-  |     appBase     | 指定虚拟主机的目录，可以指定绝对目录，也可以指定相对于 `<CATALINA_HOME>` 的相对目录，如果未设定，默认为 `<CATALINA_HOME>/webapps` |
-  |   unpackWARS    | 为 true，将把 Web 应用的 WAR 文件先展开为开发目录结构后再运行，如果设为 false，将直接运行 WAR 文件 |
-  |   autoDeploy    | 为 true，当 Tomcat 服务器处于运行状态时，能够检测 appBase 下的文件，如果有新的 web 应用加入，会自动发布 |
-  |      alias      |             指定虚拟主机的别名，可以指定多个别名             |
-  | deployOnStartup | 为 true，当 Tomcat 启动时自动发布 appBase 目录下所有 web 应用，如果 Web 应用在 server.xml 中没有相应的 `<Context>` 元素，将采用默认 `<Context>` 元素。默认值为 true |
-  |      name       |                       定义虚拟主机名字                       |
-  |     workDir     | 指定虚拟主机的工作目录。运行时会把与这个虚拟主机的所有 Web 应用相关的临时文件放在此目录下。默认为 `<CATALINA_HOME>/work`。如果 `<Host>` 元素下的一个 `<Context>` 元素也设置了 workDir 属性，那么 `<Context>` 元素的 workDir 属性会覆盖该属性 |
-  |    deployXML    | 如果设为 false，那么 Tomcat 不会解析 web 应用中用于设置 Context 元素的 META-INF/context.xml 文件。默认为 true |
+|      属性       |                             描述                             |
+| :-------------: | :----------------------------------------------------------: |
+|    className    |     指定实现类，默认 *org.apache.catalina.StandardHost*      |
+|     appBase     | 指定虚拟主机的目录，可以指定绝对目录，也可以指定相对于 <CATALINA_HOME> 的相对目录，如果未设定，默认为 *<CATALINA_HOME>/webapps* |
+|   unpackWARS    | 为 true，将把 Web 应用的 WAR 文件先展开为开发目录结构后再运行，如果设为 false，将直接运行 WAR 文件 |
+|   autoDeploy    | 为 true，当 Tomcat 服务器处于运行状态时，能够检测 appBase 下的文件，如果有新的 web 应用加入，会自动发布 |
+|      alias      |             指定虚拟主机的别名，可以指定多个别名             |
+| deployOnStartup | 为 true，当 Tomcat 启动时自动发布 appBase 目录下所有 web 应用，如果 Web 应用在 server.xml 中没有相应的 `<Context>` 元素，将采用默认 `<Context>` 元素。默认值为 true |
+|      name       |                       定义虚拟主机名字                       |
+|     workDir     | 指定虚拟主机的工作目录。运行时会把与这个虚拟主机的所有 Web 应用相关的临时文件放在此目录下。默认为 *<CATALINA_HOME>/work*，如果 `<Host>` 元素下的一个 `<Context>` 元素也设置了 workDir 属性，那么 `<Context>` 元素的 workDir 属性会覆盖该属性 |
+|    deployXML    | 如果设为 false，那么 Tomcat 不会解析 web 应用中用于设置 Context 元素的 *META-INF/context.xml* 文件。默认为 true |
 
-  `<Host>` 元素可以有一个或多个 `<alias>` 元素，指定别名
+###### Context
 
-* Context
+为特定的 Web 应用处理所有客户的请求，每个 Context 元素代表了运行在虚拟主机上的单个 Web 应用，一个 host 可以包含多个 Context 元素，由 *org.apache.catalina.Context* 接口定义
 
-  为特定的 Web 应用处理所有客户的请求，每个 Context 元素代表了运行在虚拟主机上的单个 Web 应用，一个 host 可以包含多个 Context 元素。由 `org.apache.catalina.Context` 接口定义。
+|    属性     |                              --                              |
+| :---------: | :----------------------------------------------------------: |
+|  className  |    指定实现类，默认 *org.apache.catalina.StandardContext*    |
+|    path     |                指定访问该 Web 应用的 URL 入口                |
+|   docBase   | 指定 Web 应用的文件路径，可以给定绝对路径，也可以给定相对于 Host 的 appBase 属性的相对路径。如果 Web 采用开放目录接口，则指定根目录，采用 WAR 则指定 WAR 文件路径 |
+| reloadable  | 为 true，在运行状态下会监视 WEB-INF/classes 和 WEB-INF/lib 目录下的 class 文件的改动，以及监视 WEB-INF/web.xml 文件的改动。如果有改动则自动刷新，默认为 false，（建议开放为 true，生产为 false） |
+|   cookies   |       指定是否通过 Cookie 来支持 Session，默认为 true        |
+| unloadDelay |   设定 Tomcat 等待 Servlet 卸载的毫秒数，该属性默认为 2000   |
+|   workDir   | 指定 web 应用的工作目录。Tomcat 运行时会把与这个 web 应用相关的临时文件放在此目录下 |
+|  uppackWar  | 为 true，将把 web 应用的 WAR 文件先展开为开放目录结构后再运行，false 则直接运行，默认为 true |
 
-  |    属性     |                              --                              |
-  | :---------: | :----------------------------------------------------------: |
-  |  className  |    指定实现类，默认 `org.apache.catalina.StandardContext`    |
-  |    path     |                指定访问该 Web 应用的 URL 入口                |
-  |   docBase   | 指定 Web 应用的文件路径，可以给定绝对路径，也可以给定相对于 Host 的 appBase 属性的相对路径。如果 Web 采用开放目录接口，则指定根目录，采用 WAR 则指定 WAR 文件路径 |
-  | reloadable  | 为 true，在运行状态下会监视 WEB-INF/classes 和 WEB-INF/lib 目录下的 class 文件的改动，以及监视 WEB-INF/web.xml 文件的改动。如果有改动则自动刷新，默认为 false，（建议开放为 true，生产为 false） |
-  |   cookies   |       指定是否通过 Cookie 来支持 Session，默认为 true        |
-  | unloadDelay |   设定 Tomcat 等待 Servlet 卸载的毫秒数，该属性默认为 2000   |
-  |   workDir   | 指定 web 应用的工作目录。Tomcat 运行时会把与这个 web 应用相关的临时文件放在此目录下 |
-  |  uppackWar  | 为 true，将把 web 应用的 WAR 文件先展开为开放目录结构后再运行，false 则直接运行，默认为 true |
+###### Cluster
 
-  Context 元素中可以包含 `<Realm>`、`<Value>`、`<Resource>` 、`<Manager>` 等子元素
+为 Tomcat 集群进行会话复制、Context 组件属性的复制，以及集群范围内 WAR 文件的发布
 
-* Cluster
+##### 嵌套类元素
 
-  为 Tomcat 集群进行会话复制、Context 组件属性的复制，以及集群范围内 WAR 文件的发布
+代表可以嵌入到容器中的组件
 
-* 嵌套类元素
+###### Realm
 
-  代表可以嵌入到容器中的组件，如 `<Value>` 元素和 `<Realm>` 元素
+提供用户-密码-权限的数据对象，配合资源认证模块使用
 
-##### 启动
+###### Value
 
-* Windows
+###### Listener
 
-  `startup.bat` 、`shutdown.bat`
+可以在 Tomcat 生命周期中完成某些组件监听的监听器
 
-* macos
+###### Pipeline
 
-  ```shell
-  brew services tomcat
-  ```
-  
-* linux
+对请求进行处理的管理
 
-  ```shell
-  catalina.sh run
-  ```
+###### AccessLog
 
-##### 加载模式
-
-Tomcat 的类加载器负责为 Tomcat 本身以及 Java Web 应用加载相关的类。假如 Tomcat 的类加载器要为一个 Java Web 应用加载一个名为 `Sample` 的类，类加载器会安装以下顺序到各个目录中去查找 `Sample` 类的 `.class` 文件，直到找到为止，如果所有目录都不存在 `.class` 文件，则抛出异常。加载顺序（子女优先）：
-
-1.在 Java Web 应用的 `WEB-INF/classes` 目录下查找
-
-2.在 Java Web 应用的 `WEB-INF/lib` 目录下的 JAR 文件中查找
-
-3.在 Tomcat 的 lib 子目录下直接查找
-
-4.在 Tomcat 的 lib 子目录下的 Jar 文件中查找
-
-##### 管理界面配置
-
-* 配置用户角色
-
-  编辑 `conf` 目录中的 `Tomcat-user.xml` 来创建用户和角色。role 元素定义角色，user 元素定义用户。
-
-  *tomcat-users.xml*
-
-  ```xml
-  <?xml version='1.0' encoding='utf-8'>
-  <tomcat-users>
-      <role rolename="manager-gui"/>
-      <role rolename="admin-gui"/>
-      <user username="tom" password="secret" roles="manager-gui,admin-guir"/>
-      <user username="jerry" password="secret" roles="admin-gui"/>
-  </tomcat-users>
-  ```
-
-* 允许远程访问
-
-   `webapps` 下的 `host-manager` 和 `manager` 都有一个共同的文件夹 `META-INF`，里面都有 `context.xml`，这个文件夹的内容是
-
-  ```xml
-  <Context antiResourceLocking="false" privileged="true" >
-    <Valve className="org.apache.catalina.valves.RemoteAddrValve"
-           allow="127.d+.d+.d+|::1|0:0:0:0:0:0:0:1" />
-  </Context>
-  ```
-
-  修改为无限制
-
-  ```xml
-  <Context antiResourceLocking="false" privileged="true" >
-    <Valve className="org.apache.catalina.valves.RemoteAddrValve"
-           allow=".*" />
-  </Context>
-  ```
+客户端的访问日志
 
 #### 工作模式
 
+##### 运行模式
+
 Tomcat 有三种工作模式
 
-* Tomcat 在一个 Java 虚拟机进程中独立运行，可看作是能运行 Servlet 的独立 Web 服务器
+* Tomcat 在一个 java 虚拟机进程中独立运行，可看作是能运行 Servlet 的独立 Web 服务器
 * Tomcat 运行在其他 Web 服务器的进程中，Tomcat 不直接和客户端通信，仅仅为其他 Web 服务器处理客户端访问 Servlet 的请求
-* 尽管Tomcat在一个Java虚拟机进程中独立运行，但是它不直接和客户端通信，仅仅为与它集成的其他Web服务器处理客户端访问Servlet的请
+* Tomcat 在一个 java 虚拟机进程中独立运行，但是它不直接和客户端通信，仅仅为与它集成的其他 Web 服务器处理客户端访问 Servlet 的请求
+
+###### 请求处理流程
+
+1.  当 Tomcat 启动后，Connector 组件的接收器（Acceptor）将会监听是否有客户端套接字连接并接收 Socket
+2.  监听到客户端连接，则将连接交由线程池 Executor 处理，开始执行请求
+3.  Http11Processor 组件负责从客户端连接中读取消息报文，然后开始解析 HTTP 的请求行、请求头、请求体，将解析后的报文封装成 Request 对象
+4.  Mapper 组件根据 HTTP 协议请求行的 URL 属性值和请求头的 Host 属性值匹配对应的 Host 容器、Context 容器、Wrapper 容器（根据请求从 Tomcat 找到对应的 Servlet）然后将路由的结果封装到 Request 对象中
+5.  CoyoteAdaptor 组件负责将 Connector 组件和 Engine 容器连接起来，将生成的 Request 和 Response 传递到 Engine，调用它的管道
+6.  Engine 容器管道开始处理请求，管道包含如果阀门（Value），每个阀门负责某些处理逻辑，最后执行基础阀门 EngineValue，它负责调用 Host 容器的管道
+7.  Host 容器的管道开始处理请求，它同样也包含若干阀门，首先执行这些阀门，然后执行基础阀门 HostValue，继续调用 Context 管道
+8.  Context 容器管道开始处理请求，首先执行若干阀门，然后执行基础阀门 ContextValue，它负责调用 Wrapper 容器的管道
+9.  Wrapper 容器管道开始处理请求，首先执行若干阀门，然后执行基础阀门 WrapperValue，它会执行该 Wrapper 容器对应的 Servlet 对象的处理方法，对请求进行逻辑处理，并将结果输出到客户端
+
+##### 加载模式
+
+###### 类加载
+
+Tomcat 的类加载器负责为 Tomcat 本身以及 Web 应用加载相关的类。假如 Tomcat 的类加载器要为一个 Web 应用加载一个名为 *Sample* 的类，类加载器查找 .class 文件顺序如下（子加载器优先），如果以下目录都不存在 .class 文件，则抛出异常
+
+1.  在 Web 应用的 *WEB-INF/classes* 目录下查找
+2.  在 Web 应用的 *WEB-INF/lib* 目录下的 jar 文件中查找
+3.  在 Tomcat 的 lib 子目录下直接查找
+4.  在 Tomcat 的 lib 子目录下的 jar 文件中查找
+
+#### 配置
+
+##### 管理界面配置
+
+###### 配置用户角色
+
+编辑 `conf` 目录中的 `Tomcat-user.xml` 来创建用户和角色。role 元素定义角色，user 元素定义用户。
+
+*tomcat-users.xml*
+
+```xml
+<?xml version='1.0' encoding='utf-8'>
+<tomcat-users>
+    <role rolename="manager-gui"/>
+    <role rolename="admin-gui"/>
+    <user username="tom" password="secret" roles="manager-gui,admin-guir"/>
+    <user username="jerry" password="secret" roles="admin-gui"/>
+</tomcat-users>
+```
+
+###### 允许远程访问
+
+`webapps` 下的 `host-manager` 和 `manager` 都有一个共同的文件夹 `META-INF`，里面都有 `context.xml`，这个文件夹的内容是
+
+```xml
+<Context antiResourceLocking="false" privileged="true" >
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow="127.d+.d+.d+|::1|0:0:0:0:0:0:0:1" />
+</Context>
+```
+
+修改为无限制
+
+```xml
+<Context antiResourceLocking="false" privileged="true" >
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow=".*" />
+</Context>
+```
+
+##### 变量及属性
+
+在 Tomcat 中，启动时会涉及大量环境变量、JVM 系统属性及 Tomcat 属性：
+
+*   环境变量在操作系统中配置，也可以在批处理中添加或修改环境变量，在 Tomcat 程序中可通过 System.getenv(name) 获取环境变量
+*   JVM 系统属性可以是 JVM 自带的属性，也可以是 Java 执行命令中通过 -D 参数配置，在 Tomcat 程序中可以 System.getProperty(name) 获取 JVM 系统属性
+*   Tomcat 属性主要通过 catalina.properties 配置文件配置，在 Tomcat 启动时会加载，Tomcat 程序通过 CatalinaProperties 获取
 
 #### Context 元素
 
