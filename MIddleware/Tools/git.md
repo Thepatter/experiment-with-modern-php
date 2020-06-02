@@ -492,9 +492,8 @@ git clone user@server:project.git
     git commit -m "initial commit"
     git remote add origin git@gitserver:/opt/git/project.git
     git push origin master
-    
     ```
-
+    
 * 另一个办法是让 SSH 服务器通过某个 LDAP 服务，或者其他已经设定好的集中授权机制，来进行授权。 只要每个用户可以获得主机的 shell 访问权限，任何 SSH 授权机制你都可视为是有效的。
 
 
