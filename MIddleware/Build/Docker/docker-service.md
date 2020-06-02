@@ -18,7 +18,7 @@ Docker Compose 能够在 Docker 节点上，以单引擎模式进行多容器应
 
 ###### 服务栈
 
-以 swarm 集群模式运行，由 *docker stack deploy* 运行，一般由一个 *docker-compose.yml* 文件定义
+以 swarm 集群模式运行，由 *docker stack deploy* 运行，一般由一个 *docker-compose.yml* 文件定义服务栈
 
 ##### version
 
@@ -83,7 +83,7 @@ image: webapp:tag
 | :--------: | :----------------------------------------------------------: |
 |  context   |  包含 Dockerfile 的目录路径（绝对或相对），或 git 仓库 URL   |
 | dockerfile |          指定替代 Dockerfile 文件，必须指定构建路径          |
-|    args    | 添加构建参数（必须先在 Dockerfile 中指定参数），只能在构建过程中访问（参数不赋值则使用环境参数，布尔值："true","false","yes","no","on","off" 必须使用引号 ） |
+|    args    | 添加构建参数（必须先在 Dockerfile 中定义参数），只能在构建过程中访问（参数不赋值则使用环境参数，布尔值："true","false","yes","no","on","off" 必须使用引号 ） |
 | cache_from |                3.2 版本开始，引擎缓存映像列表                |
 |   labels   |                    3.3 版本启用，映像标签                    |
 |  network   |       3.4 版本启用，构建过程中设置 RUN 指令连接的网络        |
@@ -155,9 +155,9 @@ command: ["bundle", "exec", "thin", "-p", "3000"]
         configs:  # 授予 redis 服务访问以下配置
           - source: my_config  # docker 中存在的配置名称
             target: /redis_config # 要在服务的任务容器中挂载的文件路径和名称，默认为 /<source>
-            uid: '103'    # 服务的任务容器中拥有已挂载的配置文件的数字 UID/GID 默认 0，windows 不支持
+            uid: '103'    # 指定容器挂载的配置文件的数字 UID/GID 默认 0，windows 不支持
             gid: '103'
-            mode: 0440  # 服务的任务容器中装入的文件的权限，八进制表示，默认 0444
+            mode: 0440  # 指定挂载文件的权限，八进制表示，默认 0444
     configs:
       my_config:
         file: ./my_config.txt
@@ -201,7 +201,7 @@ services:
   	image: postgres
 ```
 
-声明服务间依赖性，服务依赖性：
+声明服务依赖性，服务依赖决定服务启动顺序：
 
 * compose up/stop 以依赖顺序启动服务，即 db 和 redis 在 web 之前启动/停止
 * compose up SERVICE 自动包含 SERVICE 的依赖项，即 up web 会创建并启动 db 和 redis 服务
@@ -391,7 +391,7 @@ extra_hosts:
 
 ```yaml
 healthcheck:
-  # 检测方法，必须是字符串（等价 CMD—SHELL 和姐字符串）或列表（列表，第一项必须是 NONE、CMD、CMD-SHELL）
+  # 检测方法，必须是字符串（等价 CMD—SHELL 和 json 字符串）或列表（列表，第一项必须是 NONE、CMD、CMD-SHELL）
   test: ["CMD", "curl", "-f", "http://localhost"]
   interval: 1m30s		# 间隔
   timeout: 10s			# 超时
@@ -422,7 +422,7 @@ services:
 
 ###### isolation
 
-配置容器的隔离，Linux 仅支持 的发了，window  支持 default、process、hyperv
+配置容器的隔离，Linux 仅支持 default，window  支持 default、process、hyperv
 
 ###### labels
 
@@ -560,7 +560,7 @@ pid: "host"
 
     3.2 版本支持长语法
 
-暴露服务端口
+指定主机端口映射
 
 ###### restart
 
@@ -592,7 +592,7 @@ restart: "no"
         external: true
     ```
 
-    仅指定密码名称，将授予容器访问密码权限，并将其安装在容器内的 */run/secrets/<secret_name>*（源名称和容器内名称都设置为机密名称）
+    仅指定机密名称，将授予容器访问密码权限，并将其安装在容器内的 */run/secrets/<secret_name>*（源名称和容器内名称都设置为机密名称）
 
 * 长语法
 
@@ -702,20 +702,16 @@ userns_mode: "host"
     volumes:
       # Just specify a path and let the Engine create a volume
       - /var/lib/mysql
-    
       # Specify an absolute path mapping
       - /opt/data:/var/lib/mysql
-    
       # Path on the host, relative to the Compose file
       - ./cache:/tmp/cache
-    
       # User-relative path
       - ~/configs:/etc/configs/:ro
-    
       # Named volume
       - datavolume:/var/lib/mysql
     ```
-
+    
 * 长语法
 
     ```yaml
@@ -730,24 +726,22 @@ userns_mode: "host"
             source: mydata
             target: /data
             volume:
-              nocopy: true  # 创建券时禁用从容器复制数据的标志
+              nocopy: true  # 创建卷时禁用从容器复制数据的标志
           - type: bind
             source: ./static
             target: /opt/app/static
-    
     networks:
       webnet:
-    
     volumes:
       mydata:
     ```
-
+    
     3.2 版本支持
 
     *长语法支持的子选项*
 
     |    选项     |                             含义                             |
-    | :---------: | :----------------------------------------------------------: |
+| :---------: | :----------------------------------------------------------: |
     |    type     |                            volume                            |
     |   source    | 挂载源，主机上用于绑定挂载的路径或顶级 volumes 中定义的卷名称 tmpfs 卷不支持该选项 |
     |   target    |                    安装了券的容器中的路径                    |
@@ -765,7 +759,7 @@ userns_mode: "host"
 
 ##### volumes
 
-顶级券配置，服务可以引用配置的 key（key 值可以为空，此时使用默认驱动程序）
+顶级卷配置，服务可以引用配置的 key（key 对应的值可以为空，此时使用默认驱动程序）
 
 ###### dirver
 
@@ -804,7 +798,7 @@ volumes:
     external: true
 ```
 
-指定券是否为外部创造，为 true 时使用 up 启动服务不会创建券，如果外部不存在该券，则启动失败。在 swarm 模式下则会创建不存在的外部券（在本地节点上创建券）
+指定卷是否为外部创造，为 true 时使用 up 启动服务不会创建卷，如果外部不存在该卷，则启动失败。在 swarm 模式下则会创建不存在的外部卷（在本地节点上创建卷）
 
 ###### labels
 
@@ -815,7 +809,7 @@ labels:
   - "com.example.label-with-empty-value"
 ```
 
-指定券的元信息
+指定卷的元信息
 
 ###### name
 
@@ -826,7 +820,7 @@ volumes:
     name: my-app-data
 ```
 
-3.4 版本支持，为此券设置一个自定义名称，名称字段可用于引用包含特殊字符的券，该名称按原样使用，
+3.4 版本支持，为此卷设置一个自定义名称，名称字段可用于引用包含特殊字符的卷，该名称按原样使用，
 
 ##### networks
 
@@ -975,7 +969,7 @@ db:
   image: "postgres:${POSTGRES_VERSION}"  # 如果未设置环境变量，compose 替换为空字符串
 ```
 
-可以使用 compose 自动查找的 *.env* 文件来为环境变量设置默认值，在 shell 中设置的值将覆盖 *.env* 文件中设置的值（*.env* 文件仅支持 compose up 命令，swarm 模式不支持 *.env* 文件）
+可以使用 compose 自动查找的当前目录下 *.env* 文件来为环境变量设置默认值，在 shell 中设置的值将覆盖 *.env* 文件中设置的值（*.env* 文件仅支持 compose up 命令，swarm 模式不支持 *.env* 文件）
 
 ###### compose 环境变量
 
@@ -1259,11 +1253,11 @@ docker-compose pull [options] [SERVICE...]
 docker-compose push [options] [SERVICE...]
 ```
 
+推送服务镜像
+
 |           选项           |      含义      |
 | :----------------------: | :------------: |
 | `--ignore-push-failures` | 推送时忽略失败 |
-
-推送服务镜像
 
 ###### restart
 
@@ -1283,7 +1277,7 @@ docker-compose restart [options] [SERVICE...]
 docker-compose rm [options] [SERVICE...]
 ```
 
-删除停止服务的容器，默认不善删除附加到容器的匿名卷
+删除停止服务的容器，默认不删除附加到容器的匿名卷
 
 |     选项      |          含义          |
 | :-----------: | :--------------------: |
@@ -1400,7 +1394,7 @@ docker-compose version [--short]
 
 #### Machine
 
-负责实现对 Docker 运行环境进行安装和管理，在管理多个 Docker 环境时，使用 Machine 很高效，Machine 的定位是：在本地或云环境中创建 docker 主机，基本功能包含：在指定节点或平台上安装 docker 引起，配置其为可用的 docker 环境，集中管理（包括启动，查看等）所安装的 docker 环境
+负责实现对 Docker 运行环境进行安装和管理，在管理多个 Docker 环境时，使用 Machine 很高效，Machine 的定位是：在本地或云环境中创建 docker 主机，基本功能包含：在指定节点或平台上安装 docker 引擎，配置其为可用的 docker 环境，集中管理（包括启动，查看等）所安装的 docker 环境
 
 所有的客户端配置数据会自动存放在 *~/.docker/machine/machines/* 路径下，该路径下内容仅为客户端侧的配置和数据，删除其下内容不会影响到已创建的 docker 环境
 
@@ -1428,7 +1422,7 @@ docker-machine create -d hyperv --hyperv-virtual-switch <NameOfVirtualSwitch> <n
 
 ###### 本地驱动
 
-这种驱动适合主机操作系统和 SSH 服务已安装，需要对其安装 docker 引擎，首先确保本地主机可以通过 user 账号的 key 直接 ssh 到目标主机，使用 `generic` 类型驱动，注册一台 docker 主机
+这种驱动适合主机操作系统和 SSH 服务已安装，需要对其安装 docker 引擎，首先确保本地主机可以通过 user 账号的 key 直接 ssh 到目标主机，使用 generic 类型驱动，注册一台 docker 主机
 
 ```
 # 命名为 test
@@ -1720,7 +1714,7 @@ swarm 提供集群管理和容器编排，基于 raft 算法。swarm 管理节�
 
 ###### Ingress
 
-通过 Ingress 模式发布的服务，可以 swarm 集群内任一节点（即使没有运行服务的副本）都能访问该服务，通过 -p 指定端口时，默认都是 Ingress 模式
+通过 Ingress 模式发布的服务，可以 swarm 集群内任一节点（即使没有运行服务的副本）都能访问该服务，通过 -p 指定端口时，默认 Ingress 模式
 
 *   在底层，Ingress 模式采用名为 Service Mesh 或 Swarm Mode Service Mesh 的四层路由网络来实现
 *   如果存在多个运行中的副本，流量会平均到每个副本之上
@@ -1746,8 +1740,8 @@ docker swarm ca [options]
 
 |            选项             |                           含义                           |
 | :-------------------------: | :------------------------------------------------------: |
-|    `--ca-cert pem-file`     |           用于新群集的PEM格式的根CA证书的路径            |
-|     `--ca-key pem-file`     |           用于新集群的PEM格式的根CA密钥的路径            |
+|    `--ca-cert pem-file`     |         用于新群集的 PEM 格式的根 CA 证书的路径          |
+|     `--ca-key pem-file`     |         用于新集群的 PEM 格式的根 CA 密钥的路径          |
 |  `--cert-expiry duration`   |  节点证书的有效期（ns\|us\|ms\|s\|m\|h）默认 2160h0m0s   |
 |       `-d, --detach`        |                  退出，不等待 root 轮换                  |
 | `--external-ca external-ca` |                       声明节点签名                       |

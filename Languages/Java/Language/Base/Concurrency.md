@@ -6,19 +6,34 @@
 
 java 内部支持多线程，在一个程序中允许同时允许多个任务。可以在程序中创建附加的线程以执行并发任务，在java 中，每个任务都是 Runnable 接口的实例，一个任务类必须实现 Runnable 接口，任务必须从线程运行
 
-```java
-public class TaskClass implements Runnable {
-    @Override
-    public function run(); // 线程执行方法
-}
-// 构建任务
-TaskClass task = new TaskClass();
-// 运行任务
-Thread thread = new Thread(task);
-thread.start();
-```
-
 任务中的 run 方法指明如何完成这个任务，java 虚拟机会自动调用该方法，无需特意调用它，直接调用 run 只是在同一个线程中执行该方法，而没有新线程启动。Thread 类包含为任务而创建的线程的构造方法，以及控制线程的方法
+
+##### 线程属性
+
+Thread 类包含：
+
+* ID
+
+  该属性存储了每个线程的唯一标识符
+
+* Name
+
+  该属性存储了线程的名字
+
+* Priority
+
+  该属性存储了 Thread 对象的优先级。Java 9 在，线程优先级的范围为 1 ~ 10，10 为最高优先级（线程优先级仅供底层操作系统作为参考，不能保证，仅代表可能）
+
+* Status
+
+  保存了线程的状态，在 Java 中，线程有 6 种状态，Thread.State 枚举中定义这些状态
+
+  1. NEW
+  2. RUNNABLE
+  3. BLOCKED
+  4. WAITING
+  5. TIMED_WAITING
+  6. TERMINATED
 
 ##### 中断线程
 
@@ -49,6 +64,11 @@ thread.start();
 ###### 新创建线程
 
 当用 new 操作符创建一个新线程时，该线程还没有开始运行。这意味着它状态是 new 。当一个线程处于新创建状态时，程序还没有开始运行线程中的代码。在线程运行之前还有一些基础工作要做
+
+创建线程方式：
+
+* 直接继承 Thread 类，重写 run() 方法
+* 构建一个实现 Runnable 接口的类并重写 run() 方法，然后创建该类的实例对象，并以其作为构建参数创建 Thread 类的对象
 
 ###### 可运行线程
 

@@ -2,7 +2,7 @@ Java 相关，部分 se api 练习对应 GitHub JavaSE-Exercises 项目
 
 * 对象表示为首字符小写的类名称 object
 * 路径表示为 *`/path/to/dir`* 单行斜体代码标识
-* 类使用 *ClassName* 斜体标识
+* 类接口使用 *ClassName* 斜体标识
 * 类常量 **DEFINE_NAME** 以粗体标识
 * 指定 java jdk jre 时一律小写
 * 方法使用类名加调用符号表示 *ClassName*.**method()** 标识

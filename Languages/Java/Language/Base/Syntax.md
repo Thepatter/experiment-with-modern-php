@@ -116,55 +116,6 @@ jvm 默认会缓存 -128 ~ 127 之间的对象，因此建议使用 equals 比�
    System.out.println(c.equals(d)); // true
 ```
 
-#### 常用对象
-
-##### 数组
-
-Java 确保数组会被初始化，而且不能再它的范围之外被访问。创建数组对象时，实际上就是创建一个引用数组，并且每个引用都会自动被初始化为一个特定值，当数组元素引用未指向某个对象时为 null，在使用数组元素引用前，必须为其指定一个对象或基本类型，否则会 *NullPointException*
-
-* 基本类型的数组初始化为 0
-* boolean 数组会初始化为 false
-* 对象数组元素会初始化为 null
-* 可以向导出类型的数组赋予基类型的数组引用。数组对象可以保留有关它们包含的对象类型的规则
-
-##### Enum 类
-
-对于有限集合的变量取值，可以自定义枚举类型，枚举类型包括有限个命名的值，枚举只能存储声明的枚举值或 null 值。
-
-```java
-enum Size {SMALL, MEDIUM, LARGE, EXTRE_LARGE};
-// 声明枚举变量
-Size s = Size.MEDIUM;
-```
-
-###### *Enum* 
-
-* values() 方法返回 enum 实例的数组，而且该数组中的元素严格保持其在 enum 中声明的顺序，values() 是由编译器添加的 static 方法
-* 创建 enum 时，编译器会生成一个相关的类，这个类继承自 *java.lang.Enum*，可以使用 == 来比较 enum 实例，编译器会自动为 enum 提供 equal() 和 hashCode()，*Enum* 实现了 Comparable 和 Serializable 接口
-* ordinal() 方法返回 enum 实例在声明时的次序，从 0 开始
-* name() 方法返回 enum 实例声明时的名字，与 toString() 方法效果一样。
-* valueOf() 根据给定的名字返回相应的 enum 实例
-* 如果打算定义 enum 实例定义方法，那么必须在 enum 实例序列的最后添加一个分号，enum 实例之间用逗号分隔，必须先定义 enum 实例，如果在定义 enum 实例之前定义了任何方法或属性，会编译错误
-* 只能在 enum 内部使用其构造器创建 enum 实例，一旦 enum 的定义结束，编译器就不允许使用构造器创建任何实例了
-
-可以在接口的内部，创建实现该接口的枚举，以此将元素进行分组。
-
-可以为 enum 实例编写方法，从而为每个 enum 实例赋予各自不同的行为，需要为 *Enum* 添加一个或多个 abstract 方法，然后为每个 enum 实例实现该方法
-
-###### EnumSet
-
-SE 5 引入了 EnumSet，是为了通过 enum 创建一种替代品，以替代传统的基于 int 的 『位标志』，这种标志可以用来表示某种『开关』信息。
-
-EnumSet 中的元素必须来自一个 enum。EnumSet 的基础是 long，一个 enum 实例只需一位 bit 表示其是否存在，在不超过一个 long 的表达能力的情况下，EnumSet 可以应用于最多不超过 64 个元素的 enum，超过之后性能会下降。
-
-enum 实例定义时的次序决定了其在 EnumSet 中的顺序
-
-###### EnumMap
-
-EnumMap 是一种特殊的 Map，它要求其中的键必须来自一个 enum，EnumMap 内部由数组实现，性能很高。可以使用 enum 实例在 EnumMap 中进行查找操作，只能将 enum 的实例作为键来调用 put()
-
-enum 实例定义时的次序决定了其在 EnumMap 中的顺序
-
 #### 语法
 
 ##### 变量
