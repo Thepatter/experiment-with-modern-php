@@ -305,7 +305,7 @@ Tomcat 的类加载器负责为 Tomcat 本身以及 Web 应用加载相关的类
 <tomcat-users>
     <role rolename="manager-gui"/>
     <role rolename="admin-gui"/>
-    <user username="tom" password="secret" roles="manager-gui,admin-guir"/>
+    <user username="tom" password="secret" roles="manager-gui,admin-gui"/>
     <user username="jerry" password="secret" roles="admin-gui"/>
 </tomcat-users>
 ```

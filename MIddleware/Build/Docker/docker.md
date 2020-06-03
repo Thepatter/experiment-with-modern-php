@@ -33,19 +33,64 @@
         "storage-driver": "overlay2"
     }
     ```
-    
-*   docker.service
 
-    配置 dockerd 启动时
+###### 远程 docker daemon
 
-    */lib/systemd/system/docker.service* 或 */etc/systemd/system/docker.service.d/startup_options.conf*
+使用证书来保证能够远程访问的 docker daemon socket 安全
 
-    ```ini
-    # 添加或修改
-    [Service]
-    ExecStart=
-    # 使用 —H 指定多个套接字，默认 -H fd
-    ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:2375
+*   服务器配置
+
+    1.  配置证书相关文件
+
+        ```shell
+        # 1. 创建 certs 文件夹, 后续创建文件保存在该目录
+        mkdir -p /etc/docker/certs
+        # 2. 使用 Openssl 创建 CA 私钥和公钥
+        openssl genrsa -aes256 -out ca-key.pem 4096  // 需要输入两次相同的密码
+        openssl req -new -x509 -days 365 -key ca-key.pem -sha256 -out ca.pem // 依次输出密码，除密码外其他可以跳过
+        # 3. 创建服务器密钥和证书签名请求(CSR) $HOST 为域名或公网 IP
+        openssl genrsa -out server-key.pem 4096
+        openssl req -subj "/CN=$HOST" -sha256 -new -key server-key.pem -out server.csr
+        # 4. 使用 CA 对公钥签名
+        echo subjectAltName = DNS:$HOST,IP:0.0.0.0,IP:127.0.0.1 >> extfile.cnf  // 需要配置 127.0.0.1 和外网 IP
+        # 5. 将 Docker 守护进程密钥的扩展使用属性设置为仅用于服务器身份验证
+        echo extendedKeyUsage = serverAuth >> extfile.cnf
+        # 6. 生成签名的证书
+        openssl x509 -req -days 365 -sha256 -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem -extfile extfile.cnf
+        # 生成客户端密钥和证书签名请求
+        openssl genrsa -out key.pem 4096
+        openssl req -subj "/CN=$HOST" -new -key key.pem -out client.csr // HOST 为外网 IP 或域名
+        echo extendedKeyUsage = clientAuth > extfile-client.cnf
+        openssl x509 -req -days 365 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out cert.pem -extfile extfile-client.cnf
+        # 删除证书签名和扩展配置文件
+        rm client.csr server.csr extfile.cnf extfile-client.cnf
+        # 保护密钥
+        chmod -v 0400 ca-key.pem key.pem server-key.pem
+        chmod -v 0444 ca.pem server-cert.pem cert.pem
+        ```
+
+    2.  配置远程访问
+
+        修改 */lib/systemd/system/docker.service* 或 */etc/systemd/system/docker.service.d/startup_options.conf* 文件
+
+        ```ini
+        [Service]
+        ExecStart=
+        # 使用 —H 指定多个连接
+        ExecStart=/usr/bin/dockerd --tlsverify --tlscacert=/etc/docker/certs/ca.pem --tlscert=/etc/docker/certs/server-cert.pem --tlskey=/etc/docker/certs/server-key.pem -H fd:// -H tcp://0.0.0.0:2375 
+        ```
+
+        配置 docker.service 后需要 daemon-reload 并重启 dockerd
+
+*   客户端配置
+
+    ```shell
+    # 将服务端生成的客户端文件保存到客户机 ~/.docker/certs 目录
+    cp {ca,cert,key}.pem ~/.docker
+    # 配置环境变量
+    export DOCKER_HOST=tcp://$HOST:2375
+    export DOCKER_TLS_VERIFY=1
+    export DOCKER_CERT_PATH=/path/to/.docker/certs/
     ```
 
 ##### 引擎组件

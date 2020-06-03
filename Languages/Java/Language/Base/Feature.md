@@ -47,11 +47,11 @@ java.lang.reflect 包中主要类是
 
 在程序运行过程中，如果 jvm 检测出一个不可能执行的操作，就会出现运行时错误 (runtime error)，在 java 中运行时错误会作为异常抛出，异常是一种对象，表示阻止正常进行程序执行的错误或情况，如果异常没有被处理，那么程序就会非正常终止
 
-异常从方法抛出，方法的调用者可以捕获以及处理该异常，使用 throw 语句抛出一个异常。
+异常从方法抛出，方法的调用者可以捕获以及处理该异常，使用 throw 语句抛出一个异常。异常对象在堆上创建
 
 ##### 异常类型
 
-异常对象派生于 *java.lang.Throwable*，所有的异常都直接或间接继承该类
+异常对象派生于 *java.lang.Throwable*，所有的异常都直接或间接继承该类，java 语言规范将派生于 *Error* 或 *RuntimeException* 的所有异常称为非受检异常，其他异常为受检异常。
 
 ###### Error
 
@@ -69,17 +69,15 @@ java.lang.reflect 包中主要类是
 
   非程序本身，如网络
 
-java 语言规范将派生于 *Error* 或 *RuntimeException* 的所有异常称为非受检异常，其他异常为受检异常。
-
 ###### 常见异常
 
-|       异常类       |    含义    |
-| :----------------: | :--------: |
-| ClassCastException | 类转型异常 |
-|                    |            |
-|                    |            |
-|                    |            |
-|                    |            |
+|             异常类             |       含义       |
+| :----------------------------: | :--------------: |
+|       ClassCastException       |    类转型异常    |
+|      NullPointerException      |    空指针异常    |
+| ArrayIndexOutOfBoundsException | 数组访问越界异常 |
+|                                |                  |
+|                                |                  |
 
 ##### 声明受检异常
 
@@ -94,6 +92,31 @@ java 语言规范将派生于 *Error* 或 *RuntimeException* 的所有异常称�
 3. 使用 throw 关键字抛出异常
 
 一旦方法抛出了异常，这个方法就不能返回到调用者
+
+###### 重新抛出异常
+
+*   在 catch 子句中可以抛出异常，这样可以改变异常的类型
+
+    ```java
+    catch(SQLException e) {
+      	Throwable se = new ServletException("database error");
+      	se.initCause(e); // 构建异常链
+      	throw se;
+    }
+    // 捕获异常时，获取原始异常
+    Throwable e = se.getCause();
+    ```
+
+*   如果只是把当前异常对象重新抛出，printStackTrace() 方法将打印原来异常抛出点的调用栈信息，而非重新抛出点的信息
+
+    ```
+    // 更新异常堆栈信息, 调用 fillInStackTrace() 的那一行为异常新的发生地
+    throw (Exception) e.fillInStackTrace();
+    ```
+
+    
+
+
 
 ##### 自定义异常类
 
@@ -111,18 +134,6 @@ java 语言规范将派生于 *Error* 或 *RuntimeException* 的所有异常称�
 一个 try 语句块中可以捕获多个异常类型，SE 7 开始，同一个 catch 子句中可以捕获多个异常类型（当捕获的异常类彼此之间不存在子类关系时才需要这个特性），捕获多个异常时，细化异常类型在前
 
 如果覆写超类的方法，而这个方法又没有抛出异常，那么这个方法就必须捕获方法中的每一个受检异常
-
-在 catch 子句中可以抛出异常，这样可以改变异常的类型
-
-```java 
-catch(SQLException e) {
-  	Throwable se = new ServletException("database error");
-  	se.initCause(e);
-  	throw se;
-}
-// 捕获异常时，获取原始异常
-Throwable e = se.getCause();
-```
 
 ##### finally 子句
 

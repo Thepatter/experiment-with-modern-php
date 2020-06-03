@@ -184,12 +184,20 @@ ServletContext getContext(String uripath);
 /**
  * 把请求转发给目标组件
  * 处理流程：
-         1.清空用于存放响应正文数据的缓冲区，如果目标组件为 Servlet 或 JSP，就调用它们的 service() 方法 把该方法的响应结果发送到客户端；如果目标组件为文件系统中的静态 HTML 文档，就读取文档中的数据并发送到客户端
-// 如果源组件在进行请求转发之前，已经提交了响应结果（ServletResponse 的 flushBuffer 方法，或与 ServletResponse 关联的输出六的 close 方法，会抛出 IllegalStateException 异常）
+ *        1.清空用于存放响应正文数据的缓冲区
+ *        2.如果目标组件为 Servlet 或 JSP，就调用它们的 service() 方法，把该方法的响应结果发送到客户端；
+ *        3.如果目标组件为文件系统中的静态 HTML 文档，就读取文档中的数据并发送到客户端
+ * 如果源组件在进行请求转发之前，已经提交了响应结果（ServletResponse 的 flushBuffer 方法，或与 ServletResponse 关联的输出流的 close 方法，
+ * 会抛出 IllegalStateException 异常）
+ */
 void forward(ServletRequest request, ServletResponse response) throws ServletException, IOException;
-// 包含目标组件得响应结果
-// 处理流程：如果目标组件为 Servlet 或 JSP，就调用它们的相应的 service() 方法，把该方法产生的响应正文添加到源组件的响应结果中；如果目标组件为 HTML 文档，就直接把文档的内容添加到源组件的响应结果中，返回到源组件的服务方法中，继续执行后续代码块
-// 源组件与被包含的目标组件的输出数据都会被添加到响应结果中，在目标组件中对响应状态代码或响应头所做的修改都会被忽略
+/**
+ * 包含目标组件得响应结果
+ * 处理流程：
+ *        1.如果目标组件为 Servlet 或 JSP，就调用它们的相应的 service() 方法，把该方法产生的响应正文添加到源组件的响应结果中；
+ *        2.如果目标组件为 HTML 文档，就直接把文档的内容添加到源组件的响应结果中，返回到源组件的服务方法中，继续执行后续代码块
+ * 源组件与被包含的目标组件的输出数据都会被添加到响应结果中，在目标组件中对响应状态代码或响应头所做的修改都会被忽略
+ */
 void include(ServletRequest request, ServletResponse response) throws ServletException, IOException;
 ```
 
@@ -908,11 +916,22 @@ dispatcherTypes 属性指定的调用过滤器模式（可以指定多个），�
 
 #### 部署
 
-* 可以设置 `@WebServlet` 中没有对等元素的元素，如使用 load-on-startup 使得 servlet 在程序启动时加载，而不是第一次调用时加载
-
+* 可以设置 @WebServlet 中没有对等元素的元素，如使用 load-on-startup 使得 servlet 在程序启动时加载，而不是第一次调用时加载
 * 如果需要修改配置值，不需要重新编译 Servlet 类
+* Servlet 上的 WebServlet 标注如果同时也在部署描述符中进行声明，依照部署描述符。
 
-* Servlet 上的 `WebServlet` 标注如果同时也在部署描述符中进行声明，依照部署描述符。
+##### Web 应用
+
+Web 应用和 *ServletContext* 接口对象是一对一的关系，*ServletContext* 对象提供了一个 Servlet 和它的应用程序视图。Web 应用结构包括
+
+|                       目录                        |     描述      |
+| :-----------------------------------------------: | :-----------: |
+| `$CATALINA_HOME/webapps/$program/WEB-INF/web.xml` |  部署描述符   |
+|   `$CATALINA_HOME/webapps/$program/WEB-INF/lib`   | 依赖 jar 文件 |
+| `$CATALINA_HOME/webapps/$program/WEB-INF/classes` |    类文件     |
+|    `$CATALINA_HOME/webapps/$program/META-INF/`    |    元信息     |
+
+容器用于加载 WAR 文件中 Servlet 的类加载器必须提供 getResource 方法，以加载 WAR 文件的 jar 包中包含的任何资源。部署的每个 web 应用程序的 ClassLoader 实例必须是一个单独的实例
 
 #### 会话管理
 
@@ -935,9 +954,7 @@ Cookies 是一个很少的信息片段，可自动在浏览器和 Web 服务器�
 
 ##### Session
 
-Servlet 规范制定了基于 Java 的会话的具体运作机制。在 Servlet API 中定义了代表会话的 javax.servlet.http.H
-
-ttpSession 接口。Servlet 容器必须实现这一接口。当一个会话开始时，Servlet 容器将创建一个 `HttpSession` 对象，在 `HttpSession` 对象中可以存放表示客户状态的信息。Sevlet 容器为每个 `HttpSession` 对象分配一个唯一标识符，称为 Session ID
+Servlet 规范制定了基于 Java 的会话的具体运作机制。在 Servlet API 中定义了代表会话的 javax.servlet.http.HttpSession 接口。Servlet 容器必须实现这一接口。当一个会话开始时，Servlet 容器将创建一个 `HttpSession` 对象，在 `HttpSession` 对象中可以存放表示客户状态的信息。Sevlet 容器为每个 `HttpSession` 对象分配一个唯一标识符，称为 Session ID
 
 * 当客户请求访问该 Web 组件时，Servlet 容器会自动查找 HTTP 请求中表示 Session ID 的 Cookie，以及向 HTTP 响应结果中添加表示 Session ID 的 Cookie。Servlet 容器还会创建新的 `HttpSession` 对象或者寻找已经存在的与 Session ID 对应的 `HttpSession` 对象
 * Web 组件可以访问代表当前会话的 `HttpSession` 对象
