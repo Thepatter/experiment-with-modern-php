@@ -136,9 +136,17 @@
 
 在类级别声明，使用类路径扫描自动检测和配置 bean，在已用的类和 Bean（即每个类一个 Bean）之间存在一个隐含的一对一映射。Bean 的 ID 为首字符小写的类名
 
+###### @ComponentScan
+
+启用组件扫描
+
 ###### @Configuration
 
 指示一个类声明一个或多个 @Bean 方法，并且可以由 Spring 容器处理，以便在运行时为这些 bean 生成 BeanDefinition 和服务请求
+
+###### @EnableWebMvc
+
+启用 Spring Mvc 
 
 ##### 方法级别注解
 
