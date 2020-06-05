@@ -142,11 +142,19 @@
 
 ###### @Configuration
 
-指示一个类声明一个或多个 @Bean 方法，并且可以由 Spring 容器处理，以便在运行时为这些 bean 生成 BeanDefinition 和服务请求
+声明配置类可以声明一个或多个 @Bean 方法
 
 ###### @EnableWebMvc
 
-启用 Spring Mvc 
+启用 Spring Mvc
+
+###### @ConfigurationProperties
+
+指定配置文件前缀，属性 prefix 指定前缀
+
+###### @EnableConfigurationProperties
+
+启用配置类
 
 ##### 方法级别注解
 
@@ -224,7 +232,7 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 
 ###### @Bean
 
-显式声明单个 Bean，将 Bean 的声明与类的定义分离，并允许自定义方法创建和配置 Bean。
+显式声明单个 Bean，将 Bean 的声明与类的定义分离，并允许自定义方法创建和配置 Bean。方法上标注表明这些方法所返回的对象会以 bean 的形式添加到 Spring 的应用上下文中（默认情况下，这些 bean 所对应的 bean ID 与定义它们Nederland方法名称是相同的）
 
 ###### @ResponseStatus
 
@@ -237,6 +245,12 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 ```
 public Book store(@RequestBody Book book) {}
 ```
+
+##### 属性级别注解
+
+###### @Value
+
+在属性上声明，实例化 bean 时读取应用配置属性并赋值，使用 `${author.name}` 语法
 
 ##### SpringDataJPA
 
