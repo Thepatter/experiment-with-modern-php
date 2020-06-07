@@ -346,7 +346,7 @@ COPY [--chown=<user>:<group>] ["<src>",... "<dest>"]
 COPY --chown=10:11 files* /somedir/
 ```
 
-复制内容到镜像，复制本地主机的  src （为 Dockerfile 所在目录的相对路径，文件或目录）下内容到镜像中的 dest。
+复制内容到镜像，复制本地主机的  src （为 Dockerfile 所在目录的相对路径，文件或目录）下内容到镜像中的 dest，无法复制上下文之外的文件或目录
 
 COPY 和 ADD 指令功能类似，当使用本地目录为源目录时，推荐 COPY
 

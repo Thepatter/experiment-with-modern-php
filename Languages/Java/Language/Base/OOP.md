@@ -409,6 +409,8 @@ Outer.Inner inner = out.new Inner();
 
 ##### 字符串
 
+###### *String*
+
 java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 编码表中码点，可能需要1个或 2 个代码单元表示）。使用 + 拼接字符串。*String* 类实例不可变。
 
 * 空串
@@ -420,6 +422,38 @@ java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 
   *String* 变量可以存放一个特殊的值 null，表示目前没有任何对象与该变量关联
 
 使用索引访问用 String 的 split 方法得到的数组时，需做最后一个分隔符后有无内容的检查，否则会有抛 *IndexOutOfBoundsException* 的风险
+
+###### *StringBuilder*、*StringBuffer*
+
+* *StringBuffer*
+
+  线程安全，在每个操作方法上添加了 **synchronized**
+
+* *StringBuilder*
+
+  SE 5 新增，非线程安全
+
+###### *Formatter*
+
+所有新的格式化功能都由 *java.util.Formatter* 类处理，它将格式化字符串与数据翻译成需要的结果
+
+*类型转换字符*
+
+| 字符 |                             含义                             |
+| :--: | :----------------------------------------------------------: |
+|  d   |                          十进制整型                          |
+|  e   |                      浮点数（科学计数）                      |
+|  c   |                         Unicode 字符                         |
+|  x   |                         十六进制整型                         |
+|  b   | Boolean 值（对于 bool 和 Boolean 结果为对应值，其他类型不为 NULL，则始终 true） |
+|  h   |                        十六进制散列码                        |
+|  s   |                            String                            |
+|  %   |                            字符 %                            |
+|  f   |                         十进制浮点数                         |
+
+###### 正则表达式
+
+在 java 中双反斜线表示正则中的反斜线，即普通的反斜线为 `\\\\` ，换行符和制表符只需使用单反斜线 `\n\t`
 
 ##### BigDecimal
 

@@ -379,7 +379,7 @@ external_links:
 
 ###### extra_hosts
 
-```ymal
+```yaml
 extra_hosts:
   - "somehost:162.242.195.82"
   - "otherhost:50.31.209.229"

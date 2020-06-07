@@ -63,7 +63,12 @@ java.lang.reflect 包中主要类是
 
 * *RuntimeException*
 
-  由程序错误导致的异常
+  由程序错误导致的异常，会自动被虚拟机抛出，如果 RuntimeException 没有被捕获而直到 main()，在程序退出前将调用 printStackTrace()
+
+  只能在代码中忽略 *RuntimeException* 及其子类异常，其他类型异常的处理都是由编译器强制实施的，*RuntimeException* 代表编程错误：
+
+  1. 无法预料的错误，从控制范围之外传递进来的 null 引用
+  2. 应该在代码中进行检查的错误（如 *ArrayIndexOutofBoundsException*）
 
 * other
 

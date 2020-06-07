@@ -30,11 +30,10 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="3.0"
-xmlns="http://java.sun.com/xml/ns/javaee"
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-                    http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
+<web-app version="3.0" xmlns="http://java.sun.com/xml/ns/javaee"
+        			   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+                                           http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
     <servlet>
     	<servlet-name>springmvc</servlet-name>
         <servlet-class>
@@ -50,7 +49,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
     </servlet>
     <servlet-mapping>
     	<servlet-name>springmvc</servlet-name>
-        // 当 URL 模式为 / 时，所有请求都映射到 dispatcherServlet，需要在 SpringMvc 配置文件中添加 resources 元素处理静态资源
+        // 当匹配 / 时，所有请求都映射 dispatcherServlet，需要在 SpringMvc 配置文件添加 resources 元素以处理静态资源
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 </web-app>
@@ -193,8 +192,6 @@ Spring Boot 自动配置的 bean 都可以通过 Spring 环境提取的属性进
 |       logging.pattern.level       |           日志级别（默认记录：ERROR、WARN、INFO）            |
 |                PID                |                          当前进程ID                          |
 
-
-
 ##### 多环境配置
 
 当应用部署到不同的运行环境时，有些配置细节通常会有些差别。可以使用环境变量，通过这种方式来指定配置属性，而不是在 application.properties 中进行定义。但不好管理
@@ -254,20 +251,18 @@ Spring profile 提供了一种条件化的配置，在运行时，根据哪些 p
 
 有时候，为不同的 profile 创建一组独特的 bean 是非常有用的。正常情况下，不管那个 profile 处于激活状态，Java 配置类中声明的所有 bean 都会被创建。假设希望某些 bean 仅在特定 profile 激活的情况下才需要创建。
 
-在这种情况下，@profile 注解可以将某些 bean 设置为仅适用于给定的 profile
+在这种情况下，@profile 注解可以将某些 bean 设置为仅适用于给定的 profile，支持在带由 @Configuration 注解的类上使用 @Profile
 
 ```java
 @Bean
-// 在 dev 或 qa profile 激活的时候都需要创建 CommandLineRunner bean
-@Profile({"dev","qa"})
+@Profile({"dev","qa"}) // 在 dev 或 qa profile 激活的时候都需要创建 CommandLineRunner bean
 public CommandLineRunner dataLoader(IngredientRepository repo {}
 @Bean
-// 只要 prof profile 不激活就要创建 CommandLineRunner bean
-@Profile("!prod")
+@Profile("!prod") // 只要 prof profile 不激活就要创建 CommandLineRunner bean
 public COmmandLineRunner dataLoade(IngredientRepository repo) {}
 ```
 
-支持在带由 @Configuration 注解的类上使用 @Profile
+
 
  
 
