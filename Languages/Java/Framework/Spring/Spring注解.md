@@ -333,6 +333,14 @@ void createdAt() {
 
 Repository 接口方法注解，声明方法调用时要执行的查询，Spring Data JPA 写的 SQL 是 JPQL，需要使用 JAP 对象实体查询，不支持部分 SQL 功能，如 limit，可以使用参数 nativeQuery = true，来写原生 SQL
 
+###### @DynamicInsert
+
+插入数据时使用字段的默认值
+
+###### @DynamicUpdate
+
+更新数据时使用字段的默认值
+
 #### 其他组件
 
 ##### Lombok

@@ -36,28 +36,11 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         .passwordEncoder(new BCryptPasswordEncoder())
         .withUser("admin")
         .password(new BCryptPasswordEncoder().encode("secret"))
-        .authorities("ROLE_USER")
+        .authorities("USER")
         .and()
         .withUser("zyw")
         .password(new BCryptPasswordEncoder().encode("123456"))
-        .authorities("ROLE_USER");
-}
-```
-
-###### JDBC
-
-```java
-@Override
-protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auth.inMemoryAuthentication()
-        .passwordEncoder(new BCryptPasswordEncoder())
-        .withUser("admin")
-        .password(new BCryptPasswordEncoder().encode("secret"))
-        .authorities("ROLE_USER")
-        .and()
-        .withUser("zyw")
-        .password(new BCryptPasswordEncoder().encode("123456"))
-        .authorities("ROLE_USER");
+        .authorities("USER");
 }
 ```
 
@@ -71,6 +54,16 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 
 ##### Web 拦截
 
+###### 取消拦截
+
+在入口类中去除 security 的自动配置
+
+```java
+@SpringBootApplication(exclude = {
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+})
+```
+
 ###### 保护请求
 
 ```java
@@ -79,7 +72,7 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 protected void configure(HttpSecurity http) throws Exception {
     http.authorizeRequests()
         .antMatchers("/design", "/orders") // 需要验证
-        .hasRole("ROLE_USER")
+        .hasRole("USER")
         .antMatchers("/", "/**").permitAll();
 }
 ```
