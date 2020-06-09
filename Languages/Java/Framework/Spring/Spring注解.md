@@ -114,7 +114,16 @@
 
 ###### @Autowired
 
-`@Autowired` 属于 `org.springframework.beans.factory.annotation` 包，通过注解 `@Autowired` 到字段或方法来实现依赖注入。为了能被注入，类必须要注明为 `@Service`，该类型是 `org.springframework.stereotype` 包的成员。`@Service` 注解类型指示类是一个服务。此外，在配置文件中，还需要添加一个 `<component-scan/>` 元素来扫描依赖基本包：
+通过在字段或方法声明来实现 Bean 之间的依赖自动装配。**类必须声明为 Bean**，如果只有一个 Bean 匹配，则这个 Bean 会被装配起来，如果没有匹配的 Bean 或有多个匹配的 Bean，在应用上下文创建时会抛出异常
+
+*attribute*
+
+|   属性   |                             含义                             |
+| :------: | :----------------------------------------------------------: |
+| required | false 时，如果没有匹配的 Bean，Spring 会让这个 Bean 处于未装配状态 |
+|          |                                                              |
+
+使用 XML 配置时，还需要启动组件扫描配置
 
 ```xml
 <context:component-scae base-package="dependencyPackage"/>
@@ -124,7 +133,7 @@
 
 组件扫描会发现它，并且会将其初始化为 spring 上下文中的 bean，spring 应该将这个接口视为存储库并为它生成动态代理
 
-@SessionAttributes
+###### @SessionAttributes
 
 类级别的 @SessionAttributes 能够指定模型对象要保存在 session 中
 
@@ -142,7 +151,7 @@
 
 ###### @Configuration
 
-声明配置类可以声明一个或多个 @Bean 方法
+表明该类是一个配置类，可在类中声明一个或多个 @Bean 方法
 
 ###### @EnableWebMvc
 
@@ -186,30 +195,6 @@
 
 处理 PATCH 请求
 
-###### @PathVariable
-
-指定 url 占位符
-
-###### @RequestParam
-
-使用 `org.springframework.web.bind.annotation.RequestParam` 注解类型来注解方法参数。
-
-```java
-// 请求参数 http://domain/app/product?productId=3
-public void sendProduct(@RequestParam int productId)
-```
-
-`@RequestParam` 注解的参数类型不一定是字符串。路径变量类似请求参数，但没有 `key` 部分，只是一个值。路径变量的类型可以不是字符串，Spring MVC 将尽力转换为非字符串类型
-
-```java
-// 路径变量 http://domain/app/product/3
-@RequestMapping(value = "/product/{id}")
-public String viewProduct(@PathVariable Long id, Model model) {
-	Product product = productService.get(id);
-	model.addAttribute("product", product);
-}
-```
-
 ###### @ModelAttribute
 
 Spring MVC  在每次调用请求处理方法时，都会创建 Model 类型的一个实例。若打算使用该实例，则可以在方法中添加一个 Model 类型的参数。还可以在方法中添加 `ModelAttribute` 注解类型来访问 Model 实例。可以用 `@ModelAttribute` 来注解方法参数或方法。带 `@ModelAttribute` 注解的方法会将其输入的或创建的参数对象添加到 Model 对象中（若方法中没有显式添加）。
@@ -232,7 +217,14 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 
 ###### @Bean
 
-显式声明单个 Bean，将 Bean 的声明与类的定义分离，并允许自定义方法创建和配置 Bean。方法上标注表明这些方法所返回的对象会以 bean 的形式添加到 Spring 的应用上下文中（默认情况下，这些 bean 所对应的 bean ID 与定义它们Nederland方法名称是相同的）
+显式声明单个 Bean，将 Bean 的声明与类的定义分离。并允许自定义方法创建和配置 Bean，表明这些方法（方法体中包含了最终产生 Bean 实例的逻辑）所返回的对象会以 Bean 的形式添加到 Spring 的应用上下文中（默认情况下，这些 Bean 所对应的 ID 与定义它们方法名称是相同的）一般用于我们没有源码情况
+
+| 属性 |       含义       |
+| :--: | :--------------: |
+| name | 设置  Bean ID 名 |
+|      |                  |
+
+
 
 ###### @ResponseStatus
 
@@ -246,11 +238,47 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 public Book store(@RequestBody Book book) {}
 ```
 
+###### @PostConstruct
+
+指定初始化 Bean 后要执行方法
+
 ##### 属性级别注解
 
 ###### @Value
 
 在属性上声明，实例化 bean 时读取应用配置属性并赋值，使用 `${author.name}` 语法
+
+###### @PathVariable
+
+方法参数上使用，指定 url 路径变量，路径变量的类型可以不是字符串，Spring MVC 将尽力转换为非字符串类型
+
+```java
+// 路径变量 http://domain/app/product/3
+@RequestMapping(value = "/product/{id}")
+public String viewProduct(@PathVariable Long id, Model model) {
+	Product product = productService.get(id);
+	model.addAttribute("product", product);
+}
+```
+
+###### @RequestParam
+
+注解方法参数
+
+```java
+// 请求参数 http://domain/app/product?productId=3 支持使用 List, Map, Optional 类型接收参数
+public void sendProduct(@RequestParam int productId)
+```
+
+*attribute*
+
+|     属性     |          含义           |
+| :----------: | :---------------------: |
+|     name     |    声明请求参数名称     |
+|   required   | 默认 true，指定是否必须 |
+| defaultValue |       指定默认值        |
+
+
 
 ##### SpringDataJPA
 

@@ -29,6 +29,10 @@ public class HelloController {
 }
 ```
 
+###### session
+
+使用 session 时，直接在参数中声明 HttpSession，spring 会自动注入
+
 #### 超媒体
 
 在 API 客户端编码中，使用硬编码模式和字符串操作是很常见的。超媒体作为应用状态引擎（Hypermedia as the Engine of Application State，HATEOAS）是一种创建自描述 API 的方式。API 所返回的资源中会包含相关资源的链接，客户端只需要了解最少的 API URL 信息就能导航整个 API。这种方式能够掌握 API 所提供的资源之间的关系，客户端能够基于 API 的 URL 中所发现的关系对它们进行遍历，是一种在 JSON 响应中嵌入超链接的简单通用格式。

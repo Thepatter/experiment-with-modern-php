@@ -552,17 +552,17 @@ javac -processor ProcessorClassName1,ProcessorClassName2... sourceFiles
 
 ###### 常用注解
 
-|       注解        |              含义              | 备注 |
-| :---------------: | :----------------------------: | :--: |
-|    @Deprecated    | 声明不建议使用，方法/类上声明  |      |
-|     @Override     | 覆写基类或接口方法，方法上声明 |      |
-| @SuppressWarnings |          抑制警告信息          |      |
-|                   |                                |      |
-|                   |                                |      |
-|                   |                                |      |
-|                   |                                |      |
-|                   |                                |      |
-|                   |                                |      |
+|       注解        |                             含义                             |           备注            |
+| :---------------: | :----------------------------------------------------------: | :-----------------------: |
+|    @Deprecated    |                声明不建议使用，方法/类上声明                 |                           |
+|     @Override     |                覆写基类或接口方法，方法上声明                |                           |
+| @SuppressWarnings |                         抑制警告信息                         |                           |
+|      @Named       |    为 Bean 设置 ID，可以替代 Spring 中的声明 Bean 的注解     | Java Dependency Injection |
+|      @Inject      | 自动装配 Bean，在方法或属性上声明 Bean 之间依赖关系，可以替代 Spring 的 @Autowired | Java Dependency Injection |
+|                   |                                                              |                           |
+|                   |                                                              |                           |
+|                   |                                                              |                           |
+|                   |                                                              |                           |
 
 #### lambda
 

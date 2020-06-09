@@ -24,7 +24,7 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
 
 ##### XML 配置
 
-###### 容器部署描述符
+###### Web 容器部署描述符
 
 *web.xml*
 
@@ -149,6 +149,10 @@ Bean 在 Spring 容器中从创建到销毁会经历多个阶段，每个阶段�
 8.  如果 Bean 实现了 *BeanPostProcessor* 接口，Spring 将调用它们的 postProcessAfterInitialization() 方法
 9.  此时 Bean 已经准备就绪，可以被应用程序使用，它们将一直驻留在应用上下文中，直到该应用上下文被销毁
 10.  如果 Bean 实现了 *DisposableBean* 接口，Spring 将调用它的 destroy() 接口，同样，如果 Bean 使用 destroy-method 声明了销毁方法，该方法也会被调用
+
+##### 装配 Bean
+
+
 
 #### 应用配置
 
