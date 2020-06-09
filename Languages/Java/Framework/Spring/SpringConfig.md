@@ -2,26 +2,6 @@
 
 #### Spring 配置
 
-##### 自动配置
-
-在 Spring 技术中，自动配置起源于自动装配和组件扫描
-
-*   组件扫描
-
-    Spring 能自动发现应用类路径下的组件，并将它们创建成 Spring 应用上下文中的 bean
-
-*   自动装配
-
-    Spring 能够自动为组件注入它们所依赖的其他 bean
-
-###### spring boot 自动配置
-
-Spring Boot 能够基于类路径中的条目、环境变量和其他因素合理猜测需要配置的组件并将它们装配在一起（没有代码就是自动装配的本质）
-
-##### 注解配置
-
-基于 POJO 的注解配置
-
 ##### XML 配置
 
 ###### Web 容器部署描述符
@@ -47,6 +27,7 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
         </init-param>
         <load-on-startup>1</load-on-startup>
     </servlet>
+    
     <servlet-mapping>
     	<servlet-name>springmvc</servlet-name>
         // 当匹配 / 时，所有请求都映射 dispatcherServlet，需要在 SpringMvc 配置文件添加 resources 元素以处理静态资源
@@ -57,23 +38,26 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
 
 ###### spring 配置文件
 
+配置 Bean
+
 *springmvc-config.xml*
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:p="http://www.springframework.org/schema/p"
-    xmlns:mvc="http://www.springframework.org/schema/mvc"
-    xmlns:context="http://www.springframework.org/schema/context"
-    xsi:schemaLocation="http://www.springframework.org/schema/beans
-    http://www.springframework.org/schema/beans/spring-beans.xsd
-    http://www.springframework.org/schema/mvc
-    http://www.springframework.org/schema/mvc/spring-mvc.xsd
-    http://www.springframework.org/schema/context
-    http://www.springframework.org/schema/context/springcontext.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/mvc
+                           http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/springcontext.xsd">
+    
     <context:component-scan base-package="com.app"/>
-    // 如没有 annotation-driver，resources 元素会阻止任意控制器被调用，若不需要使用 resources，则不需要 annotation-driver 元素
+    // 如没 annotation-driver，resources 会阻止任意控制器被调用，若不使用 resources，则不要 annotation-driver 元素
     <mvc:annotation-driven/>
     <mvc:resources mapping="/css/ **" location="/css/"/>
     <mvc:resources mapping="/ *.html" location="/"/>
@@ -83,6 +67,16 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
     </bean>
 </beans>
 ```
+
+*Beans 子元素*
+
+|         子元素         |           含义            |
+| :--------------------: | :-----------------------: |
+|          bean          |         配置 Bean         |
+|    import resource     | 导入配置 Bean 的 xml 文件 |
+| context:component-scan |    启用上下文组件扫描     |
+| mvc:annotation-driven  |   配置 MVC 静态元素访问   |
+| mvc:resources mapping  |   指定 MVC 资源匹配目录   |
 
 #### Spring 容器
 
@@ -106,7 +100,7 @@ Spring 自带了多种类型的应用上下文，可以显式使用上下文容�
 
     从一个或多个基于 java 的配置类中加载 Spring 应用上下文
 
-    ```
+    ```java
     ApplicationContext context = new AnnotationConfigApplicationContext(com.springinaction.BeansConfig.class)
     ```
 
@@ -152,7 +146,59 @@ Bean 在 Spring 容器中从创建到销毁会经历多个阶段，每个阶段�
 
 ##### 装配 Bean
 
+Spring 支持 XML、自动装配、POJO 类注解装配混合装配
 
+###### 自动装配
+
+在 Spring 技术中，自动配置起源于自动装配和组件扫描
+
+* 组件扫描
+
+  Spring 能自动发现应用类路径下的组件，并将它们创建成 Spring 应用上下文中的 bean。
+
+  在 Spring 中使用 @ComponentScan 注解启用主键扫描
+
+  *使用 XML 启动*
+
+  ```xml
+  <context:component-scan base-package="soundsystem"/>
+  ```
+
+* 自动装配
+
+  Spring 能够自动为组件注入它们所依赖的其他 bean，Spring 使用 @Autowrid 注解实现自动装配
+
+###### spring boot 自动配置
+
+Spring Boot 能够基于类路径中的条目、环境变量和其他因素合理猜测需要配置的组件并将它们装配在一起（没有代码就是自动装配的本质）
+
+###### POJO 代码装配
+
+在没有源码或需要将第三方库中的组件进行装配时，使用 @Configuration 和 @Bean 注解来显式生成 Bean
+
+###### XML 装配
+
+即 XML 配置-spring 配置文件 
+
+*bean 元素属性*
+
+|      属性      |                             含义                             |
+| :------------: | :----------------------------------------------------------: |
+|       id       |                         指定 Bean ID                         |
+|     class      |                       指定 Bean class                        |
+|    c:cd-ref    | 等于 constructor-arg ref 子元素，需要在 XML 中引入 spring c 命名空间 |
+| c:_*paramName* |                装配字面量，paramName 为参数名                |
+
+*bean 子元素*
+
+|        子元素         |                             含义                             |
+| :-------------------: | :----------------------------------------------------------: |
+|  constructor-arg ref  |               指定要传入构造器参数 Bean 的 Id                |
+| constructor-arg value |                          装配字面量                          |
+|       set/list        |         constructor-arg 子元素，用于装配集合类型参数         |
+|         value         |           set/list 子元素，声明 set/list 子元素值            |
+|       ref bean        |        set/list 子元素，声明 set/list 引用 Bean 的 ID        |
+|       property        | 元素配置 Bean 属性，支持 name、ref 属性及 constructor 子元素（除集合外） |
 
 #### 应用配置
 

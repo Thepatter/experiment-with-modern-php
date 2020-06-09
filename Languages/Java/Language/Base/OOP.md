@@ -455,6 +455,12 @@ java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 
 
 在 java 中双反斜线表示正则中的反斜线，即普通的反斜线为 `\\\\` ，换行符和制表符只需使用单反斜线 `\n\t`
 
+* *String* 提供了 matches()、replaceFirst()、replaceAll()、split() 方法来进行正则操作。
+
+* *java.util.regex.* 包操作正则
+  1. 编译正则
+  2. 生成匹配对象
+
 ##### BigDecimal
 
 为了防止精度损失，禁止使用构造方法 BigDecimal(double) 的方式把 double 值转化为 BigDecimal 对象
