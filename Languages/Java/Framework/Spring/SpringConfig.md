@@ -1,10 +1,114 @@
 ### Spring Config
 
-#### Spring 配置
+#### 容器
+
+容器是 Spring 的核心，应用 Bean 存在于 Spring 容器中，容器负责创建、装配、管理 Bean 的生命周期
+
+*   Bean 工厂
+
+    由 *org.springframework.beans.factory.BeanFactory* 接口定义是最简单的容器，提供基本的 DI 支持
+
+*   应用上下文
+
+    由 *org.springframework.context.ApplicationContext* 接口定义，基于 *BeanFactory* 构建，提供应用框架级别的服务
+
+##### Bean 管理
+
+###### 内置上下文容器
+
+Spring 自带了多种类型的应用上下文，可以显式使用上下文容器，并在上下文容器上创建 Bean
+
+*   AnnotationConfigApplicationContext
+
+    从一个或多个基于 java 的配置类中加载 Spring 应用上下文
+
+    ```java
+    ApplicationContext context = new AnnotationConfigApplicationContext(com.springinaction.BeansConfig.class)
+    ```
+
+*   AnnotationConfigWebApplicationContext
+
+    从一个或多个基于 java 配置类中加载 Spring Web 应用上下文
+
+*   ClassPathXmlApplicationContext
+
+    从类路径下的一个或多个 XML 配置文件中加载上下文定义，把应用上下文的定义文件作为类资源
+
+    ```java
+    ApplicationContext context = new ClassPathXmlApplicationContext("knight.xml");
+    ```
+
+*   FileSystemXmlApplicationContext
+
+    从指定文件系统下的一个或多个 XML 配置文件中加载上下文定义
+
+    ```java
+    // 装载应用上下文
+    ApplicationContext context = new FileSystemXmlApplicationContext("c:/bean.xml")
+    ```
+
+*   XmlWebApplicationContext
+
+    从 Web 应用下的一个或多个 XML 配置文件中加载上下文定义
+
+###### Bean 生命周期
+
+Bean 在 Spring 容器中从创建到销毁会经历多个阶段，每个阶段都可以针对 Spring 如何管理 Bean 进行定制
+
+1.  Spring 对 Bean 进行实例化
+2.  Spring 将值和 Bean 的引用注入到 Bean 对应的属性中
+3.  如果 Bean 实现了 *BeanNameAware* 接口，Spring 将 Bean 的 ID 传递给 setBeanName() 方法
+4.  如果 Bean 实现了 *BeanFactoryAware* 接口，Spring 将调用 setBeanFactory() 方法，将 BeanFactory 容器实例传入
+5.  如果 Bean 实现了 *ApplicationContextAware* 接口，Spring 将调用 setApplicationContext()，将 Bean 所在的应用上下文的引用传入进来
+6.  如果 Bean 实现了 *BeanPostProcessor* 接口，Spring 将调用它们的 postProcessBeforeInitialization() 方法
+7.  如果 Bean 实现了 *InitializingBean* 接口，Spring 将调用它们的 afterPropertiesSet() 方法，如果 Bean 使用 init-method 声明了初始化方法，该方法也会被调用
+8.  如果 Bean 实现了 *BeanPostProcessor* 接口，Spring 将调用它们的 postProcessAfterInitialization() 方法
+9.  此时 Bean 已经准备就绪，可以被应用程序使用，它们将一直驻留在应用上下文中，直到该应用上下文被销毁
+10.  如果 Bean 实现了 *DisposableBean* 接口，Spring 将调用它的 destroy() 接口，同样，如果 Bean 使用 destroy-method 声明了销毁方法，该方法也会被调用
+
+##### Bean 作用域
+
+默认 Spring 应用上下文中所有 Bean 都是单例形式创建的，每次注入的都是同一个实例。Spring 定义了单例、原型（每次注入或通过 Spring 应用上下文获取时，都创建一个新的 Bean 实例）、会话（在 Web 应用中，为每个会话创建一个 Bean 实例）、请求（在 Web 应用中，为每个请求创建一个 Bean 实例）的 Bean 作用域
+
+###### 会话与请求作用域
+
+将会话或请求作用域的 Bean 注入到单例 Bean 时，需要配置代理，代理真正需要注入的 Bean，因为被注入 Bean  会在应用上下文加载时候创建，当它创建时，Spring 会试图将要注入的会话或请求 Bean 注入，但由于此时请求或会话还未创建，因此注入的 Bean 还不存在，Spring 此时会注入一个类或接口的代理，代理会暴露与注入 Bean 相同的方法，当需要调用注入 Bean 时，代理会对其进行懒解析并将调用委托给会话作用域内真正的 Bean。使用 @Scope 的 proxyMode 属性声明代理模式是接口还是类
+
+##### 装配 Bean
+
+Spring 支持 XML、自动装配、POJO 类注解装配混合装配
+
+###### 自动装配
+
+在 Spring 技术中，自动配置起源于自动装配和组件扫描
+
+* 组件扫描
+
+  Spring 能自动发现应用类路径下的组件，并将它们创建成 Spring 应用上下文中的 bean。
+
+  在 Spring 中使用 @ComponentScan 注解启用主键扫描
+
+  *使用 XML 启动*
+
+  ```xml
+  <context:component-scan base-package="soundsystem"/>
+  ```
+
+* 自动装配
+
+  Spring 能够自动为组件注入它们所依赖的其他 bean，Spring 使用 @Autowrid 注解实现自动装配
+
+###### spring boot 自动配置
+
+Spring Boot 能够基于类路径中的条目、环境变量和其他因素合理猜测需要配置的组件并将它们装配在一起（没有代码就是自动装配的本质）
+
+###### POJO 代码装配
+
+在没有源码或需要将第三方库中的组件进行装配时，使用 @Configuration 和 @Bean 注解来显式生成 Bean
 
 ##### XML 配置
 
-###### Web 容器部署描述符
+###### servlet 容器部署描述符
 
 *web.xml*
 
@@ -77,108 +181,11 @@
 | context:component-scan |    启用上下文组件扫描     |
 | mvc:annotation-driven  |   配置 MVC 静态元素访问   |
 | mvc:resources mapping  |   指定 MVC 资源匹配目录   |
-
-#### Spring 容器
-
-容器是 Spring 的核心，应用 Bean 存在于 Spring 容器中，容器负责创建、装配、管理 Bean 的生命周期
-
-*   Bean 工厂
-
-    由 *org.springframework.beans.factory.BeanFactory* 接口定义是最简单的容器，提供基本的 DI 支持
-
-*   应用上下文
-
-    由 *org.springframework.context.ApplicationContext* 接口定义，基于 *BeanFactory* 构建，提供应用框架级别的服务
-
-##### Bean 管理
-
-###### 内置上下文容器
-
-Spring 自带了多种类型的应用上下文，可以显式使用上下文容器，并在上下文容器上创建 Bean
-
-*   AnnotationConfigApplicationContext
-
-    从一个或多个基于 java 的配置类中加载 Spring 应用上下文
-
-    ```java
-    ApplicationContext context = new AnnotationConfigApplicationContext(com.springinaction.BeansConfig.class)
-    ```
-
-*   AnnotationConfigWebApplicationContext
-
-    从一个或多个基于 java 配置类中加载 Spring Web 应用上下文
-
-*   ClassPathXmlApplicationContext
-
-    从类路径下的一个或多个 XML 配置文件中加载上下文定义，把应用上下文的定义文件作为类资源
-
-    ```java
-    ApplicationContext context = new ClassPathXmlApplicationContext("knight.xml");
-    ```
-
-*   FileSystemXmlApplicationContext
-
-    从指定文件系统下的一个或多个 XML 配置文件中加载上下文定义
-
-    ```java
-    // 装载应用上下文
-    ApplicationContext context = new FileSystemXmlApplicationContext("c:/bean.xml")
-    ```
-
-*   XmlWebApplicationContext
-
-    从 Web 应用下的一个或多个 XML 配置文件中加载上下文定义
-
-###### Bean 生命周期
-
-Bean 在 Spring 容器中从创建到销毁会经历多个阶段，每个阶段都可以针对 Spring 如何管理 Bean 进行定制
-
-1.  Spring 对 Bean 进行实例化
-2.  Spring 将值和 Bean 的引用注入到 Bean 对应的属性中
-3.  如果 Bean 实现了 *BeanNameAware* 接口，Spring 将 Bean 的 ID 传递给 setBeanName() 方法
-4.  如果 Bean 实现了 *BeanFactoryAware* 接口，Spring 将调用 setBeanFactory() 方法，将 BeanFactory 容器实例传入
-5.  如果 Bean 实现了 *ApplicationContextAware* 接口，Spring 将调用 setApplicationContext()，将 Bean 所在的应用上下文的引用传入进来
-6.  如果 Bean 实现了 *BeanPostProcessor* 接口，Spring 将调用它们的 postProcessBeforeInitialization() 方法
-7.  如果 Bean 实现了 *InitializingBean* 接口，Spring 将调用它们的 afterPropertiesSet() 方法，如果 Bean 使用 init-method 声明了初始化方法，该方法也会被调用
-8.  如果 Bean 实现了 *BeanPostProcessor* 接口，Spring 将调用它们的 postProcessAfterInitialization() 方法
-9.  此时 Bean 已经准备就绪，可以被应用程序使用，它们将一直驻留在应用上下文中，直到该应用上下文被销毁
-10.  如果 Bean 实现了 *DisposableBean* 接口，Spring 将调用它的 destroy() 接口，同样，如果 Bean 使用 destroy-method 声明了销毁方法，该方法也会被调用
-
-##### 装配 Bean
-
-Spring 支持 XML、自动装配、POJO 类注解装配混合装配
-
-###### 自动装配
-
-在 Spring 技术中，自动配置起源于自动装配和组件扫描
-
-* 组件扫描
-
-  Spring 能自动发现应用类路径下的组件，并将它们创建成 Spring 应用上下文中的 bean。
-
-  在 Spring 中使用 @ComponentScan 注解启用主键扫描
-
-  *使用 XML 启动*
-
-  ```xml
-  <context:component-scan base-package="soundsystem"/>
-  ```
-
-* 自动装配
-
-  Spring 能够自动为组件注入它们所依赖的其他 bean，Spring 使用 @Autowrid 注解实现自动装配
-
-###### spring boot 自动配置
-
-Spring Boot 能够基于类路径中的条目、环境变量和其他因素合理猜测需要配置的组件并将它们装配在一起（没有代码就是自动装配的本质）
-
-###### POJO 代码装配
-
-在没有源码或需要将第三方库中的组件进行装配时，使用 @Configuration 和 @Bean 注解来显式生成 Bean
+|         beans          |      支持嵌套子元素       |
 
 ###### XML 装配
 
-即 XML 配置-spring 配置文件 
+使用 xml 元素声明 Bean，并填充 Bean 属性及管理 Bean 依赖
 
 *bean 元素属性*
 
@@ -188,6 +195,7 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
 |     class      |                       指定 Bean class                        |
 |    c:cd-ref    | 等于 constructor-arg ref 子元素，需要在 XML 中引入 spring c 命名空间 |
 | c:_*paramName* |                装配字面量，paramName 为参数名                |
+|    profile     |                         指定 profile                         |
 
 *bean 子元素*
 
@@ -199,6 +207,21 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
 |         value         |           set/list 子元素，声明 set/list 子元素值            |
 |       ref bean        |        set/list 子元素，声明 set/list 引用 Bean 的 ID        |
 |       property        | 元素配置 Bean 属性，支持 name、ref 属性及 constructor 子元素（除集合外） |
+|        profile        |                         指定 profile                         |
+|         scope         |                       声明 Bean 作用域                       |
+|   aop:scoped-proxy    | 为 Bean 创建作用域代理，默认使用 CGLib 创建目标类代理，proxy-target-class=false 创建基于接口代理，需要声明 aop 命名空间 `xmlns:aop="http://www.springframework.org/schema/aop"` |
+
+##### Bean 属性值注入
+
+自动注入会将 Bean  的引用进行注入。需要将一个固定的值注入到 Bean 的属性时，Spring 提供了属性占位符和 Spring 表达式语言的方式
+
+###### 外部值注入
+
+声明属性源并通过 Spring 的 Environment 来检索属性
+
+###### 属性占位符
+
+支持将属性定义到外部的属性文件中，并使用占位符将其值插入到 Spring Bean 中。占位符使用 `${}` 包装属性名。在使用 XML 配置 Bean 属性时，使用占位符必须使用 ` <context:property-placeholder />` 声明配置 Bean。或使用 @PropertySource 声明属性源文件
 
 #### 应用配置
 
@@ -272,6 +295,25 @@ Spring profile 提供了一种条件化的配置，在运行时，根据哪些 p
 
 ###### 激活 profile
 
+Spring 在确定那个 profile 处于激活状态时，需要依赖两个独立的属性：`spring.profiles.active`（优先） 和 `spring.profiles.default` ，没有激活 profile 时，只创建没有定义 profile 的 Bean，可以在 DispatcherServlet 的初始化参数、Web 应用的上下文参数、JNDI 条目、环境变量 JVM 的系统属性来指定这两个属性，支持同时激活多个 profile
+
+* *web.xml 中指定*
+
+  ```xml
+  <?xml version="1.0" encoding="UTF-8"?>
+  <web-app version="2.5">
+  	<context-param>  // 设置上下文默认 profile
+  		<param-name>spring.profile.default></param-name>
+          <param-value>dev</param-value>
+      </context-param>
+      <servlet>
+      	<init-param>   // 为 servlet 设置默认 profile
+              <param-name>spring.profile.default></param-name>
+          	<param-value>dev</param-value>
+          </init-param>
+      </servlet>
+  ```
+
 * 将 profile 名称的列表赋值给 spring.profiles.active 属性
 
   ```yaml
@@ -312,7 +354,19 @@ public CommandLineRunner dataLoader(IngredientRepository repo {}
 public COmmandLineRunner dataLoade(IngredientRepository repo) {}
 ```
 
+###### 创建自定义的限定符注解
 
+使用自定义的限定符注解来表达 Bean 所希望限定的特性，需要创建一个注解，它本省使用 @Qualifier 注解来标注
+
+```java
+@Target(
+    {ElementType.CONSTRUCTOR, ElementType.FIELD,ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface Cold { }
+```
+
+使用自定义限定符注解，可以同时使用多个限定符，不会有 Java 编译器的限制（不允许使用多个同类注解）
 
  
 

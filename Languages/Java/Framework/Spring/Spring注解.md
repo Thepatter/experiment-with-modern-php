@@ -16,9 +16,9 @@
 
 声明限定符
 
-*   与 @Autowired 和 @Inject 协同使用，在注入的时候指定想要注入进去的是那个 bean（所引用的 bean 要具有 String 类型的限定符，如果没有指定其他的限定符，所有的 bean 都会给定一个 默认的限定符，这个限定符与 bean 的 ID 相同）
+*   与 @Autowired 和 @Inject 协同使用，在注入的时候指定想要注入进去的是那个 Bean 的限定符（所引用的 Bean 要具有 String 类型的限定符，如果没有指定其他的限定符，所有的 Bean 都会给定一个 默认的限定符，这个限定符与 Bean 的 ID 相同）
 
-*   与 @Component 和 @Bean 协同使用，声明 @Bean 限定符，在注入时使用 @Qualifier 引用 @Bean 限定符
+*   与 @Component 和 @Bean 协同使用，声明 Bean 的限定符
 
 ###### @Scope
 
@@ -46,11 +46,19 @@
 
     *   **ScopedProxyMode.INTERFACES**
 
-        表明这个代理要实现对应接口，并将调用委托给实现 bean
+        表明这个代理要实现对应接口，并将调用委托给实现 Bean
 
     *   **ScopedProxyMode.TARGET_CLASS**
 
-        表明代理要实现对应类（即 bean 类型是具体类）
+        表明代理要实现对应类（即 Bean 类型是具体类）
+
+###### @Profile
+
+3.1 版本引入，使用该注解指定某个 Bean 属于那个 profile（spring 会在对应 profile 激活时创建 Bean），3.2 支持方法级别
+
+###### @Conditional
+
+指定条件化的创建 Bean
 
 ###### @RequestMapping
 
@@ -89,6 +97,10 @@
     该方法只会处理 Content-type 与 application/json 相匹配的请求
 
 ##### 类级别注解
+
+###### @ActiveProfiles
+
+指定激活的 profile
 
 ###### @SpringBootApplication
 
@@ -182,6 +194,10 @@
 启用配置类
 
 ##### 方法级别注解
+
+###### @PropertySource
+
+声明属性源
 
 ###### @CrossOrigin
 

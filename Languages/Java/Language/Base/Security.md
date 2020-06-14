@@ -127,7 +127,7 @@ Java 编程语言已经实现了 `MD5`、`SHA-1`、`SHA-256`、`SHA-384`、`SHA-
 * 作为所有消息摘要算法的超类
 
 ```java
- MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
+MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
 byte[] hashString = messageDigest.digest(origin);
 StringBuilder hBuilder = new StringBuilder();
 int n;
