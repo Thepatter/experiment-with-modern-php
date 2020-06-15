@@ -34,25 +34,13 @@
 
     status 命令添加 -s 参数时，文件前面标记含义：
 
-    * ??
-
-        新添加未跟踪
-
-    * A
-
-        新添加到暂存区
-
-    * M
-
-        修改过（出现在有右边的 M 表示该文件被修改了但是还没有放入暂存区，出现在靠左边的 M 表示该文件被修改了并放入了暂存区）
-
-    * R
-
-        重命名
-
-    * D
-
-        删除
+    | 标记 |                             含义                             |
+    | :--: | :----------------------------------------------------------: |
+    |  ??  |                         新添加未跟踪                         |
+    |  A   |                        新添加到暂存区                        |
+    |  M   | 修改过（出现在靠右边的 M 表示该文件被修改但还没有放入暂存区，出现在靠左边的 M 表示该文件被修改了并放入了暂存区） |
+    |  R   |                            重命名                            |
+    |  D   |                             删除                             |
 
 ###### 工作流
 
@@ -496,5 +484,74 @@ git clone user@server:project.git
     
 * 另一个办法是让 SSH 服务器通过某个 LDAP 服务，或者其他已经设定好的集中授权机制，来进行授权。 只要每个用户可以获得主机的 shell 访问权限，任何 SSH 授权机制你都可视为是有效的。
 
+#### 配置 Git
 
+可以使用 git config 命令配置 Git，Git 使用一系列配置文件来自定义行为：
 
+1. 首先会查找系统级的 */etc/gitconfig*（该文件含有系统里每位用户以及它们所拥有的仓库的配置值。git config --system 它会读写该文件）
+2. 查找用户 *~/.gitconfig* 文件或 *~/.config/git/config* 文件，可以传递 --global 选项让 git 读写该文件
+3. 查找正在操作的仓库所对应的 Git 目录下的配置文件 *.git/config*，该文件的值只对该仓库有效，对应于 git config --local 选项
+
+配置会从大到小依次覆盖配置。
+
+##### 客户端配置
+
+###### 常用配置
+
+|       配置        |                           语法                            |                             含义                             |
+| :---------------: | :-------------------------------------------------------: | :----------------------------------------------------------: |
+|     core.edit     |            git config --global core.editor vim            |                        设置默认编辑器                        |
+|  commit.template  |  git config --global commit.template ~/.gitmessage.text   |         git 会使用该文件内容作为提交的默认初始化信息         |
+|    core.pager     |            git config --global core.pager ' '             | 指定 git 运行诸如 log 和 diff 等命令所使用的分页器，支持 more 等，默认 less，空串则关闭分页 |
+|  user.signingkey  |     git config --global user.signingkey <gpg-key-id>      | 设置签署工作的 GPG 密钥，每次运行 git tag -s 可直接签署标签，而无需定义密钥 |
+| core.excludesfile | git config --global core.excludesfile ~/.gitignore_global |                   设置全局 .gitignore 文件                   |
+|     color.ui      |            git config --global color.ui false             |            设置终端着色，支持 true，false，always            |
+|      color.*      |           color.branch/diff/interactive/status            |          设置对应着色，支持 true，false，always（）          |
+|   core.autocrlf   |          git config --global core.autocrlf true           |                          换行符配置                          |
+|                   |                                                           |                                                              |
+
+* color.* 的以上每个配置项都有子选项，它们可以被用来覆盖其父设置，以达到为输出的各个部分着色的目的。 例如，为了让 `diff` 的输出信息以蓝色前景、黑色背景和粗体显示，你可以运行
+
+  ```java
+  $ git config --global color.diff.meta "blue black bold"
+  ```
+
+  你能设置的颜色有：`normal`、`black`、`red`、`green`、`yellow`、`blue`、`magenta`、`cyan` 或 `white`。 正如以上例子设置的粗体属性，想要设置字体属性的话，可以选择包括：`bold`、`dim`、`ul`（下划线）、`blink`、`reverse`（交换前景色和背景色）。
+
+core
+
+##### 服务端配置
+
+###### 常用配置
+
+#### `receive.fsckObjects`
+
+Git 能够确认每个对象的有效性以及 SHA-1 检验和是否保持一致。 但 Git 不会在每次推送时都这么做。这个操作很耗时间，很有可能会拖慢提交的过程，特别是当库或推送的文件很大的情况下。 如果想在每次推送时都要求 Git 检查一致性，设置 `receive.fsckObjects` 为 true 来强迫它这么做：
+
+```console
+$ git config --system receive.fsckObjects true
+```
+
+现在 Git 会在每次推送生效前检查库的完整性，确保没有被有问题的客户端引入破坏性数据。
+
+#### `receive.denyNonFastForwards`
+
+如果你变基已经被推送的提交，继而再推送，又或者推送一个提交到远程分支，而这个远程分支当前指向的提交不在该提交的历史中，这样的推送会被拒绝。 这通常是个很好的策略，但有时在变基的过程中，你确信自己需要更新远程分支，可以在 push 命令后加 `-f` 标志来强制更新（force-update）。
+
+要禁用这样的强制更新推送（force-pushes），可以设置 `receive.denyNonFastForwards`：
+
+```console
+$ git config --system receive.denyNonFastForwards true
+```
+
+稍后我们会提到，用服务器端的接收钩子也能达到同样的目的。 那种方法可以做到更细致的控制，例如禁止某一类用户做非快进（non-fast-forwards）推送。
+
+#### `receive.denyDeletes`
+
+有一些方法可以绕过 `denyNonFastForwards` 策略。其中一种是先删除某个分支，再连同新的引用一起推送回该分支。 把 `receive.denyDeletes` 设置为 true 可以把这个漏洞补上：
+
+```console
+$ git config --system receive.denyDeletes true
+```
+
+这样会禁止通过推送删除分支和标签 — 没有用户可以这么做。 要删除远程分支，必须从服务器手动删除引用文件。 通过用户访问控制列表（ACL）也能够在用户级的粒度上实现同样的功能

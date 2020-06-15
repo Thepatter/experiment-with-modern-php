@@ -483,6 +483,20 @@ Class 对象表示运行时的类型信息，每个类都有一个 Class 对象�
 
 类字面常量（.class）也可以生成对 Class 对象的引用，它在编译时就会受到检查，不需要置于 try 语句块中，也不需要对 forName 方法进行调用，当使用类字面常量来创建 Class 对象的引用时，不会自动地初始化 Class 对象，初始化被延迟到对静态方法或者非常数静态域（对于编译期常量，那么这个值不需要对类进行初始化就可以被读取，如果一个 static 域不是 final，那么在对它访问时，总是要求在它被读取之前，为这个域分配存储空间和初始化该存储空间）进行首次引用时才执行。
 
+* 在 Java SE5 中 Class<?> 优于 Class 类型，即便它们是等价的
+
+* Java SE5 还添加了用于 class 引用的转型语法，即 cast() 方法，cast() 方法接受参数对象，并将其转型为 Class 引用类型，对于无法使用普通转型的情况非常有用，在编写泛型时，如果存储了 Class 引用，并希望以后通过这个引用来执行转型。
+
+  ```java
+  class Building {}
+  class House extends Buiding {}
+  public class ClassCasts {
+  	Building b = new House();
+  	Class<House> houseType = House.class; 
+      House h = houseType.cast(B); //  等价	h = (House) b;
+  }
+  ```
+
 ##### 数组
 
 jvm 确保数组会被初始化，而且不能再它的范围之外被访问。创建数组对象时，实际上就是创建一个引用数组，并且每个引用都会自动被初始化为一个特定值，当数组元素引用未指向某个对象时为 null，在使用数组元素引用前，必须为其指定一个对象或基本类型，否则会 *NullPointException*
