@@ -380,6 +380,24 @@ public @interface Cold { }
 
 Advice，切面的工作被称为通知，通知定义了切面是什么以及何时使用，包含：前置通知（在目标方法被调用之前调用通知功能）、后置通知（在目标方法完成之后调用通知，此时不会关心方法的输出是什么）、返回通知（在目标方法成功执行之后调用通知）、异常通知（在目标方法抛出异常后调用通知）、环绕通知（在被通知的方法调用之前和调用之后执行自定义的行为）
 
+声明环绕通知方法时，必须指定调用 ProcessdingJoinPoint.proceed() 方法，将控制权交给被通知的方法，否则会阻塞对被通知方法的调用
+
+切点定义中的参数与切点方法中参数名称一样时，即可完成从命名切点到通知方法的参数转移（获取连接点的参数）
+
+```java
+@Aspect
+public class TrackCounter {
+
+    @Pointcut("execution(* package.class.method(int)) && args(trackNumber)")
+    public void trackPlayed(int trackNumber) {}
+    
+    @Before("trackPlayed(trackNumber)")
+    public void countTrack(int trackNumber) {
+    	System.out.print(trackNumber);
+    }
+}
+```
+
 ###### 连接点
 
 join point 连接点是应用执行过程中能够插入切面的一点，这个点可以是调用方法时，抛出异常时，修改字段时，切面代码可以利用这些点插入到应用的正常流程之中，并添加新的行为
@@ -388,15 +406,48 @@ join point 连接点是应用执行过程中能够插入切面的一点，这个
 
 Pointcut 
 
-切点定义了何处，切点的定义匹配通知所要织入的一个或多个连接点。通常使用明确的类和方法名称，或者利用正则表达式定义所匹配的类和方法名称来指定这些切点。有些 AOP 框架允许动态创建切点
+切点定义了何处，切点的定义『匹配通知所要织入的一个或多个连接点』，即将横切关注点应用的具体的方法上。通常使用明确的类和方法名称，或者利用正则表达式定义所匹配的类和方法名称来指定这些切点。有些 AOP 框架允许动态创建切点
+
+在 Spring 中，使用 AspectJ 的切点表达式语言来定义切点，仅支持 AspectJ 切点指示器的一个子集，使用列表之外的指示器会抛出 *IllegalArgumentException*
+
+| AspectJ 指示器 |                             描述                             |
+| :------------: | :----------------------------------------------------------: |
+|     arg()      |            限制连接点匹配参数为指定类型的执行方法            |
+|    @args()     |          限制连接点匹配参数由指定注解标注的执行方法          |
+|  execution()   |                  用于匹配是连接点的执行方法                  |
+|     this()     |      限制连接点匹配 AOP 代理的 bean 引用为指定类型的类       |
+|     target     |             限制连接点匹配目标对象为指定类型的类             |
+|   @target()    | 限制连接点匹配特定的执行对象，这些对象对应的类要具有指定类型的注解 |
+|    within()    |                   限制连接点匹配指定的类型                   |
+|    @within     | 限制连接点匹配指定注解所标注的类型（当使用 Spring AOP时，方法定义在由指定的注解所标注的类里） |
+|  @annotation   |                 限定匹配带有指定注解的连接点                 |
+
+```java
+// 定义切点接口
+public interface Performance { void perfore(); }
+// 切点表达式 * 不关心返回值，指定全限定的类名和方法名，方法 .. 即不关心入参（支持指定参数类型），支持使用 and or ! 等语义限制，bean 关键字指定 Bean ID
+execution(* package.class.method(..) and bean("beanId"))
+```
 
 ###### 切面
 
 Aspect 切面是通知和切点的结合，通知和切点共同定义了切面的全部内容
 
+切面是一个 POJO，使用 @AspectJ 注解标注其为一个切面，并在其方法上使用 @Before 等注解（在注解中定义切点表达式）标注切面执行时机。
+
+使用时需要将切面定义的 POJO 装配为 Bean，并启用代理功能：
+
+*   使用 @EnableAspectJAutoProxy
+
+*   xml
+
+    ```xml
+    <aop:aspectj-autoproxy/>
+    ```
+
 ###### 引入
 
-Intruduction 引入允许向现有的类添加新的方法或属性
+Intruduction 引入允许向现有的类i添加新的方法或属性
 
 ###### 织入
 
@@ -425,4 +476,70 @@ Spring AOP 建立在动态代理基础之上，局限于方法拦截，提供了
 
 Spring 所创建的通知都是标准的 java 类，在代理类中包裹切面，Spring 在运行期把切面织入到 Spring 管理的 Bean 中，代理类封装了目标类，并拦截被通知方法的调用，再把调用转发给真正的目标 Bean，当代理拦截到方法调用时，在调用目标 Bean 方法之前，会执行切面逻辑
 
-直到应用需要被代理的 Bean 时，Spring 才创建代理对象。如果使用的 ApplicationContext，在 ApplicationContext 从 BeanFactory 中加载所有 Bean 的时候，Spring 才会创建被代理的对象
+直到应用需要被代理的 Bean 时，Spring 才创建代理对象。如果使用的 ApplicationContext，在 ApplicationContext 从 BeanFactory 中加载所有 Bean 的时候，Spring 才会创建被代理的对象。Spring 基于动态代理，只支持方法连接点
+
+###### 使用 AOP
+
+1.  定义切面的 POJO（并在其方法上定义切点）
+2.  将切面的 POJO 装配为 Spring Bean
+3.  配置自动代理注册（AspectJ 自动代理都会为使用 @Aspect 注解的 Bean 创建一个代理）
+
+###### XML 配置切面
+
+对于没有源码无法使用注解时，可以使用 XML 进行切面的配置
+
+|       AOP 配置元素        |                             用途                             |
+| :-----------------------: | :----------------------------------------------------------: |
+|      `<aop:advisor>`      |                       定义 AOP 通知器                        |
+|       `<aop:after>`       |      定义 AOP 后置通知（不管被通知的方法是否执行成功）       |
+|  `<aop:after-returning>`  |                      定义 AOP 返回通知                       |
+|  `<aop:after-throwing>`   |                      定义 AOP 异常通知                       |
+|      `<aop:around>`       |                      定义 AOP 环绕通知                       |
+|      `<aop:aspect>`       |                        定义其一个切面                        |
+| `<aop:aspectj-autoproxy>` |                 启用 @AspectJ 注解驱动的切面                 |
+|      `<aop:before>`       |                    定义一个 AOP 前置通知                     |
+|      `<aop:config>`       | 顶层的 AOP 配置元素，大多数的 `<aop:*>` 元素必须包含在 `<aop:config>` 元素内 |
+|  `<aop:declare-parents>`  |           以透明的方式为被通知的对象引入额外的接口           |
+|     `<aop:pointcut>`      |                         定义一个切点                         |
+
+```xml
+<aop:config>
+    <!-- 声明切面，引用 audience Bean，ref 元素引用的 bean 提供了切面中通知所调用的方法 -->
+    <aop:aspect ref="audience">
+        <!-- 定义 id 为 performance 的切点，并在通知中引用该切点  -->
+        <aop:pointcut id="performance" expression="execution(** concert.Performance.perform(..))"/>
+        <!-- 定义了匹配切点的方法执行之前调用前置通知方法 taksSeats 和 solenceCellPhones  -->
+        <aop:before pointcut="performance" method="solenceCellPhones"/>
+        <aop:before pointcut="performance" method="takeSeats"/>
+        <!-- 定义了一个返回通知，在切点所匹配的方法调用之后再调用 applause 方法 -->
+        <aop:after-returning pointcut="performance" method="applause"/>
+        <!-- 定义了异常通知，如果所匹配的方法执行时抛出任何异常，都会调用 demandRefund() 方法 -->
+        <aop:after-throwing pointcut="performance" method="demandRefund"/>
+        <!-- 声明环绕通知 -->
+        <aop:around pointcut-ref="performance" method="watchPerformance"/>
+    </aop:aspect>
+</aop:config>
+```
+
+###### Spring Boot 相关配置
+
+*   star 依赖
+
+    ```xml
+    <dependency>
+    	<groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
+    ```
+
+*   配置
+
+    ```properties
+    # 默认开启自动代理，即默认添加了 @EnableAspectJAutoProxy
+    spring.aop.auto=true
+    # 使用 CGLIB 实现 AOP，false 则使用标注 Java 实现
+    spring.aop.proxy-target-class=true
+    ```
+
+    
+
