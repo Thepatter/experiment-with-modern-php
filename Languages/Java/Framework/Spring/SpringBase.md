@@ -382,12 +382,10 @@ Advice，切面的工作被称为通知，通知定义了切面是什么以及�
 
 声明环绕通知方法时，必须指定调用 ProcessdingJoinPoint.proceed() 方法，将控制权交给被通知的方法，否则会阻塞对被通知方法的调用
 
-切点定义中的参数与切点方法中参数名称一样时，即可完成从命名切点到通知方法的参数转移（获取连接点的参数）
-
 ```java
 @Aspect
 public class TrackCounter {
-
+	// 切点定义中的参数与切点方法中参数名称一样时，即可完成从命名切点到通知方法的参数转移（获取连接点的参数）
     @Pointcut("execution(* package.class.method(int)) && args(trackNumber)")
     public void trackPlayed(int trackNumber) {}
     
