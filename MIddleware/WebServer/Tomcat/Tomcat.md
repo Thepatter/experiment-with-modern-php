@@ -409,6 +409,8 @@ File workDir = (File) context.getAttribute("javax.servlet.context.tempdir");
 
 定义一个 JNDI 资源，应用程序便可以在 Tomcat 上下文定义中使用。资源用 `Context` 元素目录下的 `Resource` 元素表示
 
+###### 数据源
+
 *Resource属性*
 
 |      属性       |                             描述                             |
@@ -437,6 +439,18 @@ File workDir = (File) context.getAttribute("javax.servlet.context.tempdir");
 ```
 
 如果希望数据源被 Servlet 容器内一个虚拟主机的多个 web 应用访问，可以在 `<CATALINA_HOME>/conf/server.xml` 文件中相应 `<Host>` 元素中配置 `<Resource>` 子元素
+
+在 context.xml 中定义好数据源后，应用使用时需要在 web.xml 中配置 resource-ref 元素引用数据源，并在应用程序中访问
+
+```java
+// 获取数据源引用
+Context ctx = new InitialContext();
+DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/bookDB");
+// 获取连接
+connection conn = ds.getConnection();
+// 将 Connection 对象返回数据库连接池，使 Connection 对象恢复到空闲状态
+conn.close();
+```
 
 ##### 管理会话
 
