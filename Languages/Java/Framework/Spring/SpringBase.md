@@ -223,6 +223,75 @@ Spring Boot 能够基于类路径中的条目、环境变量和其他因素合�
 
 支持将属性定义到外部的属性文件中，并使用占位符将其值插入到 Spring Bean 中。占位符使用 `${}` 包装属性名。在使用 XML 配置 Bean 属性时，使用占位符必须使用 ` <context:property-placeholder />` 声明配置 Bean。或使用 @PropertySource 声明属性源文件
 
+##### Spring Expression Language
+
+Spring 3 引入 SpEL，可以将值装配到 bean 属性和构造器参数中，在这个过程中所使用的表达式会在运行时计算得到值。支持：
+
+* 使用 bean 的 id 来引用 bean
+* 调用对象的方法和访问对象属性
+* 对值进行算术、关系和逻辑运算
+* 正则、集合操作
+* Spring Security 支持使用 SpELl 表达式定义安全限制规则
+* Thymeleaf 模板使用 SpEL 表达式引用模型数据
+
+###### 基本语法
+
+* 基本语法
+
+  ```thymeleaf
+  # 属性占位符需放在 "${}" 中
+  "${user.name}"
+  # 表达式需要放在 "#{}" 中
+  "#{T(System).currentTimeMillis()}"  // 计算调用时时间
+  "#{sgtPeppers.artist}"              // id 为 sgtPeppers 的 artist 属性
+  "#{systemProperties['disc.title']}"  // 使用 systemProperties 对象引用系统属性
+  @Value("#{systemProperties['disc.title']}") String title 使用系统属性装配
+  ```
+
+* 字面值
+
+  ```
+  #{3.1411345}  // 浮点值
+  #{9.87E4}     // 科学计数法 98700
+  #{'Hello'}    // String 类型字面值
+  #{false}	  // boolean 类型值
+  ```
+
+* 引用 bean、属性、方法
+
+  ```
+  #{sgtPeppers}    // 引用 bean id
+  #{sgtPeppers.artist}     // 引用 bean 属性
+  #{artustSekectir.selectArtist()}     // 调用 bean 方法
+  #{artistSelector.selectArtist()?:toUpperCase()}   // selectArtist() 返回 null，SpEL 返回 null
+  ```
+
+* 在表达式中使用类型
+
+  ```
+  # T() 运算符访问类作用域的静态方法和常量
+  T(java.lang.Math).PI
+  T(java.lang.Math).random()
+  ```
+
+* 运算符
+
+  ```
+  #{2 * T(java.lang.Math).PI * circle.radius}  // Math.PI * 2 * id 为 circle 的 bean 的 radius
+  #{disc.title + ' by ' + disc.artist}         // 连接字符串
+  #{counter.totla == 100}    // 比较运算等价于 #{counter.total eq 100}
+  #{scoreboard.score > 1000 ? "winner!" : "loser"}    // 三元运算符
+  #{disc.title ?: 'when dis.title is null value'}     // null 合并运算
+  #{admin.email matches '[a-zA-Z0-9._%+-)+@[a-zA-Z0-9.-]+\\.com]' // 正则匹配
+  ```
+
+* 集合与数组
+
+  ```
+  // [] 访问集合、数组、字符串元素
+  #{jukebox.songs[4].title}   // id 为 jukebox bean 的 songs 集合中从零开始第四个元素的 title 属性
+  ```
+
 #### 应用配置
 
 Spring 的环境抽象是各种配置属性的一站式服务，它抽取了原始的属性，需要这些属性的 bean 可以从 Spring 本身中获取。Spring 环境会拉取多个属性源：jvm 系统属性，操作系统环境变量，命令行参数，application.yml，将这些属性聚合在一个源中。通过这个源可以注入到 Spring 的 bean 中。

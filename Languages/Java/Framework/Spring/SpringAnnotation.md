@@ -282,9 +282,9 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 
 ###### @RequestBody
 
-请求应该被转换为一个 Book 对象并绑定到该参数上
+获取请求为 raw application/json 的对象并映射到实体
 
-```
+```java
 public Book store(@RequestBody Book book) {}
 ```
 

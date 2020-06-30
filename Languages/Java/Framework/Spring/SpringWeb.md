@@ -13,115 +13,115 @@ Spring MVC 处理用户请求会经过以下流程：
 
 ##### 基础配置
 
-###### *DispatchServlet* 
-
 *DispatcherServlet* 是 Spring MVC 的核心，在这里请求会第一次接触到框架，它负责路由请求。当 *DispatcherServlet* 启动时，它会创建 Spring 应用上下文，并加载配置文件或配置类中所声明的 Bean。
 
-* 使用注解配置
+###### 注解配置
 
-  容器中配置 *DispatcherServlet* 流程
+使用注解配置
 
-  1.  在 Servlet 3.0 环境中，容器会在类路径中查找实现 *java.servlet.ServletContainerInitializer* 接口的类，用它来配置 Servlet 容器。
-  2.  Spring 提供了这个接口的实现 *SpringServletContainerInitializer*，这个类会查找实现 *WebApplicationInitializer* 类并将配置的任务交给它们来完成
-  3.  Spring 3.2 增加了 *WebApplicationInitializer* 基础实现 *AbstractAnnotationConfigDispatcherServletInitializer*
-  4.  部署到 Servlet 3.0 容器时，容器会自动发现扩展 *AbstractAnnotationConfigDispatcherServletInitializer* 的类，并用它来配置 Servlet 上下文
+容器中配置 *DispatcherServlet* 流程
 
-  *AbstractAnnotationConfigDispatcherServletInitializer* 会同时创建 *DispatcherServlet* 和 *ContextLoaderListener*，使用注解只能部署到支持 Servlet 3.0 的 Web 容器中，Tomcat 7
+1.  在 Servlet 3.0 环境中，容器会在类路径中查找实现 *java.servlet.ServletContainerInitializer* 接口的类，用它来配置 Servlet 容器。
+2.  Spring 提供了这个接口的实现 *SpringServletContainerInitializer*，这个类会查找实现 *WebApplicationInitializer* 类并将配置的任务交给它们来完成
+3.  Spring 3.2 增加了 *WebApplicationInitializer* 基础实现 *AbstractAnnotationConfigDispatcherServletInitializer*
+4.  部署到 Servlet 3.0 容器时，容器会自动发现扩展 *AbstractAnnotationConfigDispatcherServletInitializer* 的类，并用它来配置 Servlet 上下文
 
-  1. 配置 DispatcherServlet
+*AbstractAnnotationConfigDispatcherServletInitializer* 会同时创建 *DispatcherServlet* 和 *ContextLoaderListener*，使用注解只能部署到支持 Servlet 3.0 的 Web 容器中，Tomcat 7 及以上
 
-     ```java
-     import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
-     
-     public class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
-         @Override
-         protected String[] getServletMappings() {
-             return new String[] { "/" };  // 将 DispatcherServlet 映射到 “/”，应用的默认 Servlet，会处理进入应用的所有请求
-         }
-         // 返回带有 @Configuration 注解的类将会用来配置 ContextLoaderListener 创建的应用上下文中的 bean
-         @Override protected Class<?>[] getRootConfigClasses() {
-             return new Class<?>[] { RootConfig.class };   // 指定 Root 配置类
-         }
-         // 返回带有 @Configuration 注解的类将会用来定义 DispatcherServlet 应用上下文中的 bean
-         @Override protected Class<?>[] getServletConfigClasses() {
-             return new Class<?>[] { WebConfig.class };  
-         }
-     }
-     ```
+1. 配置 DispatcherServlet
 
-  2. 配置视图解析器
+   ```java
+   import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+   
+   public class WebInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+       @Override
+       protected String[] getServletMappings() {
+           return new String[] { "/" };  // 将 DispatcherServlet 映射到 “/”，应用的默认 Servlet，会处理进入应用的所有请求
+       }
+       // 返回带有 @Configuration 注解的类将会用来配置 ContextLoaderListener 创建的应用上下文中的 bean
+       @Override protected Class<?>[] getRootConfigClasses() {
+           return new Class<?>[] { RootConfig.class };   // 指定 Root 配置类
+       }
+       // 返回带有 @Configuration 注解的类将会用来定义 DispatcherServlet 应用上下文中的 bean
+       @Override protected Class<?>[] getServletConfigClasses() {
+           return new Class<?>[] { WebConfig.class };  
+       }
+   }
+   ```
 
-     ```java
-     import org.springframework.context.annotation.Bean;
-     import org.springframework.context.annotation.ComponentScan;
-     import org.springframework.context.annotation.Configuration;
-     import org.springframework.web.servlet.ViewResolver;
-     import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
-     import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-     import org.springframwork.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-     import org.springframwork.web.servlet.view.InternalResourceViewResolver;
-     
-     @Configuration
-     @EnableWebMvc
-     @ComponentScan("spitter.web")
-     public class WebConfig extends WebMvcConfigurerAdapter {
-         // 视图解析器（默认使用 BeanNameViewResolver，会查找 ID 与视图名称匹配的 bean，并且查找的 bean 要实现 view 接口）
-         @Bean public ViewResolver viewResolver() {
-             InternalResourceViewResolver resolver = new InternalResourceViewResolver();
-             resolver.setPrefix("/WEB-INF/views/");
-             resolver.setSuffix(".jsp");
-             resolver.setExposeContextBeansAsAttributes(true);
-             return resolver;
-         }
-         // 配置 DispatcherServlet 对静态资源的请求转发到 Servlet 容器中默认的 Servlet 上，而不是使用 DispatcherServlet 本身来处理此类要求
-         @Override public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
-            	configurer.enable();
-         }
-     }
-     ```
+2. 配置视图解析器
 
-  3. 配置 ContextLoader
+   ```java
+   import org.springframework.context.annotation.Bean;
+   import org.springframework.context.annotation.ComponentScan;
+   import org.springframework.context.annotation.Configuration;
+   import org.springframework.web.servlet.ViewResolver;
+   import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
+   import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+   import org.springframwork.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+   import org.springframwork.web.servlet.view.InternalResourceViewResolver;
+   
+   @Configuration
+   @EnableWebMvc
+   @ComponentScan("spitter.web")
+   public class WebConfig extends WebMvcConfigurerAdapter {
+       // 视图解析器（默认使用 BeanNameViewResolver，会查找 ID 与视图名称匹配的 bean，并且查找的 bean 要实现 view 接口）
+       @Bean public ViewResolver viewResolver() {
+           InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+           resolver.setPrefix("/WEB-INF/views/");
+           resolver.setSuffix(".jsp");
+           resolver.setExposeContextBeansAsAttributes(true);
+           return resolver;
+       }
+       // 配置 DispatcherServlet 对静态资源的请求转发到 Servlet 容器中默认的 Servlet 上，而不是使用 DispatcherServlet 本身来处理此类要求
+       @Override public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
+          	configurer.enable();
+       }
+   }
+   ```
 
-     ```java
-     import org.springframework.context.annotation.ComponentScan;
-     import org.springframework.context.annotation.ComponentScan.Filter;
-     import org.springframework.context.annotation.Configuration;
-     import org.springframework.context.annotation.FilterType;
-     @Configuration
-     @ComponentScan(basePackages={"apps"}, excludeFilters = {@Filter(type=FilterType.ANNOTATION,value=EnableWebMvc.class)})
-     public class RootConfig{}
-     ```
+3. 配置 ContextLoader
 
-* 使用 XML 进行配置
+   ```java
+   import org.springframework.context.annotation.ComponentScan;
+   import org.springframework.context.annotation.ComponentScan.Filter;
+   import org.springframework.context.annotation.Configuration;
+   import org.springframework.context.annotation.FilterType;
+   @Configuration
+   @ComponentScan(basePackages={"apps"}, excludeFilters = {@Filter(type=FilterType.ANNOTATION,value=EnableWebMvc.class)})
+   public class RootConfig{}
+   ```
 
-  在 *web.xml* 文件中配置 *DispatcherServlet*
+###### XML 配置
 
-  ```xml
-  <servlet>
-      <!-- 默认情况下 DispatcherServlet 在加载时会从一个基于这个 Servlet 名字的 XML 文件中加载 Spring 应用上下文(此处会尝试从 spring-servlet.xml 文件中加载应用上下文)  -->
-  	<servlet-name>spring</servlet-name> 
-      <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-      <load-on-startup>1</load-on-startup>
-  </servlet>
-  <servlet-mapping>
-  	<servlet-name>spring</servlet-name>
-      <url-pattern>/</url-pattern>
-  </servlet-mapping>
-  ```
+在 *web.xml* 文件中配置 *DispatcherServlet*
 
-  在 *Spring-servlet.xml* 中建立静态资源请求处理器
+```xml
+<servlet>
+    <!-- 默认情况下 DispatcherServlet 在加载时会从一个基于这个 Servlet 名字的 XML 文件中加载 Spring 应用上下文(此处会尝试从 spring-servlet.xml 文件中加载应用上下文)  -->
+	<servlet-name>spring</servlet-name> 
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+</servlet>
+<servlet-mapping>
+	<servlet-name>spring</servlet-name>
+    <url-pattern>/</url-pattern>
+</servlet-mapping>
+```
 
-  ```xml
-  <?xml version="1.0" encoding="UTF-8" ?>
-  <beans>
-      <!-- 静态资源的请求路径以 resources 开始，提供服务的文件位置为 resources -->
-      <mvc:resources mapping="/resources/**" location="/resources/" />
-  </beans>
-  ```
+在 *Spring-servlet.xml* 中建立静态资源请求处理器
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans>
+    <!-- 静态资源的请求路径以 resources 开始，提供服务的文件位置为 resources -->
+    <mvc:resources mapping="/resources/**" location="/resources/" />
+</beans>
+```
 
 ##### 请求处理
 
-###### 请求静态页面
+###### 请求视图
 
 *Controller*
 
@@ -149,6 +149,7 @@ public class IndexControllerTests {
     @Test
     public void testIndex() throws Exception {
         IndexController indexController = new IndexController();
+    	// spring boot 使用时 mockmvc 需配置 viewResolver
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(indexController).build();
         mockMvc.perform(MockMvcRequestBuilders.get("/"))
                 .andExpect(MockMvcResultMatchers.view().name("home"));
@@ -156,7 +157,7 @@ public class IndexControllerTests {
 }
 ```
 
-###### 传递模型数据到视图
+###### 模型数据绑定视图
 
 *Controller*
 
@@ -192,6 +193,22 @@ public class IndexController {
                  hasItems(expectedSpittles.toArray())));
   }
 ```
+
+###### 请求参数
+
+* 查询参数
+
+  使用 @RequestParam 获取请求参数，@RequestParam 的 value 属性与方法参数名一致时，可以省略 value 属性
+
+* 表单参数
+
+  1.表单字段需与对应对象属性一致时，会将字段值填充到对象属性中，可以在对象属性上指定验证规则来验证表单字段属性
+
+  2.使用 @RequestParam 获取请求表单字段
+
+* 路径变量
+
+  url 中变量使用 {} 占位符包裹，方法使用 @PathVariable 获取，参数与占位符一致时可省略 @PathVariable 的 value 属性
 
 ##### 添加其他的 Servlet 和 Filter
 
@@ -456,21 +473,16 @@ Thymeleaf 模板是原生的，不依赖于标签库。它能在接受原始 HTM
 
 为了要在 Spring 中使用 Thymeleaf，需要配置三个启用 Thymeleaf 与 Spring 集成的 bean：
 
-* `ThymeleafViewResolver`
+|          bean           |                             作用                             |
+| :---------------------: | :----------------------------------------------------------: |
+| `ThymeleafViewResolver` | Thymeleaf 视图解析器（将逻辑视图名称解析为 Thymeleaf 模板视图） |
+| `SpringTemplateEngine`  |                模板引擎（处理模板并渲染结果）                |
+|   `TemplateResolver`    |           模板解析器（定位与查找 Thymeleaf 模板）            |
 
-  将逻辑视图名称解析为 Thymeleaf 模板视图
-
-* `SpringTemplateEngine`
-
-  处理模板并渲染结果
-
-* `TemplateResolver`
-
-  加载 Thymeleaf 模板
-
-使用 Java 配置
+使用注解配置
 
 ```java
+// Thymeleaf 视图解析器
 @Bean
 public ViewResolver viewResolver(SpringTemplateEngine templateEngine) {
     ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
@@ -478,6 +490,7 @@ public ViewResolver viewResolver(SpringTemplateEngine templateEngine) {
     return viewResolver;
 }
 
+// 模板引擎
 @Bean
 public TemplateEngine templateEngine(TemplateResolver templateResolver) {
     SpringTemplateEngine templateEngine = new SpringTemplateEngine();
@@ -485,6 +498,7 @@ public TemplateEngine templateEngine(TemplateResolver templateResolver) {
     return templateEngine;
 }
 
+// 模板解析器
 @Bean
 public TemplateResolver templateResolver() {
     TemplateResolver templateResolver = new ServletContextTemplateResolver();
@@ -509,4 +523,20 @@ public TemplateResolver templateResolver() {
 ```
 
 `ThymeleafViewResolver` 是 SpringMVC 中 ViewResolver 的一个实现类。它接受一个逻辑视图名称，并将其解析为视图（一个 Thymeleaf 模板）。ThymeleafViewResolver bean 中注入了一个对 SpringTemplateEngine bean 的引用。SpringTemplateEngine 会在 Spring 中启用 Thymeleaf 引擎，用来解析模板，并基于这些模板渲染结果。
+
+*thymeleaf 常用标签*
+
+thymeleaf 很多属性对应标准的 HTML 属性，并具有相同的名称，但是会渲染一些计算后得到的值。
+
+| thymeleaf 属性 |                             作用                             | 用法 | 含义              |
+| :------------: | :----------------------------------------------------------: | :--: | ----------------- |
+|    th:href     | 类似 href 属性，可包含 Thymeleaf 表达式，会渲染成一个标准的 href 属性 | @{}  | 计算相对 URL 路径 |
+|    th:class    |                      渲染为 class 属性                       |      |                   |
+|    th:field    |                          后端域属性                          |      |                   |
+|                |                                                              |      |                   |
+|                |                                                              |      |                   |
+|                |                                                              |      |                   |
+|                |                                                              |      |                   |
+|                |                                                              |      |                   |
+|                |                                                              |      |                   |
 
