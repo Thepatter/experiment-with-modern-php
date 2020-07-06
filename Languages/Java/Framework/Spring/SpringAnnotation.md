@@ -274,11 +274,14 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 | name | 设置  Bean ID 名 |
 |      |                  |
 
-
-
 ###### @ResponseStatus
 
 指定响应状态码
+
+|  属性  |                 描述                  |
+| :----: | :-----------------------------------: |
+| value  | http 状态码数字，HttpStatus.NOT_FOUND |
+| reason |              原因字符串               |
 
 ###### @RequestBody
 
@@ -287,6 +290,10 @@ public void populateModel(@RequestParam String id, Model mode.addAttribute(new A
 ```java
 public Book store(@RequestBody Book book) {}
 ```
+
+###### @RequestPart
+
+获取请求对应的 part 数据
 
 ###### @PostConstruct
 

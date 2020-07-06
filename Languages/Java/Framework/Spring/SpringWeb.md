@@ -46,7 +46,20 @@ Spring MVC 处理用户请求会经过以下流程：
        @Override protected Class<?>[] getServletConfigClasses() {
            return new Class<?>[] { WebConfig.class };  
        }
-   }
+       /**
+        * 重载 customizeRegistration 额外配置 DispatcherServlet
+        */
+       @Override
+       protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+           registration.setLoadOnStartup(0);
+           registration.setRunAsRole("manager");
+           registration.setMultipartConfig(new MultipartConfigElement("/tmp/uploads", 200000, 200000, 0));
+       }
+       // 返回的所有 FIlter 都会映射到 DispatcherServlet 上
+       @Override protected Filter[] getServletFilters() {
+           return new Filter[]{ new MyFilter() };
+       }
+   } 
    ```
 
 2. 配置视图解析器
@@ -92,24 +105,72 @@ Spring MVC 处理用户请求会经过以下流程：
    public class RootConfig{}
    ```
 
-###### XML 配置
+如果要在 Web 容器中注册其他组件，只需创建一个新的初始化器，实现 Spring 的 *WebApplicationInitializer* 接口
 
-在 *web.xml* 文件中配置 *DispatcherServlet*
-
-```xml
-<servlet>
-    <!-- 默认情况下 DispatcherServlet 在加载时会从一个基于这个 Servlet 名字的 XML 文件中加载 Spring 应用上下文(此处会尝试从 spring-servlet.xml 文件中加载应用上下文)  -->
-	<servlet-name>spring</servlet-name> 
-    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-    <load-on-startup>1</load-on-startup>
-</servlet>
-<servlet-mapping>
-	<servlet-name>spring</servlet-name>
-    <url-pattern>/</url-pattern>
-</servlet-mapping>
+```java
+public class MyServletInitializer implements WebApplicationInitializer {
+	@Override
+	public void onStartup(ServletContext servletContext) throws ServletException {
+		// 注册 Servlet
+		Dynamic myServlet = servletContext.addServlet("myServlet", MyServlet.class);
+		// 映射 Servlet
+		myServlet.addMapping("/custom/**");
+        // 注册 Filter
+        javax.Servlet.FilterRegistration.Dynamic filter = servletContext.addFiter("myFilter", MyFilter.class);
+        // 添加 filter 映射路径
+        filter.addMappingForUrlPatterns(null, false, "/custom/**")
+	}
+}
 ```
 
-在 *Spring-servlet.xml* 中建立静态资源请求处理器
+###### XML 配置
+
+传统方式搭建 DispatcherServlet 和 ContextLoaderListener，在 *web.xml* 文件中配置
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<web-app version="2.5"
+         xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+                             http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+    
+    <context-param>
+    	<param-name>contextConfigLocation</param-name>
+        <param-value>/WEB-INF/Spring/root-context.xml</param-value> <!-- 设置根上下文配置文件位置 -->
+    </context-param>
+    <listener>
+        <!-- 注册 ContextLoaderListener -->
+    	<listener-class>
+        	org.springframework.web.context.ContextLoaderListener
+        </listener-class>
+    </listener>
+    
+	<servlet>
+    	<!--默认DispatcherServlet加载时依据Servlet名XML文件中加载Spring应用上下文(此处/WEB-INF/app-context.xml)-->
+		<servlet-name>app</servlet-name> 
+    	<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    	<load-on-startup>1</load-on-startup>
+        <!-- 显示指定配置文件位置 -->
+        <init-param>
+        	<param-name>contextConfigLocation</param-name>
+            <param-value>/WEB-INF/spring/appServlet/servlet-context.xml</param-value>
+        </init-param>
+        <!-- multipart 上传配置 -->
+        <multipart-config>
+        	<location>/tmp/spittr/uploads</location>
+            <max-file-size>2097152</max-file-size>
+            <max-request-size>4194304</max-request-size>
+        </multipart-config>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>spring</servlet-name>
+    	<url-pattern>/</url-pattern>
+	</servlet-mapping>
+</web-app>
+```
+
+在 *app-context.xml*  配置 Spring 上下文
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" ?>
@@ -117,6 +178,51 @@ Spring MVC 处理用户请求会经过以下流程：
     <!-- 静态资源的请求路径以 resources 开始，提供服务的文件位置为 resources -->
     <mvc:resources mapping="/resources/**" location="/resources/" />
 </beans>
+```
+
+###### 混合使用注解和 XML
+
+*web.xml* 中配置 DispatcherServlet 的 Java 类和 ContextLoaderListener 的 Java 类
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<web-app version="2.5" 
+         xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchem-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+                             http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	
+    <context-param>
+    	<param-name>contextClass</param-name> <!-- 使用 Java 配置 -->
+        <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+    </context-param>
+    <context-param>
+        <!-- 指定根配置类 -->
+    	<param-name>contextConfigLocation</param-name>
+        <param-value>com.group.config.RootConfig</param-value>  <!-- 指定根配置类 -->
+    </context-param>
+    
+    <listener>
+    	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+    <servlet>
+    	<servlet-name>appServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    	<init-param>
+            <param-name>contextClass</param-name> <!-- 使用 Java  配置类 -->
+            <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+        </init-param>
+        <init-param>
+        	<param-name>contextConfigLocation</param-name>
+            <param-value>com.group.config.WebConfig</param-value> <!-- 指定 DispatcherServlet 配置类 -->
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+    	<servlet-name>appServlet</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+</web-app>	
 ```
 
 ##### 请求处理
@@ -134,6 +240,8 @@ public class IndexController {
     }
 }
 ```
+
+当控制器的结果是重定向时，原始的请求就结束了，并且会发起一个新的请求。此时可以为模型添加属性会作为查询参数传递给新的请求（简单属性（标量和字符串））。对于对象类型的属性可以使用 flash 属性（flash 属性会一直携带这些数据直到下一次请求，然后才消失，model.addFlashAttribute 方法添加 flash 属性），在重定向执行之前，所有的 flash 属性都会复制到会话中。在重定向之后，存在会话中的 flash 属性会被取出，并从会话转移到模型之中。
 
 *Test*
 
@@ -210,23 +318,149 @@ public class IndexController {
 
   url 中变量使用 {} 占位符包裹，方法使用 @PathVariable 获取，参数与占位符一致时可省略 @PathVariable 的 value 属性
 
-##### 添加其他的 Servlet 和 Filter
+可以通过在模型字段上设置验证注解规则来验证请求表单对应对象，并在控制器方法参数中注入一个 Errors，并检查 errors.hasErrors() 是否为真来判断请求参数
 
-按照 `AbstractAnnotationConfigDisoatcherServletInitializer` 定义，它会创建 `DispatcherServlet` 和 `ContextLoaderListener` 基于 Java 的初始化器可以定义任意数量的初始化器类。如果想往 Web 容器中注册其他组件，只需创建一个新的初始化器就可以（实现 Spring 的 WebApplicationInitializer 接口）
+###### multipart
+
+multipart 格式的数据会将一个表单拆分为多个部分，每个部分对应一个输入域。在一般的表单输入域，它对应的部分中会放置文本型数据，如果上传文件，它对应部分为二进制。*DispatcherServlet* 委托 Spring 中的 MultipartResolver 接口实现处理 multipart
+
+* *CommonsMultipartResolver*
+
+  使用 Jakarta Commons FileUpload 解析 multipart 请求，spring 内置了 *CommonsMultipartResolver*，可作为 *StandardServletMultipartResolver* 的替代方案
+
+  ```java
+  // 声明 CommonsMultipartResolver Bean
+  @Bean
+  public MultipartResolver multipartResolver() {
+  	CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
+  	multipartResolver.setUploadTempDir(new FileSystemResource("/tmp/spittr/uploads"));
+      multipartResolver.setMaxUploadsSize(20000);
+      multipartResolver.setMaxInMemerySize(0);
+  	return multipartResolver; // 默认使用 Servlet 容器的临时目录，无法指定请求体最大容量
+  }
+  ```
+
+  直接在控制器方法参数上添加 @RequestPart 注解
+
+  ```
+  @RequestMapping(value="register", method=HTTP.POST)
+  public String store(@RequestPart("avatar") MultipartFile avatar, @Valid profile profile, Errors errors) {}
+  ```
+
+* *StandardServletMultipartResolver*
+
+  依赖于 Servlet 3.0 对 multipart 请求的支持（Spring 3.1）
+
+  ```
+  // 声明 StandardServletMultipartResolver Bean,通过重载 customizeRegistration 方法配置上传参数
+  @Bean
+  public MultipartResolver multipartResolver() throws IOException {
+  	return new StandardServletMultipartResolver();
+  }
+  ```
+
+  使用 Http.part 接受请求 part
+
+##### 异常处理
+
+Servlet 请求的输出都是一个 Servlet 响应，如果在请求处理的时候，出现了异常，那么它的输出依然是 Servlet 响应，异常必须要以某种方式转换为响应。Spring 提供了多种方式将异常转换为响应：
+
+* 特定的 Spring 异常将会自动映射为指定的 HTTP 状态码
+* 异常上可以添加 @ResponseStatus 朱建平，从而将其映射为一个 HTTP 状态码
+* 在方法上可以添加 @ExceptionHandler 注解，使其用来处理异常
+
+###### 将异常映射为 HTTP 状态码
+
+默认情况下，Spring 会将自身的一些异常自动转换为合适的状态码
+
+|              Spring 异常               |        HTTP 状态码         |
+| :------------------------------------: | :------------------------: |
+|             BindException              |      400 Bad Request       |
+|    ConversionNotSupportedException     | 500 Internal Server Error  |
+|  HttpMediaTypeNotAcceptableException   |     406 Not Acceptable     |
+|   HttpMediaTypeNotSupportedException   | 415 Unsupported Media Type |
+|    HttpMessageNotReadableException     |      400 Bad Request       |
+|    HttpMessageNotWritableException     | 500 Internal Server Error  |
+| HttpRequestMethodNotSupportedException |   405 Method Not Allowed   |
+|    MethodArgumentNotValidException     |      400 Bad Request       |
+| MissingServletRequestParmeterException |      400 Bad Request       |
+|   MissingServletRequestPartException   |      400 Bad Request       |
+|  NoSuchRequestHandingMethodException   |       404 Not Found        |
+|         TypeMismatchException          |      400 Bad Request       |
+
+*以上异常一般会由 Spring 自身抛出，作为 DispatcherServlet 处理过程中或执行校验时出现问题的结果*
+
+###### 抛出异常
+
+内置的映射异常对于应用所抛出的异常无法捕获与抛出。一般使用 @ResponseStatus 注解将异常映射为 HTTP 状态码，即在控制器方法中捕获程序异常，并抛出带有 @ResponseStatus 注解的异常，此时 Servlet 渲染异常时，会将状态码渲染为 @ResponseStatus 属性值
 
 ```java
-public class MyServletInitializer implements WebApplicationInitializer {
-    /** 注册servlet **/
-    @Override
-    public void onStartup(ServletContext servletContext) throw ServletException {
-        Dynamic myServlet = servletContext.addServlet("myServlet", MyServlet.class);
-        myServlet.addMapping("/custom/***");
-        /** 注册 Filter **/
-        javax.servlet.FilterRegistration.Dynamic filter = servletContext
-    }
-    
+// controller 方法
+@GetMapping("/profiles/{id}")
+public String profile(@PathVariable int id, Model model) {
+	Profile profile = profileRepository.get(id);
+	if (profile == null) {
+		throw new ProfileNotFoundException();
+	}
+	model.addAttribute(profile)
 }
+@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "Profile Not Found")
+public class ProfileNotFoundException extends RuntimeException {}
 ```
+
+或者在 Controller 方法中声明抛出异常时处理逻辑
+
+```java
+@ExceptionHandler(DuplicateSpittleException.class)  // 可以处理同一控制器中所有处理器抛出的异常
+public String handlerNotFound() { return "error/duplicate"; }
+```
+
+###### 控制器异常通知
+
+Spring 3.2 引入了控制器通知：是任意带有 @ControllerAdvice 注解的类，这个类会包含一个或多个如下类型的方法：
+
+* @ExceptionHandler 注解标注的方法
+
+  用于捕获 Controller 中抛出的异常，用于异常全局处理，此次处理异常优先级最低
+
+* @InitBinder 注解标注的方法
+
+  用于请求中注册自定义参数的解析，实现自定义请求参数格式
+
+* @ModelAttribute 注解标注的方法
+
+  此方法会在执行目标 Controller 方法前执行，即可以在 Controller 中获取该注解标注的属性
+
+  ```java
+  @RestControllerAdvice // 等效 @ControllerAdvice + @ResponseBody
+  public class GlobalHandler {
+      @ModelAttribute("loginUserInfo") 
+      public UserDetails modelAttribute() {
+          return SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+      }
+      @InitBinder
+      protected void initBinder(WebDataBinder binder) {
+          SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+          dateFormat.setLenient(false);
+          binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, false));
+      }
+      // 如果任意的控制器方法抛出了 DuplicateProfileException，都会调用该方法
+      @ExceptionHandler(DuplicateProfileException.class)
+  	public String duplicateSpittleHandler() {
+  		return "error/duplicate";
+  	}
+  }
+  // contro中使用
+  @RestController
+  public class AppController {
+      @PostMapping("/favorite/goods")
+      public List<goods> getGoodsByUser(@ModelAttribute("loginUserInfo") UserDetails userDetails，Date start) {
+       	return goodsService.getUserByStart(userDetails.getId, start);   
+      }
+  }
+  ```
+
+在带有 @ControllerAdvice 注解的类中，上述 3 个注解标注的方法会运用到整个应用程序所有控制器中带有 @RequestMapping 注解的方法上
 
 ##### 视图
 
@@ -528,15 +762,15 @@ public TemplateResolver templateResolver() {
 
 thymeleaf 很多属性对应标准的 HTML 属性，并具有相同的名称，但是会渲染一些计算后得到的值。
 
-| thymeleaf 属性 |                             作用                             | 用法 | 含义              |
-| :------------: | :----------------------------------------------------------: | :--: | ----------------- |
-|    th:href     | 类似 href 属性，可包含 Thymeleaf 表达式，会渲染成一个标准的 href 属性 | @{}  | 计算相对 URL 路径 |
-|    th:class    |                      渲染为 class 属性                       |      |                   |
-|    th:field    |                          后端域属性                          |      |                   |
-|                |                                                              |      |                   |
-|                |                                                              |      |                   |
-|                |                                                              |      |                   |
-|                |                                                              |      |                   |
-|                |                                                              |      |                   |
-|                |                                                              |      |                   |
+| thymeleaf 属性 |                             作用                             |                           用法                           |                             含义                             |
+| :------------: | :----------------------------------------------------------: | :------------------------------------------------------: | :----------------------------------------------------------: |
+|    th:href     | 类似 href 属性，可包含 Thymeleaf 表达式，会渲染成一个标准的 href 属性 |                     `@{/js/code.js}`                     |                      计算相对 URL 路径                       |
+|    th:class    |                      渲染为 class 属性                       | `th:class="${#fields.hasErrors('firstName')} ? 'error'"` | 如果 first Name 域存在错误，渲染为 error，没有错误则不渲染 class 属性 |
+|    th:field    |                          后端域属性                          |            `<input th:field="*{firstName}"/>`            | 将 value 属性设置为 firstName 的值，将 name 的属性设置为 firstName |
+|    th:each     |                             迭代                             |        `<th:each="err: ${#fields.errors('*')}">`         |                                                              |
+|     th:if      |                             判断                             |           `th:if="${#fields.hasErrors('*')}">`           |                  有错误则渲染，没有则不渲染                  |
+|    th:text     |                        计算某个表达式                        |                                                          |                                                              |
+|      ${}       |                          变量表达式                          | 使用 spring 时是 SpELl 表达式，基于整个 SpELl 上下文计算 |                                                              |
+|      *{}       |                          选择表达式                          |                   基于某个选中对象计算                   |                                                              |
+|   th:object    |                           设置对象                           |       `<form method="post" th:object="{spitter}">`       |                   将对象绑定到 form 作用域                   |
 
