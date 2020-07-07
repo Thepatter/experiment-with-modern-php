@@ -193,6 +193,10 @@
 
 启用配置类
 
+###### @ControllerAdvice
+
+应用程序级别的全局控制器通知。其中定义的 @ExceptionHandler、@InitBinder、@ModelAttribute 注解标注的方法会应用在所有控制器中带有 @RequestMapping 注解的方法上
+
 ##### 方法级别注解
 
 ###### @PropertySource
@@ -227,23 +231,29 @@
 
 处理 PATCH 请求
 
+###### @InitBinder
+
+用于请求中注册自定义参数的解析，实现自定义请求参数格式
+
+###### @ExceptionHandler
+
+用户 controller 异常处理
+
 ###### @ModelAttribute
 
-Spring MVC  在每次调用请求处理方法时，都会创建 Model 类型的一个实例。若打算使用该实例，则可以在方法中添加一个 Model 类型的参数。还可以在方法中添加 `ModelAttribute` 注解类型来访问 Model 实例。可以用 `@ModelAttribute` 来注解方法参数或方法。带 `@ModelAttribute` 注解的方法会将其输入的或创建的参数对象添加到 Model 对象中（若方法中没有显式添加）。
+会在 Controller 方法执行前执行（对于一个 Controller 多个请求映射使用时要注意）
 
-```java
-@RequestMapping(method = RequestMethod.POST)
-public String submitOrder(@ModelAttribute("newOrder") Order order, Model model) {}
-```
+*   可以返回一个对象或一个 void 类型。
 
-输入或创建的 Order 实例将用 newOrder 键值添加到 Model 对象中，如果未定义键值名，则将使用该对象类型的名称。
+    1.  如果返回一个对象，则返回对象会自动添加到 Model 中，键为对象名，值为对象。
 
-`@ModelAttribute` 的第二个用途是标注一个非请求的处理方法。被 `@ModelAttribute` 注解的方法会在每次调用该控制器类的请求处理方法时被调用。Spring MVC 会在调用请求处理方法之前调用带 `ModelAttribute` 注解的方法。带 `@ModelAttribute` 注解的方法可以返回一个对象或一个 `void` 类型。如果返回一个对象，则返回对象会自动添加到 Model 中，若方法返回 `void`，则还必须添加一个 `Model` 类型的参数，并自行将实例添加到 Model 中
+    2.  若方法返回 void，则还必须添加一个 Model 类型的参数，并自行将实例添加到 Model 中
 
-```java
-@ModelAttribute
-public void populateModel(@RequestParam String id, Model mode.addAttribute(new Account(id))) {}
-```
+*   当与 @RequestMapping 一起使用时：
+
+    1.  如果 @ModelAttribute 带有属性，则 @RequestMapping 方法返回的值为 @ModelAttribute 属性值（其 @ModelAttribute 标注方法的属性值保留），隐式查找 @RequestMapping 方法名对应的视图。
+
+    2.  如果 @ModelAttribute 不带属性，则 @RequestMapping 注解可以指定返回的视图名
 
 ###### @Valid
 

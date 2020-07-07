@@ -241,7 +241,19 @@ public class IndexController {
 }
 ```
 
-当控制器的结果是重定向时，原始的请求就结束了，并且会发起一个新的请求。此时可以为模型添加属性会作为查询参数传递给新的请求（简单属性（标量和字符串））。对于对象类型的属性可以使用 flash 属性（flash 属性会一直携带这些数据直到下一次请求，然后才消失，model.addFlashAttribute 方法添加 flash 属性），在重定向执行之前，所有的 flash 属性都会复制到会话中。在重定向之后，存在会话中的 flash 属性会被取出，并从会话转移到模型之中。
+###### 重定向转发
+
+*   重定向
+
+    重定向为客户端重定向，客户端会根据响应的重定向地址，重新发送请求到重定向地址（即发送了两次请求，第一次从服务器获取重定向地址，第二次根据重定向地址发送请求，此时浏览器地址栏会改变）
+
+    当控制器的结果是重定向时，原始的请求就结束了，并且会发起一个新的请求。此时为模型添加属性会作为查询参数传递给新的请求（简单属性（标量和字符串））。
+
+    对于对象类型的属性可以使用 flash 属性（flash 属性会一直携带这些数据直到下一次请求，然后才消失，model.addFlashAttribute 方法添加 flash 属性），在重定向执行之前，所有的 flash 属性都会复制到会话中。在重定向之后，存在会话中的 flash 属性会被取出，并从会话转移到模型之中。
+
+*   转发
+
+    为服务器内部的转发，客户端只有一次请求，当一个处理器方法完成之后，该方法所指定的模型数据将会复制到请求中，并作为请求中属性，在转发的过程中，请求属性能够保存
 
 *Test*
 
@@ -417,48 +429,14 @@ public String handlerNotFound() { return "error/duplicate"; }
 
 ###### 控制器异常通知
 
-Spring 3.2 引入了控制器通知：是任意带有 @ControllerAdvice 注解的类，这个类会包含一个或多个如下类型的方法：
+Spring 3.2 引入了控制器通知：是任意带有 @ControllerAdvice/@RestControllerAdvice 注解的类，这个类会包含一个或多个如下类型的方法：
 
 * @ExceptionHandler 注解标注的方法
 
-  用于捕获 Controller 中抛出的异常，用于异常全局处理，此次处理异常优先级最低
-
 * @InitBinder 注解标注的方法
-
-  用于请求中注册自定义参数的解析，实现自定义请求参数格式
 
 * @ModelAttribute 注解标注的方法
 
-  此方法会在执行目标 Controller 方法前执行，即可以在 Controller 中获取该注解标注的属性
-
-  ```java
-  @RestControllerAdvice // 等效 @ControllerAdvice + @ResponseBody
-  public class GlobalHandler {
-      @ModelAttribute("loginUserInfo") 
-      public UserDetails modelAttribute() {
-          return SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-      }
-      @InitBinder
-      protected void initBinder(WebDataBinder binder) {
-          SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-          dateFormat.setLenient(false);
-          binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, false));
-      }
-      // 如果任意的控制器方法抛出了 DuplicateProfileException，都会调用该方法
-      @ExceptionHandler(DuplicateProfileException.class)
-  	public String duplicateSpittleHandler() {
-  		return "error/duplicate";
-  	}
-  }
-  // contro中使用
-  @RestController
-  public class AppController {
-      @PostMapping("/favorite/goods")
-      public List<goods> getGoodsByUser(@ModelAttribute("loginUserInfo") UserDetails userDetails，Date start) {
-       	return goodsService.getUserByStart(userDetails.getId, start);   
-      }
-  }
-  ```
 
 在带有 @ControllerAdvice 注解的类中，上述 3 个注解标注的方法会运用到整个应用程序所有控制器中带有 @RequestMapping 注解的方法上
 
@@ -773,4 +751,31 @@ thymeleaf 很多属性对应标准的 HTML 属性，并具有相同的名称，�
 |      ${}       |                          变量表达式                          | 使用 spring 时是 SpELl 表达式，基于整个 SpELl 上下文计算 |                                                              |
 |      *{}       |                          选择表达式                          |                   基于某个选中对象计算                   |                                                              |
 |   th:object    |                           设置对象                           |       `<form method="post" th:object="{spitter}">`       |                   将对象绑定到 form 作用域                   |
+
+##### RestTemplate
+
+###### Rest 端点
+
+Spring 提供了 RestTemplate 能够作为 Rest 端点请求
+
+*RestTemplate中独立操作*
+
+|       方法        |                             描述                             |
+| :---------------: | :----------------------------------------------------------: |
+|     delete()      |          在特定的 URL 上对资源进行 HTTP DELETE 操作          |
+|    exchange()     | 在 URL 上执行特定的 HTTP 方法，返回包含对象的 ResponseEntity，该对象从响应体中映射得到 |
+|     execute()     | 在 URL 上执行特定的 HTTP 方法，返回一个从响应体映射得到的对象 |
+|  getForEntity()   | 发送一个 HTTP GET 请求，返回 ResponseEntity 包含了响应体所映射成的对象 |
+|  getForObject()   |     发送一个 HTTP GET 请求，返回的请求体将映射为一个对象     |
+| headForHeaders()  |   发送 HTTP HEAD 请求，返回包含特定资源 URL 的 HTTP 头信息   |
+| optionsForAllow() |     发送 HTTP OPTIONS 请求，返回特定 URL 的 Allow 头信息     |
+| patchForObject()  |     发送 HTTP PATCH 请求，返回一个从响应体映射得到的对象     |
+|  postForEntity()  | POST 数据到一个 URL，返回包含一个对象的 ResponseEntity，这个对象是从响应体中映射得到的 |
+| postForLocation() |          POST 数据到一个 URL，返回新创建资源的 URL           |
+|  postForObject()  |      POST 数据到一个 URL，返回根据响应体匹配形成的对象       |
+|       put()       |                     PUT 资源到特定的 URL                     |
+
+除了 TRACE 以外，RestTemplate 对每种标准的 HTTP 方法都提供了至少一个方法。除此之外，execute() 和 exchange() 提供了较低层的通用方法，可以进行任意的 HTTP 操作
+
+#### Web Flow
 
