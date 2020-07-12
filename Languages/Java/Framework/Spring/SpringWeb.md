@@ -249,7 +249,7 @@ public class IndexController {
 
     当控制器的结果是重定向时，原始的请求就结束了，并且会发起一个新的请求。此时为模型添加属性会作为查询参数传递给新的请求（简单属性（标量和字符串））。
 
-    对于对象类型的属性可以使用 flash 属性（flash 属性会一直携带这些数据直到下一次请求，然后才消失，model.addFlashAttribute 方法添加 flash 属性），在重定向执行之前，所有的 flash 属性都会复制到会话中。在重定向之后，存在会话中的 flash 属性会被取出，并从会话转移到模型之中。
+    对于对象类型的属性可以使用 flash 属性（flash 属性会一直携带这些数据直到下一次请求，然后才消失，model.addFlashAttribute 方法添加 flash 属性，Spring 3.1 引入了 RedirectAttributes 作为 mode 的子接口提供 flash 功能），在重定向执行之前，所有的 flash 属性都会复制到会话中。在重定向之后，存在会话中的 flash 属性会被取出，并从会话转移到模型之中。
 
 *   转发
 
@@ -354,7 +354,7 @@ multipart 格式的数据会将一个表单拆分为多个部分，每个部分�
 
   直接在控制器方法参数上添加 @RequestPart 注解
 
-  ```
+  ```java
   @RequestMapping(value="register", method=HTTP.POST)
   public String store(@RequestPart("avatar") MultipartFile avatar, @Valid profile profile, Errors errors) {}
   ```
@@ -776,6 +776,3 @@ Spring 提供了 RestTemplate 能够作为 Rest 端点请求
 |       put()       |                     PUT 资源到特定的 URL                     |
 
 除了 TRACE 以外，RestTemplate 对每种标准的 HTTP 方法都提供了至少一个方法。除此之外，execute() 和 exchange() 提供了较低层的通用方法，可以进行任意的 HTTP 操作
-
-#### Web Flow
-
