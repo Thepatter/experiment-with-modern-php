@@ -49,11 +49,9 @@
 
 ##### 用户配置
 
-默认会产生一个 basic 保护，初始用户为 user，密码为随机生成在日志中。W
+默认会产生一个 basic 保护，初始用户为 user，密码为随机生成在日志中，通过覆盖 *WebSecurityConfigurerAdapter* 基础配置类中定义的 configure() 方法为配置用户存储提供可选方案
 
-Spring Security 通过覆盖 *WebSecurityConfigurerAdapter* 基础配置类中定义的 configure() 方法来进行配置，支持以下方法定义：
-
-*配置用户详细信息方法*
+*configure 中配置用户详细支持拼接方法*
 
 |                     方法                     |            描述            |
 | :------------------------------------------: | :------------------------: |
@@ -81,7 +79,7 @@ passwordEncoder() 接受 Spring Security 中 PasswordEncoder 接口实现，Spri
 | SCryptPasswordEncoder  |  使用 scrypt 哈希加密  |
 | StanardPasswordEncoder | 使用 SHA-256 哈希加密  |
 
-###### 内存用户
+###### 基于内存的用户存储
 
 ```java
 @Override
@@ -99,7 +97,7 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 }
 ```
 
-###### 数据库
+###### 基于 JDBC 的用户存储
 
 ```java
 @Autowrid private DataSource dataSource;

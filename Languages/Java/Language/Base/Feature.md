@@ -322,12 +322,12 @@ Class 引用总是指向某个 Class 对象，int.class 不继承 Number.class�
 
 因为擦除移除了类型信息，所以，可以用无界泛型参数调用的方法只是那些可以用 Object 调用的方法。但是，如果能够将这个参数限制为某个类型子集，就可以用这些类型子集来调用方法。为了这些这种限制，java 泛型重用了 extends 关键字。extends 关键字在泛型边界上下文环境中和在普通情况下所具有的意义是完全不同的
 
-* extends
+extends
 
-  ```java
-  // 具有从 Dimension 和 HasColor 和 Weight 继承或实现的类型
-  public <T extends Dimension & HasColor & Weight> void add(T t);
-  ```
+```java
+// 具有从 Dimension 和 HasColor 和 Weight 继承或实现的类型
+public <T extends Dimension & HasColor & Weight> void add(T t);
+```
 
 ###### 通配符
 
