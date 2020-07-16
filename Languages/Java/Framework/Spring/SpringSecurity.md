@@ -99,18 +99,21 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 
 ###### 基于 JDBC 的用户存储
 
+需要设置一个数据源，支持组权限控制。重写查询时的基本协议。所有查询都将用户名作为唯一的参数。认证查询会选取用户名、密码以及启用状态信息。权限查询会选取零行或多行包含该用户名及其权限信息的数据。群组权限查询会选取零行或多行数据，每行数据中都会包含群组ID、群组名称以及权限
+
 ```java
-@Autowrid private DataSource dataSource;
-// 定义数据源
-protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auht.jdbcAuthentication()
-        .dataSource(dataSource)
-        // 替换查询时，所有查询都使用用户名作为唯一参数
-        .usersByUsernameQuery("select username,password,true from Spitter where username = ?")
-        .authoritiesByUsernameQuery("select username, 'ROLE_USER' from Spitter where username = ?")
-        // 可接受 PasswordEncoder 接口任意实现
-        .passwordEncoder(new BCryptPasswordEncoder().encode("secret"));
-}
+@Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        final String usersByUsernameQuery = "select username, password, enabled from jdbc_users where username = ?";
+        final String authoritiesByUsernameQuery = "select username, authority from jdbc_user_authorities where username = ?";
+        final String groupAuthoritiesByUsername = "select g.id, g.group_name, g.authority from jdbc_groups g, jdbc_user_groups ug where ug.username = ? and ug.group_id = g.id";
+        auth.jdbcAuthentication()
+                .dataSource(dataSource)
+                .usersByUsernameQuery(usersByUsernameQuery)
+                .authoritiesByUsernameQuery(authoritiesByUsernameQuery)
+                .groupAuthoritiesByUsername(groupAuthoritiesByUsername)
+                .passwordEncoder(new BCryptPasswordEncoder());
+    }
 ```
 
 ###### 自定义
@@ -205,6 +208,27 @@ Spring Security 3.2 开始，默认会启用 CSRF 防护，Spring Security 通�
 	http...and().csrf().disable();
 }
 ```
+
+###### 视图安全渲染渲染
+
+*   thymeleaf 的 Spring Security 方言提供了条件化渲染喝显示认证细节的能力
+
+    ```xml
+    <dependency>
+        <groupId>org.thymeleaf.extras</groupId>
+        <artifactId>thymeleaf-extras-springsecurity5</artifactId>
+    </dependency>
+    ```
+
+    *支持属性*
+
+    |        属性        |                       作用                        |
+    | :----------------: | :-----------------------------------------------: |
+    | sec:authentication |                 渲染认证对象属性                  |
+    |   sec:authorize    |       基于表达式的计算结果，条件性渲染内容        |
+    | sec:authorize-acl  |       基于表达式的计算结果，条件性渲染内容        |
+    | sec:authorize-expr |              sec:authorize 属性别名               |
+    | sec:authorize-url  | 基于给定的 URL 路径相关的安全规则，条件性渲染内容 |
 
 ##### 认证用户
 

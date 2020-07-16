@@ -330,7 +330,59 @@ public class IndexController {
 
   url 中变量使用 {} 占位符包裹，方法使用 @PathVariable 获取，参数与占位符一致时可省略 @PathVariable 的 value 属性
 
-可以通过在模型字段上设置验证注解规则来验证请求表单对应对象，并在控制器方法参数中注入一个 Errors，并检查 errors.hasErrors() 是否为真来判断请求参数
+###### 表单参数校验
+
+Spring 3.0 开始，在 Spring MVC 中提供了对 Java 校验 API（Java Validation API，JSR-303）的支持。在 Spring 中使用 Java 校验 API
+
+```xml
+<dependency>
+	<groupId>org.hibernate</groupId>
+	<artifactId>hibernate-validator</artifactId>
+	<version>6.0.4.Final</version>
+</dependency>
+```
+
+Java 校验 API 定义了多个注解，这些注解可以放到属性上，从而限制这些属性的值，所有注解定义在 *javax.validation.constraints*
+
+*支持的注解*
+
+|       注解       |                             描述                             |
+| :--------------: | :----------------------------------------------------------: |
+|   @AssertFalse   |             注解元素必须是 Boolean 且值为 false              |
+|   @AssertTrue    |             注解的元素必须是 Boolean 且值为 true             |
+|   @DecimalMax    | 注解的元素必须是数字，且值小于等于给定的 BigDecimalString 值 |
+|   @DecimalMin    |   注解元素必须是数字，且值大于等于给定 BigDecimalString 值   |
+|     @Digits      |       所注解的元素必须是数字，且它的值必须有指导的位数       |
+|      @Email      |       注解元素必须是字符串，且必须符合 Email 格式定义        |
+|     @Future      |    所注解的元素的值必须是一个将来的 instant, date or time    |
+| @FutureOrPresent |     所注解的元素必须是将来或现在的 instant, date or time     |
+|       @Max       |      所注解的元素的必须是数字，且值要小于或等于给定的值      |
+|       @Min       |        所注解的元素必须是数字，且值要大于等于给定的值        |
+|    @Negative     |                 注释的元素必须是负数，0 无效                 |
+| @NegativeOrZero  |                   注释的元素必须是负数或 0                   |
+|    @NotBlank     |           注释字符串必须不为 null 且不能为空字符串           |
+|    @NotEmpty     | 注释元素不能为 null 或 empty，支持 CharSequence、Collection、Map |
+|     @NotNull     |                     注释元素不能为 null                      |
+|      @Null       |                     注释元素必须为 null                      |
+|      @Past       |          注释的元素必须是过去的 instant、date、time          |
+|  @PastOrPresent  |       注释的元素必须是过去或现在的 instant、date、time       |
+|     @Pattern     |              注释的元素必须与指导正则表达式匹配              |
+|    @Positive     |              注释的元素必须是严格的正数，0 无效              |
+| @PositiveOrZero  |                注释的元素必须是严格的正数或 0                |
+|      @Size       |    指定注释元素 size，支持 CharSequence、Collection、Map     |
+
+如果有检验出现错误，这些错误可以通过 Errors 对象进行访问，Errors 参数要紧跟在带有 @Valid 注解的参数后面。
+
+```java
+@PostMapping("/store")
+public String store(@Valid User user, Errors errors) {
+	if (errors.hasErrors()) {
+        return "register";
+    }
+    User user = UserRepository.save(user);
+    return "redirect:/user/" + user.getId();
+}
+```
 
 ###### multipart
 
