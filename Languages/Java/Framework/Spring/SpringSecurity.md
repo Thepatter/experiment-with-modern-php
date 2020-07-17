@@ -130,7 +130,7 @@ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
    }
    ```
 
-##### Web 拦截
+##### Web 配置
 
 ###### url 路径请求保护
 
@@ -229,6 +229,12 @@ Spring Security 3.2 开始，默认会启用 CSRF 防护，Spring Security 通�
     | sec:authorize-acl  |       基于表达式的计算结果，条件性渲染内容        |
     | sec:authorize-expr |              sec:authorize 属性别名               |
     | sec:authorize-url  | 基于给定的 URL 路径相关的安全规则，条件性渲染内容 |
+
+###### 跨域
+
+在 @Controller 控制器方法上使用 @CorssOrigin 注解和security 配置 config(HttpSecurity) 中配置 and().cors() 无法跨域访问资源
+
+在 security 配置 config(HttpSecurity) 中配置 `and().cors().and().csrf().disable()` 则允许全局跨域访问资源，在 Controller 方法中无需使用 @CorssOrigin 注解，仅配置 `and().csrf().disable()` 即可跨域访问
 
 ##### 认证用户
 
