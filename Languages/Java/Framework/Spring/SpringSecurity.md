@@ -232,9 +232,9 @@ Spring Security 3.2 开始，默认会启用 CSRF 防护，Spring Security 通�
 
 ###### 跨域
 
-在 @Controller 控制器方法上使用 @CorssOrigin 注解和security 配置 config(HttpSecurity) 中配置 and().cors() 无法跨域访问资源
+在使用 Spring Security 情况下，仅在 @Controller 控制器方法上使用 @CorssOrigin 注解无法跨域请求。在 security 配置 `http.and.cors()` 无法解决跨域（其使用 csrf 来验证，必须使用 `http.and().csrf().disable()` 来允许全局跨域资源访问。
 
-在 security 配置 config(HttpSecurity) 中配置 `and().cors().and().csrf().disable()` 则允许全局跨域访问资源，在 Controller 方法中无需使用 @CorssOrigin 注解，仅配置 `and().csrf().disable()` 即可跨域访问
+对于需要在 from 表单中使用 csrf token，又需要提供跨域资源访问的情况可以使用 `http.and().csrf().ignoringAntMatchers("/url")` 来进行排除
 
 ##### 认证用户
 
@@ -261,9 +261,7 @@ protected void configure(HttpSecurity http) throws Exception {
 @Override
 protected void configure(HttpSecurity http) throws Exception {
     http.formLogin()
-        .and()
-        .formLogin()
-		.loginPage("/login") // 登录页面，需在 controller 中配置 @GetMapping("/login")
+		.loginPage("/login") // 登录页面，需在 controller 中配置 @GetMapping("/login") 
 		.loginProcessingUrl("/authenticate")  // 登录请求请求处理
 		.usernameParameter("user")  // 配置用户名密码域
 		.passwordParameter("pwd")
@@ -274,9 +272,11 @@ protected void configure(HttpSecurity http) throws Exception {
 }
 ```
 
+默认情况下，登录成功之后，用户将会被导航到 Spring Security 决定让用户登录之前的页面。如果用户直接访问登录页，那么登录成功之后用户将会被导航至根路径，可以通过配置 defaultSuccessUrl 方法来调整
+
 ###### 退出
 
-在 HttpSecurity 对象上调用 logout 方法会创建一个过滤器，会拦截对 /logout 的请求
+在 HttpSecurity 对象上调用 logout 方法会创建一个过滤器，会拦截对 /logout 的请求（该路径为 POST 请求，会进行 csrf 验证）
 
 ```java
 @Override
