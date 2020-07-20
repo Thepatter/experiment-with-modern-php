@@ -1,5 +1,92 @@
 ### HTTP 相关概念
 
+#### 协议相关
+
+HTTP 是一个用于传输超媒体文档的应用层协议。它是为 web 浏览器和 web 服务器之间的通信设计的。HTTP 是无状态协议，该协议基于 TCP/IP 层，但可以在任何可靠的传输层上使用
+
+##### HTTP 组件
+
+###### 客户端 user-agent
+
+user-agent 是任何能够为用户发起行为的工具。
+
+###### 服务端
+
+通信的另一端
+
+###### 代理 Proxies
+
+在浏览器和服务器之间，有许多计算机和其他设备转发了HTTP消息。由于Web栈层次结构的原因，它们大多都出现在传输层、网络层和物理层上，对于HTTP应用层而言就是透明的，虽然它们可能会对应用层性能有重要影响。还有一部分是表现在应用层上的，被称为**代理（Proxies）**。代理（Proxies）既可以表现得透明，又可以不透明（“改变请求”会通过它们）。代理主要有如下几种作用：
+
+-   缓存（可以是公开的也可以是私有的，像浏览器的缓存）
+-   过滤（像反病毒扫描，家长控制...）
+-   负载均衡（让多个服务器服务不同的请求）
+-   认证（对不同资源进行权限管理）
+-   日志记录（允许存储历史信息）
+
+##### HTTP 相关
+
+###### HTTP 和连接
+
+一个连接是由传输层来控制的，不属于 HTTP 范围，HTTP并不需要底层的传输层协议是面向连接的，只需要它是可靠的，或不丢失消息的（至少返回错误）。
+
+在客户端与服务端能够交互之前，必须在这两者间建立一个 TCP 链接：
+
+*   HTTP/1.0 默认为每一对 HTTP 请求/响应都打开一个单独的 TCP 连接。
+*   HTTP/1.1 引入了流水线（被证明难以实现）和持久连接的概念；底层的 TCP 连接可以通过 `Connection` 头部来被部分控制
+*   HTTP/2 通过在一个连接复用消息的方式让这个连接始终保持为暖连接
+
+###### HTTP 控制
+
+HTTP 能进行以下特性的控制：
+
+*   缓存，服务端和客户端都可以控制缓存
+
+*   开发同源限制
+
+    为了防止网络窥听和其它隐私泄漏，浏览器强制对Web网站做了分割限制。只有来自于**相同来源**的网页才能够获取网站的全部信息。这样的限制有时反而成了负担，HTTP可以通过修改头部来开放这样的限制，因此Web文档可以是由不同域下的信息拼接成的，某些情况下，这样做还有安全因素考虑
+
+*   认证
+
+    一些页面能够被保护起来，仅让特定的用户进行访问，基本的认证功能可以直接通过 HTTP 提供，使用 `Authenticate` 相似的头，或用 HTTP Cookies 来设置指定的会话
+
+*   代理和隧道
+
+    通常情况下，服务器和/或客户端是处于内网的，对外网隐藏真实 IP 地址。因此 HTTP 请求就要通过代理越过这个网络屏障。但并非所有的代理都是 HTTP 代理。例如，SOCKS协议的代理就运作在更底层，一些像 FTP 这样的协议也能够被它们处理
+
+*   会话
+
+##### data 协议
+
+即前缀为 `data:` 协议的 URL，其允许内容创建者向文档中嵌入小文件
+
+###### 语法
+
+```
+data:[<mediatype>][;base64],<data>
+```
+
+Data URLs 由四个部分组成：前缀（`data:`）、指示数据类型的 MIME 类型、如果非文本则为可选的 base64 标记、数据本身
+
+*   mediatype
+
+    为 MIME 类型的字符串，如果省略，则默认值为 `text/plain;charset=US-ASCII`
+
+*   数据
+
+    如果数据是文本类型，可以直接将文本嵌入（根据文档类型，使用合适的实体字符或转义字符），如果是二进制数据，可以将数据进行 base64 编码后再进行嵌入
+
+    ```
+    # 简单的 text/plain 类型数据
+    data:,Hello%2C%20World!
+    # base64 编码的 text/plain 类型数据
+    data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D
+    # html 文档源码
+    data:text/html,%3Ch1%3EHello%2C%20World!%3C%2Fh1%3E
+    # 带 js 的 html 文档
+    data:text/html,<script>alert('hi');</script>
+    ```
+
 #### 组成部分
 
 ##### 资源定位符
@@ -10,29 +97,16 @@ URI Uniform Resource Identifier 统一资源标识符，使用它能够唯一地
 
 ![](../Images/完整URI组成.png)
 
-* 身份信息 (不推荐)
+*URI组成部分*
 
-  表示登录主机时的用户名和密码，但现在不推荐使用这种形式了，它会将敏感信息以明文形式暴露出来
-
-* 协议名 Scheme
-
-  即访问该资源应当使用的协议，如 http、ftp
-
-* 主机名 authority
-
-  即互联网上的标记，可以是域名或 IP 地址，表示资源所在的主机名，通常为 host:port
-
-* 路径 path
-
-  即资源在主机上的位置，使用 `/` 分割多级目录。URI 的 path 部分必须以 `/` 开始，即必须包含 `/`
-
-* 查询参数 query
-
-  URL 查询参数 query，它在 path 之后，用一个 ? 开始，但不包含 ?，表示对资源附加的额外要求。查询参数是多个 key=value 的字符串，使用 & 连接
-
-* 片段标识符 #fragment
-
-  它是 URI 所定位的资源内部的一个『锚点』，浏览器可以在获取资源后直接跳转到它指示的位置。仅能由浏览器这样的客户端使用，服务器是看不到的，浏览器永远不会把带  #fragment 的 URI 发送给服务器，服务器也永远不会用这种方式处理资源的片段
+|         组成         |                             用途                             |
+| :------------------: | :----------------------------------------------------------: |
+|    协议名 Scheme     | 即访问该资源应当使用的协议，如 http/https、ftp，file、tel、data、mailto、view-source、ws/wss |
+|  身份信息 (不推荐)   | 表示登录主机时的用户名和密码，但现在不推荐使用这种形式了，它会将敏感信息以明文形式暴露出来 |
+|   主机名 authority   | 即互联网上的标记，可以是域名或 IP 地址，表示资源所在的主机名，通常为 host:port |
+|      路径 path       | 即资源在主机上的位置，使用 `/` 分割多级目录。URI 的 path 部分必须以 `/` 开始，即必须包含 `/` |
+|    查询参数 query    | URL 查询参数 query，它在 path 之后，用一个 ? 开始，但不包含 ?，表示对资源附加的额外要求。查询参数是多个 key=value 的字符串，使用 & 连接 |
+| 片段标识符 #fragment | 它是 URI 所定位的资源内部的一个『锚点』，浏览器可以在获取资源后直接跳转到它指示的位置。仅能由浏览器这样的客户端使用，服务器是看不到的，浏览器永远不会把带  #fragment 的 URI 发送给服务器，服务器也永远不会用这种方式处理资源的片段 |
 
 URI 本质上是一个字符串，这个字符串的作用是唯一的标记资源的位置或者名字。它不仅能标记万维网的资源，也可以标记其他的，如邮件系统、本地文件系统等任意资源。
 
@@ -50,7 +124,11 @@ URI 本质上是一个字符串，这个字符串的作用是唯一的标记资�
 
 ##### URI 转义
 
-包含一个百分号（%），后面跟着两个表示字符 ASCII 码的十六进制数。
+###### 百分比编码
+
+是一种拥有 8 位字符编码的编码机制，这些编码在 URL 的上下文中具有特定的含义。它有时被称为 URL 编码。包含一个百分号（%），后面跟着两个表示字符 ASCII 码的十六进制数。
+
+根据上下文, 空白符 `' '` 将会转换为 `'+'` （必须在HTTP的POST方法中使定义 `application/x-www-form-urlencoded ` 传输方式）， 或者将会转换为 `'%20'` 的 URL。
 
 *保留及受限字符*
 
@@ -128,23 +206,12 @@ URI 本质上是一个字符串，这个字符串的作用是唯一的标记资�
 
 ###### 头字段
 
-* Via
-
-  Via 是一个通用字段，请求头或响应头里都可以出现。每当报文经过一个代理节点，代理服务器就会把自身的信息追加到字段的末尾。如果通信链路中有很多中间代理，会在 Via 里形成一个链表。
-
-  Via 追加的是代理主机名（或域名）
-
-* X-Via
-
-  等同于 Via
-
-* X-Forwarded-For
-
-  每经过一个代理节点就会在该字段里追加一个信息，追加的是请求方的 IP 地址
-
-* X-Real-IP
-
-  记录客户端 IP地址，没有中间的代理信息
+|     字段名      |                             描述                             |
+| :-------------: | :----------------------------------------------------------: |
+|       Via       | 是一个通用字段，请求头或响应头里都可以出现。每当报文经过一个代理节点，代理服务器就会把自身的信息追加到字段的末尾。如果通信链路中有很多中间代理，会在 Via 里形成一个链表 |
+|      X-Via      |                          等同于 Via                          |
+| X-Forwarded-For | 每经过一个代理节点就会在该字段里追加一个信息，追加的是请求方的 IP 地址 |
+|    X-Real-IP    |            记录客户端 IP地址，没有中间的代理信息             |
 
 ###### 代理协议
 
@@ -198,29 +265,17 @@ HTTP 的服务器缓存功能主要由代理服务器来实现，而源服务器
 
 *服务器完整缓存控制策略*
 
-<img src="../Images/服务器完整缓存控制策略.png" style="zoom:65%;" />
+<img src="../Images/服务器完整缓存控制策略.png" style="zoom:50%;" />
 
-Cache-Control 属性控制：
+*服务端 Cache-Control 属性控制*
 
-* private
-
-  缓存只能在客户端保存，是用户私有的，不能放在代理上与别人分享
-
-* public
-
-  即缓存是完全开放的，谁都可以用
-
-* proxy-revalidate
-
-  要求代理的缓存过期后必须验证，客户端不必回源，只验证到代理这个环节
-
-* s-maxage
-
-  缓存只限定在代理上能够存多久，而客户端仍然使用 max-age
-
-* no-transform
-
-  不能对源数据进行操作
+|        值        |                             描述                             |
+| :--------------: | :----------------------------------------------------------: |
+|     private      | 缓存只能在客户端保存，是用户私有的，不能放在代理上与别人分享 |
+|      public      |                即缓存是完全开放的，谁都可以用                |
+| proxy-revalidate | 要求代理的缓存过期后必须验证，客户端不必回源，只验证到代理这个环节 |
+|     s-maxage     |    缓存只限定在代理上能够存多久，而客户端仍然使用 max-age    |
+|   no-transform   |                     不能对源数据进行操作                     |
 
 ```http
 # 缓存在客户端，生成时间为 5s
@@ -231,7 +286,7 @@ Cache-Control: public,max-age=5,s-maxage=10
 Cache-Control: public, max-age=5,proxy-revalidate,no-transform
 ```
 
-源服务器设置万 Cache-Control 后必须要为报文加上 Last-modified 或 ETag 字段
+源服务器设置完 Cache-Control 后必须要为报文加上 Last-modified 或 ETag 字段
 
 ###### 客户端的缓存控制
 
@@ -241,19 +296,13 @@ Cache-Control: public, max-age=5,proxy-revalidate,no-transform
 
 <img src="../Images/客户端完整缓存策略.png" style="zoom:60%;" />
 
-Cache-Control 中控制属性：
+*客户端 Cache-Control 中控制属性*
 
-* max-stale
-
-  如果代理上的缓存过期了也可以接受，但不能过期太多，即使用 max-age + max-stale 计算缓存有效时间
-
-* min-fresh
-
-  缓存必须有效，而且必须在 x 秒后依然有效，即缓存存在时间 + min-fresh 必须小于 max-age
-
-* Only-if-cached
-
-  只接受代理缓存的数据，不接受源服务器的响应，如果代理上没有缓存或缓存过期，会响应 504
+|       值       |                             描述                             |
+| :------------: | :----------------------------------------------------------: |
+|   max-stale    | 如果代理上的缓存过期了也可以接受，但不能过期太多，即使用 max-age + max-stale 计算缓存有效时间 |
+|   min-fresh    | 缓存必须有效，而且必须在 x 秒后依然有效，即缓存存在时间 + min-fresh 必须小于 max-age |
+| Only-if-cached | 只接受代理缓存的数据，不接受源服务器的响应，如果代理上没有缓存或缓存过期，会响应 504 |
 
 #### 域名
 
@@ -376,29 +425,99 @@ HTTP 协议规定了非常多的头部字段，实现各种功能：
 | response |     Server     |             正在提供 Web 服务器的软件名和版本号              |          |
 |  entity  | Content-Length | 表示报文 body 的长度，即请求头或请求行空行后面的数据长度，如果没有该字段，那么 body  就是不定长的，需要使用 chunked 方式分段传输 |          |
 
-##### 实体
+##### MIMIE
 
-###### 数据类型 MIME
+###### 数据类型
 
 在 TCP/IP 协议栈里，传输数据基本上都是 header + body 的格式。但 TCP、UDP 是传输层协议，不会关心 body 数据是什么，只要把数据发送到对方就算完成任务。而 HTTP 是应有层协议，数据到达之后还需要告诉上层应用这是什么数据才行，即数据类型
 
 Multipurpose Internet Mail Extensions 是一个很大的标准规范，但 HTTP 只取了其中的一部分，用来标记 body 的数据类型，即 MIME type，MIME 把数据分成了八大类，每个大类下再细分多个子类，形式是 type/subtype 的字符串。HTTP 里经常遇到的类别
 
-* text
+*MIMIE 分类*
 
-  文本格式的可读数据，text/html（超文本），text/plain（纯文本），text/css（样式表）
+|    类型     |              描述              |                             示例                             |
+| :---------: | :----------------------------: | :----------------------------------------------------------: |
+|    text     | 文件是普通文本，理论上人类可读 |       text/plain, text/html, text/css, text/javascript       |
+|    image    |      某种图像，不包括视频      |              image/gif、image/png、image/x-icon              |
+|    audio    |          某种音频文件          |   audio/midi、audio/mpeg、audio/webm、audio/ogg、audio/wav   |
+|    video    |          某种视频文件          |                    video/webm、video/ogg                     |
+| application |         某种二进制数据         | application/octet-stream、application/pkcs12、application/pdf |
 
-* image
+对于text文件类型若没有特定的subtype，就使用 `text/plain`。类似的，二进制文件没有特定或已知的 subtype，即使用 `application/octet-stream`（不透明的二进制数据）
 
-  即图像文件，image/gif，image/jpeg，image/png
+###### MIME 嗅探
 
-* audio/video
+在缺失 MIME 类型或客户端认为文件设置了错误的 MIME 类型时，浏览器可能会通过查看资源来进行 MIME 嗅探。每一个浏览器在不同的情况下会执行不同的操作。因为这个操作会有一些安全问题，有的 MIME 类型表示可执行内容而有些是不可执行内容。浏览器可以通过请求头 `Content-Type` 来设置 `X-Content-Type-Options`以阻止 MIME 嗅探。
 
-  音视频数据，audio/mpeg，video/mp4
+`X-Content-Type-Options` HTTP 消息头相当于一个提示标志，被服务器用来提示客户端一定要遵循在 `Content-Type` 首部中对 MIME 类型的设定，而不能对其进行修改。这就禁用了客户端的 MIME 类型嗅探行为
 
-* application
+```
+# 请求类型是"style" 但是 MIME 类型不是 "text/css",请求类型是"script" 但是 MIME 类型不是  JavaScript MIME 类型时，请求将被阻止
+X-Content-Type-Options: nosniff
+```
 
-  数据格式不固定，可能是文本也可能是二进制，必须由上层应用程序来结束，application/octet-stream（不透明二进制数据）
+###### mulitpart/form-data
+
+multipart 标识细分领域的文件类型的种类，对应不同的 MIME 类型。
+
+可用于 HTML 表单从浏览器发送信息给服务器。作为多部分文档格式，它由边界线（`--`）划分出不同的部分组成。每一部分有自己的实体，以及自己的 HTTP 请求头。Content-Disposition 和 Content-Type 用于文件上传领域，最常用的 Content-Length 因为边界线作为分隔符而被忽略
+
+###### Content-Disposition 
+
+响应头指示回复的内容该以何种形式展示，是以**内联**的形式（即网页或者页面的一部分），还是以**附件**的形式下载并保存到本地。
+
+消息头最初是在MIME标准中定义的，HTTP表单及[`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 请求只用到了其所有参数的一个子集。只有`form-data`以及可选的`name`和`filename`三个参数可以应用在HTTP场景中
+
+在 multipart/form-data 类型的应答消息体中， **`Content-Disposition`** 消息头可以被用在 multipart 消息体的子部分中，用来给出其对应字段的相关信息。各个子部分由在[`Content-Type`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Type) 中定义的**分隔符**分隔。用在消息体自身则无实际意义
+
+*   作为消息主体中的消息头
+
+    在 HTTP 场景中，第一个参数是 inline（默认），标识回复中的消息体会以页面的一部分或整个页面的形式展示。attachment（意味着消息体应该被下载到本地；大多数浏览器会呈现一个保存为的对话框，将 filename 的值预填为下载后的文件名）
+
+    ```
+    Content-Disposition: inline
+    Content-Disposition: attachment
+    Content-Disposition: attachment; filename="filename.jpg"
+    ```
+
+*   作为 multipart body 中的消息头
+
+    在 HTTP 场景中，第一个参数总是固定不变的 form-data；附加的参数不区分大小写，并且拥有参数值，参数名与参数值用 `=` 连接，参数值用双引号括起来，参数之间用分号`;`分割
+
+    ```
+    Content-Disposition: form-data
+    Content-Disposition: form-data; name="fieldName"
+    Content-Disposition: form-data; name="fieldName"; filename="filename.jpg"
+    ```
+
+    name 是表单字段名，每个字段名会对应一个子部分。在同一个字段名对应多个文件的情况下，则多个子部分共用同一个字段名，如果 name 参数值为 `_charset_`，意味着这个子部分表示的不是一个 HTML 字段，而是在未明确指定字符集信息的情况下各部分使用的默认字符集
+
+    filename 是要传送的文件的初始名称字符串，该参数总是可选的，而且不能盲目使用：路径信息必须舍去。当 `filename` 和 `filename*` 同时出现的时候，优先采用 `filename*`，假如二者都支持
+
+    *form-data 请求*
+
+    ```
+    POST /test.html HTTP/1.1
+    Host: example.org
+    Content-Type: multipart/form-data;boundary="boundary"
+    
+    --boundary
+    Content-Disposition: form-data; name="field1"
+    
+    value1
+    --boundary
+    Content-Disposition: form-data; name="field2"; filename="example.txt"
+    ```
+
+###### multipart/byteranges
+
+用于把部分的响应报文发送回浏览器。当发送状态码 206 Partial Content 时，这个 MIME 类型用于指出这个文件由若干部分组成。每个都有其请求范围，每个不同的部分都有 Content-Type 头说明文件类型和 Content-Range 说明其范围
+
+###### application/x-www-form-urlencoded
+
+数据被编码成以 `&` 分割的键值对，同时以 `=` 分隔键和值，非字母或数字的字符会被百分比编码，该类型不支持二进制数据
+
+##### 实体
 
 ###### 数据压缩编码
 
@@ -430,7 +549,13 @@ HTTP 协议定义了用于客户端和服务器进行内容协商的头字段（
 
 * Content-Type
 
-  通用字段，实体数据的真实类型，对应 Accept，如 POST 请求的实体类型，或响应的 body 类型
+  通用字段，在响应中，Content-Type 标头标识返回的实体类型（浏览器会在某些情况下进行MIME查找，并不一定遵循此标题的值; 为了防止这种行为，可以将标题 [`X-Content-Type-Options`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/X-Content-Type-Options) 设置为 **nosniff**。）在请求中 POST/PUT 客户端告诉服务器发送的数据类型
+
+  ```
+  Content-Type: text/html; charset=utf-8
+  # media-type 资源或数据的 MIME type，charset 字符编码标准，boundary 对于多部分实体，boundary 是必须的，它用于封装消息的多个部分的边界
+  Content-Type: multipart/form-data; boundary=something
+  ```
 
 * Content-Encoding
 
@@ -494,43 +619,19 @@ Transfer-Encoding: chunked 和 Contenting-Length 字段是**互斥**的，即响
 
 ##### 请求方法
 
-*HTTP 请求方法*
+目前 HTTP/1.1 支持的方法，单词都必须是大写的形式
 
-![](../Images/HTTP请求方法.jpg)
-
-目前 HTTP/1.1 规定了八种方法，单词都必须是大写的形式
-
-* GET
-
-  获取资源，读取或下载数据
-
-* HEAD
-
-  获取资源的元数据
-
-* POST
-
-  向资源提交数据，相当于写入或上传数据
-
-* PUT
-
-  类 POST
-
-* DELETE
-
-  删除资源
-
-* CONNECT
-
-  建立特殊的连接隧道
-
-* OPTIONS
-
-  列出可对资源实行的方法
-
-* TRACE
-
-  追踪请求 - 响应的传输路径
+| 方法名  |                             作用                             | 请求 body | 成功响应 body | 安全 | 幂等 | 可缓存 | 可在HTML froms 中使用 |
+| :-----: | :----------------------------------------------------------: | :-------: | :-----------: | ---- | ---- | ------ | --------------------- |
+| CONNECT | 开启客户端与所请求资源之间的双向沟通的通道，可以用来创建隧道（tunnel），是应用范围为点到点的方法 |    否     |      是       | 否   | 否   | 否     | 否                    |
+| DELETE  |                         删除指定资源                         |  可以有   |    可以有     | 否   | 是   | 否     | 否                    |
+|   GET   |         请求指定的资源，使用 GET 请求只用于获取数据          |    否     |      是       | 是   | 是   | 是     | 是                    |
+|  HEAD   |      请求资源头部信息，返回头部与 GET 请求返回头部一致       |    否     |      否       | 是   | 是   | 是     | 否                    |
+| OPTIONS |                 获取目的资源所支持的通信选项                 |    否     |      否       | 是   | 是   | 否     | 否                    |
+|  PATCH  |                    用于对资源进行部分修改                    |    是     |      否       | 否   | 否   | 否     | 否                    |
+|  POST   |      发送数据给服务器，请求主体类型由 Content-Type 指定      |    是     |      是       | 否   | 否   | 是     | 是                    |
+|   PUT   |              使用请求中的负载创建或替换目标资源              |    是     |      否       | 否   | 是   | 否     | 否                    |
+|  TRACE  |            实现沿通向目标资源的路径的消息环回测试            |    否     |      否       | 否   | 是   | 否     | 否                    |
 
 ##### 安全和幂等
 
@@ -588,101 +689,50 @@ range requests，允许客户端在请求头里使用专用字段来表示只获
 
 ###### 2xx
 
-* 200 OK
-
-  成功，如果非 HEAD 请求，通常在响应头后都会有 body 数据
-
-* 204 No Content
-
-  与 200 基本相同，但响应头后没有 body 数据
-
-* 206 Partial Content
-
-  是 HTTP 分块下载或断点续传的基础，在客户端发送『范围请求』，要求获取资源的部分数据时出现，与 200 一样，是服务器成功处理了请求，但 body 里的数据不是资源的全部，而是其中的一部分。206 通常还会伴随头字段 Content-Range，表示响应报文里 body 数据的具体范围，供客户端确认，Content-Range: bytes 0-99/2000 ，意思是此次获取的是总计 2000 个字节的前 100 个字节
+|       状态码        |                             描述                             |
+| :-----------------: | :----------------------------------------------------------: |
+|       200 OK        |    成功，如果非 HEAD 请求，通常在响应头后都会有 body 数据    |
+|   204 No Content    |          与 200 基本相同，但响应头后没有 body 数据           |
+| 206 Partial Content | 是 HTTP 分块下载或断点续传的基础，在客户端发送『范围请求』，要求获取资源的部分数据时出现，与 200 一样，是服务器成功处理了请求，但 body 里的数据不是资源的全部，而是其中的一部分。206 通常还会伴随头字段 Content-Range，表示响应报文里 body 数据的具体范围，供客户端确认，Content-Range: bytes 0-99/2000 ，意思是此次获取的是总计 2000 个字节的前 100 个字节 |
 
 ###### 3xx
 
 表示客户端请求的资源发生了变动，客户端必须用新的 URI 重新发送请求获取资源，即重定向
 
-* 301 Moved Permanently
-
-  永久重定向，即此次请求的资源已经不存在了，需要该用新的 URI 再次访问。
-
-* 302 Found
-
-  曾经的描述短语是 Moved Temporarily，即临时重定向，资源存在，但暂时需要用另一个 URI 来访问
-
-* 304 Not Modified
-
-  用于 If-Modified-Since 等条件请求，表示资源未修改，用于缓存控制，不具有通常的跳转含义，但可以理解成『重定向到已缓存的文件』，即缓存重定向
+|        状态码         |                             描述                             |
+| :-------------------: | :----------------------------------------------------------: |
+| 301 Moved Permanently | 永久重定向，即此次请求的资源已经不存在了，需要该用新的 URI 再次访问。 |
+|       302 Found       | 曾经的描述短语是 Moved Temporarily，即临时重定向，资源存在，但暂时需要用另一个 URI 来访问 |
+|   304 Not Modified    | 用于 If-Modified-Since 等条件请求，表示资源未修改，用于缓存控制，不具有通常的跳转含义，但可以理解成『重定向到已缓存的文件』，即缓存重定向 |
 
 ###### 4xx
 
 表示客户端发送的请求报文有误，服务器无法处理
 
-* 400 Bad Request
-
-  请求报文错误
-
-* 403 Forbidden
-
-  服务器禁止访问资源
-
-* 404 Not Found
-
-  资源未找到
-
-* 405 Method Not Allowed
-
-  不允许使用某些方法操作资源
-
-* 406 Not Acceptable
-
-  资源无法满足客户端请求的条件
-
-* 408 Request Timeout
-
-  请求超时，服务器等待了过长的时间
-
-* 409 Conflict
-
-  多个请求发生了冲突，多线程并发时的竞争状态
-
-* 413 Request Entity Too Large
-
-  请求报文里的 body 太大
-
-* 414 Request-URI Too Long
-
-  请求行里的 URI 太大
-
-* 429 Too Many Requests
-
-  客户端发送了太多的请求，通常是由于服务器的限连策略
-
-* 431 Request Header Fields Too Large
-
-  请求头某个字段或总体太大
+|               状态码                |                        描述                        |
+| :---------------------------------: | :------------------------------------------------: |
+|           400 Bad Request           |                    请求报文错误                    |
+|            403 Forbidden            |                 服务器禁止访问资源                 |
+|            404 Not Found            |                     资源未找到                     |
+|       405 Method Not Allowed        |             不允许使用某些方法操作资源             |
+|         406 Not Acceptable          |            资源无法满足客户端请求的条件            |
+|         408 Request Timeout         |          请求超时，服务器等待了过长的时间          |
+|            409 Conflict             |     多个请求发生了冲突，多线程并发时的竞争状态     |
+|    413 Request Entity Too Large     |               请求报文里的 body 太大               |
+|      414 Request-URI Too Long       |                请求行里的 URI 太大                 |
+|        429 Too Many Requests        | 客户端发送了太多的请求，通常是由于服务器的限连策略 |
+| 431 Request Header Fields Too Large |              请求头某个字段或总体太大              |
 
 ###### 5xx
 
 表示客户端请求报文正确，但服务器在处理时内部发生了错误，无法响应应有的响应数据，是服务器端的错误码
 
-* 500 Internal Server Error
-
-  通用错误码
-
-* 501 Not Implemented
-
-  客户端请求的功能还不支持
-
-* 502 Bad Gateway
-
-  服务器作为网关或代理时返回的错误码，表示服务器自身工作正常，访问后端服务器时发生了错误，但具体的错误原因不知
-
-* 503 Service Unavailable
-
-  服务器忙，暂时无法响应服务，503 是一个临时状态，很可能几秒钟后服务器就正常，一般 503 响应报文里通常会有一个 Retry-After 字段，指示客户端可以在多久以后再次发送请求
+|          状态码           |                             描述                             |
+| :-----------------------: | :----------------------------------------------------------: |
+| 500 Internal Server Error |                          通用错误码                          |
+|    501 Not Implemented    |                   客户端请求的功能还不支持                   |
+|      502 Bad Gateway      | 服务器作为网关或代理时返回的错误码，表示服务器自身工作正常，访问后端服务器时发生了错误，但具体的错误原因不知 |
+|  503 Service Unavailable  | 服务器忙，暂时无法响应服务，503 是一个临时状态，很可能几秒钟后服务器就正常，一般 503 响应报文里通常会有一个 Retry-After 字段，指示客户端可以在多久以后再次发送请求 |
 
 #### HTTP 连接
 
