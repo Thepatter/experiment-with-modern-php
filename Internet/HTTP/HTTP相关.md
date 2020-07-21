@@ -101,6 +101,38 @@ GSLB 会根据这些因素，用算法，找出一个最合适的边缘节点。
 
   缓存里没有，必须使用代理的方式回源站取
 
+#### 会话
+
+##### Cookie
+
+是服务器发送到用户浏览器并保存在本地的一小块数据，它会在浏览器下次向同一服务器再发起请求时被携带并发送到服务器上。
+
+```http
+Set-Cookie: id=a3fWa; Expires=Wed, 21 Oct 2015 07:28:00 GMT; Secure; HttpOnly
+```
+
+###### 头字段
+
+服务器使用 `Set-Cookie` 响应头来设置 Cookie 格式是 key=value，使用 `;` 分隔，客户代理收到响应报文，看到里面有 Set-Cookie，保存起来，下次请求时自动把这个值放进 Cookie 字段里发送给服务器。
+
+###### Cookie 的属性
+
+|   属性   |                             描述                             |
+| :------: | :----------------------------------------------------------: |
+| Expires  | 过期时间，绝对时间，即截止时间（如果不指定 Expires 或 Max-Age 属性，那么 Cookie 仅在浏览器运行时有效，一旦浏览器关闭就会失效，这被称为会话 Cookie（session cookie）或内存 Cookie 在 Chrome 里过期时间会显示为 Session 或 N/A） |
+| Max-Age  | 相对时间，单位为秒，浏览器收到报文时间点再加上 Max-Age 得到失效绝对时间（同时出现优先），当 Cookie 的过期时间被设定时，设定的日期和时间只与客户端相关 |
+|  Domain  | 设置那些主机可以接受 Cookie，如果不指定，默认为 origin，即不包含子域名（当前大多数浏览器遵循 [RFC 6265](http://tools.ietf.org/html/rfc6265)，设置 Domain 时 不需要加前导点。浏览器不遵循该规范，则需要加前导点，例如：`Domain=.mozilla.org`） |
+|   Path   | 标识主机下的那些路径可以接受 Cookie，以 `%x2F` 作为路径分隔符，子路径也会被匹配 |
+| HttpOnly | 此 Cookie 只能通过浏览器 HTTP 协议传输，浏览器 JS 引擎会禁用 document.cookie 等 API。可防止 XSS 跨站攻击 |
+| SameStie | 允许服务器要求某个 cookie 在跨站请求时不会被发送，从而阻止 XSS 攻击。`None`：浏览器会在同站、跨站请求下继续发送 cookies，不区分大小写；`Strict`：浏览器将只在访问相同站点时发送 cookie；`Lax`：与 Strict 类似，但用户从外部站点导航至 URL 时除外（默认）。未设置或浏览器不支持时为 None |
+|  Secure  | 表示这个 Cookie 仅能用 HTTPS 协议加密传输，明文的 HTTP 协议会禁止发送。但 Cookie 本身不是加密的，浏览器还是以明文的形式存在 |
+
+###### 第三方 Cookie
+
+Cookie 与域关联，如果此域与所在页面的域相同，则该 cookie 称为第一方 Cookie（first-party cookie）。如果域不同，则它是第三方 cookie（third-party cookie）
+
+当服务器设置第一方 Cookie 时，该页面可能包含存储在其他域中的服务器上的图像或其他组件，这些图像或组件可能会设置第三方 cookie。第三方服务器可以基于同一浏览器在访问多个站点时发送给它的 cookie 建立用户浏览历史和习惯的配置文件。
+
 #### HTTP Security
 
 ##### 安全威胁
@@ -114,7 +146,7 @@ GSLB 会根据这些因素，用算法，找出一个最合适的边缘节点。
 1.  数据从一个不可靠的链接进入到一个 Web 应用程序
 2.  没有过滤掉恶意代码的动态内容被发送给 web 用户
 
-恶意内容一般包括 [JavaScript](https://developer.mozilla.org/zh-CN/docs/Glossary/JavaScript)，但是，有时候也会包括 HTML，FLASH 或是其他浏览器可执行的代码。XSS 攻击的形式千差万别，但他们通常都会：将 cookies 或其他隐私信息发送给攻击者，将受害者重定向到由攻击者控制的网页，或是经由恶意网站在受害者的机器上进行其他恶意操作。
+恶意内容一般包括 JavaScript，但是，有时候也会包括 HTML，FLASH 或是其他浏览器可执行的代码。XSS 攻击的形式千差万别，但他们通常都会：将 cookies 或其他隐私信息发送给攻击者，将受害者重定向到由攻击者控制的网页，或是经由恶意网站在受害者的机器上进行其他恶意操作。
 
 XSS 攻击可以分为3类：
 
@@ -152,7 +184,7 @@ HTTP 响应头允许站点管理者控制用户代理能够为指定的页面加
 Content-Security-Policy: <policy-directive>; <policy-directive>
 ```
 
-fetch 指令用来控制某些具体类型的资源可以从那些来源被加载,所有指令的值都会回落到 default-src,如果某个 fetch 指令在 CSP 头部中未定义,那么用户代理会寻找 default-src 指令的值来替代
+fetch 指令用来控制某些具体类型的资源可以从那些来源被加载，所有指令的值都会回落到 default-src，如果某个 fetch 指令在 CSP 头部中未定义，那么用户代理会寻找 default-src 指令的值来替代
 
 *fetch 指令来控制某些可能被加载的确切的资源类型的位置*
 
@@ -304,3 +336,6 @@ Public-Key-Pins:
 
     一般是被允许(`<script src=""></script>`,`<link rel="stylesheet" href="">`(由于 CSS 的松散的语法规则,CSS 跨域需要设置一个正确的 HTTP 头部 Content-Type),`<img>`,`<video>`,`<object>`,`<embed>`,`<applet>`, @font-face 引入的字体,`<iframe>` 载入的任何资源)
 
+##### CORS HTTP 访问控制
+
+跨域资源共享是一种机制，它使用额外的 HTTP 头告诉浏览器，让运行在一个 origin domain 上的 Web 应用被准许访问来自不同源服务器上的指定的资源。当一个资源从与该资源本身所在的服务器不同的域、协议或端口请求一个资源时，资源会发起一个跨域 HTTP 请求。出于安全原因，浏览器限制从脚本内发起的跨源 HTTP 请求（这些 API 的 Web 应用只能从加载应用程序的同一个域请求 HTTP 资源，除非响应报文包含了正确的 CORS 头，也可能跨站请求可以正常发起，但返回结果被浏览器拦截了）

@@ -523,18 +523,6 @@ multipart 标识细分领域的文件类型的种类，对应不同的 MIME 类�
 
 HTTP 在传输时为了节约带宽，有时会压缩数据，使用 Encoding type 来指定编码格式
 
-* gzip
-
-  GNU zip 压缩格式
-
-* deflate
-
-  zlib 压缩格式
-
-* br
-
-  专门为 HTTP 优化的新压缩算法
-
 ###### 实体内容协商
 
 HTTP 协议定义了用于客户端和服务器进行内容协商的头字段（Accept 头告诉服务器希望接收什么数据，Content 头告诉客户端实际发送了什么数据）：
@@ -545,7 +533,11 @@ HTTP 协议定义了用于客户端和服务器进行内容协商的头字段（
 
 * Accept-Encoding
 
-  请求字段标记的是客户端支持的压缩格式，可以用逗号分隔
+  请求字段标记的是客户端支持的压缩格式，可以用逗号分隔，支持 gzip（采用 Lempel-Ziv coding LZ77 压缩算法，以及 32 位 CRC 校验的编码方式）、compress（采用 Lempel-Ziv-Welch LZW 压缩算法）、deflate（采用 zlib 结构和 deflate 压缩算法）、br（采用 Brotil 算法的编码方式）、identity（用于指代自身，除非特别说明，这个标记始终可以被接受）、*（匹配其他任意未在该请求头字段中列出的编码方式。假如该请求头字段不存在的话，这个值是默认值。它并不代表任意算法都支持，而仅仅表示算法之间无优先次序）、;q=(qvalues weighting 权重）
+
+  ```
+  Accept-Encoding: deflate, gzip;q=1.0, *;q=0.5
+  ```
 
 * Content-Type
 
@@ -559,7 +551,7 @@ HTTP 协议定义了用于客户端和服务器进行内容协商的头字段（
 
 * Content-Encoding
 
-  实际使用的压缩格式，对应 Accept-Encoding
+  当该首部出现时，表示消息主题进行了何种方式的内容编码转换。实际使用的压缩格式，对应 Accept-Encoding，值与 Accept-Encoding 对应
 
 * Accept-Language
 
@@ -575,7 +567,7 @@ HTTP 协议定义了用于客户端和服务器进行内容协商的头字段（
 Accept: text/html,application/xml;q=0.9,*/*;q=0.8
 ```
 
-内容协商的过程是不透明的，每个 web 服务器使用的算法都不一样，但有时，服务器会在响应头里多加一个 **Vary** 字段，记录服务器在内容协商时参考的请求头字段
+内容协商的过程是不透明的，每个 web 服务器使用的算法都不一样，但有时，服务器会在响应头里多加一个 **Vary** 字段，记录服务器在内容协商时参考的请求头字段，Vary
 
 ```
 # 服务器依据 Accept-Encoding,User-Agent,Accept 三个头字段决定了发回的响应报文
@@ -781,37 +773,6 @@ HTTP 协议最初（0.9/1.0）是个非常简单的协议，通信过程采用�
 * 循环跳转
 
   如果重定向的策略设置欠考虑，可能出现 A=>B=>C=>A 的无限循环，HTTP 协议规定，浏览器必须具有检测『循环跳转』的能力，在发现这种情况时应答停止发送请求并给出错误提示
-
-#### Cookie 工作机制
-
-当用户通过浏览器第一次访问服务器的时候，服务器会创建一个独特的身份标识数据，格式是 key=value，使用 ;分隔，然后放入 Set-Cookie 字段里，随着响应报文一同发送给浏览器。浏览器收到响应报文，看到里面有 Set-Cookie，保存起来，下次请求时自动把这个值放进 Cookie 字段里发送给服务器。
-
-##### Cookie 的属性
-
-* 有效期
-
-  **Expires** 和 **Max-Age** 两个属性来设置。
-
-  * Expires 过期时间，用的是绝对时间点，可以理解为『截止日期』。
-  * Max-Age 用的是相对时间，单位为秒，浏览器用收到报文的时间点再加上 Max-Age，就可以得到失效的绝对时间。
-
-  两者可以同时出现，两者值也可以不一致，浏览器优先采用 Max-Age 计算失效期。如果不指定 Expires 或 Max-Age 属性，那么 Cookie 仅在浏览器运行时有效，一旦浏览器关闭就会失效，这被称为会话 Cookie（session cookie）或内存 Cookie 在 Chrome 里过期时间会显示为 Session 或 N/A
-
-* 作用域
-
-  让浏览器仅发送给特定的服务器和 URI，避免被其他网站盗用。使用 **Domain** 和 **Path** 指定 Cookie 所属的域名和路径，浏览器在发送 Cookie 前会从 URI 中提取出 host 和 path 部分，对比 Cookie 的属性。如果不满足条件，就不会在请求头里发送 Cookie。
-
-* HttpOnly
-
-  属性 HttpOnly 会告诉浏览器，此 Cookie 只能通过浏览器 HTTP 协议传输，浏览器的 JS 引擎就会禁用 document.cookie 等相关 API。可以防止 XSS 跨站脚步攻击
-
-* SameSite
-
-  可以防范跨站请求伪造 XSRF 工具，设置 SameSite=Strict 可以严格限定 Cookie 不能随着跳转链接跨站发送，而 SameSite=Lax ，允许 GET/HEAD 等安全发送，但禁止 POST 跨站发送
-
-* Secure
-
-  表示这个 Cookie 仅能用 HTTPS 协议加密传输，明文的 HTTP 协议会禁止发送。但 Cookie 本身不是加密的，浏览器还是以明文的形式存在
 
 #### 缓存控制
 
