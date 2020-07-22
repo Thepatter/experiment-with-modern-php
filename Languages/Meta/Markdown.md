@@ -97,6 +97,7 @@ st->接收用户名和密码->使用用户名查询数据库->查询数据库
 时序图
 
 ```
+[sequence]
 Rabbit->Client: 推送用户任务到队列
 Client->MySql: 写入 mysql 落盘
 MySql->Client: 成功

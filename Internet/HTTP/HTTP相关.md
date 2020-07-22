@@ -339,3 +339,146 @@ Public-Key-Pins:
 ##### CORS HTTP 访问控制
 
 跨域资源共享是一种机制，它使用额外的 HTTP 头告诉浏览器，让运行在一个 origin domain 上的 Web 应用被准许访问来自不同源服务器上的指定的资源。当一个资源从与该资源本身所在的服务器不同的域、协议或端口请求一个资源时，资源会发起一个跨域 HTTP 请求。出于安全原因，浏览器限制从脚本内发起的跨源 HTTP 请求（这些 API 的 Web 应用只能从加载应用程序的同一个域请求 HTTP 资源，除非响应报文包含了正确的 CORS 头，也可能跨站请求可以正常发起，但返回结果被浏览器拦截了）
+
+###### cors 标准
+
+跨域资源共享标准允许在下列场景中使用跨域 HTTP 请求（XMLHttpRequest 或 Fetch 发起的跨域 HTTP 请求；Web 字体，CSS 中通过 @font-face；WebGL 贴图；使用 drawImage 将 Image/video 绘制到 canvas）
+
+<strong>跨域资源共享标准新增了一组 HTTP 首部字段，允许服务器声明哪些源站通过浏览器有权限访问哪些资源。规范要求，对那些可能对服务器数据产生副作用，特别是 GET 以外的 HTTP 请求，或者搭配某些 MIME 类型的 POST 请求，浏览器必须首先使用 OPTIONS 方法发起一个预检请求，从而获知服务端是否允许该跨域请求，服务器确认允许后，才发起实际的 HTTP 请求，在预检请求的返回中，服务器端也可以通知客户端，是否需要携带身份凭证（包括 Cookies 和 HTTP 认证相关数据）</strong>
+
+###### 相关头字段
+
+*除 Origin 外所有头有前缀 `Access-Control-`*
+
+|       字段        |                             用途                             |
+| :---------------: | :----------------------------------------------------------: |
+|      Origin       | 请求头，指示了请求来自于那个站点。该字段仅指示服务器名称，并不包含任何路径信息。该首部用于 CORS 请求或 POST 请求。除了不包含路径信息，该字段与 Referer 首部字段相似 |
+|   Allow-Origin    | 响应头指定了该响应的资源是否被允许与给定的 origin 共享，对于不需要携带身份凭证的请求，服务器可以指定该字段的值为通配符，即允许来自所有域的请求 |
+|  Request-Headers  | 请求头出现于预检请求中，用于通知服务器在真正的请求中采用那些请求头，用逗号分割请求头 |
+|   Allow-Headers   |         表明服务器允许请求携带那些请求头，用逗号分割         |
+|  Request-Method   | 请求头出现在预检请求种，用于通知服务器在真正的请求种会采用的请求方法，预检请求时，该头是必须的 |
+|   Allow-Methods   |             表明服务器允许的请求方法，用逗号分割             |
+|      Max-Age      | 表明该预检查请求响应的有效时间，在有效时间内，浏览器无须为同一请求再次发起预检请求，浏览器自身维护了一个最大有效时间，如果该首部字段的值超过了最大有效时间，将不会生效 |
+|  Expose-Headers   | 在跨域访问时，XMLHttpRequest 对象的 getResponseHeader() 方法只能拿到基本的响应头（Cache-Control、Content-Language、Content-Type、Expires、Last-Modified、Pragma），如果要访问其他头，则需要服务器设置本响应头，让服务器把允许浏览器访问的头放入白名单 |
+| Allow-Credentials | 指定了当浏览器的 credentials 设置为 true 时是否允许浏览器读取 reponse 的内容。当用在对预检请求的响应中时，它指定了实际的请求是否可以使用 credentials。简单 GET 请求不会被预检；如果对此类请求的响应中不包含该字段，这个响应将被忽略掉，并且浏览器也不会将相应内容返回给网页 |
+
+```
+Origin: ""
+Origin: <scheme> "://" <host> [":" <port>]
+```
+
+```
+# * 标识允许所有域都具有访问资源的权限
+Access-Control-Allow-Origin: <origin>
+# 如果服务器未使用 `*`，而是指定了一个域，为了向客户端表明服务器的返回会根据 Origin 请求头而有所不同，必须在 Vary 响应头中包含 Origin
+Access-Control-Allow-Origin: https://developer.mozilla.org
+Vary: Origin
+```
+
+###### 附带身份凭证的请求
+
+XMLHttpRequest 或 Fetch 可以基于 HTTP cookies 和 HTTP 认证信息发送身份凭证。一般而言，对于跨域 XMLHttpRequest 或 Fetch 请求，浏览器不会发送身份凭证信息。如果要发送凭证信息，需要设置 XMLHttpRequest 的某个特殊标志位
+
+```js
+# foo.example 脚本向 bar 域发起一个 GET 请求，并设置 Cookie
+varinvocation = new XMLHttpRequest();
+var url = 'http://bar.com/resources/credentialed-content';
+function callBarDomain() {
+    if (invocation) {
+        invocation.open('GET', url, true);
+        invocation.withCredentials = true;
+        invocation.onreadystatechange = handler;
+        invocation.send();
+    }
+}
+```
+
+XMLHttpRequest 的 withCredentials 标志设置为 true，从而向服务器发送 Cookies。如果服务端响应种未携带 Access-Control-Allow-Credentials: true，浏览器将不会把响应内容返回给请求的发送者
+
+对于附带身份凭证的请求，服务器不得设置 `Access-Control-Allow-Origin` 的值为 `*`，因为请求的首部中携带了 Cookie 信息，如果 `Access-Control-Allow-Origin: '*'`，请求将会失败，响应头如果携带了 Set-Cookie 字段，尝试对 Cookie 进行修改，如果操作失败，将会抛出异常。
+
+在 CORS 响应中设置的 cookies 使用一般性第三方 cookie 策略，如果用户设置其浏览器拒绝所有第三方 cookies，将不会保存 cookie
+
+#### Authentication
+
+##### 通用 HTTP 认证框架
+
+RFC 7235 定义了 HTTP 身份验证框架，服务器可以使用它来质询客户端请求，客户端可以使用它来提供身份验证信息，浏览器使用 UTF-8 编码认证信息，认证流程为：
+
+1.  客户端请求需要身份验证的资源，服务端返回 401 响应状态，并在 WWW-Authenticate 头中说明认证方式（代理服务器返回 407 和 Proxy-Authenticate 响应头）
+2.  客户端通过在 Authorization 请求头（代理使用 Proxy-Authorization 请求头将凭证提供给代理服务器）中添加凭证来进行身份验证
+
+###### 认证头
+
+*   响应头定义了使用何种验证方式去获取对资源的连接，通常会和一个 401 Unauthorized 的响应一同被发送
+
+    ```
+    WWW-Authenticate: <type> realm=<realm>
+    Proxy-Authenticate: <type> realm=<realm>
+    # type 验证类型，realm 一个保护区域的描述，如果未指定 realm, 客户端通常显示一个格式化的主机名来替代。
+    WWW-Authenticate: Basic realm="Access to the staging site"
+    ```
+
+*   请求头
+
+    请求头含有服务器用于验证用户代理身份的凭证，通常会在服务器返回 401 状态及 WWW-Authenticate 消息头之后再后续请求中发送此消息头
+
+    ```
+    # type 验证类型，credentials 如果使用 basic 会用冒号分割用户名密码并进行 base64 编码
+    Authorization: <type> <credentials>
+    Proxy-Authorization: <type> <credentials>
+    Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l
+    ```
+
+###### 认证方案
+
+通用 HTTP 身份验证框架可以被多个验证方案使用。不同的验证方案会在安全强度以及在客户端或服务器端软件中可获得的难易程度上有所不同
+
+###### Basic
+
+使用用户的 ID/密码作为凭证信息，并且使用 base64 算法进行编码。基本验证方案并不安全。基本验证方案应与 HTTPS / TLS 协议搭配使用。假如没有这些安全方面的增强，那么基本验证方案不应该被来用保护敏感或者极具价值的信息。
+
+*   apache 配置 Basic 验证
+
+    *.htaccess*
+
+    ```
+    AuthType Basic
+    AuthName "Access to the staging site"
+    AuthUserFile /path/to/.htpasswd # .htpasswd 为 ：分割的加密用户名密码
+    Require valid-user
+    ```
+
+    使用 htpasswd 工具生成密文
+
+    ```
+    # bcrypt
+    htpasswd -nbB myName myPassword
+    # md5
+    htpasswd -nbm myName myPassword
+    # sha1
+    htpasswd -nbs myName myPassword
+    # crypt
+    htpasswd -nbd myName myPassword
+    ```
+
+    使用 openssl-cli
+
+    ```
+    # md5
+    openssl passwd -apr1 myPassword
+    # crypt
+    openssl passwd -crypt myPassword
+    ```
+
+*   nginx
+
+    ```
+    location /status {
+    	auth_basic "Access to the staging site";
+    	auth_basic_user_file /etc/pass/.htpasswd;
+    }
+    ```
+
+    
+
