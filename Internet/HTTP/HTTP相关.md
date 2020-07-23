@@ -56,6 +56,37 @@ encode_base64(
 
 客户端收到响应报文，就可以用同样的算法，比较值是否相等，如果相等，说明返回的报文确实是刚才握手时连接的服务器，认证成功，握手完成，后续传输数据即为 WebSocket 格式二进制帧
 
+#### data 协议
+
+即前缀为 `data:` 协议的 URL，其允许内容创建者向文档中嵌入小文件
+
+```
+data:[<mediatype>][;base64],<data>
+```
+
+Data URLs 由四个部分组成：前缀（`data:`）、指示数据类型的 MIME 类型、如果非文本则为可选的 base64 标记、数据本身
+
+*   mediatype
+
+    为 MIME 类型的字符串，如果省略，则默认值为 `text/plain;charset=US-ASCII`
+
+*   数据
+
+    如果数据是文本类型，可以直接将文本嵌入（根据文档类型，使用合适的实体字符或转义字符），如果是二进制数据，可以将数据进行 base64 编码后再进行嵌入
+
+    ```
+    # 简单的 text/plain 类型数据
+    data:,Hello%2C%20World!
+    # base64 编码的 text/plain 类型数据
+    data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D
+    # html 文档源码
+    data:text/html,%3Ch1%3EHello%2C%20World!%3C%2Fh1%3E
+    # 带 js 的 html 文档
+    data:text/html,<script>alert('hi');</script>
+    ```
+
+#### 组成部分
+
 #### CDN
 
 ##### Content Delivery Network
