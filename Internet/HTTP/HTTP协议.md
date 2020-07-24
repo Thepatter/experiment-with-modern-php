@@ -450,11 +450,40 @@ Transfer-Encoding: chunked 和 Contenting-Length 字段是**互斥**的，即响
 
 ###### Range
 
+请求头，告知服务器返回文件的那一部分，在一个 Range 头中，可以一次性请求多个部分，服务器会以 multipart 文件的形式将其返回。如果服务器返回的是范围响应，需要使用 206 状态码。假如请求范围不合法，服务器会返回 416.服务器允许忽略 Range 头，从而返回整个文件，状态码用 200
+
+```
+# unit 范围所采用的单位，通常是字节 bytes
+# range-start 一个整数，表示在特定单位下，范围的起始值
+# range-end	一个整数，表示在特定单位下，范围结束值，不存在则直到结束
+Range: <unit>=<range-start>-
+Range: <unit>=<range-start>-<range-end>
+Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>
+Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>, <range-start>-<range-end>
+Range: bytes=200-1000, 2000-6576, 19000- 
+```
+
 ###### Transfer-Encoding
+
+指定了实体的编码方式。`Transfer-Encoding` 是一个[逐跳传输消息首部](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#hbh)，即仅应用于两个节点之间的消息传递，而不是所请求的资源本身。一个多节点连接中的每一段都可以应用不同的`Transfer-Encoding` 值。如果你想要将压缩后的数据应用于整个连接，那么请使用端到端传输消息首部 [`Content-Encoding`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Encoding)
+
+```
+Transfer-Encoding: chunked
+Transfer-Encoding: compress
+Transfer-Encoding: deflate
+Transfer-Encoding: gzip
+Transfer-Encoding: identity
+// Several values can be listed, separated by a comma
+Transfer-Encoding: gzip, chunked
+```
+
+chunk 数据以一系列分块的形式进行发送。 [`Content-Length`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Length) 首部在这种情况下不被发送。。在每一个分块的开头需要添加当前分块的长度，以十六进制的形式表示，后面紧跟着 '`\r\n`' ，之后是分块本身，后面也是'`\r\n`' 。终止块是一个常规的分块，不同之处在于其长度为0。终止块后面是一个挂载（trailer），由一系列（或者为空）的实体消息首部构成
 
 #### 请求
 
 ##### 请求方法
+
+###### 方法
 
 目前 HTTP/1.1 支持的方法，单词都必须是大写的形式
 
@@ -470,11 +499,17 @@ Transfer-Encoding: chunked 和 Contenting-Length 字段是**互斥**的，即响
 |   PUT   |              使用请求中的负载创建或替换目标资源              |    是     |      否       | 否   | 是   | 否     | 否                    |
 |  TRACE  |            实现沿通向目标资源的路径的消息环回测试            |    否     |      否       | 否   | 是   | 否     | 否                    |
 
-##### 安全和幂等
+###### 安全
 
-在 HTTP 协议里，安全是指请求方法不会破坏服务器上的资源，即不会对服务器上的资源造成实质的修改。即只有 HEAD 和 GET 是安全的。
+在 HTTP 协议里，安全是指请求方法不会破坏服务器上的资源，即不会对服务器上的资源造成实质的修改。即只有 HEAD、GET、OPTIONS 是安全的。
 
-**幂等**：多次执行相同的操作，结果也是相同的，即多次『幂』后结果『相等』
+###### 幂等
+
+多次执行相同的操作，结果也是相同的，即多次『幂』后结果『相等』
+
+一个HTTP方法是**幂等**的，指的是同样的请求被执行一次与连续执行多次的效果是一样的，服务器的状态也是一样的。即幂等方法不应该具有副作用（统计用途除外）。在正确实现的条件下，GET，HEAD，PUT 和 DELETE 等方法都是**幂等**的，而 POST 方法不是。所有的安全方法也都是幂等的
+
+幂等性只与后端服务器的实际状态有关，而每一次请求接收到的状态码不一定相同，服务器不一定会确保请求方法的幂等性，有些应用可能会错误地打破幂等性约束
 
 ##### 范围请求
 
@@ -553,7 +588,7 @@ range requests，允许客户端在请求头里使用专用字段来表示只获
 |     303 See Other      | 通常作为 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 或 [`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 操作的返回结果，它表示重定向链接指向的不是新上传的资源，而是另外一个页面，比如消息确认页面或上传进度页面。而请求重定向页面的方法要总是使用 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET)。 |
 |    304 Not Modified    | 用于 If-Modified-Since 等条件请求，表示资源未修改，用于缓存控制，不具有通常的跳转含义，但可以理解成『重定向到已缓存的文件』，即缓存重定向 |
 | 307 Temporary Redirect | 临时重定向响应状态码，表示请求的资源暂时地被移动到了响应的 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部所指向的 URL 上，在使用 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 方法进行文件上传操作时，如果需要返回一条确认信息（例如“你已经成功上传了 XYZ”），而不是返回上传的资源本身，就可以使用这个状态码。状态码 `307` 与 [`302`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/302) 之间的唯一区别在于，当发送重定向请求的时候，`307` 状态码可以确保请求方法和消息主体不会发生变化。如果使用 `302` 响应状态码，一些旧客户端会错误地将请求方法转换为 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET)：也就是说，在 Web 中，如果使用了 `GET` 以外的请求方法，且返回了 `302` 状态码，则重定向后的请求方法是不可预测的；但如果使用 `307` 状态码，之后的请求方法就是可预测的。对于 `GET` 请求来说，两种情况没有区别 |
-| 308 Permanent Redirect | **308 Permanent Redirect**（永久重定向）是表示重定向的响应状态码，说明请求的资源已经被永久的移动到了由 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部指定的 URL 上。浏览器会进行重定向，同时搜索引擎也会更新其链接（用 SEO 的行话来说，意思是“链接汁”（link juice）被传递到了新的 URL）。在重定向过程中，请求方法和消息主体不会发生改变，然而在返回 [`301`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/301) 状态码的情况下，请求方法有时候会被客户端错误地修改为 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/GET) 方法 |
+| 308 Permanent Redirect | **308 Permanent Redirect**（永久重定向）是表示重定向的响应状态码，说明请求的资源已经被永久的移动到了由 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部指定的 URL 上。浏览器会进行重定向，在重定向过程中，请求方法和消息主体不会发生改变，然而在返回 [`301`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/301) 状态码的情况下，请求方法有时候会被客户端错误地修改为 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/GET) 方法 |
 
 ###### 4xx
 
@@ -644,17 +679,112 @@ HTTP 协议最初（0.9/1.0）是个非常简单的协议，通信过程采用�
 
 #### 重定向
 
-重定向是服务器发起的跳转，要求客户端该用新的 URI 重新发送请求，通常会自动进行，用户是无感知的。**Location** 字段属于响应字段，必须出现在响应报文里。但只有配合 301/302 状态码才有意义，它**标记了服务器要求重定向的 URI**。浏览器收到 301/302 报文，会检查响应头里有没有 Location。如果有，就从字段里提取出 URI，发出新的请求。在 Location 里 URI 既可以使用绝对 URI，也可以使用相对 URI。与跳转有关的还有一个 Referer 和 Referrer-Policy 字段表示浏览器跳转的来源，即引用地址，可用于统计分析和防盗链。
+重定向是服务器发起的跳转，要求客户端该用新的 URI 重新发送请求，通常会自动进行，重定向分为永久、临时、特殊重定向有 HTTP、HTML、JS 三种重定向的优先级为：http->html->js，
 
-##### 重定向的相关问题
+循环跳转如果重定向的策略设置欠考虑，可能出现 A=>B=>C=>A 的无限循环，HTTP 协议规定，浏览器必须具有检测『循环跳转』的能力，在发现这种情况时应答停止发送请求并给出错误提示
 
-* 性能损耗
+##### 重定向方式
 
-  重定向的机制决定了一个跳转会有两次请求-应答，比正常的访问多了一次
+###### HTTP
 
-* 循环跳转
+服务器发送特殊的响应触发，HTTP 协议的重定向响应的状态码为 3xx。浏览器在接收到重定向响应时，会采用该响应提供的新的 URL，并立即进行加载
 
-  如果重定向的策略设置欠考虑，可能出现 A=>B=>C=>A 的无限循环，HTTP 协议规定，浏览器必须具有检测『循环跳转』的能力，在发现这种情况时应答停止发送请求并给出错误提示
+重定向状态码 301/302 时，重定向的方法可能变为 GET 方法，对于需要使用原来请求方法，请求体时需要使用 308/307
+
+###### HTML 重定向
+
+HTTP 协议重定向机制应该优先采用，对于无法控制服务器响应的情况，可以在 head 中添加 meta 元素实现
+
+```html
+<head> 
+    <!-- content 数字为跳转等待时间 -->
+  <meta http-equiv="Refresh" content="0; URL=http://example.com/" />
+</head>
+```
+
+该方法仅适用于 HTML 页面（或类似页面），然而不能应用于图片或其他类型的内容，该机制会使浏览器的回退按钮失效；可以返回含有含有这个头部的页面，但是又会立即跳转
+
+###### JavaScript 重定向
+
+```js
+window.location = "http://example.com/";
+```
+
+设置 window.location 的属性值，然后加载新页面，不适用所有类型的资源
+
+##### 头字段
+
+###### Location
+
+首部指定的是需要将页面重新定向至的地址。一般在响应码为3xx的响应中才会有意义。
+
+除了重定向响应之外， 状态码为 [`201`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/201) (Created) 的消息也会带有Location首部。它指向的是新创建的资源的地址
+
+指定的是一个重定向请求的目的地址（或者新创建的文件的URL），Content-Location 指向的是经过内容协商后的资源的直接地址，不需要进行进一步的内容协商。Location 对应的是响应，而 Content-Location 对应的是要返回的实体
+
+```
+# 相对地址或绝对地址
+Location: <url>
+Location: /index.html
+```
+
+##### 应用场景
+
+###### 不安全请求的临时响应
+
+不安全请求会修改服务器端的状态，应该避免用户无意的重复操作，此时可以返回 303 响应，其中含有合适的响应信息。如果刷新按钮被点击的话，只会导致该页面被刷新，而不会重复提交不安全的请求
+
+###### 对于耗时请求的临时响应
+
+一些请求的处理会需要比较长的时间，比如有时候 [`DELETE`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/DELETE) 请求会被安排为稍后处理。在这种情况下，会返回一个 [`303`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/303) (See Other)  重定向响应，该响应链接到一个页面，表示请求的操作已经被列入计划，并且最终会通知用户操作的进展情况，或者允许用户将其取消。
+
+##### 服务器配置
+
+###### apache
+
+mod_alias 模块提供了 Redirect 和 Redirect_Match 两种指令来设置 302 响应
+
+```conf
+<VirtualHost *:443>
+	ServerName example.com
+	Redirect / https://www.example.com
+</VirtualHost>
+```
+
+位于 `images/` 文件夹下的所有文档都会被重定向至新的域名
+
+```
+<VirtualHost *:80>
+	RedirectMatch ^/images/(.*)$ http://images.example.com/$1
+</VirtualHost>
+```
+
+永久重定向使用额外的参数（使用 HTTP 状态码或者 permanent 关键字）来进行设置：
+
+```
+Redirect permanent / https://www.example.com
+# …acts the same as: 
+Redirect 301 / https://www.example.com
+```
+
+###### nginx
+
+```nginx
+server {
+	listen 80;
+	server_name example.com;
+	return 301 $scheme://www.example.com$request_uri;
+}
+```
+
+可以使用 rewrite 指令来针对一个文件目录或者一部分页面应用重定向设置：
+
+```nginx
+rewrite ^/images/(.*)$ http://images.example.com/$1 redirect;
+rewrite ^/images/(.*)$ http://images.example.com/$1 permanent;
+```
+
+
 
 #### 缓存控制
 
@@ -776,6 +906,10 @@ ETag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
 ETag: W/"0815"
 ```
 
+###### Last-Modified
+
+响应头，服务器资源做出修改时间，常被用作一个验证器来判断接收到的或者存储的资源是否彼此一致。精确度比 ETag 低，If-Modified-Since 或 If-Unmodified-Since 请求头会使用这个字段
+
 #### 条件请求
 
 ##### 条件请求流程
@@ -806,28 +940,6 @@ ETag: W/"0815"
 ##### 条件首部
 
 HTTP 协议定义了一系列 **If** 开头的 **条件请求** 字段，专门用来检查验证资源是否过期，把两个请求才能完成的工作合并在一个请求里，而且验证责任也交给服务器。条件请求一共有 5 个头字段
-
-* If-Modified-Since:<date>
-
-  需要第一次的响应报文预先提供 Last-modified，后第二次请求带上缓存里的原值，验证资源是否是最新的。如果资源没有变化，服务器就响应 304 Not Modifed，表示缓存依然有效，浏览器可以更新一下有效期，然后使用缓存。**Last-modified 即资源最后修改时间**。
-
-  如果自指定日期后，文档没有被修改过，条件位真，通常 GET 就会成功执行携带新首部的新文档会被返回给缓存，新首部除了其他信息之外，还包含一个新的过期日期
-
-* If-None-Match:<tags>
-
-  需要第一次的响应报文预先提供 **Etag** 字段，第二次再请求时带上该值，服务器验证该值与当前实体 Etag 是否相同。**ETag 是 Entity Tag 实体标签，资源唯一标识**。强 ETag 要求资源在字节级别必须完全相符，弱 ETag 在值前有个 W/ 标记，只要求资源在语义上没有变化，但内部可能会有部分发生了改变。
-  
-* If-Unmodified-Since
-
-  在进行部分文件的传输时，获取文件的其余部分之前要确保文件未发生变化
-
-* If-Range
-
-  支持对不完整文件的缓存
-
-* If-Match
-
-  用于与 Web 服务器打交道时的并发控制
 
 ###### If-Match
 
@@ -888,3 +1000,20 @@ If-Modified-Since: Wed, 21 Oct 2015 07:28:00 GMT
 
 *   POST 搭配使用，可以用来优化并发控制，如果某些 wiki 应用在原始副本获取之后，服务器上所存储的文档已经被修改，那么对其作出的编辑会被拒绝提交
 *   与含有 If-Range 消息头的范围请求搭配使用，确保新的请求片段来自于未经修改的文档
+
+```
+If-Unmodified-Since: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
+If-Unmodified-Since: Wed, 21 Oct 2015 07:28:00 GMT 
+```
+
+###### If-Range
+
+条件请求头，当字段值中的条件得到满足时，Range 头才会起作用，同时服务器响应 206，以及 Range 头字段请求的相应部分；如果字段值中的条件没有得到满足，服务器会返回 200，并返回完整资源
+
+字段值既可以用 Last-Modified 时间值用作验证，也可以用 ETag 标记作为验证，但不能两者同时使用
+
+```
+If-Range: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
+If-Range: <etag>
+```
+
