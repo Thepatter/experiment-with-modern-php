@@ -448,21 +448,6 @@ Transfer-Encoding: chunked 和 Contenting-Length 字段是**互斥**的，即响
 
 ##### 头字段
 
-###### Range
-
-请求头，告知服务器返回文件的那一部分，在一个 Range 头中，可以一次性请求多个部分，服务器会以 multipart 文件的形式将其返回。如果服务器返回的是范围响应，需要使用 206 状态码。假如请求范围不合法，服务器会返回 416.服务器允许忽略 Range 头，从而返回整个文件，状态码用 200
-
-```
-# unit 范围所采用的单位，通常是字节 bytes
-# range-start 一个整数，表示在特定单位下，范围的起始值
-# range-end	一个整数，表示在特定单位下，范围结束值，不存在则直到结束
-Range: <unit>=<range-start>-
-Range: <unit>=<range-start>-<range-end>
-Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>
-Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>, <range-start>-<range-end>
-Range: bytes=200-1000, 2000-6576, 19000- 
-```
-
 ###### Transfer-Encoding
 
 指定了实体的编码方式。`Transfer-Encoding` 是一个[逐跳传输消息首部](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#hbh)，即仅应用于两个节点之间的消息传递，而不是所请求的资源本身。一个多节点连接中的每一段都可以应用不同的`Transfer-Encoding` 值。如果你想要将压缩后的数据应用于整个连接，那么请使用端到端传输消息首部 [`Content-Encoding`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Encoding)
@@ -513,16 +498,20 @@ chunk 数据以一系列分块的形式进行发送。 [`Content-Length`](https:
 
 ##### 范围请求
 
-###### HTTP 范围请求
+HTTP 协议范围请求允许服务器只发送 HTTP 消息的一部分到客户端。范围请求常用在传送大的媒体文件，或文件下载的断点续传
 
-range requests，允许客户端在请求头里使用专用字段来表示只获取文件的一部分。
+###### Accept-Ranges
 
-范围请求不是 Web 服务器必备的技能，可以实现也可以不实现，服务器必须在响应头里使用字段
+响应头标识自身支持范围，字段值用于定义范围请求的单位
 
-* Accept-Ranges: bytes 明确告诉客户端，支持范围请求
-* Accept-Range: none 或不发送 Accept-Range 字段来表示不支持范围请求
+```
+# 为 none 或不发送 Accept-Range 字段表示不支持范围请求，bytes 范围请求的单位是 bytes
+Accept-Ranges: bytes
+```
 
-请求头 Range 是 HTTP 范围请求的专用字段，格式是 bytes=x-y，其中 x 和 y 是以字节为单位的数据范围，x 和 y 表示的是『偏移量』，范围必须从 0 计数，如前 10 个字节表示 0-9，第二个 10 字节表示 10-19。Range 的格式也很灵活，起点 x 和终点 y 可以省略，能够很方便地表示正数或倒数的范围，假设文件是 100 个字节，那么：
+###### Range
+
+请求头 Range 是 HTTP 范围请求的专用字段，服务器允许忽略 Range 头，从而返回整个文件，状态码用 200。格式是 bytes=x-y，其中 x 和 y 是以字节为单位的数据范围，x 和 y 表示的是『偏移量』，范围必须从 0 计数，如前 10 个字节表示 0-9，第二个 10 字节表示 10-19。Range 的格式也很灵活，起点 x 和终点 y 可以省略，能够很方便地表示正数或倒数的范围，假设文件是 100 个字节，那么：
 
 * 0- 表示从文档起点到文档终点，相当于 0-99，即整个文件
 * 10- 表示从第 10 个字节开始到文档末尾，相当于 10-99
@@ -535,11 +524,34 @@ range requests，允许客户端在请求头里使用专用字段来表示只获
 * 如果范围正确，服务器就可以根据 Range 头计算偏移量，读取文件的片段，返回状态码 **206 Partial Content**
 * 服务器要添加一个响应头字段 Content-Range，告诉片段实际偏移量和资源的总大小，格式是 **bytes x-y/length**，与 Range 头区别在于没有 =，范围后多了总长度。
 
+```
+Range: <unit>=<range-start>-
+Range: <unit>=<range-start>-<range-end>
+Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>
+Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>, <range-start>-<range-end>
+Range: bytes=200-1000, 2000-6576, 19000- 
+```
+
 常用视频进度条拖拽，多段下载、断点续传也是基于它实现的，要点是：
 
 * 发送 HEAD，看服务器是否支持范围请求，同时获取文件的大小
 * 开启多个线程，每个线程用 Range 字段划分出各自负责下载的片段，发送请求
 * 即使意外中断，只要根据上次的下载记录，用 Range 请求剩下的一部分即可
+
+###### Content-Range
+
+显示的是一个数据片段在整个文件中的位置
+
+```
+# unit 数据间采用的单位，通常是 byte
+# range-start 给定单位下，区间的起始值
+# range-end 给定单位下，区间的结束值
+# size 整个文件的大小，如果大小未知
+Content-Range: <unit> <range-start>-<range-end>/<size>
+Content-Range: <unit> <range-start>-<range-end>/*
+Content-Range: <unit> */<size>
+Content-Range: bytes 200-1000/67589 
+```
 
 ###### 多段数据
 
@@ -910,6 +922,11 @@ ETag: W/"0815"
 
 响应头，服务器资源做出修改时间，常被用作一个验证器来判断接收到的或者存储的资源是否彼此一致。精确度比 ETag 低，If-Modified-Since 或 If-Unmodified-Since 请求头会使用这个字段
 
+```
+Last-Modified: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
+Last-Modified: Wed, 21 Oct 2015 07:28:00 GMT
+```
+
 #### 条件请求
 
 ##### 条件请求流程
@@ -1010,10 +1027,11 @@ If-Unmodified-Since: Wed, 21 Oct 2015 07:28:00 GMT
 
 条件请求头，当字段值中的条件得到满足时，Range 头才会起作用，同时服务器响应 206，以及 Range 头字段请求的相应部分；如果字段值中的条件没有得到满足，服务器会返回 200，并返回完整资源
 
-字段值既可以用 Last-Modified 时间值用作验证，也可以用 ETag 标记作为验证，但不能两者同时使用
+字段值既可以用 Last-Modified 时间值用作验证，也可以用 ETag 标记作为验证，但不能两者同时使用，通常用于断点续传的下载过程中，用来自从上次中断后，确保下载的资源没有发生改变。
 
 ```
 If-Range: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
 If-Range: <etag>
+If-Range: Wed, 21 Oct 2015 07:28:00 GMT 
 ```
 
