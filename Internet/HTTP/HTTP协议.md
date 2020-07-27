@@ -728,7 +728,7 @@ window.location = "http://example.com/";
 
 ###### Location
 
-首部指定的是需要将页面重新定向至的地址。一般在响应码为3xx的响应中才会有意义。
+响应头，指定的是需要将页面重新定向至的地址。一般在响应码为3xx的响应中才会有意义。
 
 除了重定向响应之外， 状态码为 [`201`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/201) (Created) 的消息也会带有Location首部。它指向的是新创建的资源的地址
 
@@ -739,6 +739,22 @@ window.location = "http://example.com/";
 Location: <url>
 Location: /index.html
 ```
+
+###### Referer
+
+请求头包含了当前请求页面的来源页面的地址，即表示当前页面是通过此来源页面里的链接进入的。服务端一般使用 Referer 请求头识别访问来源
+
+在以下情况，Referer 头不会被发送：
+
+*   来源页面采用的协议为 file 或 data
+*   当前请求采用的是非安全协议 http，而来源页面采用的是安全协议 HTTPS
+
+```
+# url 当前页面被链接而至的前一页面的绝对路径或者相对路径。不包含 URL fragments (例如 "#section") 和 userinfo 
+Referer: <url>
+```
+
+
 
 ##### 应用场景
 
@@ -833,6 +849,8 @@ HTTP 的服务器缓存功能主要由代理服务器来实现，而源服务器
 
 ###### 源服务器缓存控制
 
+Vary HTTP 响应头决定了对于后续的请求头，如何判断是请求一个新的资源还是使用缓存的文件。当缓存服务器收到一个请求，只有当前的请求和原始（缓存）的请求头跟缓存响应头里的 Vary 都匹配，才能使用缓存的响应
+
 *服务器完整缓存控制策略*
 
 <img src="../Images/服务器完整缓存控制策略.png" style="zoom:50%;" />
@@ -925,6 +943,17 @@ ETag: W/"0815"
 ```
 Last-Modified: <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
 Last-Modified: Wed, 21 Oct 2015 07:28:00 GMT
+```
+
+###### Age
+
+响应头包含对象在缓存代理中存储的时长，以秒为单位。
+
+Age 的值通常接近于 0，表示此对象刚从原始服务器获取不久；其他的值表示代理服务器当前的系统时间与此应答中的通用头 Date 的值之差
+
+```
+# 表示对象在缓存代理服务器中存贮的时长，以秒为单位
+Age: <delta-seconds>
 ```
 
 #### 条件请求
