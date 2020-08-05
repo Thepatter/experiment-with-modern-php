@@ -1,28 +1,18 @@
 ### I/O
 
-#### I/O 体系
+#### I/O 库
 
-##### java I/O 系统
+java 通过大量的类来解决 I/O 问题，自 1.0 开始，在原来面向字节的类中添加了面向字符和基于 Unicode 的类，1.4 中，添加了 nio 相关类用于改进性能及功能。
 
-###### 普通 IO
+###### File
 
-java 通过创建大量的类来解决 I/O 问题，自 1.0 开始，在原来面向字节的类中添加了面向字符和基于 Unicode 的类。
+既能代表一个特定文件的名称，又能代表一个目录下的一组文件的名称。如果它指一个文件集，可以对此集合调用 list() 方法。可以用 *File* 对象创建新的目录或整个目录路径。
 
-###### New IO
+*File* 不仅代表存在的目录和文件，也可以用 *File* 对象创建新的目录或尚不存在的目录路径和查看文件特性。如果以 *FileOutputStream* 或 *FileWriter* 打开，那么它肯定会被覆盖，应该先使用 *File* 判断
 
-jdk 1.4 中，添加了 nio 类改进性能及功能。
+##### 输入输出
 
-#### 文件体系
-
-##### *File*
-
-<u>既能代表一个特定文件的名称，又能代表一个目录下的一组文件的名称。</u>如果它指一个文件集，可以对此集合调用 list() 方法。可以用 *File* 对象创建新的目录或整个目录路径。
-
-*File* 不仅代表存在的目录和文件，也可以用 *File* 对象创建新的目录或尚不存在的目录路径和查看文件特性
-
-<u>如果以 *FileOutputStream* 或 *FileWriter* 打开，那么它肯定会被覆盖，应该先使用 *File* 判断</u>
-
-#### 输入输出
+###### 字节流
 
 java 1.0 类库中的 I/O 类分成输入和输出两部分：
 
@@ -31,7 +21,7 @@ java 1.0 类库中的 I/O 类分成输入和输出两部分：
 
 但通常不会用到这些方法，很少使用单一的类来创建流对象，而是通过叠合多个对象来提供所期望的功能（装饰器）创建单一的结果流，需要创建多个对象。面向字节操作。
 
-java 1.1 类库*Reader* 或 *Writer* 的兼容 Unicode 与面向字符的 I/O 功能。主要为了国际化。面向字符操作
+java 1.1 类库 *Reader* 或 *Writer* 的兼容 Unicode 与面向字符的 I/O 功能。主要为了国际化。面向字符操作
 
 *InputStreamReader* 可以将 *InputStream* 转换成 Reader。*OutputStreamWriter* 可将 *OutputStream* 转换为 *Writer*。几乎所有原始的 I/O 流库都有相应的 *Reader* 和 *Writer* 类来提供天然的 Unicode 操作。
 
@@ -50,7 +40,7 @@ java 1.1 类库*Reader* 或 *Writer* 的兼容 Unicode 与面向字符的 I/O �
 |        PipedInputStream         |           PipedReader            |
 |        PipedOutputStream        |           PipedWriter            |
 
-##### 格式化输出
+###### 格式化输出
 
 System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始的格式说明符都用相应的参数替换。
 
@@ -84,16 +74,16 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 
 ##### *InputStream*
 
-用来表示那些从不同数据源产生输入的类。每一种数据源都有相应的子类。
+用来表示那些从不同数据源产生输入的类。每一种数据源都有相应的子类：
 
-|           类            |                        功能                         |                            构造器                            |       使用       |
-| :---------------------: | :-------------------------------------------------: | :----------------------------------------------------------: | :--------------: |
-|  ByteArrayInputStream   |            将内存缓冲区当作 InputStream             |                    缓冲区，字节将从中取出                    |  作为一种数据源  |
-| StringBufferInputStream |            将 String 转换成 InputStream             |                            字符串                            |      数据源      |
-|     FileInputStream     |                     用于文件读                      |                      字符串，表示文件名                      |      数据源      |
-|            F            |  产生用于写入 PipedOutputStream 的数据，实现管道化  |                      PipedOutputStream                       | 作为多线程数据源 |
-|   SequenceInputStream   | 将两个或多个 InputStream 对象转换成单一 InputStream | 两个 InputStream 对象或一个容纳 InputStream 对象的容器 Enumeration |    作为数据源    |
-|   FileterInputStream    |               抽象类，作为装饰器接口                |                                                              |                  |
+|          子类           |                         功能                          |                            构造器                            |                        使用                         |
+| :---------------------: | :---------------------------------------------------: | :----------------------------------------------------------: | :-------------------------------------------------: |
+|  ByteArrayInputStream   |             将内存缓冲区当作 InputStream              |                    缓冲区，字节将从中取出                    |  作为一种数据源；与 FilterInputStream 对象组合使用  |
+| StringBufferInputStream |             将 String 转换成 InputStream              |                字符串，底层使用 StringBuffer                 |      数据源；与 FilterInputStream 对象组合使用      |
+|     FileInputStream     |                      用于文件读                       |           字符串，表示文件名，File、FileDescriptor           |      数据源；与 FilterInputStream 对象组合使用      |
+|    PipedInputStream     |   产生用于写入 PipedOutputStream 的数据，实现管道化   |                      PipedOutputStream                       | 作为多线程数据源；与 FilterInputStream 对象组合使用 |
+|   SequenceInputStream   |  将两个或多个 InputStream 对象转换成单一 InputStream  | 两个 InputStream 对象或一个容纳 InputStream 对象的容器 Enumeration |    作为数据源；与 FilterInputStream 对象组合使用    |
+|   FileterInputStream    | 抽象类，作为装饰器接口，为其他 InputStream 类组合使用 |                                                              |        把属性或有用的接口与输入流连接在一起         |
 
 ###### *ByteArrayInputStream*
 
@@ -119,23 +109,27 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 
 抽象类，作为装饰器接口，为其他 *InputStream* 类提供有用功能
 
-*FilterInputStream* 属于一种 *InputStream*，为“装饰器”类提供基类，“装饰器”类可以把属性或有用的接口与输入流连接在一起。
+*FilterInputStream* 属于一种 *InputStream*，为『装饰器』类提供基类，『装饰器』类可以把属性或有用的接口与输入流连接在一起
 
-|          类           |                       功能                       | 构造器参数  |              使用              |
-| :-------------------: | :----------------------------------------------: | :---------: | :----------------------------: |
-|    DataInputStream    |                 读取基本数据类型                 | InputStream | 博涵用于读取基本类型的全部接口 |
-|  BufferedInputStream  |                    使用缓冲区                    | InputStream |        向进程添加缓冲区        |
-| LineNumberInputStream |                跟踪输入流中的行号                | InputStream |           仅增加行号           |
-|  PushbashInputStream  | 能弹出一个字节的缓冲区，将读到的最后一个字符回退 | InputStream |         编译器的扫描器         |
+*FilterInputStream 类型*
+
+|          类           |                             功能                             |           构造器参数            |              使用              |
+| :-------------------: | :----------------------------------------------------------: | :-----------------------------: | :----------------------------: |
+|    DataInputStream    | 与 DataOutputStream 搭配使用，可以按照可移植的方式从流读取基本数据 |           InputStream           | 包含用于读取基本类型的全部接口 |
+|  BufferedInputStream  |                          使用缓冲区                          | InputStream，可选指定缓冲区大小 |        向进程添加缓冲区        |
+| LineNumberInputStream |                      跟踪输入流中的行号                      |           InputStream           |           仅增加行号           |
+|  PushbashInputStream  |       能弹出一个字节的缓冲区，将读到的最后一个字符回退       |           InputStream           |         编译器的扫描器         |
 
 ##### *OutputStream*
 
-|          类           |                          功能                          |          构造器           |         使用         |
-| :-------------------: | :----------------------------------------------------: | :-----------------------: | :------------------: |
-| ByteArrayOutputStream |                   在内存中创建缓冲区                   |         初始大小          |    指定数据目的地    |
-|   FileOutputStream    |                        写入文件                        | 字符串，文件名，File 对象 |   指定数据的目的地   |
-|   PipedOutputStream   | 任何写入其中的信息都会自动作为相关PipeInputStream 输出 |     PipedInputStream      | 指定多线程数据目的地 |
-|  FilterOutputStream   |                 抽象类，作为装饰器接口                 |                           |                      |
+该类决定了输出的目的地
+
+|          类           |                             功能                             |          构造器           |                         使用                         |
+| :-------------------: | :----------------------------------------------------------: | :-----------------------: | :--------------------------------------------------: |
+| ByteArrayOutputStream |    在内存中创建缓冲区，所有送往流的数据都要放置在此缓冲区    |         初始大小          |    指定数据目的地；与 FilterOutputStream 组合使用    |
+|   FileOutputStream    |                           写入文件                           | 字符串，文件名，File 对象 |   指定数据的目的地；与 FilterOutputStream 组合使用   |
+|   PipedOutputStream   | 任何写入其中的信息都会自动作为相关 PipeInputStream 输出，实现管道化 |     PipedInputStream      | 指定多线程数据目的地；与 FilterOutputStream 组合使用 |
+|  FilterOutputStream   |     抽象类，作为装饰器接口，与其他 OutputStream 组合使用     |                           |                                                      |
 
 ###### *ByteArrayOutputStream*
 
@@ -151,7 +145,7 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 
 ###### *FilterOutputStream*
 
-抽象类，作为装饰器接口
+抽象类，作为装饰器接口，以控制特定输出流
 
 | 类                   | 功能                         | 构造参数     | 使用                 |
 | -------------------- | ---------------------------- | ------------ | -------------------- |
