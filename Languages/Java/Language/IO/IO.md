@@ -10,9 +10,30 @@ java 通过大量的类来解决 I/O 问题，自 1.0 开始，在原来面向�
 
 *File* 不仅代表存在的目录和文件，也可以用 *File* 对象创建新的目录或尚不存在的目录路径和查看文件特性。如果以 *FileOutputStream* 或 *FileWriter* 打开，那么它肯定会被覆盖，应该先使用 *File* 判断
 
-##### 输入输出
+###### 格式化输出
 
-###### 字节流
+System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始的格式说明符都用相应的参数替换。
+
+*用于 printf 的转换符*
+
+|  转换符  |         类型         |                             例子                             |
+| :------: | :------------------: | :----------------------------------------------------------: |
+|    d     |      十进制整数      | %5d，如果数字位数小于 5，在数字前加空格，如果位数大于 5，则自动增加宽度 |
+|    x     |     十六进制整数     |                              8f                              |
+|    o     |      八进制整数      |                             237                              |
+|    f     |      定点浮点数      | %10.2f 输出的浮点宽度至少为 10，包括小数点和小数点后两位数字 |
+|    e     |      指数浮点数      | %10.2e 输出的浮点宽度至少为 10，包括小数点，小数点后两位数字 |
+|    g     |      通用浮点数      |                              --                              |
+|    a     |    十六进制浮点数    |                          0x1.fccdp3                          |
+|    s     |        字符串        | %12s  输出的字符串宽度至少为 12 个字符，如果小于 12 个字符，在前加空格，如果该字符串条目多于 12 个字符，则自动增加宽度 |
+|    c     |         字符         |                              H                               |
+|    b     |         布尔         | %6b 输出布尔值，在 false 值前加一个空格，在 true 值前加两个空格 |
+| Tx 或 tx |       日期时间       |                  过时，应改为 java.time 类                   |
+|    %     |        百分号        |                              %                               |
+|    n     | 与平台有关的行分隔符 |                              --                              |
+|    h     |        散列码        |                           42628b2                            |
+
+##### 字节流
 
 java 1.0 类库中的 I/O 类分成输入和输出两部分：
 
@@ -21,58 +42,7 @@ java 1.0 类库中的 I/O 类分成输入和输出两部分：
 
 但通常不会用到这些方法，很少使用单一的类来创建流对象，而是通过叠合多个对象来提供所期望的功能（装饰器）创建单一的结果流，需要创建多个对象。面向字节操作。
 
-java 1.1 类库 *Reader* 或 *Writer* 的兼容 Unicode 与面向字符的 I/O 功能。主要为了国际化。面向字符操作
-
-*InputStreamReader* 可以将 *InputStream* 转换成 Reader。*OutputStreamWriter* 可将 *OutputStream* 转换为 *Writer*。几乎所有原始的 I/O 流库都有相应的 *Reader* 和 *Writer* 类来提供天然的 Unicode 操作。
-
-对应类
-
-|           1.0 stream            |               1.1                |
-| :-----------------------------: | :------------------------------: |
-|           InputStream           | Reader 适配器 InputStreamReader  |
-|          OutputStream           | Writer 适配器 OutputStreamWriter |
-|         FileInputStream         |            FileReader            |
-|        FIleOutputStream         |            FileWriter            |
-| StringBufferInputStream(已弃用) |           StringReader           |
-|                                 |           StringWriter           |
-|      ByteArrayInputStream       |         CharArrayReader          |
-|      ByteArrayOutputStream      |         CharArrayWriter          |
-|        PipedInputStream         |           PipedReader            |
-|        PipedOutputStream        |           PipedWriter            |
-
-###### 格式化输出
-
-System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始的格式说明符都用相应的参数替换。
-
-*用于 printf 的转换符*
-
-|  转换符  |         类型         |           例子            |
-| :------: | :------------------: | :-----------------------: |
-|    d     |      十进制整数      |            156            |
-|    x     |     十六进制整数     |            8f             |
-|    o     |      八进制整数      |            237            |
-|    f     |      定点浮点数      |           15.9            |
-|    e     |      指数浮点数      |         1.59e+01          |
-|    g     |      通用浮点数      |            --             |
-|    a     |    十六进制浮点数    |        0x1.fccdp3         |
-|    s     |        字符串        |           Hello           |
-|    c     |         字符         |             H             |
-|    b     |         布尔         |           True            |
-| Tx 或 tx |       日期时间       | 过时，应改为 java.time 类 |
-|    %     |        百分号        |             %             |
-|    n     | 与平台有关的行分隔符 |            --             |
-|    h     |        散列码        |          42628b2          |
-
-* 常用的格式标识符：%b 布尔值，%c 字符，%d 十进制整数，%f 浮点数，%e 标准科学计数法形式的数，%s 字符串指定宽度和精度
-  * %5c 输出字符并在这个字符条目前面加 4 个空格
-  * %6b 输出布尔值，在 false 值前加一个空格，在 true 值前加两个空格
-  * %5d 输出整数条目，宽度至少为 5，如果该条目的数字位数小于 5，就在数字前面加空格，如果该条目的
-  * 数字位数大于5，则自动增加宽度
-  * %10.2f 输出的浮点条目宽度至少为 10，包括小数点和小数点后两位数字。
-  * %10.2e 输出的浮点条目的宽度至少为 10，包括小数点，小数点后两位数字
-  * %12s   输出的字符串宽度至少为 12 个字符。如果该字符串条目小于 12 个字符，就在该字符串前加空格，如果该字符串条目多于 12 个字符，则自动增加宽度
-
-##### *InputStream*
+###### *InputStream*
 
 用来表示那些从不同数据源产生输入的类。每一种数据源都有相应的子类：
 
@@ -120,7 +90,9 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 | LineNumberInputStream |                      跟踪输入流中的行号                      |           InputStream           |           仅增加行号           |
 |  PushbashInputStream  |       能弹出一个字节的缓冲区，将读到的最后一个字符回退       |           InputStream           |         编译器的扫描器         |
 
-##### *OutputStream*
+*DataInputStream* 允许我们读取不同的基本类型数据以及 String 对象，搭配相应的 *DataOutputStream* 可以通过数据流将基本类型的数据从一个地方迁移到另一个地方，其他的 *FilterInputStream* 类则在内部修改 *InputStream* 的行为方式
+
+###### *OutputStream*
 
 该类决定了输出的目的地
 
@@ -147,21 +119,60 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 
 抽象类，作为装饰器接口，以控制特定输出流
 
-| 类                   | 功能                         | 构造参数     | 使用                 |
-| -------------------- | ---------------------------- | ------------ | -------------------- |
-| DataOutputStream     | 向流中写入基本类型数据       | OutputStream | 写入基本数据全部接口 |
-| PrintStream          | 用于产生格式化输出，处理显示 | OutputStream |                      |
-| BufferedOutputStream | 使用缓冲区                   | OutputStream |                      |
+|          类          |                   功能                    |              构造参数              |                             使用                             |
+| :------------------: | :---------------------------------------: | :--------------------------------: | :----------------------------------------------------------: |
+|   DataOutputStream   |          向流中写入基本类型数据           |            OutputStream            |                     写入基本数据全部接口                     |
+|     PrintStream      | 以可视化格式打印基本数据类型及String 对象 | OutputStream，可选换行清空缓冲标志 | 捕捉了所有 IOException，必须使用 checkError 自行测试错误，未完全国际化，不能以平台无关的方式处理换行动作 |
+| BufferedOutputStream |                使用缓冲区                 | OutputStream，指定缓冲区大小，可选 |                                                              |
 
-##### ReaderWriter
+可以将各种基本的数据类型以及 String 对象格式化输出到流中，任何机器上的任何 DataInputStream 都能够读取他们
 
-##### *RandomAccessFile*
+##### 字符流
 
-使用顺序流打开的文件为顺序访问文件，内容不能更新，需要修改文件，则需使用 *RandomAccessFile* 打开文件，允许在文件的任意位置进行读写，*RandomAccessFile* 类实现了 *DataInput*  和 *DataOutput* 接口
+Reader 和 Writer 提供兼容 Unicode 与面向字符的 I/O 功能，当需要把来自字节层次结构中的类和字符层次结构中的类结合起来使用，必须使用适配器类 *InputStreamReader* 可以把 *InputStream* 转换为 Reader，*OutputStreamWriter* 可以把 *OutputStream* 转换为 Writer
+
+Reader 和 Writer 继承层次结构主要为了国际化，老的 I/O 流继承层次结构仅支持 8 位字节流，并且不能很好地处理 16 位的 Unicode 字符。
+
+几乎所有原始的 Java I/O 流类都有相应的 Reader 和 Writer 类来提供天然的 Unicode 操作，尽量尝试使用 Reader 和 Writer（java.util.zip 类库面向字节）
+
+|           1.0 stream            |               1.1                |
+| :-----------------------------: | :------------------------------: |
+|           InputStream           | Reader 适配器 InputStreamReader  |
+|          OutputStream           | Writer 适配器 OutputStreamWriter |
+|         FileInputStream         |            FileReader            |
+|        FIleOutputStream         |            FileWriter            |
+| StringBufferInputStream(已弃用) |           StringReader           |
+|            无对应类             |           StringWriter           |
+|      ByteArrayInputStream       |         CharArrayReader          |
+|      ByteArrayOutputStream      |         CharArrayWriter          |
+|        PipedInputStream         |           PipedReader            |
+|        PipedOutputStream        |           PipedWriter            |
+
+*对应过滤器*
+
+|          过滤器 1.0           |                           对应 1.1                           |
+| :---------------------------: | :----------------------------------------------------------: |
+|       FilterInputStream       |                         FilterReader                         |
+|      FilterOutputStream       |                FilterWriter（抽象类没有子类）                |
+|      BufferedInputStream      |                        BufferedReader                        |
+|     BufferedOutputStream      |                        BufferedWriter                        |
+|        DataInputStream        | 使用 DataInputStream 除了需要使用 readline() 外，应该使用 BufferedReader |
+|          PrintStream          |                         PrintWriter                          |
+| LineNumberInputStream（弃用） |                       LineNumberReader                       |
+|        StreamTokenizer        |          StreamTokenizer（仅接受 Reader 的构造器）           |
+|      PushbackInputStream      |                        PushbackReader                        |
+
+无论何时使用 readLine()，都不应该使用 DataInputStream，而应该使用 BufferedReader，
+
+###### *RandomAccessFile*
+
+使用顺序流打开的文件为顺序访问文件，内容不能更新，需要修改文件，则需使用 *RandomAccessFile* 打开文件，允许在文件的任意位置进行读写
 
 当创建一个 *RandomAccessFile* 时，可以指定两种模式（"r" 只读，或 "rw" 读写)，实例化时，存在则会按指定模式访问，不存在则会创建文件再以指定模式访问
 
-在 jdk 1.4 开始，大多数功能由 nio 存储映射文件所取代
+在 jdk 1.4 开始，大多数功能由 nio 存储映射文件所取代。
+
+*RandomAccessFile* 不是 InputStream 或 OutputStream 继承层次结构中的一部分，*RandomAccessFile* 类实现了 *DataInput*  和 *DataOutput* 接口
 
 ##### IO 流典型使用
 
@@ -170,12 +181,12 @@ System.out.printf 格式化输出类似 c 的 printf 每一个以 % 字符开始
 使用缓冲读文件：
 
 1. 使用 *String* 或 *File* 对象作为文件名的 *FileInputReader*
-2. 使用 *BufferedReader* 构造器
-3. readLine() 返回 null 时，到达文件末尾
+2. 使用 *BufferedReader* 装饰 *FileInputReader*
+3. *BufferedReader.readLine()* 返回 null 时，到达文件末尾
 
 ###### 格式化内存输入
 
-要读取格式化数据，使用 *DataInputStream* 面向字节的 I/O 类。
+要读取格式化数据，使用 *DataInputStream* 面向字节的 I/O 类，可以使用 *DataInputStream.readByte()* 一次一个字节读取字符，任何字节的值都是合法的结果，返回值不能用来检测是否结束，需要使用 available() 方法查看还有多少可供存取的字符或捕获异常（不推荐）
 
 ###### 基本文件输出
 
