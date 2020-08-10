@@ -345,8 +345,6 @@ public void sendProduct(@RequestParam int productId)
 |   required   | 默认 true，指定是否必须 |
 | defaultValue |       指定默认值        |
 
-
-
 ##### SpringDataJPA
 
 ###### @Entity
@@ -356,6 +354,70 @@ public void sendProduct(@RequestParam int productId)
 ###### @Id
 
 属性上声明该属性为数据库表主键
+
+###### @Basic
+
+属性是数据库表字段的映射，如果实体的字段没有任何注解，默认为 @Basic
+
+*属性*
+
+|   属性   |          含义           |               值                |
+| :------: | :---------------------: | :-----------------------------: |
+|  fetch   |    可选，指定值加载     | FetchType.LAZY、FetchType.EAGER |
+| optional | 设置该字段是否可为 null |       true（默认）、false       |
+
+###### @Transient
+
+表示该属性并非一个到数据库表的字段的映射，表示非持久化属性，与 @Basic 作用相反，JPA 映射数据库时忽略它
+
+###### @Column
+
+定义对应数据库中的列属性
+
+*属性*
+
+|       属性       |                       含义                        |
+| :--------------: | :-----------------------------------------------: |
+|     default      |     表列名，不填则默认字段名和实体属性名一样      |
+|      unique      |          是否唯一，默认 false，可选属性           |
+|     nullable     |        数据字段是否允许空，可选，默认 true        |
+|    insertable    | 执行 insert 操作时是否包含此字段，默认 true，可选 |
+|    updateable    | 执行 update 的时候是否包含此字段，默认 true，可选 |
+| columnDefinition |          该字段在数据库中的实际类型定义           |
+|      length      |            数据库字段的长度，默认 255             |
+
+###### @Temporal
+
+设置 Date 类型的属性映射到对应精度的字段，支持 TemporalType.DATE（只有日期）、TemporalType.TIME(只有时间)、TemporalType.TIMESTAMP（日期时间）
+
+###### @Enumerated
+
+映射 enum 枚举类型字段
+
+```java
+// 枚举类
+public enum Gender {
+    MALL("男性"), FMALL("女性");
+    private String value;
+    private Gender(String value) {
+        this.value = value;
+    }
+}
+// 实体
+@Entity
+@Table(name = "user")
+public class User implements Serializable {
+    @Enumerated(EnumType.STRING) // 支持 EnumType.ORDINAL（下标）和 EnumType.STRING（name）
+    private Gender gender;
+}
+```
+
+###### @Lob
+
+将属性映射成数据库支持的大对象类型，支持以下两种数据库类型字段 
+
+*   Clob 长字符串类型，java.sql.Clob、Character[]、char[]、String 将被映射为 Clob 类型
+*   Blob 字节类型，java.sql.Blob、Byte[]、byte[] 和实现了 Serializable 接口的类型将被映射为 Blob 类型
 
 ###### @GeneratedValue
 
@@ -435,6 +497,54 @@ Repository 接口方法注解，声明方法调用时要执行的查询，Spring
 ###### @DynamicUpdate
 
 更新数据时使用字段的默认值
+
+###### @JoinColumn
+
+定义外键关联的字段名称，需要配置 @OneToOne、@ManyToOne、@OneToMany 一起使用
+
+*属性*
+
+|         描述         |                 含义                  |
+| :------------------: | :-----------------------------------: |
+|         name         |         目标表的字段名，必须          |
+| referencedColumnName | 本实体的字段名，非必填，默认是本表 ID |
+|        unique        |     外键字段是否唯一，默认 false      |
+|       nullable       |    外键字段是否允许为空，默认 true    |
+|      insertable      |      是否跟随一起新增，默认 true      |
+|      updateable      |      是否跟随一起更新，默认 true      |
+
+###### @OneToOne
+
+一对一关联
+
+*属性*
+
+|         属性         |                             含义                             |
+| :------------------: | :----------------------------------------------------------: |
+| default/targetEntity |                 目标实体类，默认该字段的类型                 |
+|    CascadeType[]     | 级联操作策略（CascadeType.PERSIST 级联新建、REMOVE 级联删除、PEFRESH 级联刷新、MERGE 级联更新、ALL 全部，默认不产生任何影响） |
+|      FetchType       |                   数据获取方式，EAGER/LAZY                   |
+|       optional       |                         是否允许为空                         |
+|       mappedBy       | 关联关系被谁维护，只有关系维护方才能操作两者关系，被维护方即使设置维护方属性进行存储也不会更新外键关联。不能与 @JoinColumn 或 @JoinTable 同时使用，值为另一方实体里属性的字段 |
+|    orphanRemoval     |         是否级联删除，和 CascadeType.REMOVE 效果一样         |
+
+```java
+// 部门只有一个员工 Department
+@OneToOne
+@JoinColum(name="employee_id", referencedColumnName="id") // employee_id 为 Departement 字段，referencedColumnName 为 Employee 表里字段
+private Employee employee;
+// 双向关联时 Employee
+@OneToOne(mappedBy="employee")
+private Department department;
+```
+
+###### @OneToMany
+
+属性与 @OneToOne 相同，必须和 @JoinColumn 配合使用
+
+###### @ManyToOne
+
+属性与 @ManyToOne 相同，必须和 @JoinColumn 配合使用
 
 ##### AOP
 
