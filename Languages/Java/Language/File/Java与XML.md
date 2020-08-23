@@ -33,8 +33,6 @@ Document doc = builder.parse(in);
 
 *Node接口及其子接口*
 
-![](Language/Images/node接口及其子接口.png)
-
 可以通过调用 `getDocumentElement` 方法来启动对文档内容的分析，它将返回根元素。使用 `getChildNodes` 方法会返回一个类型为 `NodeList` 的集合。`item` 方法将得到指定索引值的项。`getLength` 方法提供了项的总和。
 
 ```java
