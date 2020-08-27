@@ -132,8 +132,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findByFirstName(String firstName, Pageable pageable);
 }
 
-repository.findByLastname("tom", new PageRequest(1, 10));
-repository.findByFirstName("tom", new PageRequest(1, 10, Sort.Direction.DESC, "last_name"));
+repository.findByLastname("tom", PageRequest.of(1, 10));
+repository.findByFirstName("tom", PageRequest.of(1, 10, Sort.Direction.DESC, "last_name"));
 ```
 
 ###### N+1 SQL
