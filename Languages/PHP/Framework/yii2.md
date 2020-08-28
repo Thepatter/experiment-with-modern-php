@@ -1,8 +1,8 @@
-## YII2 Framework
+### YII2 Framework
 
-### 路由
+#### 路由
 
-#### rest 路由规则
+##### rest 路由规则
 
 * 不支持显式路由，要支持 `restful` 的路由必须在 `config/<mainConf.php>` 中的 `$config[components]` 下增加 
 
@@ -24,7 +24,7 @@
 
   但增加该规则后，原来的 `url` 规则（`http://<host>/index.php?r=<controllerName>/<action>` 即失效
 
-#### 默认路由规则
+##### 默认路由规则
 
 * 默认 URL 规则为：
 
@@ -54,9 +54,9 @@
 
 * 无法显示指定 `url` 请求是 `post` 和 `get`
 
-### 请求
+#### 请求
 
-#### 获取请求参数
+##### 获取请求参数
 
 * 不支持依赖注入，`action` 中的参数必须显示在 `url` 中指定
 
@@ -73,9 +73,9 @@
   $requestPostKeyValue = Yii::$app->getRequest()->post('key');
   ```
 
-### 数据库操作
+#### 数据库操作
 
-* 原生 SQL
+##### 原生 SQL
 
   ```php
   // 返回多行关联数组，没有结果返回空数组
@@ -92,7 +92,7 @@
                ->queryScalar();
   ```
 
-* 绑定参数
+##### 绑定参数
 
   ```php
   $post = Yii::$app->db->createCommand('SELECT * FROM post WHERE id=:id AND status=:status')
@@ -101,7 +101,7 @@
              ->queryOne();
   ```
 
-* 非查询语句
+##### 非查询语句
 
   ```php
   // 方法返回执行 SQL 所影响到的行数
@@ -119,7 +119,7 @@
   ])->execute();
   ```
 
-* 事务
+##### 事务
 
   ```php
   $db = Yii::$app->db;
@@ -139,7 +139,7 @@
   }
   ```
 
-* 查询构造器
+##### 查询构造器
 
   ```php
   $rows = (new \yii\db\Query())
@@ -159,7 +159,7 @@
 
   查询构造器返回一个关联数组
 
-* 打印SQL
+##### 打印SQL
 
   打印 SQL 典型例子，使用查询构造器必须克隆构造器
 
