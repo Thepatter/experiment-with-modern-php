@@ -122,7 +122,16 @@ Class 类与 *java.lang.reflect* 类库（*Filed*、*Method*、*Constructor*）�
 * 如果 try 块中有一条语句引起异常，并被 catch 块捕获，然后跳过 try 块的其他语句，执行 catch 块和 finally 子句。执行 try 语句之后的下一条语句
 * 如果 try 块中有一条语句引起异常，但是没有被任何 catch 块捕获，就会跳过 try 块中的其他语句，执行 finally 子句，并且将异常传递给这个方法的调用者
 
-不要在 finally 里 return，且不要出现无法访问语句
+不要在 finally 里 return，且不要出现无法访问语句，以下情况 finally 代码不会被执行
+
+```java
+try {
+	// do something
+	System.exit(1);
+} finally {
+	System.out.println("Print from finally");
+}
+```
 
 ##### 异常机制良好实践
 
