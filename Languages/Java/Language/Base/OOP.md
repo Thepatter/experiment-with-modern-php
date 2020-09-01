@@ -616,7 +616,40 @@ Class 对象表示运行时的类型信息，每个类都有一个 Class 对象�
 
 ###### System
 
-*System* 包含静态的 out（*PrintStream*）、in（*InputStream*）、err（*PrintStream*） 字段映射
+*System* 包含静态的 out（*PrintStream*）、in（*InputStream*）、err（*PrintStream*） 字段映射输出、输入、错误流
+
+*Java的系统属性*
+
+|           系统属性            |           描述            |
+| :---------------------------: | :-----------------------: |
+|         java.version          |    Java 运行时环境版本    |
+|          java.vendor          |   Java 运行时环境供应商   |
+|        java.vendor.url        |       Java 厂商网址       |
+|           java.home           |       Java 安装目录       |
+| java.vm.specification.version |    Java 虚拟机规范版本    |
+| java.vm.specification.vendor  |   Java 虚拟机规范供应商   |
+|  java.vm.specification.name   |    Java虚拟机规范名称     |
+|        java.vm.version        |    Java虚拟机实现版本     |
+|        java.vm.vendor         |   Java虚拟机实现供应商    |
+|         java.vm.name          |     Java虚拟机实现名      |
+|  java.specification.version   |  Java运行时环境规范版本   |
+|   java.specification.vendor   | Java 运行时环境规范供应商 |
+|    java.specification.name    |  Java运行时环境规范名称   |
+|      java.class.version       |     Java类格式版本号      |
+|        java.class.path        |        Java类路径         |
+|       java.library.path       | 加载库时要搜索的路径列表  |
+|        java.io.tmpdir         |     默认临时文件路径      |
+|         java.compiler         |  要使用的 JIT 编译器名称  |
+|         java.ext.dirs         |   扩展目录或目录的路径    |
+|            os.name            |       操作系统名称        |
+|            os.arch            |      操作系统的架构       |
+|          os.version           |       操作系统版本        |
+|        file.separator         |        文件分隔符         |
+|        path.separator         |        路径分隔符         |
+|        line.separator         |         行分隔符          |
+|           user.name           |      用户的账户名称       |
+|           user.home           |       用户的主目录        |
+|           user.dir            |     用户当前工作目录      |
 
 ##### 数组
 
@@ -626,6 +659,14 @@ jvm 确保数组会被初始化，而且不能再它的范围之外被访问。�
 * boolean 数组会初始化为 false
 * 对象数组元素会初始化为 null
 * 可以向导出类型的数组赋予基类型的数组引用。数组对象可以保留有关它们包含的对象类型的规则
+
+```java
+// 将数组传递给方法时必须单独实例化数组
+int avg = average({1,2,3,10}); // 非法
+int avg = average(new int[]{1,2,3,10}); // 合法
+```
+
+如果没有给 main 传递参数，字符串数组 args 将是 empty，而不是 null
 
 ##### Enum 类
 
