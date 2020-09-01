@@ -524,33 +524,31 @@ Outer.Inner inner = out.new Inner();
 
 闭包（closure）是一个可调用的对象，它记录了一些信息，这些信息来自于创建它的作用域（内部类是面向对象的闭包，它不仅包含外围类对象（创建内部类的作用域）的信息，还自动拥有一个指向外围类对象的引用，在此作用域内，内部类有权操作所有的成员，包括 private 成员）
 
-#### 常用对象类型
+#### 核心类
 
 ##### 字符串
 
 ###### *String*
 
-java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 编码表中码点，可能需要1个或 2 个代码单元表示）。使用 + 拼接字符串。*String* 类实例不可变。
+java 字符串就是 Unicode 字符序列（一个 Unicode 字符对应 Unicode 编码表中码点，可能需要1个或 2 个代码单元表示）。使用 + 拼接字符串。*String* 类实例不可变（immutable），空串长度为 0 和内容为空。
 
-* 空串
+为引用变量赋一个字符串字面值与使用 new 关键字的方式不同，使用 new 关键字 JVM 将始终创建一个新的 *String* 实例，使用字符串字面值，可能会使用 string interning 缓存（String 在 Java 6 以后提供了 intern() 方法，提示 JVM 把相应字符串缓存起来，以备重复使用，对于 Java 6 的历史版本，被缓存的字符串是存在 PermGen 里即永久代，容易造成 OOM，后续版本该缓存被放置在堆中，使用 `-XX:+PrintStringTableStatistics`（打印缓存大小），`-XX:StringTableSize=N` 手动调整参数大小））Intern 是一种显式地排重机制，需要在代码中明确的调用，8u20 之后，G1 GC 下的字符串排重（通过将相同数据的字符串指向同一份数据来做到，是 JVM 底层的改变，该功能默认关闭，使用 G1 GC 时，使用 `-XX:+UseStringDeduplication` 开启）
 
-  空串是一个 java 对象，有自己的串长度 0 和内容空。
+在运行时，字符串的一些基础操作会直接利用 JVM 内部的 Intrinsic（利用 native 方式 hard-coded 逻辑，特别的内联）机制，运行的是特殊优化的本地代码非字节码。
 
-* null
-
-  *String* 变量可以存放一个特殊的值 null，表示目前没有任何对象与该变量关联
+字符串字面值以双引号开始和结束，在右双引号之前换行会产生编译错误
 
 使用索引访问用 String 的 split 方法得到的数组时，需做最后一个分隔符后有无内容的检查，否则会有抛 *IndexOutOfBoundsException* 的风险
 
+在 Java 9 中，引入了 Compact Strings 设计，将字符串存储从 char 数组改变为 byte 数组加上一个标识编码 coder（优势是更小的内存占用，更快的操作速度）
+
+`getBytes(); String(byte[] bytes)` 都是隐含使用平台默认编码
+
 ###### *StringBuilder*、*StringBuffer*
 
-* *StringBuffer*
+如果创建 *StringBuilder* 对象时没有指定容量，该对象的容量将为 16 个字符，会自动扩容。底层都是利用可修改的 char（JDK 9 之后是 byte）数字，都继承了 *AbstractStringBuilder* 里面包含了基本操作，*StringBuffer* 在每个方法上添加了 synchronized。
 
-  线程安全，在每个操作方法上添加了 **synchronized**
-
-* *StringBuilder*
-
-  SE 5 新增，非线程安全
+非静态的拼接逻辑在 JDK 8 中会自动被 javac 转换为 *StringBuilder* 操作，在 JDK 9 中，利用 InvokeDynamic，将字符串拼接的优化与 javac 生成的字节码解耦（假设未来 JVM 增强相关运行时实现，将不需要依赖 javac 的任何修改）
 
 ###### *Formatter*
 
@@ -596,7 +594,7 @@ BigDeciaml(double) 存在精度损失风险，再精确计算或值比较的场�
 
 ###### class
 
-Class 对象表示运行时的类型信息，每个类都有一个 Class 对象。
+Class 对象表示运行时的类型信息，每个类都有一个 Class 对象，JVM 每次创建一个对象时，会同时创建一个 `java.lang.Class` 对象来描述对象的类型。同一个类的所有实例共享同一个 Class 对象。
 
 * 对一个已加载的类，使用 Class.forName 再进行加载时不会出错，Class.forName() 会立即进行初始化。
 
@@ -615,6 +613,10 @@ Class 对象表示运行时的类型信息，每个类都有一个 Class 对象�
       House h = houseType.cast(B); //  等价	h = (House) b;
   }
   ```
+
+###### System
+
+*System* 包含静态的 out（*PrintStream*）、in（*InputStream*）、err（*PrintStream*） 字段映射
 
 ##### 数组
 
