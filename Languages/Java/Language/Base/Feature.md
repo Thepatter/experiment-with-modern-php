@@ -40,16 +40,16 @@ Class 类与 *java.lang.reflect* 类库（*Filed*、*Method*、*Constructor*）�
 
 * *RuntimeException*
 
-  由程序错误导致的异常，会自动被虚拟机抛出，如果 RuntimeException 没有被捕获而直到 main()，在程序退出前将调用 printStackTrace()
+  由程序错误导致的异常，会自动被虚拟机抛出，如果 RuntimeException 没有被捕获而直到 main()，在程序退出前将调用 printStackTrace()。编译器无法捕获 Java 代码可能抛出的 *RuntimeException*，该异常发生在程序运行时
 
   只能在代码中忽略 *RuntimeException* 及其子类异常，其他类型异常的处理都是由编译器强制实施的，*RuntimeException* 代表编程错误：
 
   1. 无法预料的错误，从控制范围之外传递进来的 null 引用
   2. 应该在代码中进行检查的错误（如 *ArrayIndexOutofBoundsException*）
 
-* other
+* 检查异常
 
-  非程序本身，如网络
+  检查异常是应用程序应该预料到并从中恢复的异常。基本上是所有派生自 Exception 的子类，但不是 *RuntimeException* 的子类（如 *IOException*、*SQLException*）。编译器可以通过拒绝编译任何包含可能引发已检查异常的程序来防止发生已检异常，一个编写良好的 Java 库应向它的用户指出方法所有可能抛出的异常
 
 ###### 常见异常
 
@@ -73,7 +73,7 @@ Class 类与 *java.lang.reflect* 类库（*Filed*、*Method*、*Constructor*）�
 2. 创建这个类的一个对象
 3. 使用 throw 关键字抛出异常
 
-一旦方法抛出了异常，这个方法就不能返回到调用者
+一旦方法抛出了异常，这个方法就不能返回到调用者，如果抛出的异常没有被捕获，应用程序将崩溃
 
 ###### 重新抛出异常
 
@@ -200,6 +200,10 @@ assert Condition : expression;
   运行时使用 -da 禁用，类加载器将跳过断言代码，因此，不会降低程序运行的速度
 
 由于可以使用断言，当方法被非法调用时，将会出现难以预料的结果，有时抛出断言错误，有时产生 null 指针异常，完全取决于类加载器的配置
+
+##### try-with-resources
+
+可以使资源（实现了 *java.lang.AutoCloseable*）自动关闭。
 
 #### 日志
 
@@ -627,7 +631,7 @@ Lambda 类似闭包作用域
 
 ##### *NumberFormat*
 
-数字格式化，依赖于 *Locale*，getNumberInstance() 、getCurrencyInstance() 、getPercentInstance()，这些方法返回的对象可以分别对数字、货币量和百分比进行格式化和解析。
+`java.text.NumberFormat` 是一个抽象类，用于数字格式化，依赖于 *Locale*，getNumberInstance() 、getCurrencyInstance() 、getPercentInstance()，这些方法返回的对象可以分别对数字、货币量和百分比进行格式化和解析。
 
 ##### Currency
 
@@ -801,7 +805,7 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
   将上次替换过的内容连接后面未替换过的内容，并放入 `StringBuffer`（通常在调用 `appendReplacement()` 之后调用 `appendTail()`，即获取原始`StringBuffer`
 
-#### 时间
+#### 时间日期
 
 ##### SE 8 之前
 
@@ -823,7 +827,11 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
 ##### SE 8
 
-SE 8 中引入了 *java.time* 包以提供日期和时间支持
+SE 8 中引入了 *java.time* 包以提供日期和时间支持，还包含 *java.time.chrono*，*java.time.format*，*java.time.temporal*，*java.time.zone*
+
+###### LocalDate
+
+用于为日期建模，不带时间，不包含时区
 
 ###### LocalDate 与 LocalTime
 
@@ -835,7 +843,7 @@ SE 8 中引入了 *java.time* 包以提供日期和时间支持
 
 ###### Instant
 
-类似 UNIX_TIMESTAMP，包含秒和纳秒（0～999999999）
+*java.time.Instant* 类似 UNIX_TIMESTAMP，包含秒和纳秒（0～999999999），表示时间线上的一个点，通常用于计算操作的时间。
 
 ```java
 // instant 构建local time
@@ -867,7 +875,7 @@ LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(instant.getEpochSecond
 
 ###### ZonedDateTime
 
-互联网编码分配管理机构（Internet Assigned Numbers Authority，IANA）保存着一个数据库，里面存储着世界上所有已知的时区，它每年会更新数次，而批量更新会处理夏令时的变更规则，java 使用了 IANA数据库
+对带有时区的日期时间建模，互联网编码分配管理机构（Internet Assigned Numbers Authority，IANA）保存着一个数据库，里面存储着世界上所有已知的时区，它每年会更新数次，而批量更新会处理夏令时的变更规则，java 使用了 IANA数据库
 
 每个时区都有一个 ID，*ZonedDateTime* 与 *LocalDateTime* 有大量相同的方法
 
