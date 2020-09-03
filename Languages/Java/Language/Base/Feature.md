@@ -4,19 +4,55 @@
 
 ##### 反射机制
 
+反射机制是 Java 语言提供的一种基础功能，赋予程序在运行时自省（introspect）的能力，通过反射可以直接操作类或对象（获取某个对象的类定义，获取类声明的属性和方法，调用方法或构造对象，在运行时修改类定义）
+
 Class 类与 *java.lang.reflect* 类库（*Filed*、*Method*、*Constructor*）支撑反射，这些类型的对象是由 JVM 在运行时创建的，用以表示未知类里对应的成员，匿名对象的类信息能在运行时被完全确定下来，而在编译时不需要知道任何细节
 
 当通过反射与一个未知类型的对象打交道时，JVM 只是简单地检查这个对象，看它属于那个特定的类，在用它做其他事情之前必须先加载那个类的 Class 对象。那个类的 `.class` 文件对于 JVM 来说必须是可获取的，要么在本地机器上，要么可以通过网络取得。对于反射机制来说，.class 文件在编译时是不可获取的，是在运行时打开和检查 .class 文件
 
-反射在 Java 中用来支持其他特性（对象序列化和 JavaBean）
+反射在 Java 中用来支持其他特性（对象序列化和 JavaBean）。*Class*，*Field*、*Method*、*Constructor* 是操作类和对象的元数据对应，反射为其提供的 `AccessibleObject.setAccessible(boolean flag)` 可以在运行时修改成员访问限制。java 9 之后，新增的模块化系统，出于强封装性的考虑，对反射访问进行了限制（只有当被反射操作的模块和指定的包对反射调用者模块 Open，才能使用 `setAccessible`，否则被认为不合法操作）如果我们的实体类是定义在模块里面，需要在模块描述符中明确声明：
+
+```java
+module MyEntities {
+    // Open for reflection
+    opens com.mycorp to java.persistence;
+}
+```
+
+Java 9 仍然保留了兼容 Java 8 的行为
 
 ###### 动态代理
 
-代理是基本的设计模式，插入了用来代替实际的对象提供额外的或不同的操作。这些操作涉及与实际对象的通信，代理通常充当中间人角色。java 动态代理即可以动态地创建代理并动态地处理对所代理方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上（负责根据调用类型确定调用策略）
+方便运行时动态构建代理、动态处理方法调用的机制，很多场景都是利用类似机制做到（包装 RPC 调用，AOP）
+
+代理是基本的设计模式，插入了用来代替实际的对象提供额外的或不同的操作。这些操作涉及与实际对象的通信，代理通常充当中间人角色。通过代理可以让调用者与实现者之间解耦。
+
+java 动态代理即可以动态地创建代理并动态地处理对所代理方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上（负责根据调用类型确定调用策略）
 
 通过调用静态方法 `Proxy.newProxyInstance()` 该方法参数为类加载器、代理实现接口列表（不是类或抽象类）、*InvocationHandler* 接口实现可以创建动态代理。动态代理可以将所有调用重定向到 *InvocationHandler* 调用处理器，因此通常会向调用处理器的构造器传递一个实际对象的引用，从而使得调用处理器在执行其中介任务时，可以将请求转发
 
 `InvocationHandler.invoke()` 方法中传递了代理对象，在 invoke 内部，在代理上调用方法时对接口的调用将被重定向为对代理的调用
+
+```java
+// simple dynamic proxy
+interface Hello {
+	void sayHello();
+}
+class HelloImpl implements Hello {
+	@Override public void sayHello() { System.out.println("Hello world"); }
+}
+public class DynamicProxyDemo {
+    Hello hello = new HelloImpl();
+    Hello hello = (Hello) Proxy.newProxyInstance() {
+        Hello.class.getClassLoader(),
+        new Class[] { Hello.class },
+        (proxy, methid, args1) -> {
+            System.out.println("lambda invocationHandler"),
+            return method.invoke(hello, args1);
+        }
+    }
+}
+```
 
 #### 异常
 
@@ -839,7 +875,7 @@ SE 8 中引入了 *java.time* 包以提供日期和时间支持，还包含 *jav
 
 ###### LocalDateTime
 
-是 *LocalDate* 和 *LocalTime* 复合类。同时表示了日期和时间，但不带有时区信息，可以直接创建，也可以合并日期和对象创建，支持从中提取 *LocalDate* 和 *LocalTime*
+是 *LocalDate* 和 *LocalTime* 复合类。同时表示了日期和时间，但不带有时区信息，可以直接创建，也可以合并日期和时间对象创建，支持从中提取 *LocalDate* 和 *LocalTime*
 
 ###### Instant
 
