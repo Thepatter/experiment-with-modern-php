@@ -29,30 +29,38 @@ Java 9 仍然保留了兼容 Java 8 的行为
 
 java 动态代理即可以动态地创建代理并动态地处理对所代理方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上（负责根据调用类型确定调用策略）
 
-通过调用静态方法 `Proxy.newProxyInstance()` 该方法参数为类加载器、代理实现接口列表（不是类或抽象类）、*InvocationHandler* 接口实现可以创建动态代理。动态代理可以将所有调用重定向到 *InvocationHandler* 调用处理器，因此通常会向调用处理器的构造器传递一个实际对象的引用，从而使得调用处理器在执行其中介任务时，可以将请求转发
+* JDK 动态代理
 
-`InvocationHandler.invoke()` 方法中传递了代理对象，在 invoke 内部，在代理上调用方法时对接口的调用将被重定向为对代理的调用
+    基于java 反射机制实现：通过调用静态方法 `Proxy.newProxyInstance()` 方法（参数为类加载器、代理实现接口列表（不是类或抽象类）、*InvocationHandler* 接口实现可以创建动态代理。动态代理可以将所有调用重定向到 *InvocationHandler* 调用处理器，因此通常会向调用处理器的构造器传递一个实际对象的引用，从而使得调用处理器在执行其中介任务时，可以将请求转发
 
-```java
-// simple dynamic proxy
-interface Hello {
-	void sayHello();
-}
-class HelloImpl implements Hello {
-	@Override public void sayHello() { System.out.println("Hello world"); }
-}
-public class DynamicProxyDemo {
-    Hello hello = new HelloImpl();
-    Hello hello = (Hello) Proxy.newProxyInstance() {
-        Hello.class.getClassLoader(),
-        new Class[] { Hello.class },
-        (proxy, methid, args1) -> {
-            System.out.println("lambda invocationHandler"),
-            return method.invoke(hello, args1);
+    `InvocationHandler.invoke()` 方法中传递了代理对象，在 invoke 内部，在代理上调用方法时对接口的调用将被重定向为对代理的调用
+
+    ```java
+    // simple dynamic proxy
+    interface Hello {
+    	void sayHello();
+    }
+    class HelloImpl implements Hello {
+    	@Override public void sayHello() { System.out.println("Hello world"); }
+    }
+    public class DynamicProxyDemo {
+        Hello hello = new HelloImpl();
+        Hello hello = (Hello) Proxy.newProxyInstance() {
+            Hello.class.getClassLoader(),
+            new Class[] { Hello.class },
+            (proxy, methid, args1) -> {
+                System.out.println("lambda invocationHandler"),
+                return method.invoke(hello, args1);
+            }
         }
     }
-}
-```
+    ```
+
+    基于接口实现的局限在于：以接口为中心，相当于添加了一种对于调用者没有太大意义的限制，需要先有接口，必须要实现了接口的类才能生成代理对象，实例话的是 Proxy 对象，而不是真正的调用类型，实践中会有一定的不便和能力退化；优势在于：最小化依赖关系，开发和实现简单，JDK 本身的支持
+
+* 基于 cglib 字节码实现
+
+    cglib 动态代理采取的是创建目标类的子类方式，因为是子类化，可以达到近似使用被调用者本身的效果。优势在于：去除接口依赖，只操作关注的类，而不必为其他相关类增加工作量，高性能。
 
 #### 异常
 
@@ -288,7 +296,7 @@ if (logger.isDebugEnabled) {
 
 #### 泛型
 
-泛型实现了参数化类型的概念，使代码可以用于多种类型。泛型的主要目的之一就是用来指定容器要持有什么类型的对象，而且由编译器来保证类型的正确性
+泛型实现了参数化类型的概念，使代码可以用于多种类型。泛型的主要目的之一就是用来指定容器要持有什么类型的对象，而且由编译器来保证类型的正确性。是一种编译期的技巧，Java 编译期会自动将类型转换为对应的特定类型，使用泛型，必须保证相应类型可以转换为 Object
 
 ##### 泛型机制
 
