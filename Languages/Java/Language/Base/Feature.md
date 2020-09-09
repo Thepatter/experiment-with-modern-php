@@ -685,17 +685,6 @@ Lambda 类似闭包作用域
 
 货币标识符由 ISO 4217 定义，美元：USD，人民币：CNY
 
-##### 日期和时间
-
-当格式化日期和时间时，需要考虑 4 个与 Locale 相关的问题
-
-* 月份和星期应该用本地语言来表示
-* 年月日的顺序要符号本地习惯
-* 公历可能不是本地首选的日期表示方法
-* 必须要考虑本地的时区
-
-*java.time.DateTimeFormatter* 类可以处理这些问题。
-
 #### 排序和范化
 
 ##### 字符校对与范化
@@ -863,7 +852,7 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
 ###### Calendar
 
-1.1 中，*Date* 类的很多方法被废弃了，使用 *Calendar* 类代替，修改了时间，但月份还是从 0 开始，对象可变
+1.1 中，*Date* 类的很多方法被废弃了（getDate、getMonth、getYear），使用 *Calendar* 类代替，修改了时间，但月份还是从 0 开始，对象可变
 
 ###### DateFormat
 
@@ -899,7 +888,7 @@ LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(instant.getEpochSecond
 
 ###### Duration
 
-*Duration* 类主要用于秒和纳秒衡量时间的长短，定义了两个 *Temporal* 对象时间段。但不能创建 *LocalDateTime* 和 *Instant* 两类对象的 *Duration*。会触发 *DateTimeException* 异常。
+*Duration* 类主要用于秒和纳秒对持续时间建模，类似 Period，定义了两个 *Temporal* 对象时间段。但不能创建 *LocalDateTime* 和 *Instant* 两类对象的 *Duration*。会触发 *DateTimeException* 异常。
 
 *用于时间的 Instant 和 Duration 算术运算*
 
@@ -923,7 +912,17 @@ LocalDateTime localDateTime = LocalDateTime.ofEpochSecond(instant.getEpochSecond
 
 每个时区都有一个 ID，*ZonedDateTime* 与 *LocalDateTime* 有大量相同的方法
 
+###### ZoneId
+
+表示时区标识符
+
+###### ZonedDateTime
+
+ZoneDateTime 类用于对带时区的日期-时间建模，是不可变，且时间分量的存储精度为纳秒
+
 ###### DateTimeFormatter
+
+格式化本地或带时区的日期-时间，用于在 *LocalDate*、*LocalDateTime*、*LocalTime*、*ZoneDateTime* 的 format 方法参数
 
 *预定义格式器*
 
