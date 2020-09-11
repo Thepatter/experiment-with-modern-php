@@ -856,7 +856,20 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
 ###### DateFormat
 
-格式化和解析日期或时间，非线程安全，只在 Date 类中提供
+*java.text.DateFormat* 格式化和解析日期或时间，非线程安全。支持样式和模式
+
+|       样式        |           模式           |
+| :---------------: | :----------------------: |
+| DateFormat.SHORT  |         12/2/18          |
+| DateFormat.MEDIUM |       Dec 2, 2018        |
+|  DateFormat.LONG  |     December 2, 2018     |
+|  DateFormat.FULL  | Friday, December 2, 2018 |
+
+默认 DateFormat 是宽松的（Lenient），可以接收不存在的日期，自由地将日期改为存在的日期。否则不会接收不存在的日期
+
+###### SimpleDateFormat
+
+*java.text.SimpleDateFormat* 格式化日期和解析，该类是 *DateFormat* 的具体实现。支持自定义模式
 
 ##### SE 8
 
