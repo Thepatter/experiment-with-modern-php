@@ -16,5 +16,7 @@ cron.* /var/log/cron.log
 sudo service rsyslog restart
 # 重启 crontab
 sudo service cron restart
+# sysstat 软件包
+sudo apt-get install -y sysstat
 ```
 

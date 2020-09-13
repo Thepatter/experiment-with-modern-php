@@ -8,20 +8,22 @@
 
 URI Uniform Resource Identifier 统一资源标识符，使用它能够唯一地标记互联网上资源，URI 主要有三个基本的部分构成：
 
-![](../Images/完整URI组成.png)
+```
+scheme :// user:passwd@ host:port path ?query #fragment
+```
 
 *URI组成部分*
 
 |         组成         |                             用途                             |
 | :------------------: | :----------------------------------------------------------: |
 |    协议名 Scheme     | 即访问该资源应当使用的协议，如 http/https、ftp，file、tel、data、mailto、view-source、ws/wss |
-|  身份信息 (不推荐)   | 表示登录主机时的用户名和密码，但现在不推荐使用这种形式了，它会将敏感信息以明文形式暴露出来 |
+|  身份信息 (不推荐)   | 表示登录主机时的用户名和密码，现在不推荐使用这种形式了，它会将敏感信息以明文形式暴露出来 |
 |   主机名 authority   | 即互联网上的标记，可以是域名或 IP 地址，表示资源所在的主机名，通常为 host:port |
 |      路径 path       | 即资源在主机上的位置，使用 `/` 分割多级目录。URI 的 path 部分必须以 `/` 开始，即必须包含 `/` |
 |    查询参数 query    | URL 查询参数 query，它在 path 之后，用一个 ? 开始，但不包含 ?，表示对资源附加的额外要求。查询参数是多个 key=value 的字符串，使用 & 连接 |
 | 片段标识符 #fragment | 它是 URI 所定位的资源内部的一个『锚点』，浏览器可以在获取资源后直接跳转到它指示的位置。仅能由浏览器这样的客户端使用，服务器是看不到的，浏览器永远不会把带  #fragment 的 URI 发送给服务器，服务器也永远不会用这种方式处理资源的片段 |
 
-URI 本质上是一个字符串，这个字符串的作用是唯一的标记资源的位置或者名字。它不仅能标记万维网的资源，也可以标记其他的，如邮件系统、本地文件系统等任意资源。
+URI 本质上是一个字符串，作用是唯一的标记资源的位置或者名字。它不仅能标记万维网的资源，也可以标记其他如邮件系统、本地文件系统等任意资源。
 
 客户端和服务器看到的 URI 是不一样的，客户端看到的必须是完整的 URI，使用特定的协议去连接特定的主机，而服务器看到的只是报文请求行里被删除了协议名和主机名的 URI。
 
@@ -39,9 +41,7 @@ URI 本质上是一个字符串，这个字符串的作用是唯一的标记资�
 
 ###### 百分比编码
 
-是一种拥有 8 位字符编码的编码机制，这些编码在 URL 的上下文中具有特定的含义。它有时被称为 URL 编码。包含一个百分号（%），后面跟着两个表示字符 ASCII 码的十六进制数。
-
-根据上下文, 空白符 `' '` 将会转换为 `'+'` （必须在HTTP的POST方法中使定义 `application/x-www-form-urlencoded ` 传输方式）， 或者将会转换为 `'%20'` 的 URL。
+拥有 8 位字符编码的编码机制，这些编码在 URL 的上下文中具有特定的含义。它有时被称为 URL 编码。包含一个百分号（%），后面跟着两个表示字符 ASCII 码的十六进制数。根据上下文，空白符 `' '` 将会转换为 `'+'` （必须在 HTTP 的POST 方法中使定义 `application/x-www-form-urlencoded ` 传输方式）， 或者将会转换为 `'%20'` 的 URL。
 
 *保留及受限字符*
 
@@ -73,49 +73,16 @@ URI 本质上是一个字符串，这个字符串的作用是唯一的标记资�
 
 代理（Proxy）是 HTTP 协议中请求方和应答方中间的一个环节，作为『中转站』，既可以转发客户端的请求，也可以转发服务器的应答。常见代理：
 
-* 匿名代理
-
-  完全『隐匿』了被代理的机器，外界看到的只是代理服务器
-
-* 透明代理
-
-  传输过程是『透明开发』的，外界既知道代理，也知道客户端
-
-* 正向代理
-
-  靠近客户端，代表客户端向服务器发送请求
-
-* 反向代理
-
-  靠近服务器端，代表服务器响应客户端的请求
+| 代理方式 |                        描述                        |
+| :------: | :------------------------------------------------: |
+| 匿名代理 |  完全隐匿了被代理的机器，外界看到的只是代理服务器  |
+| 透明代理 | 传输过程是透明开发的，外界即知道代理，也知道客户端 |
+| 正向代理 |       靠近客户端，代表客户端向服务器发送请求       |
+| 反向代理 |       靠近服务器，代表服务器响应客户端的请求       |
 
 ###### 作用
 
-由于代理在传输过程中插入了一个『中间层』，所以可以在这个环节做很多有意义的事情：
-
-* 负载均衡
-
-  把访问请求均匀分散到多台机器，实现访问集群化
-
-* 内容缓存
-
-  暂存上下行的数据，减轻后端的压力
-
-* 安全防护
-
-  隐匿 IP，使用 WAF 等工具抵御网络攻击，保护被代理的机器
-
-* 数据处理
-
-  提供压缩，加密等额外的功能
-  
-* 健康检查
-
-  使用心跳等机制监控后端服务器，发现有故障就及时踢出集群，保证服务高可用
-
-* 加密卸载
-
-  对外网使用 SSL/TLS 加密通信验证，而在内网不加密，消除加解密成本
+由于代理在传输过程中插入了一个『中间层』，所以可以在这个环节做很多有意义的事情：负载均衡：把访问请求均匀分散到多台机器，实现访问集群化；内容缓存，暂存上下行的数据，减轻后端的压力；安全防护：隐匿 IP，使用 WAF 等工具抵御网络攻击，保护被代理的机器；数据处理：提供压缩，加密等额外的功能；健康检查：使用心跳等机制监控后端服务器，发现有故障就及时踢出集群，保证服务高可用；加密卸载：对外网使用 SSL/TLS 加密通信验证，而在内网不加密，消除加解密成本
 
 ###### 头字段
 
@@ -174,7 +141,7 @@ resolver 8.8.8.8 valid = 30s
 
 #### 报文
 
-HTTP 协议的请求报文和响应报文的结构基本相同，由三大部分组成
+HTTP 协议的请求报文和响应报文的结构基本相同，由三部分组成
 
 * 起始行（start line）
 
@@ -188,7 +155,7 @@ HTTP 协议的请求报文和响应报文的结构基本相同，由三大部分
 
   实际传输的数据，可能是文本，图片，视频等二进制数据
 
-HTTP 协议规定报文必须有 header ，但可以没有 body，而且 header 之后必须要有一个『空行』，即 CRLF，十六进制 0D0A
+HTTP 协议规定报文必须有 header ，但没有 body，而且 header 之后必须要有一个『空行』，即 CRLF，十六进制 0D0A
 
 ##### 起始行
 
@@ -240,39 +207,30 @@ HTTP 协议规定报文必须有 header ，但可以没有 body，而且 header 
 
 HTTP 协议规定了非常多的头部字段，实现各种功能：
 
-* 通用字段
-
-  在请求头和响应头里都可以出现
-
-* 请求字段
-
-  仅能出现在请求头里，进一步说明请求信息或者额外的附加条件
-
-* 响应字段
-
-  仅能出现在响应头里，补充说明响应报文的信息
-
-* 实体字段
-
-  实际属于通用字段，但专门描述 body 的额外信息
+| 字段类型 |                    描述                    |
+| :------: | :----------------------------------------: |
+| 通用字段 |         在请求头和响应头都可以出现         |
+| 请求字段 |               仅出现在请求头               |
+| 响应字段 |               仅出现在响应头               |
+| 实体字段 | 实际属于通用字段，专门描述 body 的额外信息 |
 
 ###### 常用字段
 
-|   类型   |      key       |                             含义                             | 必须出现 |
-| :------: | :------------: | :----------------------------------------------------------: | :------: |
-| request  |      Host      | 告诉服务器这个请求应该由那个主机来处理，当一台计算机托管了多个虚拟主机的时候，服务器端就需要用 Host 字段来选择 |   true   |
-| request  |   User-Agent   |                     描述 HTTP 请求客户端                     |          |
-| general  |      Date      | 通常出现在响应头里，表示 HTTP 报文创建的时间，客户端可以使用这个时间再搭配其他字段决定缓存策略 |          |
-| response |     Server     |             正在提供 Web 服务器的软件名和版本号              |          |
-|  entity  | Content-Length | 表示报文 body 的长度，即请求头或请求行空行后面的数据长度，如果没有该字段，那么 body  就是不定长的，需要使用 chunked 方式分段传输 |          |
+|   类型   |       key        |                             含义                             | 必须出现 |
+| :------: | :--------------: | :----------------------------------------------------------: | :------: |
+| request  |      `Host`      | 告诉服务器这个请求应该由那个主机来处理，当一台计算机托管了多个虚拟主机的时候，服务器端就需要用 Host 字段来选择 |   true   |
+| request  |   `User-Agent`   |                     描述 HTTP 请求客户端                     |          |
+| general  |      `Date`      | 通常出现在响应头里，表示 HTTP 报文创建的时间，客户端可以使用这个时间再搭配其他字段决定缓存策略 |          |
+| response |     `Server`     |             正在提供 Web 服务器的软件名和版本号              |          |
+|  entity  | `Content-Length` | 表示报文 body 的长度，即请求头或请求行空行后面的数据长度，如果没有该字段，那么 body  就是不定长的，需要使用 chunked 方式分段传输 |          |
 
 ##### MIMIE
 
+Multipurpose Internet Mail Extensions 是一个很大的标准规范，但 HTTP 只取了其中的一部分，用来标记 body 的数据类型，即 MIME type，MIME 把数据分成了八大类，每个大类下再细分多个子类，形式是 type/subtype 的字符串。HTTP 里经常遇到的类别
+
 ###### 数据类型
 
-在 TCP/IP 协议栈里，传输数据基本上都是 header + body 的格式。但 TCP、UDP 是传输层协议，不会关心 body 数据是什么，只要把数据发送到对方就算完成任务。而 HTTP 是应有层协议，数据到达之后还需要告诉上层应用这是什么数据才行，即数据类型
-
-Multipurpose Internet Mail Extensions 是一个很大的标准规范，但 HTTP 只取了其中的一部分，用来标记 body 的数据类型，即 MIME type，MIME 把数据分成了八大类，每个大类下再细分多个子类，形式是 type/subtype 的字符串。HTTP 里经常遇到的类别
+在 TCP/IP 协议栈里，传输数据基本上都是 header + body 的格式。但 TCP、UDP 是传输层协议，不会关心 body 数据是什么，只要把数据发送到对方就算完成任务。而 HTTP 是应用层协议，数据到达之后还需要告诉上层应用这是什么数据才行，即数据类型
 
 *MIMIE 分类*
 
@@ -284,7 +242,7 @@ Multipurpose Internet Mail Extensions 是一个很大的标准规范，但 HTTP 
 |    video    |          某种视频文件          |                    video/webm、video/ogg                     |
 | application |         某种二进制数据         | application/octet-stream、application/pkcs12、application/pdf |
 
-对于text文件类型若没有特定的subtype，就使用 `text/plain`。类似的，二进制文件没有特定或已知的 subtype，即使用 `application/octet-stream`（不透明的二进制数据）
+对于 text 文件类型若没有特定的 subtype，就使用 `text/plain`；二进制文件没有特定或已知的 subtype，即使用 `application/octet-stream`（不透明的二进制数据）
 
 ###### MIME 嗅探
 
@@ -307,7 +265,7 @@ multipart 标识细分领域的文件类型的种类，对应不同的 MIME 类�
 
 响应头指示回复的内容该以何种形式展示，是以**内联**的形式（即网页或者页面的一部分），还是以**附件**的形式下载并保存到本地。
 
-消息头最初是在MIME标准中定义的，HTTP表单及[`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 请求只用到了其所有参数的一个子集。只有`form-data`以及可选的`name`和`filename`三个参数可以应用在HTTP场景中
+消息头最初是在 MIME 标准中定义的，HTTP 表单及[`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 请求只用到了其所有参数的一个子集。只有`form-data`以及可选的`name`和`filename`三个参数可以应用在 HTTP 场景中
 
 在 multipart/form-data 类型的应答消息体中， **`Content-Disposition`** 消息头可以被用在 multipart 消息体的子部分中，用来给出其对应字段的相关信息。各个子部分由在[`Content-Type`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Type) 中定义的**分隔符**分隔。用在消息体自身则无实际意义
 
@@ -374,7 +332,7 @@ HTTP 协议定义了用于客户端和服务器进行内容协商的头字段（
 
 * Accept-Encoding
 
-  请求字段标记的是客户端支持的压缩格式，可以用逗号分隔，支持 gzip（采用 Lempel-Ziv coding LZ77 压缩算法，以及 32 位 CRC 校验的编码方式）、compress（采用 Lempel-Ziv-Welch LZW 压缩算法）、deflate（采用 zlib 结构和 deflate 压缩算法）、br（采用 Brotil 算法的编码方式）、identity（用于指代自身，除非特别说明，这个标记始终可以被接受）、*（匹配其他任意未在该请求头字段中列出的编码方式。假如该请求头字段不存在的话，这个值是默认值。它并不代表任意算法都支持，而仅仅表示算法之间无优先次序）、;q=(qvalues weighting 权重）
+  请求字段标记的是客户端支持的压缩格式，可以用逗号分隔，支持 gzip（采用 Lempel-Ziv coding LZ77 压缩算法，以及 32 位 CRC 校验的编码方式）、compress（采用 Lempel-Ziv-Welch LZW 压缩算法）、deflate（采用 zlib 结构和 deflate 压缩算法）、br（采用 Brotil 算法的编码方式）、identity（用于指代自身，除非特别说明，这个标记始终可以被接受）、*（匹配其他任意未在该请求头字段中列出的编码方式。假如该请求头字段不存在的话，这个值是默认值。它并不代表任意算法都支持，而仅仅表示算法之间无优先次序）、；q=(qvalues weighting 权重）
 
   ```
   Accept-Encoding: deflate, gzip;q=1.0, *;q=0.5
@@ -382,7 +340,7 @@ HTTP 协议定义了用于客户端和服务器进行内容协商的头字段（
 
 * Content-Type
 
-  通用字段，在响应中，Content-Type 标头标识返回的实体类型（浏览器会在某些情况下进行MIME查找，并不一定遵循此标题的值; 为了防止这种行为，可以将标题 [`X-Content-Type-Options`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/X-Content-Type-Options) 设置为 **nosniff**。）在请求中 POST/PUT 客户端告诉服务器发送的数据类型
+  通用字段，在响应中，Content-Type 标头标识返回的实体类型（浏览器会在某些情况下进行 MIME查 找，并不一定遵循此标题的值; 为了防止这种行为，可以将标题 [`X-Content-Type-Options`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/X-Content-Type-Options) 设置为 **nosniff**。）在请求中 POST/PUT 客户端告诉服务器发送的数据类型
 
   ```
   Content-Type: text/html; charset=utf-8
@@ -450,7 +408,7 @@ Transfer-Encoding: chunked 和 Contenting-Length 字段是**互斥**的，即响
 
 ###### Transfer-Encoding
 
-指定了实体的编码方式。`Transfer-Encoding` 是一个[逐跳传输消息首部](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#hbh)，即仅应用于两个节点之间的消息传递，而不是所请求的资源本身。一个多节点连接中的每一段都可以应用不同的`Transfer-Encoding` 值。如果你想要将压缩后的数据应用于整个连接，那么请使用端到端传输消息首部 [`Content-Encoding`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Encoding)
+指定了实体的编码方式。`Transfer-Encoding` 是一个[逐跳传输消息首部](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#hbh)，即仅应用于两个节点之间的消息传递，而不是所请求的资源本身。一个多节点连接中的每一段都可以应用不同的`Transfer-Encoding` 值。如果想要将压缩后的数据应用于整个连接，那么使用端到端传输消息首部 [`Content-Encoding`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Encoding)
 
 ```
 Transfer-Encoding: chunked
@@ -462,13 +420,11 @@ Transfer-Encoding: identity
 Transfer-Encoding: gzip, chunked
 ```
 
-chunk 数据以一系列分块的形式进行发送。 [`Content-Length`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Length) 首部在这种情况下不被发送。。在每一个分块的开头需要添加当前分块的长度，以十六进制的形式表示，后面紧跟着 '`\r\n`' ，之后是分块本身，后面也是'`\r\n`' 。终止块是一个常规的分块，不同之处在于其长度为0。终止块后面是一个挂载（trailer），由一系列（或者为空）的实体消息首部构成
+chunk 数据以一系列分块的形式进行发送。 [`Content-Length`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Length) 首部在这种情况下不被发送。在每一个分块的开头需要添加当前分块的长度，以十六进制的形式表示，后面紧跟着 '`\r\n`' ，之后是分块本身，后面也是'`\r\n`' 。终止块是一个常规的分块，不同之处在于其长度为0。终止块后面是一个挂载（trailer），由一系列（或者为空）的实体消息首部构成
 
 #### 请求
 
 ##### 请求方法
-
-###### 方法
 
 目前 HTTP/1.1 支持的方法，单词都必须是大写的形式
 
@@ -492,7 +448,7 @@ chunk 数据以一系列分块的形式进行发送。 [`Content-Length`](https:
 
 多次执行相同的操作，结果也是相同的，即多次『幂』后结果『相等』
 
-一个HTTP方法是**幂等**的，指的是同样的请求被执行一次与连续执行多次的效果是一样的，服务器的状态也是一样的。即幂等方法不应该具有副作用（统计用途除外）。在正确实现的条件下，GET，HEAD，PUT 和 DELETE 等方法都是**幂等**的，而 POST 方法不是。所有的安全方法也都是幂等的
+HTTP 方法幂等：，指的是同样的请求被执行一次与连续执行多次的效果是一样的，服务器的状态也是一样的。即幂等方法不应该具有副作用（统计用途除外）。在正确实现的条件下，GET，HEAD，PUT 和 DELETE 等方法都是**幂等**的，而 POST 方法不是。所有的安全方法也都是幂等的
 
 幂等性只与后端服务器的实际状态有关，而每一次请求接收到的状态码不一定相同，服务器不一定会确保请求方法的幂等性，有些应用可能会错误地打破幂等性约束
 
@@ -511,7 +467,9 @@ Accept-Ranges: bytes
 
 ###### Range
 
-请求头 Range 是 HTTP 范围请求的专用字段，服务器允许忽略 Range 头，从而返回整个文件，状态码用 200。格式是 bytes=x-y，其中 x 和 y 是以字节为单位的数据范围，x 和 y 表示的是『偏移量』，范围必须从 0 计数，如前 10 个字节表示 0-9，第二个 10 字节表示 10-19。Range 的格式也很灵活，起点 x 和终点 y 可以省略，能够很方便地表示正数或倒数的范围，假设文件是 100 个字节，那么：
+请求头 Range 是 HTTP 范围请求的专用字段，服务器允许忽略 Range 头，从而返回整个文件，状态码用 200。
+
+格式是 bytes=x-y，其中 x 和 y 是以字节为单位的数据范围，x 和 y 表示的是『偏移量』，范围必须从 0 计数，如前 10 个字节表示 0-9，第二个 10 字节表示 10-19。Range 的格式也很灵活，起点 x 和终点 y 可以省略，能够很方便地表示正数或倒数的范围，假设文件是 100 个字节，那么：
 
 * 0- 表示从文档起点到文档终点，相当于 0-99，即整个文件
 * 10- 表示从第 10 个字节开始到文档末尾，相当于 10-99
@@ -581,12 +539,12 @@ Content-Range: bytes 200-1000/67589
 |              状态码               |                             描述                             |
 | :-------------------------------: | :----------------------------------------------------------: |
 |              200 OK               |    成功，如果非 HEAD 请求，通常在响应头后都会有 body 数据    |
-|            201 Created            | 代表成功的应答状态码，表示请求已经被成功处理，并且创建了新的资源。新的资源在应答返回之前已经被创建。同时新增的资源会在应答消息体中返回，其地址或者是原始请求的路径，或者是 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部的值（常规使用场景是作为 [`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 请求的返回值。） |
-|           202 Accepted            | 表示服务器端已经收到请求消息，但是尚未进行处理。但是对于请求的处理无保证，即稍后无法通过 HTTP 协议给客户端发送一个异步请求来告知其请求的处理结果。这个状态码被设计用来将请求交由另外一个进程或者服务器来进行处理，或者是对请求进行批处理的情形 |
-| 203 Non-Authoritative Information | 表示请求已经成功被响应，但是获得的负载与源头服务器的状态码为 [`200`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/200) (`OK`)的响应相比，经过了拥有转换功能的 [proxy](https://developer.mozilla.org/en-US/docs/Glossary/Proxy_server) （代理服务器）的修改。 |
-|          204 No Content           |          与 200 基本相同，但响应头后没有 body 数据           |
-|         205 Reset Content         | 在 HTTP 协议中，响应状态码 **`205 Reset Content`** 用来通知客户端重置文档视图，比如清空表单内容、重置 canvas 状态或者刷新用户界面 |
-|        206 Partial Content        | 成功状态响应代码表示请求已成功，并且主体包含所请求的数据区间，该数据区间是在请求的 Range 首部指定的，如果只包含一个数据区间，那么整个响应的 Content-Type 首部的值为所请求的文件的类型，同时包含 Content-Range 首部。如果包含多个数据区间，那么整个响应的 Content-Type 首部的值为 `multipart/byteranges` ，其中一个片段对应一个数据区间，并提供  Content-Range 和 Content-Type 描述信息是 HTTP 分块下载或断点续传的基础，在客户端发送『范围请求』，要求获取资源的部分数据时出现，与 200 一样，是服务器成功处理了请求，但 body 里的数据不是资源的全部，而是其中的一部分。206 通常还会伴随头字段 Content-Range，表示响应报文里 body 数据的具体范围，供客户端确认，Content-Range: bytes 0-99/2000 ，意思是此次获取的是总计 2000 个字节的前 100 个字节 |
+|            201 Created            | 成功，请求已被处理，创建了新资源，新资源在应答返回之前已经被创建。同时新增的资源会在应答消息体中返回，其地址或者是原始请求的路径，或者是 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部的值（常规使用场景是作为 [`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 请求的返回值。） |
+|           202 Accepted            | 服务器端已经收到请求消息，但尚未进行处理。对于请求的处理无保证，即稍后无法通过 HTTP 协议给客户端发送一个异步请求来告知其请求的处理结果。该状态码被设计用来将请求交由另外一个进程或者服务器来进行处理，或者是对请求进行批处理的情形 |
+| 203 Non-Authoritative Information | 请求成功被响应，但是获得的负载与源头服务器的状态码为 [`200`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/200) (`OK`)的响应相比，经过了拥有转换功能的 [proxy](https://developer.mozilla.org/en-US/docs/Glossary/Proxy_server) （代理服务器）的修改。 |
+|          204 No Content           |           与 200 基本相同，响应头后没有 body 数据            |
+|         205 Reset Content         | 用来通知客户端重置文档视图，比如清空表单内容、重置 canvas 状态或者刷新用户界面 |
+|        206 Partial Content        | 成功，且主体包含所请求的数据区间，该数据区间是在请求的 Range 首部指定的，如果只包含一个数据区间，那么整个响应的 Content-Type 首部的值为所请求的文件的类型，同时包含 Content-Range 首部。如果包含多个数据区间，那么整个响应的 Content-Type 首部的值为 `multipart/byteranges` ，其中一个片段对应一个数据区间，并提供  Content-Range 和 Content-Type 描述信息是 HTTP 分块下载或断点续传的基础，在客户端发送『范围请求』，要求获取资源的部分数据时出现，是服务器成功处理请求，但 body 数据不是资源的全部，是其中的一部分。206 通常还会伴随头字段 Content-Range，表示响应报文里 body 数据的具体范围，供客户端确认，Content-Range: bytes 0-99/2000 ，意思是此次获取的是总计 2000 个字节的前 100 个字节 |
 
 ###### 3xx
 
@@ -595,12 +553,12 @@ Content-Range: bytes 200-1000/67589
 |         状态码         |                             描述                             |
 | :--------------------: | :----------------------------------------------------------: |
 |  300 Multiple Choices  | 一个用来表示重定向的响应状态码，表示该请求拥有多种可能的响应。用户代理或者用户自身应该从中选择一个。由于没有如何进行选择的标准方法，这个状态码极少使用。 |
-| 301 Moved Permanently  | 永久重定向，说明请求的资源已经被移动到了由 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 头部指定的url上，是固定的不会再改变。搜索引擎会根据该响应修正，尽管标准要求浏览器在收到该响应并进行重定向时不应该修改http method和body，但是有一些浏览器可能会有问题。所以最好是在应对[`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET) 或 [`HEAD`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/HEAD) 方法时使用301，其他情况使用[`308`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/308) 来替代301 |
-|       302 Found        | 曾经的描述短语是 Moved Temporarily，即临时重定向，资源存在，但暂时需要用另一个 URI 来访问，仅在响应 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET) 或 [`HEAD`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/HEAD) 方法时采用 302 状态码，而在其他时候使用 [`307`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/307) Temporary Redirect 来替代，因为在这些场景下方法变换是明确禁止的。 |
-|     303 See Other      | 通常作为 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 或 [`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 操作的返回结果，它表示重定向链接指向的不是新上传的资源，而是另外一个页面，比如消息确认页面或上传进度页面。而请求重定向页面的方法要总是使用 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET)。 |
+| 301 Moved Permanently  | 永久重定向，说明请求的资源已经被移动到了由 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 头部指定的url上，是固定的不会再改变。搜索引擎会根据该响应修正，尽管标准要求浏览器在收到该响应并进行重定向时不应该修改 http method和 body，但是有一些浏览器可能会有问题。最好是在应对[`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET) 或 [`HEAD`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/HEAD) 方法时使用 301，其他情况使用[`308`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/308) 来替代 301 |
+|       302 Found        | 曾经描述短语是 Moved Temporarily，即临时重定向，资源存在，但暂时需要用另一个 URI 来访问，仅在响应 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET) 或 [`HEAD`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/HEAD) 方法时采用 302 状态码，而在其他时候使用 [`307`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/307) Temporary Redirect 来替代，因为在这些场景下方法变换是明确禁止的。 |
+|     303 See Other      | 通常作为 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 或 [`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 操作的返回结果，表示重定向链接指向的不是新上传的资源，而是另外一个页面，比如消息确认页面或上传进度页面。而请求重定向页面的方法要总是使用 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET)。 |
 |    304 Not Modified    | 用于 If-Modified-Since 等条件请求，表示资源未修改，用于缓存控制，不具有通常的跳转含义，但可以理解成『重定向到已缓存的文件』，即缓存重定向 |
-| 307 Temporary Redirect | 临时重定向响应状态码，表示请求的资源暂时地被移动到了响应的 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部所指向的 URL 上，在使用 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 方法进行文件上传操作时，如果需要返回一条确认信息（例如“你已经成功上传了 XYZ”），而不是返回上传的资源本身，就可以使用这个状态码。状态码 `307` 与 [`302`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/302) 之间的唯一区别在于，当发送重定向请求的时候，`307` 状态码可以确保请求方法和消息主体不会发生变化。如果使用 `302` 响应状态码，一些旧客户端会错误地将请求方法转换为 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET)：也就是说，在 Web 中，如果使用了 `GET` 以外的请求方法，且返回了 `302` 状态码，则重定向后的请求方法是不可预测的；但如果使用 `307` 状态码，之后的请求方法就是可预测的。对于 `GET` 请求来说，两种情况没有区别 |
-| 308 Permanent Redirect | **308 Permanent Redirect**（永久重定向）是表示重定向的响应状态码，说明请求的资源已经被永久的移动到了由 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部指定的 URL 上。浏览器会进行重定向，在重定向过程中，请求方法和消息主体不会发生改变，然而在返回 [`301`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/301) 状态码的情况下，请求方法有时候会被客户端错误地修改为 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/GET) 方法 |
+| 307 Temporary Redirect | 临时重定向，请求的资源暂时地被移动到了响应的 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部所指向的 URL 上，在使用 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 方法进行文件上传操作时，如果需要返回一条确认信息（如"你已经成功上传了 XYZ"），而不是返回上传的资源本身，就可以使用这个状态码。状态码 `307` 与  302 唯一区别在于，当发送重定向请求的时候，`307` 状态码确保请求方法和消息主体不会发生变化。如果使用 `302` 响应状态码，一些旧客户端会错误地将请求方法转换为 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET)：也就是说，在 Web 中，如果使用了 `GET` 以外的请求方法，且返回了 `302` 状态码，则重定向后的请求方法是不可预测的；但如果使用 `307` 状态码，之后的请求方法就是可预测的。对于 `GET` 请求来说，两种情况没有区别 |
+| 308 Permanent Redirect | **308 Permanent Redirect**（永久重定向）请求的资源已经被永久的移动到了由 [`Location`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Location) 首部指定的 URL 上。浏览器会进行重定向，在重定向过程中，请求方法和消息主体不会发生改变。返回 [`301`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status/301) 状态码时，请求方法有时候会被客户端错误地修改为 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/GET) 方法 |
 
 ###### 4xx
 
@@ -609,20 +567,17 @@ Content-Range: bytes 200-1000/67589
 |               状态码                |                             描述                             |
 | :---------------------------------: | :----------------------------------------------------------: |
 |           400 Bad Request           |                         请求报文错误                         |
-|          401 Unauthorized           | 客户端错误，指的是由于缺乏目标资源要求的身份验证凭证，发送的请求未得到满足。这个状态码会与  [`WWW-Authenticate`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/WWW-Authenticate) 首部一起发送，其中包含有如何进行验证的信息。 |
+|          401 Unauthorized           | 客户端错误，由于缺乏目标资源要求的身份验证凭证，发送的请求未得到满足。这个状态码会与  [`WWW-Authenticate`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/WWW-Authenticate) 首部一起发送，其中包含有如何进行验证的信息。 |
 |            403 Forbidden            | 客户端错误，指的是服务器端有能力处理该请求，但是拒绝授权访问。 |
-|            404 Not Found            | 代表客户端错误，指的是服务器端无法找到所请求的资源。返回该响应的链接通常称为坏链（broken link）或死链（dead link），它们会导向链接出错处理([link rot](https://en.wikipedia.org/wiki/Link_rot))页面。 |
-|       405 Method Not Allowed        |           表明服务器禁止了使用当前 HTTP 方法的请求           |
-|         406 Not Acceptable          | 指代服务器端无法提供与 [`Accept-Charset`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Accept-Charset) 以及 [`Accept-Language`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Accept-Language) 消息头指定的值相匹配的响应，服务器返回了这个错误状态码，那么消息体中应该包含所能提供的资源表现形式的列表，允许用户手动进行选择 |
-|                                     |                                                              |
-|         408 Request Timeout         |               请求超时，服务器等待了过长的时间               |
-|            409 Conflict             |          多个请求发生了冲突，多线程并发时的竞争状态          |
-|  407 Proxy Authentication Required  | 代表客户端错误，指的是由于缺乏位于浏览器与可以访问所请求资源的服务器之间的代理服务器（[proxy server](https://developer.mozilla.org/zh-CN/docs/Glossary/代理服务器) ）要求的身份验证凭证，发送的请求尚未得到满足。这个状态码会与 [`Proxy-Authenticate`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Proxy-Authenticate) 首部一起发送，其中包含有如何进行验证的信息。 |
-|         408 Request Timeout         | 服务器想要将没有在使用的连接关闭。一些服务器会在空闲连接上发送此信息，**即便是在客户端没有发送任何请求的情况下**服务器应该在此类响应中将 [`Connection`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Connection) 首部的值设置为 "close"，因为 `408` 意味着服务器已经决定将连接关闭，而不是继续等待 |
-|            409 Conflict             | 请求与服务器端目标资源的当前状态相冲突，冲突最有可能发生在对 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 请求的响应中。例如，当上传文件的版本比服务器上已存在的要旧，从而导致版本冲突的时候，那么就有可能收到状态码为 409 的响应 |
-|              410 Gone               | 求的内容在服务器上不存在了，同时是永久性的丢失。如果不清楚是否为永久或临时的丢失，应该使用 404，410 响应默认会被缓存 |
+|            404 Not Found            | 客户端错误，服务器端无法找到请求的资源。返回该响应的链接通常称为坏链（broken link）或死链（dead link），它们会导向链接出错处理([link rot](https://en.wikipedia.org/wiki/Link_rot))页面。 |
+|       405 Method Not Allowed        |             服务器禁止了使用当前 HTTP 方法的请求             |
+|         406 Not Acceptable          | 服务器端无法提供与 [`Accept-Charset`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Accept-Charset) 以及 [`Accept-Language`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Accept-Language) 消息头指定的值相匹配的响应，服务器返回该状态码，消息体中应该包含所能提供的资源表现形式的列表，允许用户手动进行选择 |
+|  407 Proxy Authentication Required  | 客户端错误，由于缺乏位于浏览器与可访问所请求资源的服务器之间的代理服务器要求的身份验证凭证，发送的请求尚未得到满足。该状态码会与 [`Proxy-Authenticate`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Proxy-Authenticate) 首部一起发送，其中包含有如何进行验证的信息 |
+|         408 Request Timeout         | 请求超时，服务器想要将没有在使用的连接关闭。一些服务器会在空闲连接上发送此信息，**即便是在客户端没有发送任何请求的情况下**服务器应该在此类响应中将 [`Connection`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Connection) 首部的值设置为 "close"，因为 `408` 意味着服务器已经决定将连接关闭，而不是继续等待 |
+|            409 Conflict             | 请求与服务器端目标资源的当前状态相冲突，多个请求发生了冲突，多线程并发时的竞争状态。冲突最有可能发生在对 [`PUT`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/PUT) 请求的响应中。例如，当上传文件的版本比服务器上已存在的要旧，从而导致版本冲突的时候，那么就有可能收到状态码为 409 的响应 |
+|              410 Gone               | 请求内容在服务器上不存在了，同时是永久性的丢失。如果不清楚是否为永久或临时的丢失，应该使用 404，410 响应默认会被缓存 |
 |         411 Length Required         | 表示由于缺少确定的[`Content-Length`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Length) 首部字段，服务器拒绝客户端的请求。 |
-|       412 Precondition Failed       | （先决条件失败）表示客户端错误，意味着对于目标资源的访问请求被拒绝。这通常发生于采用除 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET) 和 [`HEAD`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/HEAD) 之外的方法进行条件请求时，由首部字段 [`If-Unmodified-Since`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-Unmodified-Since) 或 [`If-None-Match`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-None-Match) 规定的先决条件不成立的情况下。这时候，请求的操作——通常是上传或修改文件——无法执行，从而返回该错误状态码 |
+|       412 Precondition Failed       | （先决条件失败）表示客户端错误，意味着对于目标资源的访问请求被拒绝。通常发生于采用除 [`GET`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/GET) 和 [`HEAD`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/HEAD) 之外的方法进行条件请求时，由首部字段 [`If-Unmodified-Since`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-Unmodified-Since) 或 [`If-None-Match`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-None-Match) 规定的先决条件不成立的情况下。这时候，请求的操作通常是上传或修改文件无法执行，从而返回该错误状态码 |
 |        413 Payload Too Large        | 请求主体的大小超过了服务器愿意或有能力处理的限度，服务器可能会（may）关闭连接以防止客户端继续发送该请求，如果“超出限度”是暂时性的，服务器应该返回 [`Retry-After`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Retry-After) 首部字段，说明这是暂时性的，以及客户端可以在什么时间（after what time）后重试 |
 |          414 URI Too Long           |          客户端所请求的 URI 超过了服务器允许的范围           |
 |     415 Unsupported Media Type      | HTTP协议的错误状态代码，表示服务器由于不支持其有效载荷的格式，从而拒绝接受客户端的请求，格式问题的出现有可能源于客户端在 [`Content-Type`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Type) 或 [`Content-Encoding`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Encoding) 首部中指定的格式，也可能源于直接对负载数据进行检测的结果 |

@@ -568,6 +568,61 @@ maven 支持针对不同的环境生成不同的构建
    mvn clean install -Pdev
    ```
 
+##### 打包项目
+
+###### Shade
+
+该插件用于生成胖 JAR 文件
+
+```xml
+</project>
+		<build>
+      	<plugins>
+      			<plugin>
+          			<groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.1.0</version>
+              	<executions>
+                		<phase>package</phase>
+                    <goals>
+                    		<configuration>
+                        		<transformers>
+                                <!-- 包括了资源转换器 -->
+                                <transformer implemetation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"></transformer>
+            <!-- 指定一个要包含在 JAR 清单中的主类 -->                    <mainClass>com.packege.name.ClassName</mainClass>
+                            </transformers>
+                        </configuration>
+                    </goals>
+                </executions>
+          	</plugin>
+      	</plugins>
+		</build>
+</project>
+```
+
+###### war
+
+```xml
+<build>
+		<plugins>
+  			<plugin>
+        		<groupId>org.apache.maven.pluginds</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>3.2.0</version>
+            <configuration>
+            		<archive>
+            				<manifest>
+                    		<addClasspath>true</addClasspath>
+                    </manifest>
+                </archive>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+
+
 #### 仓库
 
 ##### 概述
@@ -741,8 +796,6 @@ maven 的生命周期就是为了对所有的构建过程进行抽象和统一�
 生命周期抽象了构建的各个步骤，定义了它们的次序，生命周期本身不做任何实际的工作，实际的任务都交由插件完成，每个构建步骤可以绑定一个或多个插件行为，为大多数构建步骤编写了并绑定了默认插件。
 
 在 maven 的日常使用中，命令行的输入往往对应了生命周期。maven 生命周期是抽象的，其实际行为都由插件来完成。
-
-##### 种类
 
 maven 拥有三套相互独立的生命周期
 
@@ -1253,4 +1306,3 @@ import 范围依赖一般指向打包类型为 pom 的模块，如果有多个�
 |             <dependencyManagement>             |               依赖管理               |
 |                  <properties>                  |              maven 属性              |
 |              <reporting><plugins>              |               报告插件               |
-
