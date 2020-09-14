@@ -32,7 +32,16 @@ HTTPS 协议规定了协议名为 https，默认端口号 443，请求-应答、
 
 SSL 即安全套阶层（Secure Socket Layer)，在 OSI 模型中处于第 5 层（会话层），由 v2 和 v3 两个版本，SSL 发展到 v3 时被互联网工程组 IETF 在 1999 年标准化为 TLS（Transport Layer Security），版本号从 1.0 算，TLS 1.0 即 SSLv3.1。TSL 发展出三个版本，2006 1.1，2008 1.2，2018 1.3。目前应用广泛的是 TLS 1.2，之前的 1.0，1.1 各大浏览器将在 2020 年左右停止支持。
 
-浏览器和服务器在使用 TLS 建立连接时需要选择一组恰当的加密算法来实现安全通信，这些算法组合为加密套件（cipher suite），客户端和服务器支持非常多的密码套件，基本形式为『密钥交换算法 + 签名算法 + 对称加密算法 + 摘要算法』，TLS 会在 Openssl 密码套件前添加 TLS 前缀，TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384，并用 WITH 分开握手和通信算法：`ECDHE-RSA-AES256-GCM-SHA384` 即：握手时使用 ECDHE 算法进行密钥交换、用 RSA 签名和身份认证、握手后的通信使用 AES 对称算法，密钥长度 256 位，分组模式 GCM、摘要算法 SHA384 用于消息认证和产生随机数（AES 保证机密，SHA384 保证完整，RSA 保证身份认证和不可否认）TLS1.2 要求必须实现 `TLS_RSA_WITH_AES_128_CBC_SHA`，TLS 1.3 要求必须实现 `TLS_AES_128_GCM_SHA256`，并且因为前向安全的原因废除了 DH 和 RSA 密钥交换算法
+浏览器和服务器在使用 TLS 建立连接时需要选择一组恰当的加密算法来实现安全通信，这些算法组合为加密套件（cipher suite），客户端和服务器支持非常多的密码套件，基本形式为『密钥交换算法 + 签名算法 + 对称加密算法 + 摘要算法』，TLS 会在 Openssl 密码套件前添加 TLS 前缀，TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384，并用 WITH 分开握手和通信算法
+
+`ECDHE-RSA-AES256-GCM-SHA384` ：
+
+*   握手时使用 ECDHE 算法进行密钥交换
+*   用 RSA 签名和身份认证
+*   握手后的通信使用 AES 对称算法，密钥长度 256 位，分组模式 GCM
+*   摘要算法 SHA384 用于消息认证和产生随机数
+
+AES 保证机密，SHA384 保证完整，RSA 保证身份认证和不可否认。TLS1.2 要求必须实现 `TLS_RSA_WITH_AES_128_CBC_SHA`，TLS 1.3 要求必须实现 `TLS_AES_128_GCM_SHA256`，并且因为前向安全的原因废除了 DH 和 RSA 密钥交换算法
 
 ###### TLS 协议的组成
 
@@ -58,7 +67,7 @@ TLS 包含几个子协议，比较常用的有记录协议、警报协议、握�
 
 *TLS握手过程*
 
-<img src="../Images/TLS握手过程.png" style="zoom:50%;" />
+<img src="../Images/TLS握手过程.png" style="zoom:30%;" />
 
 每个框都是一个记录，多个记录组合成一个 TCP 包发送，最多经过两次消息往返（4 个消息），就可以完成握手。
 
@@ -137,8 +146,8 @@ server {
     listen 443 ssl;
     ssl_certificate rsa.crt; # rsa2048 cert
     ssl_ceritificate_key rsa.key; # rsa2048 private key
-    ssl_ceritificate  ecc.crt; # ecdsa cert
-    ssl_ceritificate _key  ecc.key; # ecdsa private key
+    ssl_ceritificate ecc.crt; # ecdsa cert
+    ssl_ceritificate_key ecc.key; # ecdsa private key
     # 强制只支持 TLS1.2 以上的协议，打开 Session Ticket 会话复用
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_timeout 5m;
@@ -150,10 +159,23 @@ server {
     ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-CHACHA20-POLY1305:ECDHE+AES128:!MD5:!SHA1;
     # 配置椭圆曲线
     ssl_ecdh_curve X25519:P-256
-    # 添加 HSTS 头
-    add_header Strict-Transport-Security max-age=15768000; #182.5days
+    # 添加 HSTS 头，182.5days
+    add_header Strict-Transport-Security max-age=15768000; 
 }
 ```
+
+HSTS：HTTP 严格传输安全，通知浏览器，不再使用 HTTP 加载该网站，自动转换该网站的所有的 HTTP 链接至更安全的 HTTPS。在响应头中使用 `Strict-Transport-Security` 设置
+
+```
+# 收到该请求后的 expire-time 秒的时间内访问该域名下的请求都使用 HTTPS
+Strict-Transport-Security: max-age=<expire-time>
+# inculdeSubDomains（可选） 包含该域名的所有子域名
+Strict-Transport-Security: max-age=<expire-time>; includeSubDomains
+# preload（可选）预加载 HSTS，不是标准一部分
+Strict-Transport-Security: max-age=<expire-time>; preload
+```
+
+Strict-Transport-Security 在通过 HTTP 访问时会被浏览器忽略；只有在通过 HTTPS 访问并且没有证书错误时，浏览器才支持 HSTS（即第一个通过 HTTPS 请求，响应 Strict-Transport-Security 头，浏览器记录这些信息，然后尝试访问这个网站的请求都会自动把 HTTP 替换为  HTTPS，当 HSTS 设置的过期时间到期后，通过 HTTP 的访问恢复到正常模式，不再自动跳转到 HTTPS，每次浏览器接收到 Strict-Transport-Security 头，都会更新这个网站过期时间，Chrome、Firefox 等浏览器，当使用 HTTP 访问该域名时，会产生一个 307，自动跳转到 HTTPS 请求），主要用于防止中间人攻击
 
 ##### HTTP 2.0
 
@@ -190,7 +212,7 @@ HTTP/2 废除了原有的起始行概念，把起始行里面的请求方法、U
    |      值       |             描述             |
    | :-----------: | :--------------------------: |
    |    HEADERS    |      仅包含 HTTP 头信息      |
-   |     DATA      |   包含消息得所有或部分负载   |
+   |     DATA      |   包含消息的所有或部分负载   |
    |   PRIORITY    |     指定分配给流的优先级     |
    |  RST_STREAM   |       错误通知、终止流       |
    |   SETTINGS    |         指定连接配置         |
@@ -225,7 +247,7 @@ HTTP/2 废除了原有的起始行概念，把起始行里面的请求方法、U
 HTTP/2 为此定义了一个“流”（Stream）的概念，它是二进制帧的双向传输序列，同一个消息往返的帧会分配一个唯一的流 ID。HTTP/2 流支持：
 
 1. 并发，一个 HTTP/2 流支持多个流传输数据，并且可以设定优先级
-2. 客户端服务端都可以创建流，客户端发起的 ID 是奇数，服务端发起的 ID 是偶数，流 IO 不能重用，顺序递增
+2. 客户端服务端都可以创建流，客户端发起的 ID 是奇数，服务端发起的 ID 是偶数，流 ID 不能重用，顺序递增
 3. 将请求-应答模式抽象为流，一个流里面客户端和服务器都可以发送或接收数据帧，流之间彼此独立，流内部的帧有严格顺序
 4. 0 号流不能关闭，不能发送数据帧，只能发送控制帧
 
