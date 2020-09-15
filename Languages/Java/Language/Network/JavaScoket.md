@@ -1,16 +1,24 @@
 ### java Socket
 
-#### NIO socket
+#### Socket
 
-##### 概述
+##### 客户端 Socket
 
-在 NIO 中，涉及网络连接的通道是 SocketChannel 负责连接传输，另一个是 ServerChannel 负责连接的监听
+当客户端的 Socket 构造方法请求与服务器连接时，可能要等待一段时间。在默认情况下，Socket 构造方法会一直等待下去，直到连接成功，或者出现异常。
 
-NIO 的 *SocketChannel* 传输通道与 OIO 中的 *Socket* 类对应
+```java
+// 指定连接超时时间
+Socket socket = new Socket();
+SocketAddress remoteAddr = new InetSocketAddress("localhost", 8000);
+socket.connect(remoteAddr, 6000);
+```
 
-NIO 中的 *ServerSocketChannel* 监听通道，对应与 OIO 的 *ServerSocket* 类，
+在一个 Socket 对象中，既包含远程服务器的 IP 和 Prot，也包含本地客户端的 IP 和 Port（客户端默认 IP 为主机 IP，Port 为随机分配）
 
-*ServerSocketChannel* 应用于服务器端，*SocketChannel* 同时处于服务器端和客户端，都支持非阻塞模式。
+```java
+// 指定客户端 IP 和端口, localAddr 和 localPort 指定本地客户端 IP 和 Port
+Socket(InetAddress address, int port, InetAddress localAddr, int localPort)
+```
 
 
 
