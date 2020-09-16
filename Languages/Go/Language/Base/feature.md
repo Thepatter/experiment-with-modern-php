@@ -142,10 +142,6 @@ end := time.Now()
 delta := end.Sub(start)
 ```
 
-#### runtime
-
-#### log
-
 #### regexp
 
 ```go
