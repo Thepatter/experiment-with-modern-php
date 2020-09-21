@@ -6,11 +6,22 @@
 
 *java.io* 包中包含了很多类用于进行 I/O 操作
 
-##### File
+##### 文件
+
+###### File
 
 既能代表一个特定文件的名称，又能代表一个目录下的一组文件的名称
 
 可以用 *File* 对象创建新的目录或尚不存在的目录路径和查看文件特性（大小、最后修改日期，读写，删除文件）。如果以 *FileOutputStream* 或 *FileWriter* 打开，那么它肯定会被覆盖，应该先使用 *File* 判断
+
+###### 文件锁
+
+Java 的文件加锁直接映射了本地操作系统的加锁工具：
+
+*   通过对 *FileChannel*  调用 tryLock（非阻塞，无法获取锁时直接返回）或  lock（阻塞至获得锁返回，或调用线程中断，调用通道关闭），就可以获得整个文件的 *FileLock*（*SocketChannel*、*DatagramChannel*、*ServerSocketChannel* 不需要加锁，它们是从单进程实体继承而来）
+*   支持对文件部分进行上锁。具有固定尺寸的锁不随文件尺寸的变化而变化。
+
+对独占锁或共享锁的支持必须由底层的操作系统提供。如果操作系统不支持共享锁，会使用独占锁，可通过 isShared 查询锁类型
 
 ##### 字节输入输出
 
@@ -52,7 +63,7 @@
 
 随机读写，不在 *InputStream*、*OutputStream* 继承层次结构，不支持装饰。实现了 *DataInput*、*DataOutput* 接口。工作方式类似于把 *DataInputStream* 和 *DataOutputStream* 组合使用，并添加了一些方法。支持查找当前所处的文件位置（getFilePointer）及将文件移动到新位置（seek），支持随机读和读写模式，但不支持只写模式，拥有读取基本类型和 UTF-8 字符串的方法
 
-1.4 之后，大多数功能由 nio 存储映射文件取代
+1.4 之后，大多数功能由 nio 存储映射文件取代。
 
 ###### 管道流
 
@@ -115,5 +126,101 @@
 
 Java 提供了 *System.in*、*System.out*、*System.err* 来定位标准 I/O，并提供了重定向的方法，I/O  重定向操作的是字节流，因此只能使用字节流装饰器装饰字符流
 
+##### NIO
 
+jdk 1.4 引入的 `java.nio.*` 包中引入新的 I/O 类库，旧的 I/O 包已经使用 nio 重新实现过。使用更加接近于操作系统 I/O 的方式：通道和缓冲器。不直接和通道交互只是和缓冲器交互，通道要么从缓冲器获取数据，要么向缓冲器发送数据，可以向通道传送用于读写的 *ByteBuffer*
+
+旧 I/O 库中 *FileInputStream*、*FileOutputStream*、*RandomAccessFile* 可以产生 *FileChannel*，*Reader* 和 *Writer* 字符模式类不能产生通道，*java.nio.channels.Channels* 提供在通道中产生 *Reader* 和 *Writer*
+
+###### *ByteBuffer*
+
+与通道直接交互的缓冲器，可以存储未加工字节的缓冲器。可以使用 put 方法直接进行填充（填入一个或多个字节，或基本数据类型的值）或 warp 方法将已存在的字节数组包装到 *ByteBuffer* 中。缓冲器由容量（不变）、读写位置（下一个值将在此处读写）、界限（超过它进行读写时没有意义）、标记（可选的编辑，重复一个读入或写出操作）
+
+对于只读访问，必须显式地使用静态的 allocate 方法来分配 *Bytebuffer*，可以使用 allocatedDirect  而不指定缓冲大小来产生一个与操作系统有更高耦合性的直接缓冲器。
+
+*ByteBuffer*  由 read 模式切换到 wirte 时，必须使用 flip 转换后才能写入，由 write 模式切换到 read 模式时，必须 clear 后才能继续读入
+
+```java
+while (in.read(byteBuffer) != -1) {
+	byteBuffer.flip();
+	out.write(byteBuffer);
+	byteBuffer.clear();
+}
+```
+
+缓冲器容纳的是普通的字节，将其转换成字符：在输入时对其进行编码，读取时将 *ByteBuffer* 转换成 *CharBuffer*；在输出时对其进行解码；通过 *CharBuffer*.put() 方法向 *ByteBuffer* 写入
+
+```java
+// 输出原始字符
+byteBuffer.asCharBuffer().toString()
+// 输出时解码
+String encoding = System.getProperty("file.encoding");
+Charset.forName(encoding).decode(byteBuffer));
+// 写入时编码，读取时将 ByteBuffer 转换成 CharBuffer byteBuffer.asCharBuffer()
+ByteBuffer.wrap("Some text 🦋 s".getBytes(StandardCharsets.UTF_16));
+byteBuffer.asCharBuffer();
+// 使用 CharBuffer put
+ByteBuffer.allocate(1024).asChrBuffer.put("Some text 😀");
+```
+
+视图缓冲器可以通过某个特定的基本数据类型的视窗查看器底层的 *ByteBuffer*。对视图的任何修改都会映射成为对 *ByteBuffer* 中数据的修改。视图允许单个或批量的读取基本数据类型。
+
+*ByteBuffer* 以高位优先（big endian 将最重要的字节存放在地址最低的存储器单元，little endian 将最重要的字节放在地址最高的存储器单元）的形式存储数据
+
+###### *MappedByteBuffer*
+
+特殊的直接缓冲器，可以映射某个大文件的较小的部分，由 *RandomAccessFile* 通道 map 产生，继承自 *ByteBuffer*
+
+##### 压缩
+
+I/O 类库支持读写压缩格式的数据流。属于字节流继承结构中一部分。
+
+*压缩类结构*
+
+|           类           |                           功能                           |
+| :--------------------: | :------------------------------------------------------: |
+|  *CheckedInputStream*  | GetCheckSum 为任何 InputStream 产生校验和（不仅解压缩）  |
+| *CheckedOutputStream*  | GetCheckSum 为任何 OutputStream 产生校验和（不仅是压缩） |
+| *DeflaterOutputStream* |                        压缩类基类                        |
+|   *ZipOutputStream*    |                将数据压缩成 Zip 文件格式                 |
+|   *GZIPOutputStream*   |                将数据压缩成 GZIP 文件格式                |
+| *InflaterInputStream*  |                      解压缩类的基类                      |
+|    *ZipInputStream*    |                解压缩 Zip 文件格式的数据                 |
+|   *GZIPInputStream*    |                解压缩 GZIP 文件格式的数据                |
+
+###### GZIP 压缩
+
+压缩类使用时，将输出流装饰成 *GZIPOutputStream* 或 *ZipOutputStream*，将输入流装饰城 *GZIPInputStream* 或 *ZipInputStream*，其他操作与 IO 读写一致。
+
+```java
+void gzipCompress() throws IOException {
+    BufferedReader in = new BufferedReader(new FileReader(new File("prlog.http")));
+    BufferedOutputStream out = new BufferedOutputStream(
+        new GZIPOutputStream(new FileOutputStream("test.gz")));
+    System.out.println("Writing file");
+    int c;
+    while ((c = in.read()) != -1) {
+        out.write(c);
+    }
+    in.close();
+    out.close();
+    System.out.println("Reading file");
+    BufferedReader in2 = new BufferedReader(
+        new InputStreamReader(new GZIPInputStream(new FileInputStream("test.gz"))));
+    String s;
+    while ((s = in2.readLine()) != null) {
+        System.out.println(s);
+    }
+}
+```
+
+##### 对象 I/O 
+
+###### 对象序列化
+
+Java 对象序列化将实现了 *Serializable* 接口的对象转换成一个字节序列，并能够在以后将这个字节序列完成恢复为原来的对象，支持跨网络，跨系统传输。并且能递归追踪对象内所包含的所有引用，并保存那些对象。
+
+###### *ObjectOutputStream*
+
+序列化对象时，创建输出目的地的 *OutputStream* 并使用 *ObjectOutputStream* 装饰，调用 writeObject。对象序列化是基于字节的。还原一个对象时，创建源 *InputStream* 并使用 *ObjectInputStream* 装饰，调用 readObject，返回一个向上转型的 Object，对一个 *Serializable* 对象进行还原的过程中，没有调用任何构造器，包括默认的构造器，整个对象都是通过 *InputStream* 中取得数据恢复而来的
 
