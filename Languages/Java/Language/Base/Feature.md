@@ -136,7 +136,7 @@ JVM 会在特定时机将引用 enqueue 到队列里，可以从队列里获取�
 |      NullPointerException      |                          空指针异常                          |
 | ArrayIndexOutOfBoundsException |                       数组访问越界异常                       |
 |      NoClassDefFoundError      | 运行时错误：是 java 运行时系统尝试加载类定义时引发的错误，并且该类定义不再可用，所需的类定义在编译时存在，但在运行时丢失（缺少对应 .class 文件） |
-|     ClassNotFoundException     | 运行时异常：当应用使用 class.forName()、loadClass()、findSystemclass() 在运行时加载类，并且在类路径中找不到具有指定名称的类时抛出 |
+|     ClassNotFoundException     | 运行时异常：执行：class.forName()、loadClass()、findSystemclass()、反序列化时在运行时加载或验证类，并且在类路径中找不到具有指定名称的类时抛出 |
 
 ##### 声明受检异常
 
