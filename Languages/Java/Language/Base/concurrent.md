@@ -58,9 +58,9 @@ thread.start();
 
 一个线程可以在其他线程之上调用 join() 方法，其效果是等待一段时间直到第二个线程结束才继续执行。如果某个线程在另一个线程 t 上调用 t.join()，此线程将被挂起，直到目标线程 t 结束才恢复（即 t.isAlive == false）
 
-也可以在调用join（）时带上一个超时参数（单位可以是毫秒，或者毫秒和纳秒），这样如果目标线程在这段时间到期时还没有结束的话，join（）方法总能返回
+也可以在调用 join() 时带上一个超时参数（单位可以是毫秒，或者毫秒和纳秒），这样如果目标线程在这段时间到期时还没有结束的话，join() 方法总能返回
 
-对join（）方法的调用可以被中断，做法是在调用线程上调用interrupt（）方法，这时需要用到try-catch子句
+对 join() 方法的调用可以被中断，做法是在调用线程上调用 interrupt（）方法，这时需要用到 try-catch子句
 
 ###### 线程组
 
@@ -70,7 +70,20 @@ thread.start();
 
 由于线程的本质特性，使得不能捕获从线程中逃逸的异常，一旦异常逃出任务的 run() 方法，它就会向外传播到控制台，除非采取特殊的步骤捕获这种错误的异常。在 SE 5 之前，可以使用线程组来捕获这些异常，但 SE 5 开始，就可以用 *Executor* 来解决这个问题。
 
-修改 *Executor* 产生线程的方式。Thread.UncaughtExceptionHandler 是 SE 5 中的新接口，允许在每个 Thread 对象上都附着一个异常处理器。Thread.UncaughtExceptionHandler.uncaughtException() 会在线程因未捕获的异常而临近死亡时被调用。为了使用它，创建一个新类型的 *ThreadFactory*，它将在每个新创建的 Thread 对象上附着一个 Thread.UncaughtExceptionHandler，将该工厂传递给 Executors 创建新的 ExecutorService 方法
+修改 *Executor* 产生线程的方式。*Thread.UncaughtExceptionHandler* 是 SE 5 中的新接口，允许在每个 Thread 对象上都附着一个异常处理器。*Thread.UncaughtExceptionHandler*.uncaughtException() 会在线程因未捕获的异常而临近死亡时被调用。
+
+```java
+// 使用工厂，可以根据情况设置单个线程的异常处理器
+class HandlerThreadFactory implements ThreadFactory {
+    public Thread newThread(Runnable r) {
+        Thread t = new Thread(r);
+        t.setUncaughtExceptionHandler(new MyUncaughtExceptionHandler());
+        return t;
+    }
+}
+// 为所有线程使用相同的异常处理器，设置 Thread 静态域
+Thread.setDefaultUncaughtExceptionHandler(new MyUncaughtExceptionHandler());
+```
 
 ###### 线程本地存储
 
@@ -146,7 +159,36 @@ public class UserThreadFactory implements ThreadFactory {
     userThreadPool.execute(thread);
 ```
 
-#### 同步相关
+#### 并非编程
+
+##### 线程同步
+
+###### synchorized
+
+使用对象内部锁进行同步，支持代码块（临界区）级别同步
+
+```java
+synchronized(this) {
+	// todo
+}
+```
+
+###### *Lock*
+
+*Lock* 对象必须被显式地创建、锁定和释放。相比 synchronized 关键字，可以在 finally 进行清理工作，只有在解决特殊问题时，才使用显式 *Lock*
+
+```java
+private Lock lock = new ReentrantLock();
+public int next() {
+    lock.lock();
+    try {
+        // tudo
+        return ... // return 必须在 try 子句中
+    } finally {
+        lock.unlock();
+    }
+}
+```
 
 ##### 原子类
 

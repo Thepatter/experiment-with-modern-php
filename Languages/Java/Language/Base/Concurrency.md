@@ -235,6 +235,14 @@ synchronized(obj) {}
 
 voliatile 域不提供原子性
 
+volatile 确保了应用的可视性。如果将一个域声明为 volatile，只要对这个域产生了写操作，所有的读操作都可以看到这个修改。即时使用了本地缓存。volatile 域会立即被写入到主存中。非 volatile 域上的原子操作不必刷新到主存中。
+
+如果多个任务在同时访问某个域，那么这个域就应该是 volatile 的，否则这个域只能由同步来访问，同步也会导致向主存中刷新，如果一个域完全由 synchronized 方法或语句来保护，则不必将其设置为 volatile
+
+一个任务所作的任何写入操作对这个任务来说都是可视的，如果只需要在这个任务可视，则不需要将其设置为 volatile
+
+当一个域的值依赖于它之前的值时，volatile 就无法工作，如果某个域的值受到其他域的值的限制，volatile 也无法工作。使用 volatile 而不是 synchronized 的唯一安全的情况是类中只有一个可变的域。
+
 ###### 读写锁
 
 *ReentrantReadWriteLock* 使用流程
