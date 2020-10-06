@@ -162,7 +162,7 @@ Service 组件包含若干用于接收客户端消息的 Connector 组件和一�
 |  maxSwallowSize   | 指定请求正文的最大长度，以字节为单位，默认 2097152（2mb）。为负，则无限制 |
 |     executor      |                    指定所使用执行器的名字                    |
 
-每个 Connector 都将指定一个端口进行监听，分别负责对请求报文解析和对响应报文组装，解析过程生成 Request 对象。再同个 Service 实例内可以配置若干 Connector 实例，端口必须不同，但协议可以相同。HTTP Connector 包含的协议处理组件有 Http11Protocol（Java BIO 模式），Http11NioProtocol（Java NIO 模式）和 Http11AprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式。
+每个 Connector 都将指定一个端口进行监听，分别负责对请求报文解析和对响应报文组装，解析过程生成 Request 对象。同个 Service 实例内可以配置若干 Connector 实例，端口必须不同，但协议可以相同。HTTP Connector 包含的协议处理组件有 Http11Protocol（Java BIO 模式），Http11NioProtocol（Java NIO 模式）和 Http11AprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式。
 
 AJP Connector 组件用于支持 AJP 协议通信，AJP Connector 包含的协议处理组件有 AjpProtocol（Java BIO 模式），AjpNioProtocol（Java NIO 模式），AjpAprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式
 

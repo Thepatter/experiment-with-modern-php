@@ -1,5 +1,163 @@
 ### HTTP 相关
 
+#### 域名
+
+域名是一个有层次的结构，是一串用 . 分隔的多个单词，最右边的被称为『顶级域名』，然后是『二级域名』，层级关系向左依次降低。最左边的是主机名，通常用来表明主机的用途，如 www 表示提供万维网服务，mail 表示提供邮件服务。在 Apache、Nginx 这样的 Web 服务器里，域名可以用来标识虚拟主机，决定由那个虚拟主机来对外提供服务。
+
+##### 域名解析
+
+DNS 核心系统是一个三层的树状、分布式服务，基本对应域名的结构：
+
+* 根域名服务器 Root DNS Server
+
+    管理顶级域名服务器，返回 com 、net、cn 等顶级域名服务器的 IP 地址
+
+* 顶级域名服务器 Top-level DNS Server
+
+    管理各自域名下的权威域名服务器，如 com 顶级域名服务器可以返回 apple.com 域名服务器的 IP 地址
+
+* 权威域名服务器 Authoritative DNS Server
+
+    管理自己域名下主机的 IP 地址，如 apple.com 权威域名服务器可以返回 www.apple.com 的 IP 地址
+
+<u>nginx 中的 resolver 指令，就是用来配置 DNS 服务器的，如果没有它，那么 nginx 就无法查询域名对应的 IP，也就无法反向代理到外部的网站</u>
+
+```nginx
+# 指定 Google 的 DNS，缓存 30s
+resolver 8.8.8.8 valid = 30s
+```
+
+#### MIME
+
+##### 定义
+
+Multipurpose Internet Mail Extensions 是一个很大的标准规范，但 HTTP 只取了其中的一部分，用来标记 body 的数据类型，即 MIME type，MIME 把数据分成了八大类，每个大类下再细分多个子类，形式是 type/subtype 的字符串。HTTP 里经常遇到的类别
+
+###### 数据类型
+
+在 TCP/IP 协议栈里，传输数据基本上都是 header + body 的格式。但 TCP、UDP 是传输层协议，不会关心 body 数据是什么，只要把数据发送到对方就算完成任务。而 HTTP 是应用层协议，数据到达之后还需要告诉上层应用这是什么数据才行，即数据类型
+
+*MIMIE 分类*
+
+|    类型     |              描述              |                             示例                             |
+| :---------: | :----------------------------: | :----------------------------------------------------------: |
+|    text     | 文件是普通文本，理论上人类可读 |       text/plain, text/html, text/css, text/javascript       |
+|    image    |      某种图像，不包括视频      |              image/gif、image/png、image/x-icon              |
+|    audio    |          某种音频文件          |   audio/midi、audio/mpeg、audio/webm、audio/ogg、audio/wav   |
+|    video    |          某种视频文件          |                    video/webm、video/ogg                     |
+| application |         某种二进制数据         | application/octet-stream、application/pkcs12、application/pdf |
+
+对于 text 文件类型若没有特定的 subtype，就使用 `text/plain`；二进制文件没有特定或已知的 subtype，即使用 `application/octet-stream`（不透明的二进制数据）
+
+###### MIME 嗅探
+
+在缺失 MIME 类型或客户端认为文件设置了错误的 MIME 类型时，浏览器可能会通过查看资源来进行 MIME 嗅探。每一个浏览器在不同的情况下会执行不同的操作。因为这个操作会有一些安全问题，有的 MIME 类型表示可执行内容而有些是不可执行内容。浏览器可以通过请求头 `Content-Type` 来设置 `X-Content-Type-Options`以阻止 MIME 嗅探。
+
+`X-Content-Type-Options` HTTP 消息头相当于一个提示标志，被服务器用来提示客户端一定要遵循在 `Content-Type` 首部中对 MIME 类型的设定，而不能对其进行修改。这就禁用了客户端的 MIME 类型嗅探行为
+
+```
+# 请求类型是"style" 但是 MIME 类型不是 "text/css",请求类型是"script" 但是 MIME 类型不是  JavaScript MIME 类型时，请求将被阻止
+X-Content-Type-Options: nosniff
+```
+
+##### 头字段
+
+###### mulitpart/form-data
+
+multipart 标识细分领域的文件类型的种类，对应不同的 MIME 类型。
+
+可用于 HTML 表单从浏览器发送信息给服务器。作为多部分文档格式，它由边界线（`--`）划分出不同的部分组成。每一部分有自己的实体，以及自己的 HTTP 请求头。Content-Disposition 和 Content-Type 用于文件上传领域，最常用的 Content-Length 因为边界线作为分隔符而被忽略
+
+###### Content-Disposition 
+
+响应头指示回复的内容该以何种形式展示，是以**内联**的形式（即网页或者页面的一部分），还是以**附件**的形式下载并保存到本地。
+
+消息头最初是在 MIME 标准中定义的，HTTP 表单及[`POST`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods/POST) 请求只用到了其所有参数的一个子集。只有`form-data`以及可选的`name`和`filename`三个参数可以应用在 HTTP 场景中
+
+在 multipart/form-data 类型的应答消息体中， **`Content-Disposition`** 消息头可以被用在 multipart 消息体的子部分中，用来给出其对应字段的相关信息。各个子部分由在[`Content-Type`](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Type) 中定义的**分隔符**分隔。用在消息体自身则无实际意义
+
+*   作为消息主体中的消息头
+
+    在 HTTP 场景中，第一个参数是 inline（默认），标识回复中的消息体会以页面的一部分或整个页面的形式展示。attachment（意味着消息体应该被下载到本地；大多数浏览器会呈现一个保存为的对话框，将 filename 的值预填为下载后的文件名）
+
+    ```
+    Content-Disposition: inline
+    Content-Disposition: attachment
+    Content-Disposition: attachment; filename="filename.jpg"
+    ```
+
+*   作为 multipart body 中的消息头
+
+    在 HTTP 场景中，第一个参数总是固定不变的 form-data；附加的参数不区分大小写，并且拥有参数值，参数名与参数值用 `=` 连接，参数值用双引号括起来，参数之间用分号`;`分割
+
+    ```
+    Content-Disposition: form-data
+    Content-Disposition: form-data; name="fieldName"
+    Content-Disposition: form-data; name="fieldName"; filename="filename.jpg"
+    ```
+
+    name 是表单字段名，每个字段名会对应一个子部分。在同一个字段名对应多个文件的情况下，则多个子部分共用同一个字段名，如果 name 参数值为 `_charset_`，意味着这个子部分表示的不是一个 HTML 字段，而是在未明确指定字符集信息的情况下各部分使用的默认字符集
+
+    filename 是要传送的文件的初始名称字符串，该参数总是可选的，而且不能盲目使用：路径信息必须舍去。当 `filename` 和 `filename*` 同时出现的时候，优先采用 `filename*`，假如二者都支持
+
+    *form-data 请求*
+
+    ```
+    POST /test.html HTTP/1.1
+    Host: example.org
+    Content-Type: multipart/form-data;boundary="boundary"
+    
+    --boundary
+    Content-Disposition: form-data; name="field1"
+    
+    value1
+    --boundary
+    Content-Disposition: form-data; name="field2"; filename="example.txt"
+    ```
+
+###### multipart/byteranges
+
+用于把部分的响应报文发送回浏览器。当发送状态码 206 Partial Content 时，这个 MIME 类型用于指出这个文件由若干部分组成。每个都有其请求范围，每个不同的部分都有 Content-Type 头说明文件类型和 Content-Range 说明其范围
+
+###### application/x-www-form-urlencoded
+
+数据被编码成以 `&` 分割的键值对，同时以 `=` 分隔键和值，非字母或数字的字符会被百分比编码，该类型不支持二进制数据
+
+#### 连接管理
+
+##### Nagle 算法
+
+试图在发送一个分组之前，将大量 TCP 数据绑定在一起，以提高网络效率，鼓励发送全尺寸的段，只有当所有其他分组都确认之后，Nagle 算法才允许发送非全尺寸的分组。如果其他分组仍然在传输过程中，将那部分数据缓存起来，只有当挂起分组都确认，或缓存中积累了足够发送一个全尺寸分组的数据时，才会将缓存的数据发送出去
+
+###### Nagle 算法性能问题
+
+*   小的 HTTP 报文可能无法填满一个分组，可能会因为等待那些永远不会到来的额外数据而产生时延。
+*   Nagle 算法与确认延迟之间交互存在问题，Nagle 算法会阻止数据的发送，直到有确认分组抵达为止，但确认分组自身会被延迟确认算法延迟 100 ～ 200 毫秒
+
+###### 关闭 Nagle 算法
+
+通过对套接字的修改关闭 Nagle 算法。为套接字设置 TCP_NODELAY 选项即可关闭 Nagle 算法
+
+##### TIME_WAIT 累计
+
+###### TIME_WAIT 端口耗尽
+
+当某个 TCP 端点关闭 TCP 连接时，会在内存中维护一个小的控制块，用来记录最近所关闭连接的 IP 地址和端口号。通常会维持 2MSL（2 分钟），以确保这段时间内不会创建具有相同地址和端口的新连接（主要防止在两分钟内创建、关闭并重新创建两个具有相同 IP 地址和端口号的连接）
+
+客户端每次连接到服务器时，都会使用一个新的源端口，以实现连接的唯一性。由于可用源端口的数量有限，而且在 2MSL 内连接是无法重用的，连接率就被限制在（可用端口数）/ 120
+
+##### HTTP 连接优化
+
+###### 1.0 Keep-Alive
+
+实现 HTTP/1.0 keep-alive 连接的客户端可以通过包含 Connection:Keep-Alive 首部请求将一条连接保持在打开状态。如果服务器愿意为下一条请求将连接保持在打开状态，就在响应中包含相同的首部（Connection:Keep-Alive），如果不包含则客户端认为服务器不支持 keep-alive，会接收报文后关闭连接。
+
+可以用 Keep-Alive 通用首部（使用该首部，必须包含 Connection:Keep-Alive 首部）显示 keep-Alive 属性
+
+###### 1.1 Keep-Alive
+
+1.1 使用持久连接取代了 keep-Alive。默认激活，要在事务处理结束后关闭连接，必须显式添加 Connection:close 首部。允许在持久连接上可选的使用请求管道。在响应到达之前，可将多条请求放入队列。当第一条请求通过网络流向服务器时，后续请求也可以开始发送，在高时延网络条件下，可以降低网络的环回时间，提高性能。
+
 #### WebSocket
 
 WebSocket 是『全双工』的通信协议，与 TCP 一样，客户端和服务器都可以随时向对方发送数据，采用二进制帧结构，算法，语义与 HTTP 完全不兼容。服务器发现方面，WebSocket 采用了 URI 格式：`ws` 和 `wss`，对应端口 80 和 443

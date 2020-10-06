@@ -214,6 +214,10 @@ SE 5 的 *java.util.concurrent* 包中的执行器（*Executor*）管理 *Thread
 
     执行拒绝策略的对象。当超过 workQueue 任务缓冲区上限时，可以通过该策略处理请求。会将任务和线程池对象传入该策略对象
 
+###### *ScheduledExecutor*
+
+*ScheduledThreadPoolExecutor* 通过使用 schedule() （运行一次）或 scheduleAtFixedRate()（每隔规则的时间重复执行任务），可以将 Runnable 对象设置为将来的某个时刻执行。
+
 ##### 线程同步
 
 在多线程对同一变量进行写操作时，如果操作没有原子性（CAS，compare and swap 是原子操作），可能产生脏数据。
@@ -263,36 +267,64 @@ public int next() {
 }
 ```
 
-##### 线程之间的协作
+##### 线程协作
 
-当任务协作时，关键问题是这些任务之间的握手，为了实现这种握手，使用互斥，在这种情况下，互斥能够确保只有一个任务可以响应某个信号，这样就可以根除任何可能的竞争条件。在互斥之上，为任务添加了一种途径，可以将其自身挂起，直至某些外部条件发生变化。
+线程之间的协作
 
-握手可以通过 Object 的方法 wait() 和 notify() 来安全地实现。SE 5 的并发类库还提供了具有 await() 和 signal() 方法的 Condition 对象。
+###### 对象通知机制
 
-###### wait 与 notifyAll
+*Object*.wait() 使线程等待某个条件发生变化，wait() 会在等待期间将任务挂起，并且只有在 *Object*.notify() 或 *Object*.notifyAll() 发生时，这个任务才会被唤醒并去检查所产生的变化。
 
-wait() 使线程等待某个条件发生变化，而改变这个条件超出了当前方法的控制能力，通常这种条件将由另一个任务来改变。wait() 会在等待外部时间产生变化的时候将任务挂起，并且只有在 notify() 或 notifyAll() 发生时，这个任务才会被唤醒并去检查所产生的变化。
+线程调用 sleep() 和 yield() 时不会释放锁，但对象调用 wait() 时将释放线程持有锁。只能在同步控制方法或同步控制块里调用 wait()，notify()，notifyAll()（调用这些方法前线程必须拥有对象的锁）如果在非同步方法里调用这些方法，程序能通过编译，但运行时，将得到 *IllegalMonitorStateException* 异常。
 
-调用 sleep() 和 yield() 时锁并没有被释放，<u>当一个任务在方法里遇到了对 wait() 的调用的时候，线程的执行被挂起，对象上的锁被释放</u>
+###### 并发包工具
 
-wait()、notify()、notifyAll() 有一个比较特殊的方面，这些是基类 Object 的一部分，而不是属于 Thread 的一部分。因为这些方法操作的锁也是所有对象的一部分。可以把 wait() 放进任何同步控制方法中，而不用考虑这个类是继承自 Thread 还是实现了 Runnable 接口。实际上只能在同步控制方法或同步控制块里调用 wait()，notify()，notifyAll()（调用这些方法前必须拥有对象的锁）如果在非同步孔子方法里调用这些方法，程序能通过编译，但运行时，将得到 *IllegalMonitorStateException* 异常。
+在 SE 5 并发包支持显式 *Lock* 和 *Condition* 对象。使用互斥并允许任务挂起的基本类 *Condition*。*Condition*.await() 挂起一个任务，调用 signal() 来唤醒一个任务，调用 signalAll() 来唤醒所有在这个 *Condition* 上被其自身挂起的任务（与 notifyAll() 相比，signalAll() 是更安全的方式）
 
-###### notify() 和 notifyAll()
+```java
+class Car {
+  	private Lock lock = new ReentrantLock();
+  	private Condition condition = lock.newCondition();
+  	// 必须先获得锁才能操作 condition 对象
+  	public void waxed() {
+      	lock.lock();
+      	try {
+          	// todo
+          condition.signalAll();
+        } finally {
+          	lock.unlock();
+        }
+    }
+}
+```
 
-使用 notify() 而不是 notifyAll() 是一种优化，使用 notify() 时，在众多等待同一个锁的任务中只有一个会被唤醒。如果使用 notify()，就必须保证被唤醒的是恰当的任务，所有任务必须等待相同的条件，如果有多个任务在等待不同的条件，那么就不会知道是否唤醒了恰当的任务。
+###### 阻塞队列
 
-###### 显式的 Lock 和 Condition 对象
+对于实际编程来说，应该尽可能远离底层结构，对于许多线程问题，可以通过使用一个或多个队列以实现序列化以避免同步。当试图向队列添加元素而队列已满，或试图从队列移除元素而队列为空时，阻塞队列导致线程阻塞。并发包提供了阻塞队列的几个变种。
 
-在 SE 5 的 java.util.concurrent 类库中还有额外的显式 Lock 和 Condition 对象。使用互斥并允许任务挂起的基本类 *Condition*，可以在 *Condition* 上调用 await() 来挂起一个任务，当外部条件发生变化，意味着某个任务应该继续执行时，可以通过调用 signal() 来通知这个任务，从而唤醒一个任务，或者调用 signalAll() 来唤醒所有在这个 *Condition* 上被其自身挂起的任务（与 notifyAll() 相比，signalAll() 是更安全的方式）
+*阻塞队列获取和添加元素方法*
 
-##### 死锁
+|  方法   |        正常动作         |            特殊情况下动作             |
+| :-----: | :---------------------: | :-----------------------------------: |
+|   add   |      添加一个元素       |  队列满，抛出 IllegalStateException   |
+|   put   |      添加一个元素       |            队列满，则阻塞             |
+|  offer  | 添加一个元素并返回 true |         队列满，则返回 false          |
+|  poll   |    移除并返回头元素     |           队列空，返回 null           |
+| remove  |    移除并返回头元素     | 队列空，则抛出 NoSuchElementException |
+|  take   |  移除并返回队列头元素   |            队列空，则阻塞             |
+|  peek   |    返回队列的头元素     |           队列空，返回 null           |
+| element |    返回队列的头元素     |  队列空，抛出 NoSuchElementException  |
 
-当以下四个条件同时满足时，就会发生死锁：
+*阻塞队列工具类*
 
-1. 互斥条件
-2. 至少有一个任务它必须持有一个资源且正在等待获取一个当前被别的任务持有的资源
-3. 资源不能被任务抢占，任务必须把资源释放当作普通事件
-4. 必须有循环等待，这时，一个任务等待其他任务所持有的资源，后者又在等待另一个任务所持有的资源，这样一直下去，直到有一个任务在等待第一个任务所持有的资源，使得大家都被锁住
+|           类            |                             用途                             |
+| :---------------------: | :----------------------------------------------------------: |
+|  *LinkedBlockingQueue*  |              默认容量没有上限，可以指定最大容量              |
+|  *LinkedBlockingDeque*  |                           双端队列                           |
+|  *ArrayBlockingQueue*   |                需要指定容量，可以指定是否公平                |
+| *PriorityBlockingQueue* |                   优先级队列，没有容量上限                   |
+|      *DelayQueue*       | 实现了 Delayed 接口，是个无界的 *BlockingQueue*，放置 Delayed 接口对象，只能在其到期时才能从队列中取走。这种队列是有序的（队列头的延迟到期的时间最长。如果没有任务延迟到期，那么就不会有任务头元素，并且 poll() 将返回 null，不能将 null 放回队列） |
+|  *LinkedTransferQueue*  | SE 7 增加，允许生产者线程等待，直到消费者准备就绪可以接收一个元素。如果生产者调用 q.transfer(item) 这个调用会阻塞，直到另一个线程将元素删除 |
 
 #### 并发工具包
 
@@ -314,13 +346,11 @@ SE 5 的 java.util.concurrent 引入了大量设计用来解决并发问题的�
 
 ###### *CountDownLatch*
 
-初始定义了资源总量 state = count，countDown() 不断将 state 减少 1，当 state = 0 时才能获得锁，释放完后 state 就一直为 0，所有线程调用 await() 都不会等待。*CountDownLatch* 是一次性的，用完后如果再想用只能重新创建
+同步一个或多个任务，强制它们等待由其他任务执行的一组操作完成。的典型用法是将一个程序分为 n 个互相独立的可解决任务
 
-被用来同步一个或多个任务，强制它们等待由其他任务执行的一组操作完成。可以向 *CountDownLatch* 对象设置一个初始计数值，任何在这个对象上调用 wait() 的方法都将阻塞，直至这个数值到达 0。其他任务在结束其工作时，可以在该对象调用 countDown() 来减少这个计数值。*CountDownLatch* 被设计为只触发一次，计数值不能被重置。*CyclicBarrier* 支持计数器重置。
+初始定义了资源总量 state = count，countDown() 将 state 减 1，当 state = 0 时才能获得锁，释放完后 state 就一直为 0，所有线程调用 await() 都不会等待。*CountDownLatch* 是一次性的，用完后如果再想用只能重新创建
 
-调用 countDown() 的任务在产生这个调用时并没有被阻塞，只有对 await() 的调用会被阻塞，直至计数值到达 0
-
-*CountDownLatch* 的典型用法是将一个程序分为 n 个互相独立的可解决任务，并创建值为 0 的 *CountDownLatch* 当每个任务完成时，都会在这个锁存器上调用 countDown()。等待问题被解决的任务在这个锁存器上调用 await()，将它们自己挡住，直至锁存器计数结束
+*CountDownLatch*.countDown() 调用不会阻塞，*CountDownLatch*.await() 调用会被阻塞，直至计数值到达 0。
 
 ###### *CyclicDBarrier*
 
@@ -334,13 +364,13 @@ SE 5 的 java.util.concurrent 引入了大量设计用来解决并发问题的�
 
 concurrent.locks 或 synchronized 对象锁在任何时刻都只允许一个任务访问一项资源，而『计数信号量』允许 n 个任务同时访问这个资源。
 
-ScheduledExecutor
+###### *ReadWriteLock*
 
-*ScheduledThreadPoolExecutor* 通过使用 schedule() （运行一次）或 scheduleAtFixedRate()（每隔规则的时间重复执行任务），可以将 Runnable 对象设置为将来的某个时刻执行。
+
 
 ###### *StampedLock*
 
-JDK8 新增，改进了读写锁 *ReentrantReadWriteLock*
+JDK8 新增，改进了读写锁
 
 ##### 并发数据结构
 
