@@ -38,6 +38,8 @@ UNINSTALL PLUGIN {example}
 
 #### MyISAM
 
+每个 MyISAM 表都以两个文件存储在磁盘上，以表名开头，数据文件以 `.MYD`（MYData）结尾，索引文件以 `.MYI`（MYIndex）结尾，表定义存储在 MySQL 数据字典中
+
 ##### 特性
 
 5.1 及之前的版本中，是默认的存储引擎
