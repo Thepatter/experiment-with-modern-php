@@ -226,6 +226,24 @@ repair table table_name;
 clients are using or haven't closed the table properly
 ```
 
+##### 常用操作
+
+###### 快速创建索引
+
+为了高效地载入数据到 MyISAM 表中，可以先禁用索引、载入数据，然后重新启用索引：                       
+
+```mysql
+// 禁用索引
+ALTER TABLE test.load_data DISABLE KEYS;
+// 插入数据
+// 启用索引
+ALTER TABLE test.load_data ENABLE KEYS;
+```
+
+这样构建索引的工作被延迟到数据完全载入以后，这个时候已经可以通过排序来构建索引了。这样做会快很多，并且使得索引树碎片更少，更紧凑。
+
+如果使用的是 `LOAD DATA FILE`，并且要载入的表是空的，MyISAM 也可以通过排序来构建索引，但是对唯一索引无效，因为 `DISABLE KEYS` 只对非唯一性索引有效。MyISAM 会在内存中构造唯一索引，并且为载入的每一行检查唯一性。一旦索引的大小超过了有效内存大小，载入操作就会变得越来越慢。                                                                                                                                                                               
+
 #### Archive
 
 创建 ARCHIVE 引擎表时，存储引擎会创建名称以表名开始 `.ARZ` 结尾的文件。在优化过程中可能会出现 `.ARN` 结尾文件

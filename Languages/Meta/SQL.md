@@ -250,6 +250,123 @@ ANY，ALL 关键字必须与一个比较操作符一起使用，如果不使用�
 select team_name, (select count(*) from player where player.team_id = team.team_id) as player_num from team
 ```
 
+#### 事务
+
+##### 特性
+
+* Atomicity 原子性
+
+    不可分割，事务要么全部执行，要么全部不执行
+
+* Consistency 一致性
+
+    数据库在进行事务操作后，会由原来的一致状态，变成另一种一致状态。即事务提交或回滚后，数据库完整性约束不被破坏
+
+* Isolation 隔离性
+
+    每个事务彼此独立，不受其他事务的执行影响
+
+* Durability 持久性
+
+    事务提交之后对数据的修改是持久性的，即使在系统出故障的情况下，数据修改依然有效。持久性通过事务日志来保证
+
+###### 事务隔离级别
+
+SQL-92 中定义了事务并发处理时的异常情况：
+
+*   脏读（读到其他事务还没有提交的数据）
+*   不可重复读（同一事务中对某条数据进行读取，两次读取的结果不一致，其他事务对这个数据进行更新）不可重复读是同一条记录的内容被修改了，重点在与 UPDATE 或 DELETE
+*   幻读（事务 A 根据条件查询得到了 N 条数据，同时事务 B 更改或者增加了 M 条符合事务 A 查询条件的数据，这样当事务 A 再次进行查询的时候发现会有 N + M 条数据，产生了幻读）幻读是查询某一个范围的数据行变多了或少了，重点在于 INSERT。即 SELECT 显示不存在，但 INSERT 的时候发现已存在，说明符合条件的数据行发生了变化
+
+SQL-92 标准还定义了 4 种隔离级别来解决这些异常情况
+
+|     隔离级别     | 脏读可能性 | 不可重复读可能性 | 幻读可能性 | 加锁读 |
+| :--------------: | :--------: | :--------------: | :--------: | :----: |
+| READ UNCOMMITTED |    Yes     |       Yes        |    Yes     |   No   |
+|  READ COMMITED   |     No     |       Yes        |    Yes     |   No   |
+| REPEATABLE READ  |     No     |        No        |    Yes     |   No   |
+|   SERIALIZABLE   |     No     |        No        |     No     |  Yes   |
+
+* 读未提交
+
+    允许读到未提交的数据，这种情况下查询是不会使用锁的，可能会产生脏读、不可重复读、幻读等情况
+
+* 读已提交
+
+    只能读到已提交的内容，可以避免脏读的产生，（SQL Server 和 Oracle 的默认隔离级别），但如果想要避免不可重复读或幻读，就需要在 SQL 查询的时候编写带加锁的 SQL 语句
+
+    一个事务从开始直到提交前，所做的任何修改对其他事务都是不可见的。这个级别有时候也叫做不可重复读，因为两次执行同样的查询，可能会得到不一样的结果
+
+* 可重复读
+
+    保证一个事务在相同查询条件下两次查询得到的数据结果是一致的，可以避免不可重复读和脏读，但无法避免幻读。MySQL 默认隔离级别就是可重复读
+
+* 可串行化
+
+    将事务进行串行化，即在一个队列中按照顺序执行，可串行化是最高级别的隔离等级，可以解决事务读取中所有可能出现的异常情况，但牺牲了系统的并发性
+
+```sql
+# 查看当前事务隔离级别
+SHOW VARIABLES LIKE 'transaction_isolation'
+# 设置事务隔离级别
+SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+```
+
+##### 事务执行
+
+###### 控制语句
+
+* `START TRANSACTION` 或 `BEGIN`，显式开启一个事务，在 MySQL 连续 BEGIN，当开启了第一个事务时，还没有进行 COMMIT 提交时，直接进行第二个事务的 BEGIN，这时数据库会隐式地 COMMIT 第一个事务，然后再进入到第二个事务
+
+* `COMMIT` 提交事务
+
+* `ROLLBACK` 或 `ROLLBACK TO [SAVEPOINT]`
+
+    回滚事务（撤销正在进行的所有没有提交的修改），回滚到某个保存点。ROLLBACK 是针对当前事务的
+
+* `SAVEPOINT`
+
+    在事务中创建保存点，方便后续针对保存点进行回滚，一个事务中可以存在多个保存点
+
+* `RELEASE DAVEPOINT`
+
+    删除某个保存点
+
+* `SET TRANSACTION`
+
+    设置事务的隔离级别
+
+关于事务的 ACID，在使用 COMMIT 和 ROLLBACK 来控制事务的时候，在一个事务的执行过程中可能会失败。遇到失败的时候是进行回滚，还是将事务执行过程中已经成功操作的来进行提交，这个逻辑需要开发者自决：这里开发者可以决定，如果遇到了小错误是直接忽略，提交事务，还是遇到任何错误都进行回滚。如果强行进行 COMMIT，数据库会将这个事务中成功的操作进行提交
+
+###### 显式与隐式事务
+
+隐式事务实际上就是自动提交，Oracle 默认不自动提交，需要手写 COMMIT 命令，而 MySQL 默认自动提交，可以配置 MySQL 参数
+
+```sql
+# 关闭自动提交
+mysql>set autocommit = 0;
+# 开启自动提交
+mysql>set autocommit = 1;
+```
+
+* 当 `autocommit = 0` 时，不论是否采用 `START TRANSACTION` 或 `BEGIN` 的方式来开启事务，都需要用 `COMMIT` 进行提交，让事务生效，使用 `ROLLBACK` 对事务进行回滚
+
+* 当 `autocommint = 1` 时，每条 SQL 语句都会自动进行提交。此时，需要采用 `START TRANSACTION` 或 `BEGIN` 的方式来显式地开启事务，这个事务只有在 `COMMIT` 时才会生效，在 `ROLLBACK` 时才会回滚
+
+MySQL 中的 `completion_type` 参数的作用
+
+* `completion_type = 0` or `completion_type = NO_CHAIN`
+
+    默认情况。当执行 `COMMIT` 的时候会提交事务，在执行下一个事务时，还需要使用 `START TRANSACTION` 或者 `BEGIN` 来开启。
+
+* `completion_type = 1` or  `completion_type = COMMIT AND CHAIN`
+
+    提交事务后立即开启一个链式事务，即提交事务后会开启一个相同隔离级别的事务
+
+* `completion_type = 2` or `completion_type = COMMIT AND REPLEASE`
+
+    这种情况下 `COMMIT = COMMIT AND REPLEASE`，提交后，会自动断开服务器连接
+
 #### 游标
 
 提供了一种灵活的操作方法，可以从数据结果集中每次提取一条数据记录进行操作。
