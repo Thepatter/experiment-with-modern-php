@@ -13,6 +13,7 @@
 
 * `select * from T where ID=500` 只需要搜索 `ID` 这个 `B+` 树
 * `select * from T where K=5` 要先搜索 `K` 索引树，得到主键值，再在主键索引树上索引一次，过程称为回表，基于非主键索引的查询需要多扫描一棵索引树，尽量使用主键查询
+* auto_increment 的列必须定义一个 key
 
 #### 索引维护
 

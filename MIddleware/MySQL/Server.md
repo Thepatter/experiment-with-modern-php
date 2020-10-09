@@ -280,3 +280,5 @@ SHOW [GLOBAL | SESSION] STATUS
 |                         |                                        |
 |                         |                                        |
 
+#### SQL 模式
+

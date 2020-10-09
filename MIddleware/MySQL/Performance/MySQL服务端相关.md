@@ -81,7 +81,7 @@ mysql -h$host -P$port -u$user -$pwd -e "select * from db1.t" > $target_file
 
 *kill query 成功的例子*
 
-![](/Users/zhangyaowen/notes/ServerSoftware/MySQL/Images/Performance/keyquery%E6%88%90%E5%8A%9F%E7%9A%84%E4%BE%8B%E5%AD%90.png)
+![](../Images/Performance/keyquery%E6%88%90%E5%8A%9F%E7%9A%84%E4%BE%8B%E5%AD%90.png)
 
 `session C` 执行 `key query` 以后。`session B` 几乎同时提示了语句被中断。
 
