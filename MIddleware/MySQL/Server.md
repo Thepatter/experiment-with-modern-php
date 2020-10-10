@@ -179,106 +179,159 @@ SHOW [GLOBAL | SESSION] STATUS
 
 ###### 服务器系统变量
 
-|        系统变量         |                  含义                  |
-| :---------------------: | :------------------------------------: |
-|    `Aborted_clients`    | 由于客户端未正确关闭连接而中止的连接数 |
-|   `Aborted_connects`    |   连接到 MySQL 服务器的失败尝试次数    |
-| `Binlog_cache_disk_use` |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
-|                         |                                        |
+```mysql
+# 刷新系统变量
+FLUSH STATUS;
+```
+
+###### InnoDB 相关
+
+|                系统变量                 |                             含义                             |
+| :-------------------------------------: | :----------------------------------------------------------: |
+|    `Innodb_buffer_pool_dump_status`     |                    导出 Innodb 缓冲池状态                    |
+|     `Innodb_buffer_poll_load_stat`      | Innodb 缓冲池热身状态（重启后会加载一个之前的时间节点快照）  |
+|     `Innodb_buffer_pool_bytes_data`     |               Innodb 缓冲池包含数据的字节总数                |
+|     `Innodb_buffer_pool_pages_data`     |                 Innodb 缓冲池中包含的数据页                  |
+|    `Innodb_buffer_pool_bytes_dirty`     |                Innodb 缓冲池中脏页的总字节数                 |
+|    `Innodb_buffer_pool_pages_dirty`     |                     Innodb 缓冲其脏页数                      |
+|   `Innodb_buffer_pool_pages_flushed`    |                   Innodb 缓冲池刷新页次数                    |
+|     `Innodb_buffer_pool_pages_free`     |                  Innodb 缓冲池可用的页总数                   |
+|   `Innodb_buffer_pool_pages_latched`    | Innodb 缓冲池中锁定的数据页（正在读或写的页或无法刷新和删除的页面）仅使用 UNIV_DEBUG 构建服务器才会开启 |
+|     `Innodb_buffer_pool_pages_misc`     |             Innodb 缓冲池中用于管理而分片的页数              |
+|    `Innodb_buffer_pool_pages_total`     |                    Innodb 缓冲池的总页数                     |
+|     `Innodb_buffer_pool_read_ahead`     |            Innodb 缓冲池中后台预读线程读取的页面             |
+| `Innodb_buffer_pool_read_ahead_evicted` | Innodb 缓冲池中后台预读线程读取的页面（这些页面在随后没有被查询访问的情况被换出） |
+|   `Innodb_buffer_pool_read_ahead_rnd`   | Innodb 缓冲池发起随机预读次数，当查询以随机顺序扫描表时会发生 |
+|   `Innodb_buffer_pool_read_requests`    |                Innodb 缓冲池逻辑读取请求次数                 |
+|       `Innodb_buffer_pool_reads`        |    Innodb 缓冲其不能从逻辑读取的数量，必须直接从磁盘读取     |
+|   `Innodb_buffer_pool_resize_status`    | 通过动态设置参数来动态调整 Innodb 缓冲池大小的操作状态（会记录重设大小时间） |
+|     `Innodb_buffer_pool_wait_free`      |    Innodb 读取/创建页面没有干净页面时，等待刷新脏页的次数    |
+|   `Innodb_buffer_pool_write_requests`   |                Innodb 缓冲池页写操作完成计数                 |
+|          `Innodb_data_fsyncs`           | `fsync()` 函数操作计数，`fsync()` 频率受 `innodb_flush_method` 选项影响 |
+|      `Innodb_data_pending_fsyncs`       |                 当前未决的 `fsync()` 操作数                  |
+|       `Innodb_data_pending_reads`       |                       当前未决的读操作                       |
+|      `Innodb_data_pending_writes`       |                       当前未决的写操作                       |
+|           `Innodb_data_read`            |               服务启动开始的读取数据数（字节）               |
+|           `Innodb_data_reads`           |                操作系统读取文件读取的数据总数                |
+|          `Innodb_data_writes`           |                         写的数据总数                         |
+|          `Innodb_data_written`          |                       当前写的字节总数                       |
+|      `Innodb_dblwr_pages_written`       |                    已写入双写缓冲的页面数                    |
+|          `Innodb_dblwr_writes`          |                     已执行的双写缓存数量                     |
+|      `Innodb_have_atomic_builtins`      |                指示服务器是否使用原子指令构建                |
+|           `Innodb_log_waits`            |              等待 log buffer 刷新重做日志的次数              |
+|       `Innodb_log_write_requests`       |                 写 Innodb redo log 请求次数                  |
+|           `Innodb_log_writes`           |                   物理写 redo log 文件次数                   |
+|         `Innodb_num_open_files`         |                   Innodb 当前打开文件数量                    |
+|         `Innodb_os_log_fsyncs`          |                `fsync()` 写完成 redo log 次数                |
+|      `Innodb_os_log_pending_syncs`      |              redo log 未决的 `fsync()` 操作次数              |
+|     `Innodb_os_log_pending_writes`      |                  redo log 写操作未决的次数                   |
+|         `Innodb_os_log_written`         |                redo log 写入的数量量（字节）                 |
+|           `Innodb_page_size`            |                 Innodb 页大小，默认 16 kb。                  |
+|         `Innodb_pages_created`          |                  Innodb 表操作创建的页数量                   |
+|           `Innodb_pages_read`           |                  Innodb 表操作读取的页数量                   |
+|         `Innodb_pages_written`          |                   Innodb 表操作写的页数量                    |
+|        `Inndb_redo_log_enabled`         |               redo log 是否启用，8.0.21 中引入               |
+|     `Innodb_row_lock_current_waits`     |               Innodb 表操作正在等待行锁的数量                |
+|         `Innodb_row_lock_time`          |              Innodb 表等待行锁花费的时间，毫秒               |
+|       `Innodb_row_lock_time_avg`        |               Innodb 表等待行锁花费的平均时间                |
+|       `Innodb_row_lock_time_max`        |               Innodb 表等待行锁花费的最大时间                |
+|         `Innodb_row_lock_waits`         |                  Innodb 表操作等待锁的次数                   |
+|          `Innodb_rows_deleted`          |                    Innodb 表已删除的行数                     |
+|         `Innodb_rows_inserted`          |                     Innodb 表插入的行数                      |
+|           `Innodb_rows_read`            |                      Innodb 表读的行数                       |
+|          `Innodb_rows_updated`          |                     Innodb 表更新的行数                      |
+|      `Innodb_system_rows_deleted`       |               Innodb 从系统创建的表中删除的行                |
+|      `Innodb_system_rows_inserted`      |               Innodb 从系统创建的表中插入的行                |
+|        `Innodb_system_rows_read`        |                 Innodb 从系统创建表中读的行                  |
+|    `Innodb_truncated_status_writes`     |           show innodb engine status 输出被截断次数           |
+|    `Innodb_undo_tablespaces_active`     | 活动的撤销表空间数量，包含显式（用户创建）、隐式（Innodb 创建）的撤销表空间 |
+|   `Innodb_undo_tablespaces_explicit`    |                  用户创建的撤销表空间的数量                  |
+|    `Innodb_undo_tablespace_implicit`    | Innodb 创建的撤销表空间的数量，初始会创建两个默认撤销表空间  |
+|     `Innodb_undo_tablespace_total`      |                        撤销表空间总数                        |
+
+*   所有关于 `Innodb_buffer_pool_*` 相关统计，使用了压缩表都可能不准确
+
+###### 服务端统计相关
+
+|              系统变量              |                             含义                             |
+| :--------------------------------: | :----------------------------------------------------------: |
+|         `Aborted_clients`          |            由于客户端未正确关闭连接而中止的连接数            |
+|         `Aborted_connects`         |              连接到 MySQL 服务器的失败尝试次数               |
+|      `Binlog_cache_disk_use`       |      使用临时文件存储超过 `binlog_cache_size` 的事务数       |
+|         `Binlog_cache_use`         |                     binlog 缓存的事务数                      |
+|    `Binlog_stmt_cache_disk_use`    |   使用文件存储超过 `binlog_stmt_cache_size`  非事务语句数    |
+|      `Binlog_stmt_cache_use`       |                  binlog 缓存的非事务语句数                   |
+|          `Bytes_received`          |                    接收的所有客户端字节数                    |
+|            `Bytes_sent`            |                    所有客户端发送的字节数                    |
+|             `Com_xxx`              |                         执行语句统计                         |
+|      `Connection_errors_xxx`       |                      客户端连接错误相关                      |
+|           `Connections`            |           客户端连接数（失败/成功），约等于连接 ID           |
+|     `Created_tmp_disk_tables`      |                   执行时创建磁盘临时表数量                   |
+|        `Created_tmp_files`         |                       创建的临时文件数                       |
+|       `Created_temp_tables`        |                  执行时创建的内存临时表数量                  |
+|          `Flush_commands`          |      服务器刷新表次数。`Com_flush` 统计刷新语句执行次数      |
+| `group_replication_primary_member` |              显式主节点 UUID，多主时为空，废弃               |
+|          `Handler_commit`          |                    内部 `COMMIT` 语句数量                    |
+|          `Handler_delete`          |            从表中删除行的次数（失败/成功都统计）             |
+|      `Handler_external_lock`       | 调用 `external_lock()` 时加一，通常在访问表实例开始和结束时发生。可以使用此变量发现访问分区表的语句在锁定 |
+|         `Handler_mrr_init`         |               服务器使用引擎自身多范围读表相关               |
+|         `Handler_prepare`          |                 两阶段提交操作准备阶段计数器                 |
+|        `Handler_read_first`        | 索引中第一个条目的读取次数，如果此值很高，则服务器正在执行很多全索引扫描 |
+|         `Handler_read_key`         |    基于键读取行的请求数，如果此值很高，则已为查询正确索引    |
+|        `Handler_read_last`         |                  读取索引最后一个键的次数。                  |
+|        `Handler_read_next`         |     读取顺序键的下一行次数（索引字段范围扫描，索引扫描）     |
+|        `Handler_read_prev`         |         读取顺序键的上一行次数（ORDER BY DESC 优化）         |
+|         `Handler_read_rnd`         | 基于固定位置读取行的请求数（执行很多需要对结果进行排序的查询，或扫描多表、联接未使用键） |
+|      `Handler_read_rnd_next`       | 读取数据文件下一行的请求数，如果要进行大量表扫描，则此值很高（索引使用问题） |
+|         `Handler_rollback`         |                 存储引擎执行回滚操作的请求数                 |
+|        `Handler_savepoint`         |                  存储引擎存储保存点的请求数                  |
+|    `Handler_savepoint_rollback`    |                 存储引擎回滚到保存点的请求数                 |
+|          `Handler_update`          |                       更新表中行的次数                       |
+|          `Handler_write`           |                       插入表中行的次数                       |
+|         `Last_query_cost`          | 最后查询的成本，用于比较同一查询的不同查询计划成本。会话范围，默认 0 标识未编译任何查询。8.0.16 开始支持复制查询成本统计 |
+|     `Last_query_partial_plans`     |     查询优化器在上一个查询的执行计划构建中进行的迭代次数     |
+|   `Max_execution_time_exceeded`    |                   执行超时的 SELECT 语句数                   |
+|       `Max_used_connections`       |                   启动以来的最大同时连接数                   |
+|    `Max_used_connections_time`     |                 启动以来最大同时连接数的时间                 |
+|            `Open_files`            | 打开的文件数，包含服务器打开的常规文件，不包括套接字等也不包括存储引擎内部打开文件 |
+|           `Open_streams`           |                         已打开的流数                         |
+|      `Open_table_definitions`      |                        缓存的表定义数                        |
+|           `Open_tables`            |                         打开的表数量                         |
+|           `Opened_files`           |               使用 `my_open()` 已打开的文件数                |
+|     `Opened_table_definitions`     |                       已缓存的表定义数                       |
+|          `Opened_tables`           |  已打开的表数，如果该值太大，则 `table_open_cache` 可能太小  |
+|             `Queries`              |           服务器执行的语句数，包含存储中执行的语句           |
+|            `Questions`             |      服务器执行的语句数，仅包含客户端发送给服务器的语句      |
+
+###### 复制相关
+
+|                   选项                   |                    含义                    |
+| :--------------------------------------: | :----------------------------------------: |
+|      `Rpl_semi_sync_master_clients`      |              半同步副本的数量              |
+| `Rpl_semi_sync_master_net_avg_wait_time` | 源等待副本回复的平均时间（微妙），始终为 0 |
+|   `Rpl_semi_sync_master_net_wait_time`   |      源等待副本回复的总时间，始终为 0      |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
+|                                          |                                            |
 
 #### SQL 模式
 
+服务器可以在不同的 SQL 模式
