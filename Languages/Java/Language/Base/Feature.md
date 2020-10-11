@@ -910,7 +910,13 @@ SE 8 中引入了 *java.time* 包以提供日期和时间支持，还包含 *jav
 
 ###### LocalDate
 
-用于为日期建模，不带时间，不包含时区
+用于为日期建模，不带时间，不包含时区。`LocalDate.until` 方法支持以指定时间单位到另一个日期的时间
+
+```java
+public int intvalDays(LocalDate start, LocalDate end) {
+  	return start.until(end, ChronoUnit.DAYS);
+}
+```
 
 ###### LocalDate 与 LocalTime
 
@@ -1014,4 +1020,3 @@ ZoneDateTime 类用于对带时区的日期-时间建模，是不可变，且时
 |     时区偏移量      | x：-04，xx：-0400，xxx：-4:00，XXX：与 xxx 相同，但 z 表示为 0 |
 | 本地化的时区偏移量  |                   0:GMT-4，0000:GMT-04:00                    |
 
-明年，

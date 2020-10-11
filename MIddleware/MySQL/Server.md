@@ -153,6 +153,10 @@ RESET PERSIST;
 
 ##### 常见系统变量
 
+###### 日志设置
+
+###### InnoDB 设置
+
 ###### 服务端设置
 
 *   `collation_server`
@@ -168,6 +172,44 @@ RESET PERSIST;
     指定是否从数据目录 `mysqld-auto.cnf` 加载持久配置。默认会加载
 
     命令行选项 `--persisted-globals-load[={OFF|ON}]`，全局范围，布尔值，默认 ON
+    
+*   `time_zone`
+
+    当前时区，此变量用于初始化每个连接的客户端时区，之前全局和绘画范围。默认 `SYSTEM`，启动项 `--default-time-zone` 指定。8.0.19 开始的值范围 `-14:00~14:00`，8.0.18 之前值范围 `-12:59~13:00`
+
+*   `system_time_zone`
+
+    全局范围，指示服务器系统时区，默认继承环境变量 TZ 的值。可以使用 mysqld_safe 脚本的 `--timezone` 
+
+*   `max_allowd_packet`
+
+    
+
+###### 数据操作
+
+*   `explicit_defaults_for_timestamp`
+
+    指定服务器是否为列的默认值或 NULL 值处理。布尔，启动项 `--explicit-defaults-for-timestamp[=OOF|ON]`
+
+    *   开启（默认）
+
+        如果将 `TIMESTAMP` 列定义为 `NULL` 则不会将当前时间，要定义为 `CURRENT_TIMESTAMP`，如果未使用 `NOT NULL` 而插入了 `NULL` 值，则列值为 `NULL`，而不是当前时间戳。
+
+    *   禁用
+
+        未使用 `NULL` 声明的列将自动声明 `NOT NULL`，插入 `NULL` 值将设置为当前的时间戳。8.0.22 开始将报错。
+
+        如果未使用 `NULL` 或 `DEFAULT ON UPDATE` 声明第一列，则自动将第一个 `TIMESTAMP` 列设置为 `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` 
+
+*   `max_sort_length`
+
+    整数类型，指定排序数据值时使用的字节数，服务器仅使用（`GROUP BY`、`ORDER BY`、`DISTINCT`）该值前的字节排序，而忽略其后不同的值，范围 4 ~ 8388608 默认 1024，支持会话和全局，命令行 `--max-sort-length=#`，调整时，可能需要修改 `sort_buffer_size` 值
+
+*   `sort_buffer_size`
+
+    每个必须执行排序的会话都会分配此大小的缓冲区。非特定于引擎。`SHOW GLOBAL STATUS` 的 `Sort_merge_passes` 值很大，则可以增加该值。整数，默认 262144，范围 32768 ~ 4G - 1。
+
+    Linux 上内存分配阈值为 256kb 和 2mb，超过阈值会导致内存分配变慢
 
 ##### 服务器状态
 
@@ -302,6 +344,13 @@ FLUSH STATUS;
 |          `Opened_tables`           |  已打开的表数，如果该值太大，则 `table_open_cache` 可能太小  |
 |             `Queries`              |           服务器执行的语句数，包含存储中执行的语句           |
 |            `Questions`             |      服务器执行的语句数，仅包含客户端发送给服务器的语句      |
+|        `Sort_merge_passes`         | 排序必须执行的合并次数，很多则可能需要增加 `sort_buffer_size` 值 |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
 
 ###### 复制相关
 
