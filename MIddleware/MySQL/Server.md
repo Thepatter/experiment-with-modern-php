@@ -167,23 +167,37 @@ RESET PERSIST;
 
     默认数据库使用的排序规则，每当更改默认数据库时，服务器都会设置此变量。如果没有默认数据库，与 collation_server 一致。支持全局和会话
 
+*   `max_allowd_packet`
+
+*   `max_prepared_stmt_count`
+
+    整型，全局范围，默认 16382，范围 0~1048576(8.0.17)/4194394(8.0.18)，启动项 `--max-prepared-stmt-count=#`。限制服务器中准备好的语句总数。如果将此值设置为低于准备好的语句的当前数目，则现有语句不会收到影响，且可以使用，但直到当前数目降至限制以下才可以准备新语句。为 0，则禁用准备语句
+
+*   `long_query_time`
+
+    整型，全局、会话范围，如果查询时间超过该值（秒），默认 10，服务器将增加 `Slow_queries` 状态。如果启用了慢查询日志，则查询将记录到慢查询日志文件中。此值是实时测量，不是 CPU 时间。可以将值指定为微秒。不建议将此值设置小于一秒。
+
 *   `persisted_globals_load`
 
     指定是否从数据目录 `mysqld-auto.cnf` 加载持久配置。默认会加载
 
     命令行选项 `--persisted-globals-load[={OFF|ON}]`，全局范围，布尔值，默认 ON
     
-*   `time_zone`
-
-    当前时区，此变量用于初始化每个连接的客户端时区，之前全局和绘画范围。默认 `SYSTEM`，启动项 `--default-time-zone` 指定。8.0.19 开始的值范围 `-14:00~14:00`，8.0.18 之前值范围 `-12:59~13:00`
-
 *   `system_time_zone`
 
-    全局范围，指示服务器系统时区，默认继承环境变量 TZ 的值。可以使用 mysqld_safe 脚本的 `--timezone` 
+    全局范围，指示服务器系统时区，默认继承环境变量 TZ，可以使用 mysqld_safe 脚本的 `--timezone` 
 
-*   `max_allowd_packet`
+*   `slow_launch_time`
 
+    整型，全局，命令行选项 `--slow-launch-time=#`，默认 2，如果创建线程花费的时间超过该值（秒），服务器将增加 `Slow_launch_threads` 状态变量。
+
+*   `time_zone`
+
+    当前时区，此变量用于初始化每个连接的客户端时区，全局和会话范围。默认 `SYSTEM`，启动项 `--default-time-zone` 指定。8.0.19 开始的值范围 `-14:00~14:00`，8.0.18 之前值范围 `-12:59~13:00`
     
+*   `table_open_cache`
+
+    整型，全局范围，默认 4000，范围 1 ~ 524288。指示所有线程的打开表数。增大将增加 mysqld 所需的文件描述符数量。可以通过检查 `Opened_tables` 状态变量来检查是否需要增加表缓存。如果 `Opened_tables` 很大，且不 `FLUSH TABLE`（强制关闭并重新打开所有表），则应增加该值
 
 ###### 数据操作
 
@@ -342,9 +356,23 @@ FLUSH STATUS;
 |           `Opened_files`           |               使用 `my_open()` 已打开的文件数                |
 |     `Opened_table_definitions`     |                       已缓存的表定义数                       |
 |          `Opened_tables`           |  已打开的表数，如果该值太大，则 `table_open_cache` 可能太小  |
+|       `Prepared_stmt_count`        |   当前准备好的语句数（最大数由 `max_prepared_stmt_count`）   |
 |             `Queries`              |           服务器执行的语句数，包含存储中执行的语句           |
 |            `Questions`             |      服务器执行的语句数，仅包含客户端发送给服务器的语句      |
+|         `Select_full_join`         | 由于不使用索引而执行表扫描的联接数，如果该值不为 0，应检查表索引 |
+|        `Select_range_check`        |   连接使用键后，检查键后的每行。如果不是 0，应该检查表索引   |
+|           `Select_scan`            |                   完全扫描第一个表的联接数                   |
+|       `Slow_launch_threads`        |           线程创建超过 `slow_launch_time` 时间数量           |
+|           `Slow_queries`           | 查询耗时超过 `long_query_time` 的次数。无法是否启用慢查询日志，此值都会增加 |
 |        `Sort_merge_passes`         | 排序必须执行的合并次数，很多则可能需要增加 `sort_buffer_size` 值 |
+|            `Sort_range`            |                    使用范围完成的排序数量                    |
+|            `Sort_rows`             |                          排序的行数                          |
+|            `Sort_scan`             |                    通过扫描表完成的排序数                    |
+|      `Table_locks_immediate`       |                  可以立即授予表锁的请求次数                  |
+|        `Table_locks_waited`        | 无法立即授予表锁并需要等待的次数，如果很高，可能有性能问题，应优化查询，拆分多表查询 |
+|      `Table_open_cache_hits`       |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
 |                                    |                                                              |
 |                                    |                                                              |
 |                                    |                                                              |
@@ -354,32 +382,34 @@ FLUSH STATUS;
 
 ###### 复制相关
 
-|                   选项                   |                    含义                    |
-| :--------------------------------------: | :----------------------------------------: |
-|      `Rpl_semi_sync_master_clients`      |              半同步副本的数量              |
-| `Rpl_semi_sync_master_net_avg_wait_time` | 源等待副本回复的平均时间（微妙），始终为 0 |
-|   `Rpl_semi_sync_master_net_wait_time`   |      源等待副本回复的总时间，始终为 0      |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
-|                                          |                                            |
+*   `Rpl` 开头变量，需要安装了源端半同步复制插件时可可用	
+
+|                     选项                     |                             含义                             |
+| :------------------------------------------: | :----------------------------------------------------------: |
+|        `Rpl_semi_sync_master_clients`        |                       半同步副本的数量                       |
+|   `Rpl_semi_sync_master_net_avg_wait_time`   |          源等待副本回复的平均时间（微秒），始终为 0          |
+|     `Rpl_semi_sync_master_net_wait_time`     |           源等待副本回复的总时间（微秒），始终为 0           |
+|       `Rpl_semi_sync_master_net_waits`       |                   源等待副本回复的总次数，                   |
+|       `Rpl_semi_sync_master_no_times`        |                    源关闭半同步复制的次数                    |
+|         `Rpl_semi_sync_master_no_tx`         |                    副本未成功确认的提交数                    |
+|        `Rpl_semi_sync_master_status`         | 半同步复制当前是否可作为源运行，ON 为已启用并已发生提交确认。OFF 未启用插件或源因提交确认超时已回到异步复制 |
+|   `Rpl_semi_sync_master_timefunc_failures`   |                    源调用时机函数失败次数                    |
+|   `Rpl_semi_sync_master_tx_avg_wait_time`    |           源等待每个事务的平均时间（以微秒为单位）           |
+|     `Rpl_semi_sync_master_tx_wait_time`      |                  源等待事务的总时间（微秒）                  |
+|       `Rpl_semi_sync_master_tx_waits`        |                      源等待事务的总次数                      |
+| `Rpl_semi_sync_master_wait_pos_backtraverse` | 源等待事件的二进制坐标比以前等待的事件低的总次数。当事务开始等待答复的顺序与写入其二进制日志事件的顺序不同时，可能发生此情况 |
+|     `Rpl_semi_sync_master_wait_sessions`     |                   当前等待副本回复的会话数                   |
+|        `Rpl_semi_sync_master_yes_tx`         |                     副本成功确认的提交数                     |
+|         `Rpl_semi_sync_slave_status`         | 半同步复制当前是否可以副本运行。ON 为已启用且复制 I/O 线程正运行。OFF 否 |
+|           `Slave_open_temp_tables`           | 复制 SQL 线程当前已打开的临时表数，如果该值大于零，则关闭副本是不安全的 |
+|                                              |                                                              |
+|                                              |                                                              |
+|                                              |                                                              |
+|                                              |                                                              |
+|                                              |                                                              |
+|                                              |                                                              |
+|                                              |                                                              |
+|                                              |                                                              |
 
 #### SQL 模式
 
