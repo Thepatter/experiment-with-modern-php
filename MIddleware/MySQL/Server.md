@@ -155,6 +155,16 @@ RESET PERSIST;
 
 ###### 日志设置
 
+*   `binlog_row_value_options`
+
+    支持动态设置，命令行选项 `--binlog-row-value-options=#`，全局和会话范围、字符串，默认空串、有效值为 `PARTIAL_JSON`，此时将以节省空间的二进制日志格式仅修改 JSON 文档的部分更新。将导致基于行的复制仅将 JSON 文档修改后的部分写入 after-image，而不是完整文档。如果修改所需的空间大于完整文档的空间，或者服务器无法生存部分更新，则使用完整文档。
+
+    必须二进制格式为行时和该值同时设置时才生效。基于语句的复制始终仅记录 JSON 文档的修改部分。要最大限度的节省空间使用 `binlog_row_image=NOBLOB/MINIMAL` 与该选项一起使用。`binlog_row_image=FULL` 占用较多空间在于全部 JSON 文档存储在 before-image 中，部分更新仅存储在 before-image 中
+
+    如果无法将修改应用于副本上的 JSON 文档，则 MySQL 复制会产生错误。
+
+    mysqlbinlog 输出使用 base64 编码的字符串事件形式的 JSON 部分更新，指定 `--verbose` 选项会使用伪 SQL 语句将 JSON 部分更新显示为可读的 JSON
+
 ###### InnoDB 设置
 
 *   `innodb_strict_mode`
@@ -175,7 +185,27 @@ RESET PERSIST;
 
     默认数据库使用的排序规则，每当更改默认数据库时，服务器都会设置此变量。如果没有默认数据库，与 collation_server 一致。支持全局和会话
 
-*   `max_allowd_packet`
+*   `net_buffer_length`
+
+    整型、全局和会话范围（只读）动态扩展，默认 16384，范围 1024～1048576，命令选项 `--net-buffer-length=#`
+
+    每个客户端线程都与连接缓冲区和结果缓冲区关联，两者都以该值初始化，但需要时可以扩展到 `max_allowed_packet` 大小。每个 SQL 语句执行结束后，结果缓冲区缩小到该值大小
+
+    通常不应该更改此变量，如果语句超过此长度，连接缓冲区将自动扩大。
+
+*   `max_allowed_packet`
+
+    最大的数据包大小或生成/中间字符串大小；或准备语句 `mysql_stmt_send_long_data()`/C API 函数参数大小；默认 64 MB。
+
+    整型，全局会话范围，支持动态设置，命令行选项 `--max-allowed-packet=#`，范围 1024~1073741824（byte）。
+
+    包消息缓冲被初始化为 `net_buffer_length` 大小，需要时可以扩展到 `max_allowed_packet` 大小。
+
+    如果使用大的 `BLOB` 或 `TEXT` 必须增加此变量值，和其大小匹配。
+
+    通过更改此变量来更改消息缓冲区大小时，如果客户端允许，还应该在客户端更改缓冲区大小。客户端库内的默认值是 1G，但单个客户端可能会覆盖它（mysql 为 16 MB，mysqldump 为 24 MB，可以在命令行或选项文件中更改客户端值）
+
+    会话值是只读的，客户端最多可以接收与会话值一样多的字节。服务器不会向客户端发送比当前全局值更多的字节
 
 *   `max_prepared_stmt_count`
 
