@@ -157,6 +157,14 @@ RESET PERSIST;
 
 ###### InnoDB 设置
 
+*   `innodb_strict_mode`
+
+    布尔，全局会话范围，命令行选项 `--innodb-strict-mode[={OFF|ON}]`，默认 `ON`，支持动态设置。启用时，部分操作下（`CREATE TABLE`、`ALTER TABLE`、`CREATE INDEX`、`OPTIMIZE TABLE`），InnoDB 将返回错误，而不是警告。
+
+    会启用记录大小检查，此时 `INSERT` 和 `UPDATE` 不会因为记录大于所选页面而失败。
+
+    Oracle 建议在 `CREATE TABLE`，`ALTER TABLE` 和 `CREATE INDEX` 语句中使用 `ROW_FORMAT` 和 `KEY_BLOCK_SIZE` 子句时启用。禁用时，InnoDB 将忽略冲突的子句，并在消息日志中仅带有警告的情况下创建表或索引。结果表可能具有与预期不同的特征，例如在尝试创建压缩表时缺少压缩支持。启用时，此类问题会立即产生错误，并且不会创建表或索引。规则不适用通用表空间
+
 ###### 服务端设置
 
 *   `collation_server`
@@ -191,13 +199,29 @@ RESET PERSIST;
 
     整型，全局，命令行选项 `--slow-launch-time=#`，默认 2，如果创建线程花费的时间超过该值（秒），服务器将增加 `Slow_launch_threads` 状态变量。
 
-*   `time_zone`
+*   `sql_mode`
 
-    当前时区，此变量用于初始化每个连接的客户端时区，全局和会话范围。默认 `SYSTEM`，启动项 `--default-time-zone` 指定。8.0.19 开始的值范围 `-14:00~14:00`，8.0.18 之前值范围 `-12:59~13:00`
-    
+    Set 类型（`ALLOW_INVALID_DATES`、`ANSI_QUOTES`、`ERROR_FOR_DIVISION_BY_ZERO`、`HIGH_NOT_PRECEDENCE`、`IGNORE_SPACE`、`NO_AUTO_VALUE_ON_ZERO`、`NO_BACKSLASH_ESCAPES`、`NO_DIR_IN_CREATE`、`NO_ENGINE_SUBSTITUTION`、`NO_UNSIGNED_SUBTRACTION`、`NO_ZERO_DATE`、`NO_ZERO_IN_DATE`、`ONLY_FULLGROUP_BY`、`PAD_CHAR_TO_FULL_LENGTH`、`PIPES_AS_CONCAT`、`REAL_AS_FLOAT`、`STRICT_ALL_TABLES`、`STRICT_TRANS_TABLES`、`TIME_TRUNCATE_FRACTIONAL`），支持动态设置，全局和会话范围。命令行选项 `--sql-mode=name`，默认 `ONLY_FULL_GROUP_BY`、`STRICT_TRANS_TABLES`、`NO_ZERO_IN_DATE`、`NO_ZERO_DATE`、`ERROR_FOR_DIVISION_BY_ZERO`、`NO_ENGINE_SUBSTITUTION`
+
 *   `table_open_cache`
 
     整型，全局范围，默认 4000，范围 1 ~ 524288。指示所有线程的打开表数。增大将增加 mysqld 所需的文件描述符数量。可以通过检查 `Opened_tables` 状态变量来检查是否需要增加表缓存。如果 `Opened_tables` 很大，且不 `FLUSH TABLE`（强制关闭并重新打开所有表），则应增加该值
+    
+*   `thread_cache_size`
+
+    整型，全局，命令行选项 `--thread-cache-size=#`，默认 -1，范围 0 ~ 16384。指示服务器应缓存线程数。当客户端断开连接时，如果小于 `thread_cache_size`，将客户端线程放入缓存中。如果有许多新连接，应设置该值足够高，默认计算公式（8 + (max_connections / 100)）上限 100
+
+*   `thread_handling`
+
+    枚举（`no-threads`（服务器使用一个线程处理一个连接）、`one-thread-per-connection`（默认，服务器使用一个线程处理每个客户端连接）、`loaded-dynamically`（由线程池插件在初始化时设置）），全局范围，无法动态设置。指示服务器用于连接线程的线程处理模型。
+
+*   `thread_stack`
+
+    整型，全局范围，无法动态设置，命令行选项 `--thread-stack=#`，默认值（64 位：286720，32 位：221184），范围：131072 ~ double.max（64）/int.max(32)。块大小 1024。指示每个线程的堆栈大小。默认即可正常运行，如果线程堆栈太小，会限制服务器可以处理 SQL 的复杂性、存储过程的递归深度和其他消耗内存的操作
+
+*   `time_zone`
+
+    当前时区，此变量用于初始化每个连接的客户端时区，全局和会话范围。默认 `SYSTEM`，启动项 `--default-time-zone` 指定。8.0.19 开始的值范围 `-14:00~14:00`，8.0.18 之前值范围 `-12:59~13:00`
 
 ###### 数据操作
 
@@ -370,15 +394,15 @@ FLUSH STATUS;
 |            `Sort_scan`             |                    通过扫描表完成的排序数                    |
 |      `Table_locks_immediate`       |                  可以立即授予表锁的请求次数                  |
 |        `Table_locks_waited`        | 无法立即授予表锁并需要等待的次数，如果很高，可能有性能问题，应优化查询，拆分多表查询 |
-|      `Table_open_cache_hits`       |                                                              |
-|                                    |                                                              |
-|                                    |                                                              |
-|                                    |                                                              |
-|                                    |                                                              |
-|                                    |                                                              |
-|                                    |                                                              |
-|                                    |                                                              |
-|                                    |                                                              |
+|      `Table_open_cache_hits`       |                     打开表的缓存命中查找                     |
+|     `Table_open_cache_misses`      |                    打开表的缓存未命中查找                    |
+|    `Table_open_cache_overflows`    | 打开表缓存的溢出次数。打开或关闭表后，高速缓存实例具有未使用的条目且实例的大小大于 `table_open_cache`/`table_open_cache_instances` 的次数 |
+|          `Threads_cached`          |                      线程缓存中的线程数                      |
+|        `Threads_connected`         |                       当前打开的连接数                       |
+|         `Threads_created`          | 创建用于处理连接的线程数。如果该值较大，可能需要增加 `thread_cache_size` 值 |
+|         `Threads_running`          |                        未休眠的线程数                        |
+|              `Uptime`              |                       服务器启动的秒数                       |
+|    `Uptime_since_flush_status`     |                上次 `FLUSH STATUS` 以来的秒数                |
 
 ###### 复制相关
 
@@ -413,4 +437,253 @@ FLUSH STATUS;
 
 #### SQL 模式
 
-服务器可以在不同的 SQL 模式
+MySQL 可以在不同的 SQL 模式下运行，并且可以针对不同的 clients 应用这些模式，具体取决于 `sql_mode` 系统变量。模式会影响 MySQL 支持的 SQL 语法以及它执行的数据验证检查。每种模式都可以独立开启和关闭。使用 `InnoDB` 表时，还要考虑 `innodb_strict_mode` ，5.7.6 以后该值默认开启
+
+SQL 模式可以在运行中设置，支持会话与全局设置，复制分区表时，master 和 slave 上的不同 SQL 模式也会导致问题。为了获得最佳结果，应始终在 master 和 slave 上使用相同的服务器 SQL 模式
+
+##### 全部模式
+
+###### `ALLOW_INVALIDDATES`
+
+不对日期进行全面检查。仅检查月份是否在 1 ～ 12 、日期是否在 1～31 内。适用于`date` 和 `datetime` ，不适用于 `timestamp` （它总是需要有效的日期）。禁用时：服务器要求月和日值合法，而不仅仅在在 1~12，1～31 的范围内。
+
+禁用严格模式后，`2001-04-31` 等无效日期将转换为 `0000-00-00` 并生成警告。启用严格模式后，无效日期会生成错误
+
+###### `ANSI_QUOTES`
+
+将 `"` 作为标识符（与 ` 类似），启用后，不能使用双引号引用字符串
+
+###### `ERROR_FOR_DIVISION_BY_ZERO`
+
+对于除 0 的处理，包括 `MOD(N, 0)` 和数据更改（`INSERT`、`UPDATE`）操作，其效果取决于是否启用了严格的 SQL 模式。
+
+*   未启用严格模式
+
+    未启用该模式，除 0 将插入 `NULL` 并且不产生警告；启用此模式，则除 0 会插入 `NULL` 并产生警告。
+
+*   启用严格模式
+
+    启用该模式，则除非另外指定 `IGNORE`，否则除 0 会产生错误，对于 `INSERT IGNORE` ，`UPDATE IGNORE`，除 0 将插入 `NULL`，并产生警告。
+
+对于 `SELECT` ，除 0 将返回 `NULL`。启用该模式会产生警告，无论是否启用严格模式
+
+该模式已过时，不是严格模式的一部分，但应该于严格模式结合使用，并且默认情况下处于启用状态。如果在未启用严格模式下启用该模式，则会产生警告。如果启用该模式但未启用严格模式，也会产生警告
+
+###### `HIGH_NOT_PRECEDENCE`
+
+`NOT` 运算法的优先级`NOT a BETWEEN b AND c` 等表达式被解析为 `NOT (a BETWEEN b AND C)`。在某些旧版本中被解析为 `(NOT a) BETWEEN b AND c`。启用该模式，可以获得旧的解析行为。
+
+```mysql
+SET sql_mode = '';
+SELECT NOT 1 BETWEEN -5 AND 5; # 返回 0
+SET sql_mode = 'HIGH_NOT_PERCEDENCE';
+SELECT NOT 1 BETWEEN -5 AND 5; # 返回 1
+```
+
+###### `IGNORE_SPACE`
+
+允许函数和 `(` 之间的空格，这会使函数名被视为保留字（只适用于内置函数名）
+
+###### `NO_AUTOVALUE_ON_ZERO`
+
+会影响 `AUTO_INCREMENT` 列的处理，通常可以指定 `null` 或 0 来生成下一个自增值。启用该模式，则传入 0 值时不会生成自增值
+
+###### `NO_AUTO_CREATE_USER`
+
+除非指定了身份验证信息，否则防止 `GRANT` 语句自动创建用户。该语句必须使用 `IDENTIFIED BY` 指定非空秘密或使用 `INENTIFIED WITH` 指定身份验证插件，未来会移除
+
+###### `NO_BACKSLASH_ESCAPES`
+
+禁止在字符串和标识符中使用 `\` 作为转义字符。启用此模式后，反斜杠就像其他任何一个普通字符一样
+
+###### `NO_DIR_IN_CREATE`
+
+当创建表时，忽略所有 `INDEX DIRECTORY` 和 `DATA DIRECTORY` 指令。此选项在从属服务器上很有用
+
+###### `NO_ENGINE_SUBSTITUTION`
+
+当诸如 `CREATE TABLE` 或 `ALTER TABLE` 之类的语句指定禁用或未编译的存储引擎时，控制是否使用默认存储引擎自动替换。
+
+禁用对于创建表将使用默认引擎，如果所需的引擎不可用，会警告，对于修改表，发生警告，并且不更改表。启用该模式，如果所需引擎不可用，不会修改或创建表，会报错
+
+###### `NO_FIELD_OPTIONS`
+
+不在 `SHOW CREATE TABLE` 的输出中打印特定于 MySQL 的列选项。`mysqldump`在可移植模式下使用此模式，5.7.22 开始，不推荐使用，未来会移除
+
+###### `NO_KEY_OPTIONS`
+
+不在 `SHOW CREATE TABLE` 的输出中打印 MySQL 特定的索引选项。`mysqldump` 在可移植模式下使用此模式。5.7.22 开始，不推荐使用，未来会移除
+
+###### `NO_TABLE_OPTIONS`
+
+不在 `show create table` 的输出中打印特定 MySQL 选项，5.7.22 开始，不推荐使用，未来会移除
+
+###### `NO_UNSIGNED_SUBTRACTION`
+
+默认情况下，无符号整数值之间的减法会产生无符号结果。如果结果为负，则将导致错误。如果启用了该模式，则结果为负。如果将此类操作的结果用于更新 `UNSIGNED` 整数列，则结果将被裁剪为该列类型的最大值，如果启用该模式，则将其裁剪为 0。启用严格模式后，将发生错误，并且列保持不变。
+
+###### `NO_ZERO_DATE`
+
+是否允许将 `0000-00-00` 作为有效日期。其效果取决于是否启用了严格模式
+
+*   未启用严格模式
+
+    未启用该模式，`0000-00-00` 允许插入不会产生警告。启用该模式 `0000-00-00` 则允许插入会产生警告。
+
+*   如果启用此模式和严格模式，则不允许 `0000-00-00` 插入且会产生错误。除非指定 `IGNORE`，对于 `INSERT IGNORE` 和 `UPDATE IGNORE`，`0000-00-00` 允许插入并产生警告
+
+不推荐使用，`NO_ZERO_DATE` 不是严格模式的一部分，但应与严格模式结合使用，并且默认情况下处于启用状态。如果未启用严格模式启用了该模式则会产生警告，反之亦然。
+
+###### `NO_ZERO_IN_DATE`
+
+影响服务器是否允许年份部分非零，但月份和日期部分为 0（`2010-00-01`，`2019-01-00`）但不影响 `0000-00-00`
+
+*   未启用严格模式
+
+    未启用该模式，则允许零部分的日期，插入不会产生警告。启用此模式，则将零部分日期插入为 `0000-00-00` 并产生警告。
+
+*   启用严格模式
+
+    如果启用了此模式除非同时指定 `IGNORE`，否则不允许插入，且会报错。对于 `INSERT IGNORE` 和 `UPDATE IGNORE`，将零部分的日期作为 `0000-00-00` 插入并产生警告
+
+###### `ONLY_FULL_GROUP_BY`
+
+对于使用 `GROUP BY` 进行查询的 SQL，不允许 `SELECT` 部分出现 `GROUP BY` 中未出现的字段即 `SELECT` 查询的字段必须是 `GROUP BY` 中出现的或者使用聚合函数的或者是具有唯一属性的。不论是否启用该模式，`HAVING` 子句都可以引用别名
+
+###### `PAD_CHAR_TO_FULL_LENGTH`
+
+默认情况下，在检索时从 `CHAR` 列值修剪尾部空格。启用该模式则不会修剪。并且检索的 `CHAR` 值将填充到其全长。此模式不适用于 `VARCHAR` 列，在检索时保留尾部空格，8.0.13 开始弃用
+
+###### `PIPES_AS_CONCAT`
+
+将 `||` 视为连接操作符与 `CONCAT` 相同，而不是或的同义词
+
+###### `REAL_AS_FLOAT`
+
+将 `REAL` 作为 `FLOAT` 代名词，默认情况下，`REAL` 作为 `DOUBLE` 代名词
+
+###### `STRICT_ALL_TABLES`
+
+为所有存储引擎启用严格的 SQL 模式，无效的数据值将被拒绝。
+
+###### `STRICT_TRANS_TABLES`
+
+为事务性存储引擎以及可能的情况下为非事务性存储引擎启用严格的 SQL 模式。如果不能按照给定值插入事务表中，则中止该语句。对于非事务表，如果该值出现在单行语句或多行语句第一行中，则中止该语句
+
+###### `TIME_TRUNCATE_FRACTIONAL`
+
+控制是否舍入或截断插入时 `TIME`，`DATE`，`TIMESTAMP` 的超过声明允许的小数部分，默认舍入，启用此模式截断
+
+##### 组合 SQL 模式
+
+提供以下特殊模式作为模式值组合的简写
+
+###### `ANSI`
+
+相当于 `REAL_AS_FLOAT`，`PIPES_AS_CONCAT`，`ANSI_QUOTES`，`IGNORE_SPACE`，`ONLY_FULL_GROUP_BY`。还会导致无法将具有外部引用的聚合函数集合到已解决外部引用的外部查询中
+
+```mysql
+# max(t1.b) 不能再外部查询中聚合，因为它出现再 where 查询子句中此时返回错误
+SELECT * FROM t1 WHERE t1.a IN (SELECT MAX(t1.b) FROM t2 WHERE ...);
+```
+
+###### `TRADITIONAL`
+
+相当于 `STRICT_TRANS_TABLES`，`STRICT_ALL_TABLES`，`NO_ZERO_IN_DATE`，`NO_ZERO_DATE`，`ERROR_FOR_DIVISION_BY_ZERO`，`NO_ENGINE_SUBSTITUTION`
+
+##### 严格 SQL 模式行为
+
+###### 严格 SQL 模式
+
+严格模式即单独或同时启用 `STRICT_TRANS_TABLES` 或 `STRICT_ALL_TABLES` 模式
+
+严格模式控制 MySQL 如何处理数据更改语句（`INSERT` 或 `UPDATE`）中的无效或缺失值，还会影响 DDL 语句。如果严格模式未启用，则 MySQL 会为无效或缺失的值插入调整后的值并产生警告。在严格模式下，可以通过 `INSERT IGNORE` 和 `UPDATE IGNORE` 来达到此效果。对于 `SELECT` 不更改数据的语句，无效值会在严格模式下生成警告，而不是错误。严格模式不影响是否检查外键约束（`foreign_key_cheks`）。如果试图创建超过最大长度的索引，严格模式会产生错误。未启用严格模式会导致警告把索引截断为最支持长度
+
+`STRICT_ALL_TABLES` 和 `STRICT_TRANS_TABLES` 区别：
+
+* 事务表
+
+    启用 `STRICT_ALL_TABLES` 时，数据更改语句中的无效值和缺失值会发生错误，该语句被中止并回滚
+
+* 非事务表
+
+    如果在要插入或更新的第一行中出现错误，语句中止且表保持不变。如果该语句插入或修改了多行，且错误值出现在第二行或更高行中，则结果取决于启用了那种严格模式：
+
+    *   `STRICT_ALL_TABLES`
+
+        MySQL 返回错误，并忽略其余行，由于已插入或更新了较早的行，因此结果是部分更新的。为了避免这种情况，请使用单行语句，该语句可以在不更改表的情况下中止；
+
+    *   `STRICT_TRANS_TABLES`
+
+        MySQL 将无效值转换为该列的最接近的有效值，并插入调整后的值。如果缺少值，MySQL 将为列数据类型插入隐式默认值。无论哪种情况，MySQL 都会生成警告而不是错误，并继续处理该语句
+
+严格模式会影响除零（`MOD(N,0)`）的处理，对于数据更改操作：如果未启用严格模式，则除以零将插入 NULL 并且不产生警告；如果启用了严格模式，则除非 `IGNORE` 同样给出，否则除零会产生错误。对于 `INSERT IGNORE` 和 `UPDATE IGNORE`，除零将插入 NULL 并产生警告；对于 select 除零返回 null。启用严格模式也会引起警告
+
+如果未启用严格模式，`0000-00-00` 则允许插入不会产生任何警告，启用严格模式，不允许插入且会报错，除非指定 `IGNORE` 关键字，将 `0000-00-00` 插入并产生警告；
+
+对于月份和日期部分为 0 的日期，如果未启用严格模式，则允许零部分的日期，并且插入不会产生任何警告。如果启用了严格模式，则除非 `IGNORE` 同时指定，否则不允许使用，插入会产生错误，对于 `INSERT IGNORE` 和 `UPDATE IGNORE`，将作为 `0000-00-00` 插入，并产生警告
+
+严格模式适用于以下语句：`ALTER TABLE`、`CREATE TABLE`、`CREATE TABLE...SELECT`、`DELETE`、`INSERT`、`LOAD DATA`、`LOAD XML`、`SELECT SLEEP()`、`UPDATE`。在存储中，如果在严格模式生效时定义了程序，则以上语句将在严格模式下指向。严格模式适用于以下错误
+
+```
+ER_BAD_NULL_ERROR
+ER_CUT_VALUE_GROUP_CONCAT
+ER_DATA_TOO_LONG
+ER_DATETIME_FUNCTION_OVERFLOW
+ER_DIVISION_BY_ZERO
+ER_INVALID_ARGUMENT_FOR_LOGARITHM
+ER_NO_DEFAULT_FOR_FIELD
+ER_NO_DEFAULT_FOR_VIEW_FIELD
+ER_TOO_LONG_KEY
+ER_TRUNCATED_WRONG_VALUE
+ER_TRUNCATED_WRONG_VALUE_FOR_FIELD
+ER_WARN_DATA_OUT_OF_RANGE
+ER_WARN_NULL_TO_NOTNULL
+ER_WARN_TOO_FEW_RECORDS
+ER_WRONG_ARGUMENTS
+ER_WRONG_VALUE_FOR_TYPE
+WARN_DATA_TRUNCATED
+```
+
+###### IGNORE 关键字
+
+当 `IGNORE` 关键字和严格模式都有效时，`IGNORE` 优先。对于多行语句，`IGNORE` 使该语句跳至下一行而不是中止（对于不可忽略的错误，忽略 `IGNORE` 关键字，报错）。`IGNORE` 关键字忽略以下错误
+
+```
+ER_BAD_NULL_ERROR
+ER_DUP_ENTRY
+ER_DUP_ENTRY_WITH_KEY_NAME
+ER_DUP_KEY
+ER_NO_PARTITION_FOR_GIVEN_VALUE
+ER_NO_PARTITION_FOR_GIVEN_VALUE_SILENT
+ER_NO_REFERENCED_ROW_2
+ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+ER_ROW_IS_REFERENCED_2
+ER_SUBQUERY_NO_1_ROW
+ER_VIEW_CHECK_FAILED
+```
+
+`IGNORE` 关键字对以下语句生效
+
+*   `CREATE TABLE...SELECT: IGNORE`
+
+    `IGNORE` 关键字不适用 `CREATE TABLE` 和 `SELECT` 部分，但适用于插入表中的 SELECT 值，与唯一键值上现有行重复的行将被丢弃
+
+*   `DELETE`
+
+    删除行过程中忽略错误
+
+*   `INSERT`
+
+    将删除再唯一键值上重复的现有行。或将错误数值修改为最接近的有效值。对于没有找到与给定值匹配的分区的分区表，IGNORE 对于包含不匹配值的行，会静默失败
+
+*   `LOAD DATA`、`LOAD XML`
+
+    重复的唯一键上的值都会丢弃
+
+*   `UPDATE`
+
+    不会更新在唯一键值上发生重复键冲突的行。错误的值会修改为最接近的有效值
+
+
+
