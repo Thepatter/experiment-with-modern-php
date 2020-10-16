@@ -182,6 +182,28 @@ RESET PERSIST;
     如果无法将修改应用于副本上的 JSON 文档，则 MySQL 复制会产生错误。
 
     mysqlbinlog 输出使用 base64 编码的字符串事件形式的 JSON 部分更新，指定 `--verbose` 选项会使用伪 SQL 语句将 JSON 部分更新显示为可读的 JSON
+    
+*   `general_log`
+
+    布尔，默认 OFF，全局范围，动态设置，命令行选项 `--general-log[={OFF|ON}` 是否启用一般查询日志，如果 `log_output=NONE`，即使启用了日志，也不会写入任何日志条目
+
+*   `general_log_file`
+
+    文件名，默认 `host_name.log` 全局范围，动态设置，命令行选项 `--general-log-file=file_name`。指定常规查询日志文件名称
+
+*   `log_output`
+
+    集合类型（TABLE（记录到 `mysql.general_log` 和 `mysql.slow.log`）、FILE（由 `general_log_file` 和 `slow_query_log_file` 指定）、NONE（不记录日志，同时存在时优先））默认 FILE，支持动态设置，全局范围，命令行选项 `--log-output=name`。指定（general.log 和 slow.log）输出目的地，此变量仅指定输出目标，不会启动日志
+
+*   `long_query_time`
+
+    整型，默认 10（秒），全局会话范围，动态设置，命令行选项 `--long-query-time=#`。如果查询超过该值，则增加 `Slow_queries` 值，如果启用了慢查询日志，则将查询记录到慢查询日志。
+
+*   `slow_query_log`
+
+    布尔，默认 OFF，全局范围，动态设置，命令行选项 `--slow-query-log[={OFF|ON}]` 指定是否启用慢查询日志。如果 `log_output=NONE`，即使启用了日志，也不会写入任何日志条目。由 `long_query_time` 指定记录阈值
+
+*   `slow_query_log_file`
 
 ###### InnoDB 设置
 
@@ -285,9 +307,11 @@ RESET PERSIST;
 
     整型，全局范围，默认 16382，范围 0~1048576(8.0.17)/4194394(8.0.18)，启动项 `--max-prepared-stmt-count=#`。限制服务器中准备好的语句总数。如果将此值设置为低于准备好的语句的当前数目，则现有语句不会收到影响，且可以使用，但直到当前数目降至限制以下才可以准备新语句。为 0，则禁用准备语句
 
-*   `long_query_time`
+*   `open_files_limit`
 
-    整型，全局、会话范围，如果查询时间超过该值（秒），默认 10，服务器将增加 `Slow_queries` 状态。如果启用了慢查询日志，则查询将记录到慢查询日志文件中。此值是实时测量，不是 CPU 时间。可以将值指定为微秒。不建议将此值设置小于一秒。
+    整型，默认 5000，范围 0 ~ 平台限制，全局访问，不支持动态设置，命令行选项 `--open-files-limit=#`，指定 mysqld 可从服务器获取的文件描述符数量。启动时 mysqld 会申请保留该值指定的描述符，运行时该值表示操作系统允许 mysqld 使用的的文件描述符数量。
+
+    在 Linux 上不能设置为大于 `ulimit -n` 的值。有效的值基于启动时指定的值（如果无法获取会报 `Too many open files` 错误）
 
 *   `persisted_globals_load`
 
@@ -311,6 +335,12 @@ RESET PERSIST;
 
     整型，全局范围，默认 4000，范围 1 ~ 524288。指示所有线程的打开表数。增大将增加 mysqld 所需的文件描述符数量。可以通过检查 `Opened_tables` 状态变量来检查是否需要增加表缓存。如果 `Opened_tables` 很大，且不 `FLUSH TABLE`（强制关闭并重新打开所有表），则应增加该值
     
+*   `table_open_cache_instances`
+
+    整型，默认 16，范围 1~64，全局范围，支持动态，命令行选项 `--table-open-cache-instances=#`。打开表缓存实例的数量。打开的表缓存会划分为 `table_open_cache/table_open_cache_instances`，会话只需要锁定一个实例即可访问获取 DML 语句（DDL 语句仍然需要锁定整个缓存），在多会话访问表时可以提高性能
+
+    在 16 核心及以上建议将值设置为 8 或 16
+
 *   `thread_cache_size`
 
     整型，全局，命令行选项 `--thread-cache-size=#`，默认 -1，范围 0 ~ 16384。指示服务器应缓存线程数。当客户端断开连接时，如果小于 `thread_cache_size`，将客户端线程放入缓存中。如果有许多新连接，应设置该值足够高，默认计算公式（8 + (max_connections / 100)）上限 100
