@@ -697,3 +697,25 @@ enum 实例定义时的次序决定了其在 EnumSet 中的顺序
 EnumMap 是一种特殊的 Map，它要求其中的键必须来自一个 enum，EnumMap 内部由数组实现，性能很高。可以使用 enum 实例在 EnumMap 中进行查找操作，只能将 enum 的实例作为键来调用 put()
 
 enum 实例定义时的次序决定了其在 EnumMap 中的顺序
+
+##### Optional
+
+为了处理 *NullPointerException*，Java 8  的 *java.util* 添加了 *Optional*，*OptionalInt*，*OptionalLong*，*OptionalDouble* 类，可以配合 Lambda 实现简洁的代码。
+
+*Optional* 是存放值的容器，该值可能为 Null，将每个可能为 null 的字段包装为 *Optional*
+
+*Optional类常用方法*
+
+|    方法    |                             说明                             |
+| :--------: | :----------------------------------------------------------: |
+|   empty    |                    返回一个空的 Optional                     |
+|   filter   | 如果存在一个值且与给的谓词匹配，返回该值的 Optional，否则返回空 Optional |
+|  flatMap   | 如果预先设置了一个值，则对该值应用指定的映射函数，并返回映射结果的 Optional，如果值不存在，返回空 Optional |
+|    get     | 如果值存在，返回该值，否则抛出 *NoSuchElementException* 异常 |
+| ifPresent  |           如果值存在，使用该值调用给定的 Consumer            |
+| isPresent  |           如果值存在，返回 true，否则，返回 false            |
+|    map     | 如果值存在，对它应用给定的映射函数；如果结果不为 null，返回一个描述结果的 Optional |
+|     of     |              返回描述给定非 null 值的 Optional               |
+| ofNullable | 如果给定值非 null，返回描述该值的 Optional；如果值为 null，返回空 Optional |
+|   orElse   |            如果值存在，返回该值；否则返回指定的值            |
+

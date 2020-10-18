@@ -622,19 +622,21 @@ javac -processor ProcessorClassName1,ProcessorClassName2... sourceFiles
 
 ###### 常用注解
 
-|       注解        |                             含义                             |           备注            |
-| :---------------: | :----------------------------------------------------------: | :-----------------------: |
-|    @Deprecated    |                声明不建议使用，方法/类上声明                 |                           |
-|     @Override     |                覆写基类或接口方法，方法上声明                |                           |
-| @SuppressWarnings |                         抑制警告信息                         |                           |
-|      @Named       |    为 Bean 设置 ID，可以替代 Spring 中的声明 Bean 的注解     | Java Dependency Injection |
-|      @Inject      | 自动装配 Bean，在方法或属性上声明 Bean 之间依赖关系，可以替代 Spring 的 @Autowired | Java Dependency Injection |
-|                   |                                                              |                           |
-|                   |                                                              |                           |
-|                   |                                                              |                           |
-|                   |                                                              |                           |
+|         注解         |                             含义                             |           备注            |
+| :------------------: | :----------------------------------------------------------: | :-----------------------: |
+|     @Deprecated      |                声明不建议使用，方法/类上声明                 |                           |
+|      @Override       |                覆写基类或接口方法，方法上声明                |                           |
+|  @SuppressWarnings   |                         抑制警告信息                         |                           |
+|        @Named        |    为 Bean 设置 ID，可以替代 Spring 中的声明 Bean 的注解     | Java Dependency Injection |
+|       @Inject        | 自动装配 Bean，在方法或属性上声明 Bean 之间依赖关系，可以替代 Spring 的 @Autowired | Java Dependency Injection |
+| @FunctionalInterface |                        标注函数式接口                        |                           |
+|                      |                                                              |                           |
+|                      |                                                              |                           |
+|                      |                                                              |                           |
 
 #### lambda
+
+Lambda 即闭包
 
 ##### lambda 表达式语法
 
@@ -674,23 +676,17 @@ Lambda 即带参数变量的表达式，由参数，箭头操作符及代码块�
 (first, second)->first.length() - second.length()
 ```
 
-###### 函数式接口
-
-对于只有一个抽象方法的接口，需要这种情况的对象时，可以提供一个 lambda 表达式。这种接口即函数式接口如：Comparator。
-
-java.util.function 包中定义了很多非常通用的函数式接口。
-
 ###### 方法引用
 
-使用 :: 操作符分隔方法名与对象或类名，可以在方法引用中使用 this 和 super 引用，使用 ::new 进行构造器引用
+可以为接受函数式对象的参数传递一个方法引用来代替 Lambda 表达式。方法引用是一个类名和对象引用，后跟双冒号运算符和方法名，可以在方法引用中使用 this 和 super 引用，使用 ::new 进行构造器引用
 
 * Object::instanceMethod
 
   方法引用等价于提供方法参数的 lambda 表达式
 
-* Class::staticMethod
+* Class::staticMethodName
 
-  方法引用等价于提供方法参数的 lambda 表达式
+  如果静态方法具有与函数式接口的抽象方法兼容的返回类型和兼容的参数类型，可以将对静态方法的引用作为参数传递给函数式接口方法
 
 * Class::instanceMethod
 
@@ -699,6 +695,48 @@ java.util.function 包中定义了很多非常通用的函数式接口。
 ###### 变量作用域
 
 Lambda 类似闭包作用域
+
+##### 函数式接口
+
+只有一个抽象方法的接口，该抽象方法不能覆盖 *java.lang.Object* 类的方法。函数式接口也称为单抽象方法接口。Lambda 表达式等价于实现函数式接口的实例。
+
+*java.util.function* 包中定义了很多非常通用的函数式接口，可以使用 @FunctionalInterface 标注函数式接口
+
+###### Function/BiFunction
+
+* Function
+
+  ```java
+  public interface Function<T, R>
+  ```
+
+  创建一个返回结果的单参数函数，是一个参数化类型，调用函数是通过调用 apply 方法完成
+
+* BiFunction
+
+  是 Function 变体，接受两个参数
+
+* IntFunction/LongFunction/DoubleFunction
+
+  Function 变体，只返回参数化的返回类型
+
+* IntToDouble/DoubleToInt
+
+  接受 Int 返回 double，直接声明参数，前面为参数，后面为返回参数，没有参数化。
+
+###### Predicate
+
+参数化接口，接受一个参数并根据该参数值返回布尔值，抽象方法为 test
+
+###### Supplier
+
+参数化接口，不接受任何参数并返回一个值，抽象方法为 get
+
+###### Consumer
+
+参数化接口，不返回接口，抽象方法为 accept
+
+
 
 #### 国际化
 
