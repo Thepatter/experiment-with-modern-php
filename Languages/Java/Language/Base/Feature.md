@@ -1,16 +1,18 @@
 ### 语言特性
 
-#### Reflect
-
-##### 反射机制
+#### 反射
 
 反射机制是 Java 语言提供的一种基础功能，赋予程序在运行时自省（introspect）的能力，通过反射可以直接操作类或对象（获取某个对象的类定义，获取类声明的属性和方法，调用方法或构造对象，在运行时修改类定义）
 
-Class 类与 *java.lang.reflect* 类库（*Filed*、*Method*、*Constructor*）支撑反射，这些类型的对象是由 JVM 在运行时创建的，用以表示未知类里对应的成员，匿名对象的类信息能在运行时被完全确定下来，而在编译时不需要知道任何细节
+##### 反射机制
 
-当通过反射与一个未知类型的对象打交道时，JVM 只是简单地检查这个对象，看它属于那个特定的类，在用它做其他事情之前必须先加载那个类的 Class 对象。那个类的 `.class` 文件对于 JVM 来说必须是可获取的，要么在本地机器上，要么可以通过网络取得。对于反射机制来说，.class 文件在编译时是不可获取的，是在运行时打开和检查 .class 文件
+*java.lang.Class* 类与 *java.lang.reflect* 类库（*Filed*、*Method*、*Constructor*）支撑反射（*Class* 类提供方法获取 *Filed*/*Method*/*Constructor* 对象），这些类型的对象是由 JVM 在运行时创建的，用以表示类对应的成员，匿名对象的类信息能在运行时被完全确定下来，而在编译时不需要知道任何细节
 
-反射在 Java 中用来支持其他特性（对象序列化和 JavaBean）。*Class*，*Field*、*Method*、*Constructor* 是操作类和对象的元数据对应，反射为其提供的 `AccessibleObject.setAccessible(boolean flag)` 可以在运行时修改成员访问限制。java 9 之后，新增的模块化系统，出于强封装性的考虑，对反射访问进行了限制（只有当被反射操作的模块和指定的包对反射调用者模块 Open，才能使用 `setAccessible`，否则被认为不合法操作）如果我们的实体类是定义在模块里面，需要在模块描述符中明确声明：
+当通过反射与一个未知类型的对象打交道时，JVM 只是简单地检查这个对象，看它属于那个特定的类，在用它做其他事情之前必须先加载那个类的 Class 对象。那个类的 `.class` 文件对于 JVM 来说必须是可获取的，要么在本地机器上，要么可以通过网络取得。对于反射机制来说，.class 文件在编译时可以不获取，在运行时打开和检查 .class 文件
+
+反射在 Java 中用来支持其他特性（对象序列化和 JavaBean）。反射提供的 `AccessibleObject.setAccessible(boolean flag)` 可以在运行时修改成员访问限制（即使类中使用 private 修饰）。
+
+9 之后，新增的模块化系统，出于强封装性的考虑，对反射访问进行了限制（只有当被反射操作的模块和指定的包对反射调用者模块 Open，才能使用 `setAccessible`，否则被认为不合法操作）如果我们的实体类是定义在模块里面，需要在模块描述符中明确声明：
 
 ```java
 module MyEntities {
@@ -21,112 +23,180 @@ module MyEntities {
 
 Java 9 仍然保留了兼容 Java 8 的行为
 
-###### 动态代理
+##### 动态代理
 
-方便运行时动态构建代理、动态处理方法调用的机制，很多场景都是利用类似机制做到（包装 RPC 调用，AOP）
+*   代理
 
-代理是基本的设计模式，插入了用来代替实际的对象提供额外的或不同的操作。这些操作涉及与实际对象的通信，代理通常充当中间人角色。通过代理可以让调用者与实现者之间解耦。
+    是基本的设计模式，插入了用来代替实际的对象提供额外的或不同的操作。这些操作涉及与实际对象的通信，代理通常充当中间人角色。通过代理可以让调用者与实现者之间解耦。
 
-java 动态代理即可以动态地创建代理并动态地处理对所代理方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上（负责根据调用类型确定调用策略）
+*   动态代理
 
-* JDK 动态代理
+    可以动态的创建代理并动态地处理对所代理方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上（负责根据调用类型确定调用策略）
 
-    基于java 反射机制实现：通过调用静态方法 `Proxy.newProxyInstance()` 方法（参数为类加载器、代理实现接口列表（不是类或抽象类）、*InvocationHandler* 接口实现可以创建动态代理。动态代理可以将所有调用重定向到 *InvocationHandler* 调用处理器，因此通常会向调用处理器的构造器传递一个实际对象的引用，从而使得调用处理器在执行其中介任务时，可以将请求转发
+###### JDK 动态代理
 
-    `InvocationHandler.invoke()` 方法中传递了代理对象，在 invoke 内部，在代理上调用方法时对接口的调用将被重定向为对代理的调用
+基于反射机制实现，通过调用静态方法 `Proxy.newProxyInstance` 创建动态代理。
 
-    ```java
-    // simple dynamic proxy
-    interface Hello {
-    	void sayHello();
-    }
-    class HelloImpl implements Hello {
-    	@Override public void sayHello() { System.out.println("Hello world"); }
-    }
-    public class DynamicProxyDemo {
-        Hello hello = new HelloImpl();
-        Hello hello = (Hello) Proxy.newProxyInstance() {
+动态代理可以将所有调用重定向到 *InvocationHandler* 调用处理器，通常会向调用处理器的构造器传递一个实际对象的引用，从而使得调用处理器在执行其中介任务时，可以将请求转发
+
+`InvocationHandler.invoke()` 方法中传递了代理对象，在 invoke 内部，在代理上调用方法时对接口的调用将被重定向为对代理的调用
+
+```java
+// 接口
+public interface Hello {
+	void sayHello();
+}
+public class DynamicProxyDemo {
+    Hello dynamicHello = (Hello) Proxy.newProxyInstance(
             Hello.class.getClassLoader(),
             new Class[] { Hello.class },
-            (proxy, methid, args1) -> {
-                System.out.println("lambda invocationHandler"),
-                return method.invoke(hello, args1);
+            (proxy, method, args1) -> {
+                System.out.println("lambda invocationHandler");
+                // 对接口实现替换为 lambda
+                return method.invoke((Hello) () -> {
+                    System.out.println("lambda provider say");
+                }, args1);
             }
-        }
-    }
-    ```
+    );
+    dynamicHello.sayHello();
+}
+```
 
-    基于接口实现的局限在于：以接口为中心，相当于添加了一种对于调用者没有太大意义的限制，需要先有接口，必须要实现了接口的类才能生成代理对象，实例话的是 Proxy 对象，而不是真正的调用类型，实践中会有一定的不便和能力退化；优势在于：最小化依赖关系，开发和实现简单，JDK 本身的支持
+基于接口实现的局限在于：以接口为中心，要先定义接口，实例化的是 Proxy 对象，而不是真正的调用类型，实践中会有一定的不便和能力退化；优势在于：最小化依赖关系，开发和实现简单，JDK 本身的支持
 
-* 基于 cglib 字节码实现
+###### 基于 cglib 字节码实现
 
-    cglib 动态代理采取的是创建目标类的子类方式，因为是子类化，可以达到近似使用被调用者本身的效果。优势在于：去除接口依赖，只操作关注的类，而不必为其他相关类增加工作量，高性能。
+cglib 动态代理采取的是创建目标类的子类方式，因为是子类化，可以达到近似使用被调用者本身的效果。优势在于：去除接口依赖，只操作关注的类，而不必为其他相关类增加工作量，高性能。
 
-##### ref  库
+##### ref 库
 
 *java.lang.ref* 库包含一组类，这些类为垃圾回收提供了暗示。当垃圾回收器正在考察的对象只能通过某个 *Reference* 对象才可获得时，会使用以下类进行可达性分析
 
-reachable 是指对象可在程序中的某处找到，如果一个对象是 reachable ，垃圾回收器就不能释放它，否则垃圾回收器可将其释放
+###### 垃圾收集可达性
 
-如果想继续持有某个对象的引用，希望以后还能访问该对象，但也希望能够允许垃圾回收器释放它。此时应该使用 Referen 对象包装该对象（且不能有普通的引用指向该对象），此时可以继续使用该对象，而在内存消耗完之前又允许释放该对象。
+对象可在程序中的某处找到，如果一个对象是可达的，垃圾回收器就不能释放它，否则垃圾回收器可将其释放，对于普通对象，如果没有其他引用关系，只要超过了引用的作用域或将强引用赋值为 null，就可以被垃圾收集器收集，具体回收时机取决于垃圾收集策略）
 
-###### *SoftReference*
+*   强可达（Strongly Reachable）
 
-可以让对象豁免一些垃圾收集。只有当 JVM 认位内存不足时，才会回收软引用指向的对象，JVM 会确保在抛出 *OutOfMemoryError* 之前，清理软引用指向的对象。通常用来实现内存敏感的缓存，如果还有空闲内存，就可以暂时保留缓存，当内存不足时清理掉。
+    当一个对象可以被一个或多个线程在不通过各种引用访问到的情况（新创建一个对象，创建它的线程对它就是强可达）
 
-软引用通常会在最后一次引用后，还能保持一段时间，默认值是根据堆剩余空间计算的（以 M bytes）从 Java 1.3.1 开始，提供了
+*   软可达（Softly Reachable）
 
-```shell
-# 以毫秒为单位设置保持时间
---XX:SoftRefLRUPolicyMSPerMB=3000
+    只能通过软引用才能访问到对象的状态
+
+*   弱可达（Weakly Reachable）
+
+    只能通过弱引用访问时的状态。此时临近 finalize 状态的时机，当弱引用被清除的时候，就符合 finalize 的条件了
+
+*   幻象可达（Phantom Reachable）
+
+    已经 finalize 过了，只有幻象引用指向这个对象的时候
+
+*   不可达（unreachable）
+
+    此时对象可以被垃圾收集器回收
+
+判断对象可达性，是垃圾收集器决定如何处理对象的一部分考虑
+
+###### 引用对象
+
+所有引用类型，都是抽象类 `java.lang.ref.Reference` 的子类，除了幻象引用，如果对象还没有被销毁，都可以通过 get 方法获取原有对象并重新指向强引用，因此对于软引用、弱引用、垃圾收集器可能会存在二次确认的问题，以保证处于弱引用状态的对象，没有改变为强引用。
+
+*   强引用（Strong Reference）
+
+    普通对象引用，只要还有强引用指向一个对象，就表明对象还存活，垃圾收集器不会收集该对象。
+
+*   软引用（*SoftReference*）
+
+    可以让对象豁免一些垃圾收集。只有当 JVM 认为内存不足时，才会回收软引用指向的对象，JVM 会确保在抛出 *OutOfMemoryError* 之前，清理软引用指向的对象。
+    通常用来实现内存敏感的缓存，如果还有空闲内存，就可以暂时保留缓存，当内存不足时清理掉。
+
+    软引用通常会在最后一次引用后，还能保持一段时间，默认值是根据堆剩余空间计算的（以 M bytes）从 Java 1.3.1 开始，提供了
+
+    ```shell
+    # 以毫秒为单位设置保持时间
+    --XX:SoftRefLRUPolicyMSPerMB=3000
+    ```
+
+*   弱引用（*WeakReference*）
+
+    是为了实现规范映射（canonicalizing mappings）而设计的，不妨碍垃圾回收器回收映射的键或值，仅仅提供一种访问在弱引用状态下对象的途径。
+    可以用来维护一种非强制性的映射关系，如果试图获取时对象还在，就使用它，否则重新实例化。同样是很多缓存实现的选择
+
+*   幻象引用（*PhantomReference*）
+
+    不能通过它访问对象。通常用以调度回收前的清理工作，比 Java 终止机制更灵活。不能通过它访问对象(get 方法只返回 null)。仅仅提供了一种确保对象被 finalize 以后做某些事情的机制。通常用来做 Post-Mortem 清理机制。也可以利用幻象引用监控对象的创建和销毁
+
+###### 引用编程
+
+当使用各种引用进行编程时，在创建各种引用并关联到相应对象时，可以选择是否需要关联引用队列（*ReferenceQueue*），虚拟机会在特定时机将引用 enqueue 到队列里，可以从队列里获取引用进行后续逻辑（尤其是幻象引用，get 方法只返回 null，如果不指定引用队列，则没有意义）
+
+```java
+<T> void example(T obj) {
+    ReferenceQueue<T> referenceQueue = new ReferenceQueue<>();
+    PhantomReference<T> p = new PhantomReference<>(obj, referenceQueue);
+    obj = null;
+    System.gc();
+    try {
+    	Reference<T> reference = (Reference<T>) referenceQueue.remove();
+    	if (reference != null) {
+    		System.out.println(reference.get());
+    	}
+    } catch (InterruptedException e) {
+    	e.printStackTrace();
+    }
+}
 ```
 
-###### *WeakReference*
+9 开始可以通过底层 API 来达到强引用的效果，有时，对象本身没有强引用，但它的部分属性还在被使用，如各种异步调用
 
-是为了实现规范映射（canonicalizing mappings）而设计的，不妨碍垃圾回收器回收映射的键或值，仅仅提供一种访问在弱引用状态下对象的途径。可以用来维护一种非强制性的映射关系，如果试图获取时对象还在，就使用它，否则重新实例化。同样是很多缓存实现的选择
+```java
+class Resource {
+    private int myIndex;
+    private static ExternalResource[] externalResourceArray;
+    public Resource(int i) {
+        myIndex = i;
+        externalResourceArray[myIndex] = i;
+    }
+    public void action() {
+        try {
+            int i = myIndex;
+            Resource.update(externalResourceArray[i]);
+        } finally {
+            // finally 中明确声明对象强可达
+            Reference.reachabilityFence(this);
+        }
+    }
+    private static void update(ExternalResource exter) {
+        ext.status = ...;
+    }
+}
+new Resource().action();
+```
 
-###### *PhantomReference*
+#### 异常
 
-用以调度回收前的清理工作，比 Java 终止机制更灵活。不能通过它访问对象(get 方法只返回  null)。仅仅提供了一种确保对象被 finalize 以后做某些事情的机制。通常用来做 Post-Mortem 清理机制。也可以利用幻象引用监控对象的创建和销毁
-
-###### *ReferenceQueue*
-
-回收前的清理工作，*SoftReference* 和 *WeakReference* 可选是否放入 *ReferenceQueue*，*PhantomReference* 只能依赖于 *ReferenceQueue*
-
-JVM 会在特定时机将引用 enqueue 到队列里，可以从队列里获取引用进行后续逻辑
-
-
-
-##### 异常处理机制
-
-在程序运行过程中，如果 jvm 检测出一个不可能执行的操作，就会出现运行时错误 (runtime error)，在 java 中运行时错误会作为异常抛出，异常是一种对象，表示阻止正常进行程序执行的错误或情况，如果异常没有被处理，那么程序就会非正常终止
-
-异常从方法抛出，方法的调用者可以捕获以及处理该异常，使用 throw 语句抛出一个异常。异常对象在堆上创建
+在程序运行过程中，如果虚拟机检测出一个不可执行的操作，就会出现运行时错误 (runtime error)，运行时错误会作为异常（一种对象，表示阻止正常程序正常执行的错误或情况，异常对象在堆上创建）抛出，如果异常没有被处理，那么程序就会非正常终止。异常从方法抛出，方法的调用者可以捕获以及处理该异常，使用 throw 语句抛出一个异常。
 
 ##### 异常类型
 
-异常对象派生于 *java.lang.Throwable*，所有的异常都直接或间接继承该类，java 语言规范将派生于 *Error* 或 *RuntimeException* 的所有异常称为非受检异常，其他异常为受检异常。
+异常对象派生于 *java.lang.Throwable*，所有的异常都直接或间接继承该类。
 
-###### Error
+*   非受检异常
 
-*Error* 类层次结构描述了 java 运行时系统的内部错误和资源耗尽错误。应用程序不应该抛出这种类型的对象。如果发生，除了通知用户以及尽量稳妥的终止程序外，几乎什么都不能做
+    派生于 *Error* 或 *RuntimeException* 的所有异常
 
-###### Exception
+    *   *Error* 
 
-*Exception* 层次结构分为：
+        类层次结构描述了运行时系统的内部错误和资源耗尽错误。应用程序不应该抛出这种类型的对象。如果发生，除了通知用户以及尽量稳妥的终止程序外，几乎什么都不能做
 
-* *RuntimeException*
+    *   *RuntimeException*
 
-  由程序错误导致的异常，会自动被虚拟机抛出，如果 RuntimeException 没有被捕获而直到 main()，在程序退出前将调用 printStackTrace()。编译器无法捕获 Java 代码可能抛出的 *RuntimeException*，该异常发生在程序运行时
+        由程序错误导致的异常，会自动被虚拟机抛出，如果没有被捕获而直到 main()，在程序退出前将调用 printStackTrace()。该异常发生在运行时，代表编程错误，编译器无法捕获该异常及其子异常其他类型异常的处理都是由编译器强制实施的
 
-  只能在代码中忽略 *RuntimeException* 及其子类异常，其他类型异常的处理都是由编译器强制实施的，*RuntimeException* 代表编程错误：
+*   受检异常
 
-  1. 无法预料的错误，从控制范围之外传递进来的 null 引用
-  2. 应该在代码中进行检查的错误（如 *ArrayIndexOutofBoundsException*）
-
-* 检查异常
-
-  检查异常是应用程序应该预料到并从中恢复的异常。基本上是所有派生自 Exception 的子类，但不是 *RuntimeException* 的子类（如 *IOException*、*SQLException*）。编译器可以通过拒绝编译任何包含可能引发已检查异常的程序来防止发生已检异常，一个编写良好的 Java 库应向它的用户指出方法所有可能抛出的异常
+    应用程序应该预料到并从中恢复的异常。基本上是所有派生自 Exception 的子类，但不是 *RuntimeException* 的子类（如 *IOException*、*SQLException*）。编译器可以通过拒绝编译任何包含可能引发已检查异常的程序来防止发生已检异常，一个编写良好的 Java 库应向它的用户指出方法所有可能抛出的异常
 
 ###### 常见异常
 
@@ -135,29 +205,25 @@ JVM 会在特定时机将引用 enqueue 到队列里，可以从队列里获取�
 |       ClassCastException       |                          类转型异常                          |
 |      NullPointerException      |                          空指针异常                          |
 | ArrayIndexOutOfBoundsException |                       数组访问越界异常                       |
-|      NoClassDefFoundError      | 运行时错误：是 java 运行时系统尝试加载类定义时引发的错误，并且该类定义不再可用，所需的类定义在编译时存在，但在运行时丢失（缺少对应 .class 文件） |
+|      NoClassDefFoundError      | 运行时错误：运行时系统尝试加载类定义时引发的错误，并且该类定义不再可用，所需的类定义在编译时存在，但在运行时丢失（缺少对应 .class 文件） |
 |     ClassNotFoundException     | 运行时异常：执行：class.forName()、loadClass()、findSystemclass()、反序列化时在运行时加载或验证类，并且在类路径中找不到具有指定名称的类时抛出 |
 
-##### 声明受检异常
+##### 异常在编程中运用
 
-方法应该在其首部声明所有可能抛出的异常，使用 throws 声明所有异常类，用逗号分隔。如果方法没有声明所有可能发生的受检异常，编译无法通过。
+如果方法没有声明（使用 throws 声明所有异常类，用逗号分隔）所有可能发生的受检异常，编译无法通过。
 
 如果在子类中覆盖了超类的一个方法，子类方法中声明的受检异常不能比超类方法中声明的异常更通用。如果超类方法没有抛出任何受检异常，子类也不能抛出任何异常。
 
-##### 抛出异常
+###### 抛出异常
 
-1. 找到一个合适的异常类
-2. 创建这个类的一个对象
-3. 使用 throw 关键字抛出异常
+创建异常类的对象（要自定义异常，需要继承 *Exception* 或其子类，应包含默认和有描述信息的构造器）并使用 throw 关键字抛出异常，一旦方法抛出了异常，这个方法就不能返回到调用者，如果抛出的异常没有被捕获，应用程序将崩溃
 
-一旦方法抛出了异常，这个方法就不能返回到调用者，如果抛出的异常没有被捕获，应用程序将崩溃
+*   重新抛出异常
 
-###### 重新抛出异常
-
-*   在 catch 子句中可以抛出异常，这样可以改变异常的类型
+    在 catch 子句中可以抛出异常，这样可以改变异常的类型
 
     ```java
-    catch(SQLException e) {
+    catch (SQLException e) {
       	Throwable se = new ServletException("database error");
       	se.initCause(e); // 构建异常链
       	throw se;
@@ -168,38 +234,18 @@ JVM 会在特定时机将引用 enqueue 到队列里，可以从队列里获取�
 
 *   如果只是把当前异常对象重新抛出，printStackTrace() 方法将打印原来异常抛出点的调用栈信息，而非重新抛出点的信息
 
-    ```
+    ```java
     // 更新异常堆栈信息, 调用 fillInStackTrace() 的那一行为异常新的发生地
     throw (Exception) e.fillInStackTrace();
     ```
 
+###### 捕获异常
 
-##### 自定义异常类
+如果某个异常发生的时候没有在任何地方进行捕获，程序便会终止执行，并在控制台打印异常堆栈信息。使用 try/catch 语句块捕获异常，一个 try 语句块中可以捕获多个异常类型，SE 7 开始，同一个 catch 子句中可以捕获多个异常类型（当捕获的异常类彼此之间不存在子类关系时才需要这个特性），捕获多个异常时，细化异常类型在前
 
-要自定义异常，需要继承 *Exception* 或其子类，应该包含默认构造器，和带有描述信息的构造器。
+###### finally 子句
 
-##### 捕获异常
-
-如果某个异常发生的时候没有在任何地方进行捕获，程序便会终止执行，并在控制台上打印出异常信息，其中包括异常的类型和堆栈。
-
-使用 try/catch 语句块捕获异常：
-
-* 如果在 try 语句块中的任何代码抛出了一个在 catch 子句中说明的异常类，程序将跳过 try 语句块的其余代码，程序将执行 catch 子句找你的处理代码。
-* 如果在 try 语句块中的代码没有抛出任何异常，程序将跳过 catch子句
-
-一个 try 语句块中可以捕获多个异常类型，SE 7 开始，同一个 catch 子句中可以捕获多个异常类型（当捕获的异常类彼此之间不存在子类关系时才需要这个特性），捕获多个异常时，细化异常类型在前
-
-如果覆写超类的方法，而这个方法又没有抛出异常，那么这个方法就必须捕获方法中的每一个受检异常
-
-##### finally 子句
-
-在任何情况下，finally 块中的代码都会执行，不论 try 块中是否出现异常或者是否被捕获
-
-* 如果 try 块中没有出现异常，执行 finally 块然后执行 try 语句的下一条语句
-* 如果 try 块中有一条语句引起异常，并被 catch 块捕获，然后跳过 try 块的其他语句，执行 catch 块和 finally 子句。执行 try 语句之后的下一条语句
-* 如果 try 块中有一条语句引起异常，但是没有被任何 catch 块捕获，就会跳过 try 块中的其他语句，执行 finally 子句，并且将异常传递给这个方法的调用者
-
-不要在 finally 里 return，且不要出现无法访问语句，以下情况 finally 代码不会被执行
+在任何情况下，finally 块中的代码都会执行，不论 try 块中是否出现异常或者是否被捕获，不要在 finally 里 return，且不要出现无法访问语句，以下情况 finally 代码不会被执行
 
 ```java
 try {
@@ -210,45 +256,13 @@ try {
 }
 ```
 
-##### 异常机制良好实践
+###### 异常机制良好实践
 
 * 异常处理不能代替测试即只在异常情况下使用异常机制，因为捕获异常时间更久
 * 不过分细化异常导致代码量膨胀
 * 利用异常层次结构，不要只抛出 *RuntimeException* 异常，不要只捕获 *Thowable*
 * 不要压制异常
 * 早抛出，晚捕获（抛出异常到上层方法及应用）
-
-##### 异常执行顺序
-
-```java
-try{} catch() {} finally{} return;
-```
-
-顺序执行
-
-```java
-try {return;} catch() {} finally{} return;
-```
-
-程序执行 `try` 里 `return` 代码块前的代码，出现异常执行 `catch` 中的代码，然后执行最后的 `return` 代码；程序执行 `try` 里 `return` 代码块前的代码，不出现异常则将先执行 `finally` 里代码，然后执行 `try` 里的 `return` 代码，最后的 `return` 语句不会执行
-
-```java
-try {} catch() {return;} finally {} return;
-```
-
-程序执行 `try` 出现异常则执行 `catch` 代码，然后执行 `finally` 代码，返回 `catch` 中的 `return` 返回值，最后的 `return` 不会执行；程序执行 `try` 不出现异常，然后执行 `finally` 语句，执行最后的 `return` 语句
-
-```java
-try {return;} catch() {return;} finally {return;}
-```
-
-`finally` 中不要包含 `return` 语句，否则就始终返回 `finally` 里 `return`  返回值
-
-```java
-try {return;} catch() {return;} finally {} return;
-```
-
-编译错误，不可访问错误，最后的 `return` 语句不会被访问
 
 #### 断言
 
@@ -304,7 +318,7 @@ Logger.getGlobal().setLevel(Level.OFF);
 java -Djava.util.logging.config.file=configFile MainClass
 ```
 
-日志管理器在 VM 启动过程中初始化，这在 main 执行之前完成，如果在 main 中调用 *System*.setProperty("java.util.logging.config.file", file)，也会调用 *LogManager*.readConfiguration() 来重新初始化日志管理器
+日志管理器在虚拟机启动过程中初始化，在 main 执行之前完成，如果在 main 中调用 `System.setProperty("java.util.logging.config.file", file)`，也会调用 *LogManager*.readConfiguration() 来重新初始化日志管理器
 
 *my_log.properties*
 
@@ -346,7 +360,7 @@ if (logger.isDebugEnabled) {
 类型变量使用大写形式：
 
 * E 表示集合的元素类型
-* K 和 V 分别表示表的关键字与值的类型
+* K 和 V 分别表示键与值的类型
 * T、U、S 表示任意类型
 
 泛型类可看作普通类的工厂，SE 7 及以后的版本中，表达式右边的类型变量可以省略。
@@ -369,15 +383,13 @@ if (logger.isDebugEnabled) {
 
 Class 引用总是指向某个 Class 对象，int.class 不继承 Number.class，此时可以使用通配符 ?，或使用 `Class<? extend Number>` 来进行限定为 Number 或 Number 的任何子类型
 
-在 SE5 中，Class＜?＞优于平凡的 Class，即便它们是等价的，平凡的 Class 如你所见，不会产生编译器警告信息。Class＜?＞ 的好处是它表示你并非是碰巧或者由于疏忽，而使用了一个非具体的类引用，你就是选择了非具体的版本。
+在 SE5 中，Class＜?＞优于的 Class，Class 不会产生编译器警告信息
 
 ##### 泛型特性
 
 ###### 边界-类型限定
 
-边界使得可以在用于泛型的参数类型上设置限制条件。尽管可以强制规定泛型可以应用的类型，但是其潜在的一个更重要的效果是可以按照自己的边界类型来调用方法。
-
-因为擦除移除了类型信息，所以，可以用无界泛型参数调用的方法只是那些可以用 Object 调用的方法。但是，如果能够将这个参数限制为某个类型子集，就可以用这些类型子集来调用方法。为了这些这种限制，java 泛型重用了 extends 关键字。extends 关键字在泛型边界上下文环境中和在普通情况下所具有的意义是完全不同的
+边界使得可以在用于泛型的参数类型上设置限制条件。因为擦除移除了类型信息，所以，可以用无界泛型参数调用的方法只是那些可以用 Object 调用的方法。如果将这个参数限制为某个类型子集，就可以用这些类型子集来调用方法。为了这些这种限制，泛型重用了 extends 关键字。extends 关键字在泛型边界上下文环境中和在普通情况下所具有的意义是完全不同的
 
 extends
 
@@ -399,7 +411,7 @@ Pair<? super Manager>
 
 * ?
 
-  无界通配符，声明：用 java 的泛型来编写这段代码，并不是要用原生类型，在当前这种情况下，泛型参数可以持有任何类型
+  无界通配符，声明：用的泛型来编写这段代码，并不是要用原生类型，在当前这种情况下，泛型参数可以持有任何类型
 
 * &
 
@@ -408,7 +420,6 @@ Pair<? super Manager>
 泛型通配符 <? extends T> 来接收返回的数据。此写法的泛型集合不能使用 add 方法，而 <? super T>  不能使用 get 方法。频繁往外读取内容时，适合用 <? extends T>，经常往里写数据时，适合用 <? super T>
 
 ```java
-// 表示
 Pair<? extends Employee>
 ```
 
@@ -428,11 +439,11 @@ Pair<? extends Employee>
 
 <u>在泛型代码内部，无法获得任何有关泛型参数类型的信息</u>，如果打印泛型类的参数（`genericObj.getClass().getTypeParameters()`）只能得到参数占位符的标识
 
-在基于擦除的实现中，泛型类型被当作第二类类型处理，即不能再某些重要的上下文环境中使用的类型。泛型类型只有在静态类型检查期间才出现，在此之后，程序中的所有泛型类型都将被擦除，替换为它们的非泛型上界。List<T> 这些的类型将被擦除为 List，而普通的类型变量在位指定边界的情况下将被擦除为 Object，擦除使得泛化的客户端可以用非泛化的类库来使用，反之亦然，通过允许非泛型代码和泛型代码共存，擦除使得泛型迁移成为可能，擦除使得在不破坏现有类库的情况下，将泛型融入 Java 语言。擦除使得现有的非泛型客户端代码能够在不改变的情况下继续使用。
+在基于擦除的实现中，泛型类型被当作第二类类型处理，即不能在某些重要的上下文环境中使用的类型。泛型类型只有在静态类型检查期间才出现，在此之后，程序中的所有泛型类型都将被擦除，替换为它们的非泛型上界。List<T> 这些的类型将被擦除为 List，而普通的类型变量在未指定边界的情况下将被擦除为 Object，擦除使得泛化的客户端可以用非泛化的类库来使用，反之亦然，通过允许非泛型代码和泛型代码共存，擦除使得泛型迁移成为可能，擦除使得在不破坏现有类库的情况下，将泛型融入 Java 语言。擦除使得现有的非泛型客户端代码能够在不改变的情况下继续使用。
 
-擦除代价是泛型不能用于显式地引用运行时类型的操作之上（转型、instanceof 操作、new 表达式）使用泛型并不是强制的，当没有泛型参数时，可以使用 `@SuppressWarnings("unchecked")` 来屏蔽警告
+擦除代价是泛型不能用于显式的应用运行时类型的操作之上（转型、instanceof 操作、new 表达式）使用泛型并不是强制的，当没有泛型参数时，可以使用 `@SuppressWarnings("unchecked")` 来屏蔽警告
 
-即使擦除在方法或类内部移除了有关实际类型的信息，编译器仍旧可以确保在方法或类中使用的类型的内部一致性，擦除在方法体中移除了类型信息，在运行时问题是边界：即对象进入和离开方法的地点（编译器在编译期执行类型检查并插入转型代码的地点），泛型中的所有动作（对传递进来的值进行额外的编译器检查，并插入对传递出去的值的转型）都发生在边界处
+即使擦除在方法或类内部移除了有关实际类型的信息，编译器仍可以确保在方法或类中使用的类型的内部一致性，擦除在方法体中移除了类型信息，在运行时问题是边界：即对象进入和离开方法的地点（编译器在编译期执行类型检查并插入转型代码的地点），泛型中的所有动作（对传递进来的值进行额外的编译器检查，并插入对传递出去的值的转型）都发生在边界处
 
 ###### 自限定的类型
 
@@ -445,7 +456,7 @@ class SelfBounded<T extends SelfBounded<T>> {}
 
 ###### 参数协变
 
-方法参数类型会随着子类而变化。还可以产生于子类类型相同的返回类型（SE 5 中引入）
+方法参数类型会随着子类而变化。还可以产生与子类类型相同的返回类型（SE 5 中引入）
 
 ```java
 // 返回子类型
