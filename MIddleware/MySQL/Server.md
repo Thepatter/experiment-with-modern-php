@@ -191,9 +191,49 @@ RESET PERSIST;
 
     文件名，默认 `host_name.log` 全局范围，动态设置，命令行选项 `--general-log-file=file_name`。指定常规查询日志文件名称
 
+*   `log_error`
+
+    指定错误日志输出目标，不支持动态设置，全局范围，命令行选项 `--log-error[=file_name]`。默认为数据目录下的 `host_name.err` 文件。如果指定了 `--pid-file` 则文件名是 PID 文件名称。如果指定了文件名，则为数据目录下以 `.err` 后缀的文件名。除非指定了绝对路径名。如果错误日志无法重定向到错误日志文件，则发生错误并启动失败。如果输出目标是控制台，则此值为 `stderr`。
+
+*   `log_error_filter_rules`
+
+    字符串类型，默认 `IF prio>=INFORMATION THEN drop. IF EXISTS source_line THEN unset source_line.`，全局范围，支持动态设置，命令行选项 `--dragnet.log-error-filter-rules=value`
+
+    指定 `dragnet` 组件过滤规则（有零个或多个规则组成，每个规则以 `IF` 开始和 `.` 结尾）。如果未安装或未启用 `log_filter_dragnet` 插件，该参数无效。8.0.12 开始，可以查询 `dragnet.Status` 变量以确定对该参数的最新赋值结果，之前设置该值成功后查看 `show warnings` 则会产生一条注释。
+
+    ```mysql
+    # 删除 INFORMATION 或以上事件，其他事件删除 source_line 字段
+    SET GLOBAL dragnet.log_error_filter_rules = '
+      IF prio>=INFORMATION THEN drop.
+      IF EXISTS source_line THEN unset source_line.
+    ';
+    ```
+
+*   `log_error_services`
+
+    字符串，默认 `log_filter_internal`、`log_sink_internal`。命令行参数 `--log-error-services=value` 全局范围，支持动态设置，
+
+    启用错误日志记录的组件。支持 0、1、或字符串（逗号、分号分隔（8.0.12），可选后跟空格）列表。组件顺序很重要。服务器按照列出的顺序执行组件（最后一个组件不能是过滤器）。值中的（非内置）命名组件必须先安装才能使用。
+
+*   `log_error_verbosity`
+
+    整型，默认 2（ERROR、WARNING）， 范围 1（ERROR） ～ 3（ERROR、WARNING、INFORMATION），全局范围，支持动态设置，命令行参数 `--log-error-verbosity=#`。指定用于处理错误日志的详细程度，影响 `log_filter_internal` 过滤器行为，如果未启用 `log_filter_internal` 则该选项无效。值为 2 或更大：记录不安全语句；3 将记录连接和访问错误。如果使用复制，建议使用 2 或更大的值。对于 SYSTEM （0）级别错误（包含启动关闭设置更改等）无论该值如何，都将记录到错误日志中
+
+*   `log_error_suppression_list`
+
+    字符串，默认空串，8.0.13 支持，全局范围，支持动态设置。影响 `log_filter_internal` 过滤器行为，如果该过滤器禁用，该变量无效。指定要抑制的错误代码（字符或数字指定，可以带或不带 `MY-` 前缀）以逗号分隔。指定的错误码必须由 MySQL 使用，指定不允许范围（值必须在允许范围内：1～999 服务器和客户端使用的全局错误代码；10000 服务器错误代码，将写入错误日志，不发给给客户端）。只能丢弃警告或信息级别消息，如果 `log_error_verbosity=1` 时，该值无效
+
 *   `log_output`
 
     集合类型（TABLE（记录到 `mysql.general_log` 和 `mysql.slow.log`）、FILE（由 `general_log_file` 和 `slow_query_log_file` 指定）、NONE（不记录日志，同时存在时优先））默认 FILE，支持动态设置，全局范围，命令行选项 `--log-output=name`。指定（general.log 和 slow.log）输出目的地，此变量仅指定输出目标，不会启动日志
+
+*   `log_raw`
+
+    布尔，默认 OFF（重写），8.0.19 支持全局范围，8.0.19 支持动态设置，命令行选项 `--log-raw={OFF|ON}`。指定服务器重写以纯文本形式写入查询日志、慢查询日志、二进制日志语句中的密码。如果安装了查询重写插件，该选项将影响语句记录：不使用该选项，将记录查询重写插件返回的语句；使用该选项，将记录原始语句
+
+*   `log_timestamps`
+
+    枚举（UTC、SYSTEM）、默认 UTC，支持动态设置，全局范围，命令行选项 `--log-timestamps=#`。控制写入文件错误日志、查询日志、慢查询日志消息中的时间戳时区。但不影响写入表的查询、慢查询日志记录。
 
 *   `long_query_time`
 
