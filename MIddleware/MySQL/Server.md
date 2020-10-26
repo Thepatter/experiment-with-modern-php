@@ -173,6 +173,88 @@ RESET PERSIST;
 
 ###### 日志设置
 
+*   `binlog_cache_size`
+
+    整型，默认 32768，范围 4096～平台最大值。支持动态支持，全局范围。命令行选项 `--binlog-cache-size=#`
+
+    事务期间，用于保存更改的二进制日志的内存缓冲区的大小。在服务器上启用二进制日志记录时，如果服务器支持任何事务存储引擎，则会为每个客户端分配一个二进制日志缓存。如果用于事务的数据超过了内存缓冲区中的空间，则多余的数据将存储在一个临时文件中。当服务器上的二进制日志加密开启时，不会对内存缓存区进行加密。8.0.17 任何用于保存二进制日志缓存的临时文件都将被加密。提交每个事务后，通过清除内存缓存区并截断临时文件（如果使用）来重置二进制日志缓存
+
+    如果经常使用大型事务，则可以通过减少或消除写入临时文件的需要来增加此缓存的大小，以获得更好的性能。`Binlog_cache_use` （用缓存或临时文件存储事务语句的数目）和 `Binlog_cache_disk_use` （使用临时文件的二进制 binlog 缓存）状态变量可用于调整此变量的大小
+
+    `binlog_cache_size` 仅设置事务缓存的大小；语句缓存的大小由 `binlog_stmt_cahce_size` 系统变量控制
+
+*   `--binlog-checksum={NONE|CRC32}`
+
+    字符串（NONE、CRC32），默认 CRC32，命令行选项 `--binlog-checksum=type`
+
+    启用此选项会为源服务器写入二进制日志的事件写入校验和。不能在事务中更改此选项。要控制 slave 从中继日志读取校验和，使用 `--slave-sql-verify-checksum` 选项，主服务器上的此变量设置为从服务器无法识别的值会导致从服务器将其自身的 `binlog_checksum` 值设置为 NONE，并因错误而停止复制
+
+    8.0.21 之前，组复制不能使用校验和，且不支持二进制日志中的校验和，因此组成员必须将该值设置为 NONE。8.0.21 开始，组复制支持校验和，组成员可以使用默认值。
+
+    更改该值会导致二进制日志轮换。必须为整个文件写入校验和，而非一部分。使用 `binlog_transaction_compression` 启用二进制日志事务压缩时，不会在压缩的事务有效负载中为单个事件写入校验和，将为 GTID 事件写入一个校验和，并为压缩的 Transaction_payload_event 写入一个校验和
+
+*   `binlog_direct_non_transactional_updates`
+
+    布尔，默认 OFF，支持动态设置，全局会话范围。命令行选项 `--binlog-direct-non-transactional-updates[={OFF|ON}]`
+
+    由于并发问题，当事务同时包含对事务表和非事务表的更新时，副本可能会变得不一致。服务器试图通过将非事务性语句写入事务高速缓存来保留这些语句之间的因果关系，事务高速缓存将在提交后刷新。但是，当代表事务对非事务表所做的修改对其他连接而言立即可见时，就会出现问题，因为这些更改可能不会立即写入二进制日志中。
+
+    该 `binlog_direct_non_transactional_updates` 变量为该问题提供了一种可能的解决方法。默认情况下，此变量是禁用的。启用 `binlog_direct_non_transactional_updates` 会使对非事务表的更新直接写入二进制日志，而不是事务高速缓存
+
+    从 8.0.14 开始，设置此系统变量的会话是受限制操作。
+
+    `binlog_direct_non_transactional_updates` 仅适用于使用基于语句的二进制日志记录格式复制的语句；它仅在 `binlog_format` 为 `STATEMENT` 或 `MIXED` （使用基于语句的格式复制给定语句时）才有效。当二进制日志格式为 ROW 或 `MIXED` 使用基于行的格式复制给定语句时，此变量无效
+
+    在启用此变量之前，必须确保事务表和非事务表之间没有依赖关系。（如 `INSERT INTO myisam_table SELECT * FROM innodb_table`）否则，这样可能导致从库偏离
+
+*   `binlog_encryption`
+
+    布尔类型，全局范围，支持动态设置，默认 OFF。为服务器上的二进制日志文件和中继日志文件启用加密。索引文件不会加密，需要启用密钥环插件。运行过程中启用或关闭会刷新日志文件
+
+*   `binlog_error_action`
+
+    枚举（`IGNORE_ERROR`（继续进行中的事务，记录该错误然后停止记录二进制日志，并继续执行更新。要重启二进制日志需要重启服务器，此设置提供了与旧版的向后兼容。）、`ABORT_SERVER`）默认 `ABORT_SERVER`（停止并关闭），支持动态设置，全局范围，命令行选项 `--binlog-error-action=[value]`
+
+    控制当服务器无法写入，刷新或同步二进制日志之类的错误时行为。该错误可能导致主持不一致，或失去同步
+
+*   `binlog_expire_logs_seconds`
+
+    整型 0 ～ INT32.MAX，默认 2592000，支持动态设置，全局范围，命令行选项 `--binlog-expire-logs-seconds`
+
+    设置二进制日志的有效期（以秒为单位）。到期后自动删除日志文件。默认为 30 天，同时设置该变量和 `expire_logs_days`，以该变量为准。要禁用自动清除二进制日志，显式设置该变量为 0，且不设置 `expire_logs_days`，或 `expire_logs_days` 显式设置为 0，且不为 `binlog_expire_logs_seconds` 指定值
+
+*   `bingo_format`
+
+    枚举（`ROW`、`STATEMENT`、`MIXED`）默认 ROW，支持动态设置，全局会话范围，命令行选项 `--binlog-format=format`。
+
+    设置二进制日志格式，某些情况下无法动态（存在临时表或正在运行复制）设置，设置主服务器不会导致副本服务器更改其日志格式。如果副本服务器启用了二进制日志，运行时修改会导致问题。
+
+*   `binlog_group_commit_sync_delay`
+
+    整型 0 ～ 1000000，默认 0，支持动态设置，全局范围。命令行格式 `--binlog-group-commit-sync-delay=#`
+
+    控制二进制日志提交在将二进制日志文件同步到磁盘之前等待多时微秒。默认为 0，表示没有延迟。设置该值可使更多事务一次同步到磁盘上，从而减少提交一组事务的总时间。
+
+    设置会增加服务器上事务的延迟，可会会影响客户端应用程序。在高并发工作负载上，延迟可能会增加争用并降低吞吐量。
+
+*   `binlog_group_commt_sync_no_delay_count`
+
+    整型 0 ～ 1000000，默认 0，支持动态设置，全局范围。命令行选项 `--binlog-group-commit-sync-no-delay-count=#`。
+
+    指定当前要等待的最大事务数，如果 `binlog_group_commit_sync_delay` 设置为 0，则此选项无效。
+
+*   `binlog_order_commit`
+
+    布尔，默认 ON，支持动态设置，全局范围，命令行选项 `--binlog-order-commits[={OFF|ON}]`。
+
+    复制源服务上启用此变量后，发布到存储引擎的事务提交指令将在单个线程上序列化，事务始终以与二进制日志相同的顺序提交。禁用将允许多个线程发出事务提交指令，与二进制日志组提交结合使用，可以防止单个事务的提交速率成功吞吐量的瓶颈，提高性能。
+
+*   `binlog-row-event-max-size=N`
+
+    整型，范围 256 ～ 平台最大值，默认 8192，8.0.14 支持全局范围，但不支持动态设置。命令行格式 `--binlog-row-event-max-size=#`
+
+    当使用基于行的二进制日志记录时，设置基于行的二进制日志事件的最大大小（以字节为单位）的软限制。如果可能，将二进制日志中存储的行分组为大小不超过此设置值的事件。如果事件无法拆分，则可以超过最大大小。该值必须是 256 的倍数（否则将被舍入为 256）
+
 *   `binlog_row_value_options`
 
     支持动态设置，命令行选项 `--binlog-row-value-options=#`，全局和会话范围、字符串，默认空串、有效值为 `PARTIAL_JSON`，此时将以节省空间的二进制日志格式仅修改 JSON 文档的部分更新。将导致基于行的复制仅将 JSON 文档修改后的部分写入 after-image，而不是完整文档。如果修改所需的空间大于完整文档的空间，或者服务器无法生存部分更新，则使用完整文档。
@@ -190,6 +272,24 @@ RESET PERSIST;
 *   `general_log_file`
 
     文件名，默认 `host_name.log` 全局范围，动态设置，命令行选项 `--general-log-file=file_name`。指定常规查询日志文件名称
+
+*   `log_bin`
+
+    指定用于二进制日志文件的基本名称。不提供或提供的 `--log-bin` 选项不是字符串或是空字符串，则基本名称默认为 `host_name-bin`。默认位置是数据目录。要更改该位置使用 `--log-bin=/absolute/path/`，绝对路径地址。
+
+    8.0 之前，默认禁用二进制日志，指定该选项则启用，8.0 开始，无论是否指定 `--log-bin` 选项，默认情况下都会启用二进制日志记录。启用二进制后，`log_bin` 系统变量为 `ON`
+
+    禁用二进制日志记录，可以在启动时指定 `--skip-log-bin` 或 `--disable-log-bin` 选项，当与 `log-bin` 选项同时设置时，后设置选项会覆盖之前选项。
+
+    在服务器上使用 GTID 时，如果在异常关闭后重新启动服务器时禁用了二进制日志记录，则某些 GTID 可能会丢失，从而导致复制失败。在正常关闭状态下，当前二进制日志文件中的 GTID 集会保存在 `mysql.gtid_executed` 表。在恢复过程中，只要仍启用了二进制日志记录，就会将 GTID 从二进制日志文件添加到表中。如果在重新启动服务器时禁用了二进制日志记录，则服务器将无法访问二进制日志文件以恢复 GTID，因此无法启动复制。正常关闭后，可以安全的禁用二进制日志。
+
+    `--log-slave-updates` 和 `--slave-preserve-commit-order` 选项需要二进制日志。如果禁用二进制日志，则忽略这些选项或指定 `--log-slave-updates=OFF` 和 `--skip-slave-preserve-commit-order` 如果同时指定这些选项和禁用二进制日志，则警告报错
+
+    5.7 中，启用二进制日志记录时必须指定服务器ID，否则服务器无法启动。8.0 中，`server_id` 系统变量默认设置为 1。对于复制拓扑中使用的服务器，必须为每个服务器指定一个唯一的非零服务器 ID
+
+*   `--log-bin-index[=file_name]`
+
+    文件名，不支持动态设置，全局范围，命令行选项 `--log-bin-index=file_name`。二进制日志索引文件的名称，其记录二进制日志文件的名称。默认情况下，它的位置和基本名称与使用 `--log-bin` 选项二进制日志文件指定的值相同加扩展名为 `.index`。如果未指定 `--log-bin`，则默认的二进制日志索引文件名为 `binlog.index`。如果指定的 `--log-bin` 选项不带任何字符串或为空字符串，则默认的二进制日志索引文件名是 `host_name-bin.index`
 
 *   `log_error`
 
@@ -237,13 +337,21 @@ RESET PERSIST;
 
 *   `long_query_time`
 
-    整型，默认 10（秒），全局会话范围，动态设置，命令行选项 `--long-query-time=#`。如果查询超过该值，则增加 `Slow_queries` 值，如果启用了慢查询日志，则将查询记录到慢查询日志。
+    整型，默认 10（秒），全局会话范围，动态设置，命令行选项 `--long-query-time=#`。如果查询超过该值，则增加 `Slow_queries` 值，如果启用了慢查询日志，则将查询记录到慢查询日志
+
+*   `--max-binlog-dump-events=N`
+
+    MySQL 测试套件在内部使用此选项进行复制测试和调试。
 
 *   `slow_query_log`
 
     布尔，默认 OFF，全局范围，动态设置，命令行选项 `--slow-query-log[={OFF|ON}]` 指定是否启用慢查询日志。如果 `log_output=NONE`，即使启用了日志，也不会写入任何日志条目。由 `long_query_time` 指定记录阈值
 
 *   `slow_query_log_file`
+
+*   `--sporadic-binlog-dump-fail`
+
+    MySQL 测试套件在内部使用此选项进行复制测试和调试。
 
 ###### InnoDB 设置
 
@@ -422,6 +530,66 @@ RESET PERSIST;
     每个必须执行排序的会话都会分配此大小的缓冲区。非特定于引擎。`SHOW GLOBAL STATUS` 的 `Sort_merge_passes` 值很大，则可以增加该值。整数，默认 262144，范围 32768 ~ 4G - 1。
 
     Linux 上内存分配阈值为 256kb 和 2mb，超过阈值会导致内存分配变慢
+
+###### 复制相关
+
+* `--binlog-do-db=db_name`
+
+    类似于 `--replicate-do-db` 影响复制的方式来影响二进制日志记录。
+
+    此选项的效果取决于使用的是基于语句的记录格式还是基于行的日志记录格式（同 `--replicate-do-db`）。DDL 语句始终作为语句记录，而不考虑有效的记录
+
+    **基于语句的日志记录**
+
+    只有那些语句被写入二进制日志，要指定多个数据库，多次使用此选项，每个数据库指定一次，不能使用列表；但是，这样做不会导致在选择其他数据库或没有数据库时记录跨数据库语句（`UPDATE some_db.some_table SET foo='bar'`）。默认数据库为使用 `selected` 或 `use` 语句指定的
+
+    ```mysql
+    # --binlog-do-db=sales 以下语句不会记录到 binlog
+    USE prices;
+    UPDATE sales.january SET amount=amount+1000;
+    # --binlog-do-db=sales 以下语句会记录 binlog，sales 是 update 发出该语句时的默认数据库
+    USE sales;
+    UPDATE prices.discounts SET percentage = percentage + 10;
+    ```
+
+    **基于行的日志记录**
+
+    记录仅限于指定数据库的表，不影响默认数据库。
+
+    ```mysql
+    # --binlog-do-db=sales 不会记录，即使使用 USE sales 也不会记录
+    USE prices;
+    UPDATE prices.march SET amount=amount-25;
+    # --binlog-do-db=sales 会记录
+    USE prices;
+    UPDATE sales.february SET amount=amount+100;
+    ```
+
+* `--binlog-ignore-db=db_name`
+
+    类似 `--replicate-ignore-db` ，取决于日志格式。要指定多个忽略的数据库，多次使用此选项，每个数据库指定一次。
+
+    **基于语句的日志记录**
+
+    会略使用 USE 等于 db_name 的数据库语句
+
+    ```mysql
+    # --binlog-ignore-db=sales 会记录
+    USE prices;
+    UPDATE sales.january SET amount=amount+1000;
+    ```
+
+    **基于行的格式**
+
+    忽略 db_name 中的表记录
+
+    ```mysql
+    # --binlog-ignore-db=sales 不会记录
+    USE prices;
+    UPDATE sales.january SET amount=amount+1000;
+    ```
+
+    
 
 ##### 服务器状态
 
