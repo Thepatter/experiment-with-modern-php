@@ -1,59 +1,39 @@
 ### maven
 
-#### 介绍
-
-##### 安装与配置
-
-###### 安装
-
-1. 安装 java
-2. 下载 maven
-3. 配置系统变量 M2_HOME 为 mvn 解压目录
-4. 将 M2_HOME/bin 添加到系统 path
-
-###### *M2_HOME*
-
-* *bin*
-
-  包含 mvn 运行的脚本，这些脚本用来配置 java 命令，准备好 classpath 和相关的 java 系统属性，然后执行 java 命令。
-
-* boot
-
-  类加载器框架
-
-* conf
-
-  包含全局配置的 settings.xml 文件，修改该文件会对影响全局 mavn 的行为，可以将该文件复制到 ～/.m2/ 下在用户范围定制 maven 行为
-
-* Lib
-
-  包含所有 maven 运行时需要的 java 类库，maven 本身是分模块开发的
-
-###### *~/.m2*
-
-用户 mvn 目录，包含 mvn 本地仓库 repository，用户下载的所有的 maven 构件存储到该目录
-
-###### 约定目录
-
-基于项目对象模型概览，可以对 java 项目进行构建、依赖管理。Maven 提倡约定优于配置
-
-*maven约定目录结构*
-
-|                目录                |                  目的                  |
-| :--------------------------------: | :------------------------------------: |
-|             ${basedir}             |       存放 pom.xml 和所有子目录        |
-|      ${basedir}/src/main/java      |           项目的 java 源代码           |
-|   ${basedir}/src/main/resources    |      项目的资源，如 property 文件      |
-|      ${basedir}/src/test/java      |              项目的测试类              |
-|    ${basedir}/src/test/resource    |              测试用的资源              |
-| ${basedir}/src/main/webapp/WEB-INF |     Web 应用文件目录，web 项目信息     |
-|         ${basedir}/target          |              打包输出目录              |
-|     ${basedir}/target/classes      |              编译输出目录              |
-|   ${basedir}/target/test-classes   |            测试编译输出目录            |
-|             Test.java              | mvn 只会自动运行符合该命名规则的测试类 |
-|         ～/.m2/repository          |            mvn 本地仓库目录            |
+mvn 提倡约定优于配置
 
 #### 构建项目
+
+##### 目录结构
+
+###### maven 目录
+
+*   `M2_HOME`
+
+    | 目录 |     含义     |
+    | :--: | :----------: |
+    | bin  |   执行脚本   |
+    | boot |  类加载框架  |
+    | conf | 全局配置文件 |
+    | lib  |  依赖及模块  |
+
+*   `~/.m2`
+
+    用户运行时目录，包含本地仓库 repository，及用户 `settings.xml` 文件
+
+###### 项目目录
+
+|                 目录                 |              目的              |
+| :----------------------------------: | :----------------------------: |
+|             `${basedir}`             |   存放 pom.xml 和所有子目录    |
+|      `${basedir}/src/main/java`      |       项目的 java 源代码       |
+|   `${basedir}/src/main/resources`    |  项目的资源，如 property 文件  |
+|      `${basedir}/src/test/java`      |          项目的测试类          |
+|    `${basedir}/src/test/resource`    |          测试用的资源          |
+| `${basedir}/src/main/webapp/WEB-INF` | Web 应用文件目录，web 项目信息 |
+|         `${basedir}/target`          |          打包输出目录          |
+|     `${basedir}/target/classes`      |          编译输出目录          |
+|   `${basedir}/target/test-classes`   |        测试编译输出目录        |
 
 ##### 基础配置
 
@@ -128,13 +108,10 @@ mvn archetype:generate
 mvn org.apache.maven.plugins:maven-archetype-plugin:2.0-alpha-5:generate
 ```
 
-有几种 Archetype 供选择，默认 maven-archetype-quickstart，接着会提示输入要创建项目的 groupId、artifactId、version、以及包名 package。
-
-Archetype 插件将根据提供的信息创建项目骨架。会创建对应的目录结构及一个包含 main 方法的 java 类，和 pom 文件
-
-可以使用 -B 选项来以批处理方式运行
+Archetype用于生成具有约定配置的项目骨架，默认 maven-archetype-quickstart
 
 ```shell
+# 使用 -B 选项以批处理方式运行
 mvn archetype:generate -B \
 -DarchetypeGroupId = org.apache.maven.archetypes \
 -DarchetypeArtifactId = maven-archetype-quickstart \
@@ -152,59 +129,51 @@ mvn archetype:generate -B \
   默认值，生成内容包含：
 
   * 一个包含 JUnit 依赖声明的 pom.xml
-  * src/main/java 主代码目录及该代码目录下一个名为 App 的输出 hello world 的类
-  * src/test/java 测试代码目录及该目录下一个名为 AppTest 的 JUnit 测试用例
+  * `src/main/java` 主代码目录及该代码目录下一个名为 App 的输出 hello world 的类
+  * `src/test/java` 测试代码目录及该目录下一个名为 AppTest 的 JUnit 测试用例
 
 * maven-archetype-webapp
 
   简单 maven war 项目模板：
 
   * 一个 packaging 为 war 且带有 JUnit 依赖声明的 pom.xml
-  * src/main/webapp 目录
-  * src/main/webapp/index.jsp 文件，一个简单的 Hello World 页面
-  * src/main/webapp/WEB-INF/web.xml，一个基本为空的 Web 应用配置文件
+  * `src/main/webapp` 目录
+  * `src/main/webapp/index.jsp` 文件，一个简单的 Hello World 页面
+  * `src/main/webapp/WEB-INF/web.xml`，一个基本为空的 Web 应用配置文件
 
 ###### 坐标
 
-Maven 使用坐标标识构建，坐标的元素包括 groupId、artifactId、version、packaging、classifier。groupId、artifactId、version 必须定义的，packaging 可选，classifier 不能直接定义的。项目构件的文件名是与坐标相对应的，一般的规则为 artifactId-version [-classifier].packaging。maven 仓库布局也是基于 maven 坐标。
+坐标的元素包括 groupId、artifactId、version、packaging、classifier。groupId、artifactId、version 必须定义的，packaging 可选，classifier 不能直接定义的。项目构件的文件名是与坐标相对应的，一般的规则为 `artifactId-version [-classifier].packaging`。maven 仓库布局也是基于 maven 坐标。
 
 * groupId
 
-  定义当前 maven 项目隶属的实际项目。maven 项目和实际项目不一定是一对一关系。groupId 不应该对应项目隶属的组织或公司。groupId 的表示方式与 java 包名的表示方式类似，通常与域名反向一一对应。
-
-  阿里 java 规范指定：com.{公司/BU}.业务线 [.子业务线]，最多 4 级
+  类似包名，通常与域名反向对应。阿里规范指定：`com.{公司/BU}.业务线 [.子业务线]`，最多 4 级
 
 * artifactId
 
-  该元素定义实际项目中的一个 maven 项目（模块），推荐的做法是使用实际项目名称作为 artifactId 的前缀。在默认情况下，maven 生成的构件，其文件名会以 artifactId 作为开头
-
-  阿里 java 规范指定：产品线名-模块名。语义不重复，不遗漏
+  定义实际项目中的一个项目/模块，推荐的做法是使用实际项目名称作为 artifactId 的前缀。maven 生成的构件以 artifactId 作为开头。阿里规范指定：产品线名-模块名。语义不重复，不遗漏
 
 * version
 
-  该元素定义 maven 项目当前所处的版本
+  项目当前所处的版本
 
-  阿里 java 规范指定：
+  阿里规范指定：
 
   1. 主版本号：产品方向改变，或者大规模 API 不兼容，或者架构不兼容升级
   2. 次版本号：保持相对兼容性，增加主要功能特性，影响范围极小的 API 不兼容修改
   3. 修订版本号：保持完成兼容，修复 BUF、新增次要功能特性
 
-  版本后缀 snapshot 代表不稳定，尚处于开发中的版本，release 代表发布的稳定版本
-
-  协同开发时，如果 A 依赖构件 B，由于 B 会更新，B 应该使用 SNAPSHOT 来标识自己。如果 B 不用 SNAPSHOT，而是每次更新后都使用一个稳定的版本，那版本号就会升的太快，对版本号造成滥用；
-
-  如果 B 不用 SNAPSHOT，但是一直使用一个单一的 Release 版本号，那当 B 更新后，A 可能并不会接受到更新，因为 A 使用的 repository 一般不会频繁更新 release 版本的缓冲（本地 repository），所以 B 以不换版本号的方式更新后，A 在拿 B 时发现本地已有这个版本，就不会去远程 repository 下载最新的 B。正式环境中不得使用 snapshot 版本的库。
+  版本后缀 snapshot 代表不稳定，尚处于开发中的版本，release 代表发布的稳定版本。协同开发时，对于依赖的构件要使用 SNAPSHOT 版本
 
 * packaging
 
-  该元素定义 maven 项目的打包方式，打包方式通常与所生成构件的文件扩展名对应，打包方式会影响到构建的生命周期，jar 打包和 war 打包会使用不同的命令。当未定义 packaging 的时候，maven 使用默认值 jar。支持 war、pom、maven-plugin、ear 等
+  定义项目打包方式通常生成构件扩展名对应，打包方式会影响到构建的生命周期，jar 打包和 war 打包会使用不同的命令。当未定义时默认 jar。支持 war、pom、maven-plugin、ear 等
 
 * classifier
 
-  该元素用来定义构建输出的一些附属构建。附属构建与主构件对应。不能直接定义项目的 classifier，因为附属构件不是项目直接默认生成的，而是由附加的插件帮助生成
+  该元素用来定义构建输出的一些附属构建。附属构建与主构件对应。不能直接定义项目的 classifier，附属构件不是项目直接默认生成的，而是由附加的插件帮助生成
 
-##### 依赖
+##### 依赖管理
 
 根元素 project 下的 dependencies 可以包含一个或多个 dependency 元素，以声明一个或多个项目依赖。
 
@@ -245,27 +214,27 @@ Maven 使用坐标标识构建，坐标的元素包括 groupId、artifactId、ve
 
 ###### 依赖范围
 
-Maven 在编译、测试、运行时会使用不同的 classpath，依赖范围就是用来控制三种 classpath 的关系，maven 有以下几种依赖范围：
+Maven 在编译、测试、运行时会使用不同的 classpath，依赖范围用来控制三种 classpath 的关系：
 
 * compile
 
-  编译依赖范围。如果没有指定，就会默认使用该依赖范围。使用此依赖范围的 maven 依赖，对于编译、测试、运行三种 classpath 都有效。
+  编译依赖范围。默认依赖范围。对于编译、测试、运行三种 classpath 都有效。
 
 * test
 
-  测试依赖范围。使用此依赖范围的 maven 依赖，只对于测试 classpath 有效，在编译主代码或者运行项目时将无法使用此类依赖。
+  测试依赖范围。只对测试 classpath 有效，在编译主代码或者运行项目时将无法使用此类依赖。
 
 * provided
 
-  已提供依赖范围。使用此依赖范围的 maven 依赖，对于编译和测试 classpath 有效，但在运行时无效（如 servlet-api，编译和测试项目时需要，但运行项目时，由于容器已经提供，则不需要 maven 重复引入)
+  已提供依赖范围。编译和测试 classpath 有效，但在运行时无效（如 servlet-api，编译和测试项目时需要，但运行项目时，由于容器已经提供，则不需要 maven 重复引入)
 
 * runtime
 
-  运行时依赖范围。使用此依赖范围的 maven 依赖，对于测试和运行 classpath 有效，但在编译主代码时无效（如 JDBC 驱动实现，项目主代码的编译只需要 jdk 提供的 JDBC 接口，只有在执行测试或运行项目时才需要实现上述接口的具体 JDBC 驱动）
+  运行时依赖范围。对于测试和运行 classpath 有效，编译时无效（如 JDBC 驱动实现，项目主代码的编译只需要 jdk 提供的 JDBC 接口，只有在执行测试或运行项目时才需要实现上述接口的具体 JDBC 驱动）
 
 * system
 
-  系统依赖范围。和 provided 依赖范围完全一致。但是，使用 system 范围的依赖时必须通过 systemPath 元素显式地指定依赖文件的路径。由于此类依赖不能通过 maven 仓库解析，而且往往与本机系统绑定，可能造成构建的不可移植，因谨慎使用。systemPath 元素可以引用环境变量
+  系统依赖范围。和 provided 依赖范围完全一致。使用 system 范围的依赖时必须通过 systemPath 元素显式地指定依赖文件的路径。由于此类依赖不能通过 maven 仓库解析，而且往往与本机系统绑定，可能造成构建的不可移植，因谨慎使用。systemPath 元素可以引用环境变量
 
   ```xml
   <scope>system</scope>
