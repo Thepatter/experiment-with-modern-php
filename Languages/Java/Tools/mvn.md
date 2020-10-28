@@ -296,23 +296,6 @@ maven 引入的传递性依赖机制，大部分情况下只需要关心项目�
 
 代码中使用 exclusions 元素声明排除依赖，exclusions 可以包含一个或多个 exclusion 子元素，可以排除一个或多个传递性依赖。声明 exclusion 时只需要 groupId 和 artifactId，而不需要 version 元素。
 
-###### 归类依赖
-
-假定依赖于同一项目的不同模块，这些依赖的版本都是相同的，如果将来需要升级，这些依赖的版本会一起升级。如（springframework），可以在一个唯一的地方定义版本，并且在 dependency 声明中引用。使用 properties 元素定义 maven 属性
-
-```xml
-<properties>
-	<springframework.version>4.3.18</springframework.version>
-</properties>
-<dependencies>
-	<dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-beans</artifactId>
-        <version>${springframwrok.version}</version>
-    </dependency>
-</dependencies>
-```
-
 ###### 优化依赖
 
 maven 会自动解析所有项目的直接依赖和传递性依赖，并且根据规则正确判断每个依赖的范围，对于一些依赖冲突，也能进行调节，以确保任何一个构件只有唯一的版本在依赖中存在。这些工作后，得到的依赖称为已解析依赖（Resolved Dependency）。
@@ -342,77 +325,54 @@ mvn dependency:analyze
 
 通过 properties 元素可以自定义一个或多个 maven 属性，然后在 POM 的其他地方使用 ${属性名} 的方式引用该属性，可以消除重复
 
-###### 内置属性
+```xml
+<properties>
+	<springframework.version>4.3.18</springframework.version>
+</properties>
+<dependencies>
+	<dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${springframwrok.version}</version>
+    </dependency>
+</dependencies>
+```
 
-* ${basedir}
+*其他属性*
 
-  项目根目录
+|                  定义                  |                     含义                      |   类型   |
+| :------------------------------------: | :-------------------------------------------: | :------: |
+|              `${basedir}`              |                  项目根目录                   |   内置   |
+|              `${version}`              |                   项目版本                    |   内置   |
+|   `${project.build.sourceDirectory}`   |       主源码目录，默认 `src/main/java`        |   POM    |
+| `${project.build.testSourceDirectory}` |      测试源码目录，默认 `src/test/java`       |   POM    |
+|      `${project.build.directory}`      |       项目构建输出目录，默认 `target/`        |   POM    |
+|      `${project.outputDirectory}`      |     编译输出目录，默认 `target/classes/`      |   POM    |
+|    `${project.testOutputDirectory}`    | 测试代码输出目录，默认 `target/test-classes`  |   POM    |
+|          `${project.groupId}`          |                项目的 groupId                 |   POM    |
+|        `${project.artifactId}`         |                项目 artifactId                |   POM    |
+|          `${project.version}`          |        项目 version，等价 `${version}`        |   POM    |
+|      `${project.build.finalName}`      | 项目打包输出文件名称，默认 artifactId-version |   POM    |
+|       `${settings.propertyName}`       |          引用 setings.xml 文件元素值          | settings |
+|         `${env.propertyName}`          |                 引用环境变量                  |   env    |
 
-* ${version}
+*   settings 属性
 
-  项目版本
+    引用 *settings.xml* 文件中 XML 元素的值，使用该属性引入 settings. 开头的属性
 
-###### POM 属性
+*   java 系统属性
 
-使用该属性引用 POM 文件中对应元素的值，常用 POM 属性包括
+    所有 java 系统属性都可以使用 maven 属性引用，使用 mvn help:system 查看所有 java 系统属性
 
-* ${project.build.sourceDirectory}
+*   环境变量属性
 
-  项目的主源码目录，默认为 src/main/java
-
-* ${project.build.testSourceDirectory}
-
-  项目的测试源码目录，默认为 src/test/java
-
-* ${project.build.directory}
-
-  项目构建输出目录，默认为 target/
-
-* ${project.outputDirectory}
-
-  项目主代码编译输出目录，默认为 target/classes/
-
-* ${project.testOutputDirectory}
-
-  项目测试代码编译输出目录，默认为 target/test-classes/
-
-* ${project.groupId}
-
-  项目的 groupId
-
-* ${project.artifactId}
-
-  项目的 artifactId
-
-* ${project.verion}
-
-  项目的 version，等价 ${version}
-
-* ${project.build.finalName}
-
-  项目打包输出文件的名称，默认为 artifactId-version
-
-###### settings 属性
-
-使用该属性引入 settings. 开头的属性，引用 settings.xml 文件中 XML 元素的值
-
-* ${settings.localRepository}
-
-  指定本地仓库地址
-
-###### java 系统属性
-
-所有 java 系统属性都可以使用 maven 属性引用，使用 mvn help:system 查看所有 java 系统属性
-
-###### 环境变量属性
-
-所有环境变量可以使用以 ${evn.属性名} 形式引用
+    所有环境变量可以使用以 ${env.属性名} 形式引用
 
 ##### profiles
 
-###### 构建文件 profile
-
 为了能让构建在各个环境下方便移植，maven 引入了 profile 的概念。profile 能够在构建的时候修改 POM 的一个子集，或者添加额外的配置元素，用户可以使用很多方式激活 profile，以实现构建在不同环境下的移植。
+
+###### 构建文件 profile
 
 构建配置文件是一系列的配置项的值，用来设置或者覆盖 maven 构建默认值。使用构建配置文件，可以为不同的环境，定制构建方式。配置文件在 POM 文件中使用 activeProfiles 或者 profiles 元素指定，并且可以通过各种方式触发。配置文件在构建时修改 POM，并且用来给参数设定不同的目标环境
 
@@ -425,15 +385,11 @@ mvn help:all-profiles
 
 可以在以下位置声明 profile
 
-* POM 文件，声明的 profile 只对当前项目有效
+* *pom.xml*，声明的 profile 只对当前项目有效
 
   支持：repositories、pluginsRepositories、distributionManagement、dependencies、dependencyManagement、modules、properties、reporting、build 元素
 
-* 用户 settings.xml，对该用户所有的 maven 项目有效
-
-* 全局 settings.xml，对本机所有 maven 项目有效
-
-  setting.xml 中只支持：repositories、pluginRepositories、properties
+* *settings.xml*，支持用户和全局，支持：repositories、pluginRepositories、properties
 
 ###### 激活 profile
 
@@ -579,9 +535,9 @@ maven 支持针对不同的环境生成不同的构建
             <artifactId>maven-war-plugin</artifactId>
             <version>3.2.0</version>
             <configuration>
-            		<archive>
-            				<manifest>
-                    		<addClasspath>true</addClasspath>
+            	<archive>
+            		<manifest>
+                    	<addClasspath>true</addClasspath>
                     </manifest>
                 </archive>
             </configuration>
@@ -590,13 +546,9 @@ maven 支持针对不同的环境生成不同的构建
 </build>
 ```
 
-
-
 #### 仓库
 
-##### 概述
-
-在 maven 世界中，任何一个依赖，插件或者项目构建的输出，都可以称为构件。任何一个构件都有一组坐标唯一标识。得益于坐标机制，任何 maven 项目使用任何一个构件的方式都是完全相同的。在此基础上，maven 可以在某个位置统一存储所有 maven 项目共享的构件，这个统一的位置就是仓库。
+仓库：统一存储所有 maven 项目共享的构件位置
 
 实际的 maven 项目将不再各自存储其依赖文件，它们只需要声明这些依赖的坐标，在需要的时候 maven 会自动根据坐标找到仓库中的构件，并使用它们。项目构建完毕后生成的构件也可以安装或者部署到仓库中，供其他项目使用
 
@@ -630,10 +582,10 @@ maven 支持针对不同的环境生成不同的构建
           	<name>JBoss Repository</name>
           	<url>http://repository.jboss.com/maven2/</url>
           	<releases>
-            		<enabled>true</enabled>
+            	<enabled>true</enabled>
           	</releases>
           	<snapshots>
-            		<enabled>false</enabled>
+            	<enabled>false</enabled>
           	</snapshots>
           	<layout>default</layout>
         </respository>
@@ -657,7 +609,7 @@ releases 和 snapshots 元素用来控制 maven 对于发布版构件和快照�
 
   配置 maven 检查检验和文件的策略。当构件被部署到 maven 仓库中时，会同时部署对应的校验和文件。在下载构件的时候，maven 会验证校验和文件，当值为默认的 warn 时，maven 会在执行构建时输出警告信息，fail 遇到校验和错误就构建失败，ignore 使 maven 完全忽略校验和错误
 
-layout 元素值表示仓库的布局是 maven2 或 maven3 的默认布局，而不是 maven1 的布局。
+*   layout 元素值表示仓库的布局是 maven2 或 maven3 的默认布局，而不是 maven1 的布局。
 
 远程仓库的认证
 
@@ -706,7 +658,7 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
 * 统一修改仓库地址
 
-  可以直接修改 MAVEN_HOME/conf 文件夹中的 settings.xml 文件，或者 ~/.m2/settings.xml 文件。setting.xml里有个 mirrors 节点，用来配置镜像 URL。mirrors 可以配置多个 mirror，每个 mirror 有：
+  可以修改 *settings.xml* 下 mirrors 节点，用来配置镜像 URL。mirrors 可以配置多个 mirror，每个 mirror 有：
 
   id：唯一标识一个 mirror，name：类似描述，url：mirror 地址，mirrorOf：代表一个镜像的替代位置，central 即代替官方的中央库
 
@@ -739,9 +691,9 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
 ###### 本地仓库
 
-一般来说，在 maven 项目目录下，没有诸如 *lib/* 这样用来存放依赖文件的目录，当 maven 在执行编译或测试时，如果需要使用依赖文件，它总是基于坐标使用本地仓库的依赖文件。
+在 maven 项目目录下，没有诸如 *lib/* 这样用来存放依赖文件的目录，当 maven 在执行编译或测试时，如果需要使用依赖文件，它总是基于坐标使用本地仓库的依赖文件。
 
-默认情况下，每个用户在自己的用户目录下都有一个路径为 *.m2/repository/* 的仓库目录。可以编辑 .m2/settings.xml，设置 localRepository 元素的值为想要的仓库地址
+默认用户仓库 *~/.m2/repository/*  编辑 .m2/settings.xml，设置 localRepository 元素的值为想要的仓库地址
 
 ```xml
 <settings>
@@ -760,27 +712,9 @@ distributionManagement 包含 repository 和 snapshotRepository 子元素，前�
 
 ##### 生命周期
 
-maven 的生命周期就是为了对所有的构建过程进行抽象和统一，包含了项目的清理、初始化、编译、测试、打包、集成测试、验证、部署和站点生成等。
+maven 的生命周期包含项目的清理、初始化、编译、测试、打包、集成测试、验证、部署和站点生成等。生命周期抽象了构建的各个步骤，定义了它们的次序，生命周期本身不做任何实际的工作，实际的任务都交由插件完成，每个构建步骤可以绑定一个或多个插件行为，为大多数构建步骤编写了并绑定了默认插件。
 
-生命周期抽象了构建的各个步骤，定义了它们的次序，生命周期本身不做任何实际的工作，实际的任务都交由插件完成，每个构建步骤可以绑定一个或多个插件行为，为大多数构建步骤编写了并绑定了默认插件。
-
-在 maven 的日常使用中，命令行的输入往往对应了生命周期。maven 生命周期是抽象的，其实际行为都由插件来完成。
-
-maven 拥有三套相互独立的生命周期
-
-* clean
-
-  清理项目
-
-* default
-
-  构建项目
-
-* site
-
-  建立项目站点
-
-每个生命周期包含一些阶段，这些阶段是有顺序的，并且后面的阶段依赖于前面的阶段，用户和 maven 直接交互方式就是调用这些生命周期阶段。
+maven 拥有三套（clean：清理、default：构建、site：站点）相互独立的生命周期，每个生命周期包含一些阶段，这些阶段是有顺序的，并且后面的阶段依赖于前面的阶段，用户和 maven 直接交互方式就是调用这些生命周期阶段。
 
 三套生命周期本身是相互独立的，用户可以仅调用生命周期的某个阶段，而不会对其他生命周期产生任何影响。
 
@@ -880,11 +814,7 @@ site 生命周期是建立和发布项目站点。maven 能基于 POM 所包含�
 
 ##### 插件
 
-###### 插件目标
-
-插件以独立的构件形式存在，maven 会在需要的时候下载并使用插件，对于插件本身，为了能够复用代码，它往往能完成多个任务。这些功能聚集在一个插件里，每个功能就是一个插件目标。
-
-通用的写法为冒号前面是插件前缀，冒号后面是插件的目标。
+插件以独立的构件形式存在，maven 会在需要的时候下载并使用插件，对于插件本身，为了能够复用代码，它往往能完成多个任务。这些功能聚集在一个插件里，每个功能就是一个插件目标。通用的写法为冒号前面是插件前缀，冒号后面是插件的目标。
 
 ###### 内置插件
 
