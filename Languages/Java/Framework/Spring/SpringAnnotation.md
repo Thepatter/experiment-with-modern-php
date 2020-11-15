@@ -1,5 +1,3 @@
-### 注解
-
 #### Spring 内置注解
 
 ##### 通用注解
@@ -293,18 +291,6 @@
 | value  | http 状态码数字，HttpStatus.NOT_FOUND |
 | reason |              原因字符串               |
 
-###### @RequestBody
-
-获取请求为 raw application/json 的对象并映射到实体
-
-```java
-public Book store(@RequestBody Book book) {}
-```
-
-###### @RequestPart
-
-获取请求对应的 part 数据
-
 ###### @PostConstruct
 
 指定初始化 Bean 后要执行方法
@@ -344,6 +330,18 @@ public void sendProduct(@RequestParam int productId)
 |     name     |    声明请求参数名称     |
 |   required   | 默认 true，指定是否必须 |
 | defaultValue |       指定默认值        |
+
+###### @RequestBody
+
+获取请求为 raw application/json 的对象并映射到实体，不支持表单提交类型为 `x-www-form-urlencoded` 
+
+###### @ModelAttribute
+
+获取请求为 `x-www-form-urlencoded` 的表单对象，将表单字段绑定到声明对象属性，使用 thymeleaf 模版时，在模版中使用 `th:object` 标签在 from 元素中声明对象后再在表单字段中使用 `th:field` 绑定对象属性
+
+###### @RequestPart
+
+获取请求对应的 part 数据
 
 ##### SpringDataJPA
 

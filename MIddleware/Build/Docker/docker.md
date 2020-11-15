@@ -6,28 +6,24 @@
 
 典型的 C/S 应用程序，Docker Engine 运行方式：
 
-1. dockerd 作为服务端软件运行（创建和管理 docker 对象：网络，容器，卷），并提供调用接口，cli 客户端（docker）使用 socket 或 tcp 与服务端 dockerd 通信
-2. docker 命令行客户端调用接口与守护进程交互
+1. daemon 软件（dockerd）运行（创建和管理 docker 对象：网络，容器，卷），并提供调用接口，cli 客户端（docker）使用 socket 或 tcp 与服务端 dockerd 通信
+2. client 通过网络或 socket 接口与 dameon 交互
 
 ###### 配置
 
-*   daemon.json
-
-    配置 dockerd 运行时
-
-    */etc/docker/daemon.json*
+*   */etc/docker/daemon.json* 配置 dockerd 运行时行为
 
     ```json
-    {
-    	// 指定仓库镜像
-    	"registry-mirrors" : [
+{
+    	  // 指定仓库镜像
+	  "registry-mirrors" : [
             "https://docker.mirrors.ustc.edu.cn/",
             "https://reg-mirror.qiniu.com",
             "https://hub-mirror.c.163.com",
       	],
         // 指定 images 目录
         "graph": "/var/data/docker",
-    	// 指定安全仓库地址
+    	  // 指定安全仓库地址
         "insecure-registries" : ["home.com:5000"],
         // 修改存储驱动
         "storage-driver": "overlay2"
@@ -36,7 +32,7 @@
 
 ###### 远程 docker daemon
 
-使用证书来保证能够远程访问的 docker daemon socket 安全
+使用证书来保护远程访问
 
 *   服务器配置
 
@@ -45,42 +41,40 @@
         ```shell
         # 1. 创建 certs 文件夹, 后续创建文件保存在该目录
         mkdir -p /etc/docker/certs
-        # 2. 使用 Openssl 创建 CA 私钥和公钥
-        openssl genrsa -aes256 -out ca-key.pem 4096  // 需要输入两次相同的密码
-        openssl req -new -x509 -days 365 -key ca-key.pem -sha256 -out ca.pem // 依次输出密码，除密码外其他可以跳过
+        # 2. 使用 Openssl 创建 CA 私钥和公钥，两次密码相同，除密码外可跳过其他
+        openssl genrsa -aes256 -out ca-key.pem 4096
+        openssl req -new -x509 -days 365 -key ca-key.pem -sha256 -out ca.pem
         # 3. 创建服务器密钥和证书签名请求(CSR) $HOST 为域名或公网 IP
         openssl genrsa -out server-key.pem 4096
         openssl req -subj "/CN=$HOST" -sha256 -new -key server-key.pem -out server.csr
-        # 4. 使用 CA 对公钥签名
-        echo subjectAltName = DNS:$HOST,IP:0.0.0.0,IP:127.0.0.1 >> extfile.cnf  // 需要配置 127.0.0.1 和外网 IP
+        # 4. 使用 CA 对公钥签名，需要配置 127.0.0.1 和公网 IP
+        echo subjectAltName = DNS:$HOST,IP:0.0.0.0,IP:127.0.0.1 >> extfile.cnf
         # 5. 将 Docker 守护进程密钥的扩展使用属性设置为仅用于服务器身份验证
         echo extendedKeyUsage = serverAuth >> extfile.cnf
         # 6. 生成签名的证书
         openssl x509 -req -days 365 -sha256 -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem -extfile extfile.cnf
         # 生成客户端密钥和证书签名请求
         openssl genrsa -out key.pem 4096
-        openssl req -subj "/CN=$HOST" -new -key key.pem -out client.csr // HOST 为外网 IP 或域名
+        # HOST 为外网 IP 或域名
+        openssl req -subj "/CN=$HOST" -new -key key.pem -out client.csr 
         echo extendedKeyUsage = clientAuth > extfile-client.cnf
         openssl x509 -req -days 365 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out cert.pem -extfile extfile-client.cnf
         # 删除证书签名和扩展配置文件
         rm client.csr server.csr extfile.cnf extfile-client.cnf
-        # 保护密钥
+        # 保护密钥权限
         chmod -v 0400 ca-key.pem key.pem server-key.pem
         chmod -v 0444 ca.pem server-cert.pem cert.pem
         ```
 
-    2.  配置远程访问
-
-        修改 */lib/systemd/system/docker.service* 或 */etc/systemd/system/docker.service.d/startup_options.conf* 文件
+    2.  修改 /lib/systemd/system/docker.service 或 /etc/systemd/system/docker.service.d/startup_options.conf，更新后需要 daemon-reload 并重启 dockerd
 
         ```ini
-        [Service]
+    [Service]
         ExecStart=
         # 使用 —H 指定多个连接
         ExecStart=/usr/bin/dockerd --tlsverify --tlscacert=/etc/docker/certs/ca.pem --tlscert=/etc/docker/certs/server-cert.pem --tlskey=/etc/docker/certs/server-key.pem -H fd:// -H tcp://0.0.0.0:2375 
         ```
-
-        配置 docker.service 后需要 daemon-reload 并重启 dockerd
+        
 
 *   客户端配置
 
@@ -97,25 +91,23 @@
 
 docker 引擎是用来运行和管理容器的核心软件，采用了模块化的设计，其组件是可替换的，引擎大致工作流程为：
 
-1.  docker 客户端将命令提交到 docker daemon 执行
-2.  docker daemon 解析并执行命令，调用（通过 gRPC 通信） containerd 管理 docker 对象
+1.  client 验证并提交命令到 daemon 执行
+2.  daemon 解析并执行命令，调用（通过 gRPC 通信） containerd 管理 docker 对象
 3.  containerd 调用（将 docker 镜像转为为 OCI bundle）与操作系统绑定的 runc 来创建容器
 4.  runc 与操作系统内核接口进行通信，基于所有必要的工具（Namespace、CGroup）来创建容器
 5.  容器进程作为 runc 的子进程启动，启动完毕后，runc 将会退出
 
-###### Docker 客户端
+###### client
 
-提供 docker 命令
+命令行客户端、编程语言 API 接口
 
-###### Docker 守护进程
+###### daemon
 
-API 和其他特性。
+处理客户端请求，提供服务接口与其他组件通信
 
 ###### containerd
 
-容器 Supervsor。管理所有容器的执行逻辑，用于容器生命周期（start|stop|pause|rm...）管理。在 Linux 和 Windows 中以 damon 的方式运行，在 Docker 引擎技术栈中 containerd 位于 damon 和 runc 之间
-
-kubernetes 也可以通过 cri-containerd 使用 containerd
+容器 Supervsor。管理所有容器的执行逻辑及生命周期（start|stop|pause|rm...）管理。在 Linux 和 Windows 中以 damon 的方式运行，在 Docker 引擎技术栈中 containerd 位于 damon 和 runc 之间。
 
 ###### runc
 
@@ -125,9 +117,58 @@ kubernetes 也可以通过 cri-containerd 使用 containerd
 
 ###### 存储驱动
 
-每个 docker 容器都有一个本地存储空间，用于保存层叠的镜像层以及挂载的容器文件系统。默认情况下，容器的所有读写操作都发生在其镜像层上或挂载的文件系统中。
+每个容器都有一个本地存储空间，用于保存层叠的镜像层以及挂载的容器文件系统。默认情况下，容器的所有读写操作都发生在其镜像层上或挂载的文件系统中。本地存储是通过存储驱动进行管理的，存储驱动在上层抽象中都采用了栈式镜像层存储和写时复制。存储驱动的选择是节点级别的。每个节点只能选择一种存储驱动，不能为每个容器选择不同的存储驱动。修改存储引擎后，现有的镜像和容器在重启之后将不可用。
 
-本地存储是通过存储驱动进行管理的，存储驱动在上层抽象中都采用了栈式镜像层存储和写时复制。存储驱动的选择是节点级别的。每个 docker 主机只能选择一种存储驱动，不能为每个容器选择不同的存储驱动。修改存储引擎后，现有的镜像和容器在重启之后将不可用。
+*   aufs（advanced multi layered unification filesystem）
+
+    最早使用的，Ubuntu 早期版本对该驱动支持较好。支持联合挂载的文件系统，支持将不同的目录挂载到同一个目录下，分层挂载，最上层是可读写层，下层是只读层。每一层都是一个普通文件系统。
+
+    *   读文件时：从顶层向下寻找
+
+    *   写文件时：不存在文件会在读写层新建该文件，存在时从读写层开始向下查询，如果在只读层找到该文件，则将其复制到读写层进行修改，写文件时开销较大
+    *   新建文件时：如果在读写层存在对应空白文件，则先删除空白文件删除再新建，否则直接新疆
+    *   删除文件时：如果仅存在读写层中，直接删除，否则先删除读写层文件，在读写层中创建一个空白文件标志该文件不存在，不会删除只读层文件
+
+*   Device Mapper
+
+    2.6 内核中提供从逻辑设备到物理设备的映射框架机制。包含：
+
+    *   映射设备
+
+        是内核向外提供的逻辑设备。一个映射设备通过一个映射表与多个目标设备映射起来
+
+    *   映射表
+
+        包含多个多元组，每个多元组记录了这个映射设备的起始地址、范围与目标设备的地址偏移量的映射关系
+
+    *   目标设备
+
+        可以是物理设备，也可以是映射设备，最终通过映射树映射到物理设备上
+
+    Device Mapper 本质是根据映射关系描述 IO 处理规则，当映射设备接收 IO 请求时，这个 IO 请求会根据映射表逐级转发，直到到达最底层物理设备
+
+    在 Redhat 早期版本支持较好，需要一定配置。默认采用 loopback mounted sparse file 作为底层实现性能较差。生产环境中需要将底层实现配置为 direct-lvm 模式（使用裸块设备）的 LVM 精简池（LVM thin pool）提高性能
+
+    ```json
+    // /etc/docker/daemon.json
+    {
+      	"storage-driver": "devicemapper",
+      	"storage-opts": [
+          	"dm.directlvm_device=/dev/xdf", // 块设备位置
+          	"dm.thinp_percent=95", 		// 镜像和容器允许使用的最大存储空间占比，默认 95
+          	"dm.thinp_metapercent=1", // 元数据允许使用存储空间大小，默认 1%
+          	"dm.thinp_autoextend_threshold=80", // 自动扩展精简池阈值，默认 80
+          	"dm.thinp_autoextend_percent=20", // 当触发精简池自动扩展时，扩展大小应当占现有空间的比例
+          	"dm.directlvm_device_force=false" // 允许用户决定是否将块设备格式化为新的文件系统
+        ]
+    }
+    ```
+
+    使用 direct-lvm 前需要有可用的块设备。
+
+*   Overlay2
+
+    需要 17+ 和 4.x 内核，性能更好，更稳定。18 开始默认。新型联合文件系统，允许将一个文件系统与另一个文件系统重叠，在上层文件系统中记录更改，下层的文件系统保持不变。
 
 #### 镜像
 

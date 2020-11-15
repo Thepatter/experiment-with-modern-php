@@ -151,7 +151,7 @@ mysqld --init-file=/path/to/mysql-init &
 
   ```java
   // 如果要让用户 ua 拥有库 db1 的所有权限，可以执行下面这条命令
-  grant all privileges on db1.* to 'ua'@'%' with grant options;
+  grant all privileges on db1.* to 'ua'@'%';
   ```
 
   基于库的权限记录保存在 `mysql.db` 表中，在内存里则保存在数组 `acl_dbs` 中，这条 `grant` 命令做了两个动作
