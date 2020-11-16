@@ -568,6 +568,22 @@ CMD ["--spring.profiles.active=postgres"]
 
 COPY --from 指令，它从之前的阶段构建的镜像中仅复制生产环境相关的应用代码，而不会复制生产环境不需要的构件
 
+##### 镜像保存
+
+###### docker-hub
+
+*   登录到 registry
+
+    ```shell
+    # --password, -p
+    # --password-stdin
+    # --username, -u
+    docker login [OPTIONS] [SERVER]
+    $ cat ~/my_password.txt | docker login --username foo --password-stdin
+    ```
+
+    
+
 #### 容器
 
 ##### 运行容器
@@ -924,29 +940,11 @@ Docker 为覆盖网络提供了本地驱动 overlay
 * 使用 host 网络
 * 使用宿主机 IP 别名（host.docker.internal）
 
-#### 管理接口
+#### 命令行接口
 
-##### builder
+##### Docker
 
-##### config
+##### Docker Compose
 
-##### container
-
-##### context
-
-##### image
-
-##### node
-
-##### plugin
-
-##### secret
-
-##### stack
-
-##### system
-
-##### trust
-
-
+##### Daemon
 
