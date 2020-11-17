@@ -317,6 +317,102 @@ bin/magento setup:install \
     bin/magento admin:user:unlock {username}
     ```
 
+##### 运行时配置
+
+###### 缓存
+
+默认文件系统缓存处于启用状态，文件缓存位于 <magento_root>/var 目录下，<magento_root>/app/etc/env.php 项 cache_type 控制缓存项。支持多种缓存引擎
+
+* database
+
+  修改  <magento_root>/app/etc/di.xml。将缓存数据存储在 cache 和 cache_tag 表中。
+
+  ```xml
+  <!-- 声明 cache 内存大小 -->
+  <type name="Magento\Framework\App\Cache\Frontend\Pool">
+      <arguments>
+          <argument name="frontendSettings" xsi:type="array">
+              <item name="page_cache" xsi:type="array">
+                  <item name="backend" xsi:type="string">database</item>
+              </item>
+              <!-- env.php 中自定义 cache 的 id 可以指定多个 cache id -->
+              <item name="<your cache id>" xsi:type="array">
+              	<item name="backend" xsi:type="string">database</item>
+              </item>
+          </argument>
+      </arguments>
+  </type>
+  <!-- 声明 cache 实例 -->
+  <type name="Magento\Framework\App\Cache\Type\FrontendPool">
+      <arguments>
+          <argument name="typeFrontendMap" xsi:type="array">
+              <item name="backend" xsi:type="string">database</item>
+          </argument>
+      </arguments>
+  </type>
+  ```
+
+  在 env.php 文件中的 cache 配置项中自定义缓存
+
+  ```php
+      'cache' => [
+          'frontend' => [
+              'default' => [
+                  'id_prefix' => 'ec1_'
+              ],
+              'page_cache' => [
+                  'id_prefix' => 'ec1_'
+              ],
+              'magento_cache' => [
+                  'backend' => 'database'
+              ]
+          ],
+          'type' => [
+              'config' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'layout' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'block_html' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'view_files_fallback' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'view_files_preprocessing' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'collections' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'db_ddl' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'eav' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'full_page' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'translate' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'config_integration' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'config_integration_api' => [
+                  'frontend' => 'magento_cache'
+              ],
+              'config_webservice' => [
+                  'frontend' => 'magento_cache'
+              ],
+          ]
+      ],
+  ```
+
+  修改 di.xml 和 env.php 文件后直接刷新即可看见结果，无需更新配置，验证时删除文件缓存并查看数据库
+
 #### 开发
 
 magento 应用由模块（业务）、主题、语言包组成，构建模块时，必须遵循 PSR-4 兼容结构
@@ -349,13 +445,13 @@ magento 应用由模块（业务）、主题、语言包组成，构建模块时
     }
     ```
 
-* 包根目录下创建一个 registration.php 文件在 magento 加载时注册
+* 包根目录下创建一个 registration.php 文件在 magento 加载时注册.
 
     ```PHP
     <?php
     
     use \Magento\Framework\Component\ComponentRegistrar;
-    // 参数为 type（module/theme/language）、contentName、path
+    // 参数为 type（MODULE/THEME/LANGUAGE/LIBRARY）、contentName、path
     ComponentRegistrar::register(ComponentRegistrar::MODULE, 'Magento_Backend', __DIR__);
     ```
 
@@ -450,3 +546,168 @@ magento 应用由模块（业务）、主题、语言包组成，构建模块时
 ##### 组件开发
 
 开发前需要安装 magento 及其依赖并将其设置为开发者模式。包括布局文件结构，创建必要的配置文件，构建任何所需的 API 接口和服务以及添加组件所需的任何前端部件。构建过程中关闭缓存
+
+###### 组件配置
+
+在 /etc/module.xml 文件中声明自身
+
+```xml
+<?xml version="1.0"?>
+<!-- 可以使用 urn 引用 xsd -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+    <!-- name 属性声明模块名,必须存在，如果不适用声明式安装与升级还必须声明 setup_version 属性 -->
+    <module name="Vendor_ComponentName"/>
+    <!-- 指定加载顺序，指定加载该组件前需要加载的组件列表 -->
+    <sequence>
+		<module name="Magento_Backend"/>
+        <module name="Magento_Sales"/>
+        <module name="Magento_Quote"/>
+        <module name="Magento_Checkout"/>
+        <module name="Magento_Cms"/>
+    </sequence>
+</config>
+```
+
+###### di.xml
+
+dev:di:info 获取依赖注入配置信息
+
+```shell
+# 获取对应类的注入项
+bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
+```
+
+```xml
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- 一个继承 Magneto\Core\Model\Config 的虚拟类型，system 为构造参数 type 值 -->
+    <virtualType name="moduleConfig" type="Magento\Core\Model\Config">
+        <arguments>
+            <argument name="type" xsi:type="string">system</argument>
+        </arguments>
+    </virtualType>
+    <!-- App 所有实例接受 moduleConfig 作为依赖 -->
+    <type name="Magento\Core\Model\App">
+    <!-- 配置构造函数参数，参数名称须与配置类中构造函数中参数名称相对应 -->
+        <arguments>
+            <argument name="config" xsi:type="object">moduleConfig</argument>
+        </arguments>
+    </type>
+</config>
+```
+
+* virtualType
+
+  将不同的依赖项注入到现有 PHP 类中而不影响其他类且无需创建新类文件的方式。可以自定义类，而不会影响依赖于原始类的其他类
+
+* 构造函数参数，可以在 argument 节点中配置类构造函数参数，支持以下类型
+
+  ```xml
+  <!-- string -->
+  <argument xsi:type="string">{strValue}</argument>
+  <argument xsi:type="string" translate="true">{strValue}</argument>
+  <!-- boolean 支持小写和字符串小写 false|"false"*/true|"true"* 和数字字符串 0/1 -->
+  <argument xsi:type="boolean">{boolValue}</argument>
+  <!-- number 支持整形和浮点型 -->
+  <argument xsi:type="number">{numericValue}</argument>
+  <!-- init_parameter 全局初始化常量 -->
+  <argument xsi:type="init_parameter">{Constant::NAME}</argument>
+  <!-- const 常量 -->
+  <argument xsi:type="const">{Constant::NAME}</argument>
+  <!-- null -->
+  <argument xsi:type="null"/>
+  <!-- array -->
+  <argument xsi:type="array">
+  	<item name="somekey" xsi:type="<type>">someVal</item>
+  </argument>
+  <!-- object 创建typeName类型实例作为参数传递，支持类、接口、虚拟类型-->
+  <argument xsi:type="object">{typeName}</argument>
+  <!-- shared 定义创建对象实例方式,默认（true）单例第一次请求时创建，false 为每次创建-->
+  <argument xsi:type="object" shared="{shared}">{typeName}</argument>
+  <!-- 声明抽象或接口实现  -->
+  <perference for="Magento\Core\Model\UrlInterface" type="Magento\Backend\Model\Url"/>
+  ```
+
+  Magento 合并给定范围的配置文件时，具有相同名称的数组参数将合并到新数组中，加载具体作用域配置时会替换其值。合并时，如果参数的类型不同，参数会用相同的名称替换其他参数，如果参数类型相同，则更新的参数将替换旧的参数
+
+  ```xml
+  <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+      <type name="Magento\Example\Type">
+          <arguments>
+              <!-- Pass simple string -->
+              <argument name="stringParam" xsi:type="string">someStringValue</argument>
+              <!-- Pass instance of Magento\Some\Type -->
+              <argument name="instanceParam" xsi:type="object">Magento\Some\Type</argument>
+              <!-- Pass true -->
+              <argument name="boolParam" xsi:type="boolean">1</argument>
+              <!-- Pass 1 -->
+              <argument name="intParam" xsi:type="number">1</argument>
+              <!-- Pass application init argument, named by constant value -->
+              <argument name="globalInitParam" xsi:type="init_parameter">Magento\Some\Class::SOME_CONSTANT</argument>
+              <!-- Pass constant value -->
+              <argument name="constantParam" xsi:type="const">Magento\Some\Class::SOME_CONSTANT</argument>
+              <!-- Pass null value -->
+              <argument name="optionalParam" xsi:type="null"/>
+              <!-- Pass array -->
+              <argument name="arrayParam" xsi:type="array">
+                  <!-- First element is value of constant -->
+                  <item name="firstElem" xsi:type="const">Magento\Some\Class::SOME_CONSTANT</item>
+                  <!-- Second element is null -->
+                  <item name="secondElem" xsi:type="null"/>
+                  <!-- Third element is a subarray -->
+                  <item name="thirdElem" xsi:type="array">
+                      <!-- Subarray contains scalar value -->
+                      <item name="scalarValue" xsi:type="string">ScalarValue</item>
+                      <!-- and application init argument -->
+                      <item name="globalArgument " xsi:type="init_parameter">Magento\Some\Class::SOME_CONSTANT</item>
+                  </item>
+              </argument>
+          </arguments>
+      </type>
+  </config>
+  ```
+
+  多系统部署时，系统间共享 app/etc/config.php 中配置。不要在 app/etc/env.php 中存储敏感配置，也不要在生产环境和开发环境中共享该配置
+
+  ```xml
+  <type name="Magento\Config\Model\Config\TypePool">
+      <arguments>
+          <!-- 声明配置是敏感的 item name 属性指定配置项 item 值指定是(1)否(0)敏感 -->
+          <argument name="sensitive" xsi:type="array">
+              <item name="carriers/ups/username" xsi:type="string">1</item>
+              <item name="carriers/ups/password" xsi:type="string">1</item>
+              <item name="carriers/ups/access_license_number" xsi:type="string">1</item>
+              <item name="carriers/ups/tracking_xml_url" xsi:type="string">1</item>
+              <item name="carriers/ups/gateway_xml_url" xsi:type="string">1</item>
+              <item name="carriers/ups/shipper_number" xsi:type="string">1</item>
+              <item name="carriers/ups/gateway_url" xsi:type="string">1</item>
+          </argument>
+          <!-- 声明配置是环境独有的 item name 属性指定配置项，值指定是(1)否(0)特定环境-->
+          <argument name="environment" xsi:type="array">
+              <item name="carriers/ups/access_license_number" xsi:type="string">1</item>
+              <item name="carriers/ups/debug" xsi:type="string">1</item>
+              <item name="carriers/ups/gateway_url" xsi:type="string">1</item>
+              <item name="carriers/ups/gateway_xml_url" xsi:type="string">1</item>
+              <item name="carriers/ups/is_account_live" xsi:type="string">1</item>
+              <item name="carriers/ups/password" xsi:type="string">1</item>
+              <item name="carriers/ups/username" xsi:type="string">1</item>
+          </argument>
+      </arguments>
+  </type>
+  ```
+
+##### 功能项
+
+###### 后端缓存管理
+
+在 etc/cache.xml 文件中配置一个可在管理后台操作的缓存项
+
+```xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
+    <type name="%cache_type_id%" translate="label,description" instance="VendorName\ModuleName\Model\Cache\Type\CacheType">
+        <label>Cache Type Label</label>
+        <description>Cache Type Description</description>
+    </type>
+</config>
+```
+
