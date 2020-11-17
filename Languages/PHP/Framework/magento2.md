@@ -325,13 +325,15 @@ bin/magento setup:install \
 
 * database
 
-  修改  <magento_root>/app/etc/di.xml。将缓存数据存储在 cache 和 cache_tag 表中。
+  修改  <magento_root>/app/etc/di.xml。缓存数据将存储在 cache 和 cache_tag 表中。
 
   ```xml
-  <!-- 声明 cache 内存大小 -->
+  <!-- 节点所有前端缓存实例的内存相关配置 -->
   <type name="Magento\Framework\App\Cache\Frontend\Pool">
       <arguments>
+        	<!-- 使 item 与 etc/env.php 中 cache 键中 frontend 数组对应 -->
           <argument name="frontendSettings" xsi:type="array">
+            	<!-- name 为 env.php 中 cache 键数组 frontend 数组键值 -->
               <item name="page_cache" xsi:type="array">
                   <item name="backend" xsi:type="string">database</item>
               </item>
@@ -342,18 +344,18 @@ bin/magento setup:install \
           </argument>
       </arguments>
   </type>
-  <!-- 声明 cache 实例 -->
+  <!-- 声明节点前端每个缓存类型配置 -->
   <type name="Magento\Framework\App\Cache\Type\FrontendPool">
       <arguments>
           <argument name="typeFrontendMap" xsi:type="array">
               <item name="backend" xsi:type="string">database</item>
           </argument>
       </arguments>
-  </type>
+</type>
   ```
 
   在 env.php 文件中的 cache 配置项中自定义缓存
-
+  
   ```php
       'cache' => [
           'frontend' => [
@@ -408,9 +410,9 @@ bin/magento setup:install \
                   'frontend' => 'magento_cache'
               ],
           ]
-      ],
+    ],
   ```
-
+  
   修改 di.xml 和 env.php 文件后直接刷新即可看见结果，无需更新配置，验证时删除文件缓存并查看数据库
 
 #### 开发
@@ -697,17 +699,22 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
 
 ##### 功能项
 
-###### 后端缓存管理
+###### 管理后台 Cache Management 项新增缓存管理
 
-在 etc/cache.xml 文件中配置一个可在管理后台操作的缓存项
+1.  在 etc/cache.xml 文件中配置一个可在管理后台操作的缓存项
 
-```xml
-<?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
-    <type name="%cache_type_id%" translate="label,description" instance="VendorName\ModuleName\Model\Cache\Type\CacheType">
-        <label>Cache Type Label</label>
-        <description>Cache Type Description</description>
-    </type>
-</config>
-```
+    ```xml
+    <?xml version="1.0"?>
+    <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
+      	<!-- name 唯一缓存类型 id, translate 管理后台 Cache Management 页展示参数 -->
+        <type name="%cache_type_id%" translate="label,description" instance="VendorName\ModuleName\Model\Cache\Type\CacheType">
+          	<!-- 后台缓存控制 Cache Type 字段展示 -->
+            <label>Cache Type Label</label>
+          	<!-- 后台缓存控制 Description 字段展示 -->
+            <description>Cache Type Description</description>
+        </type>
+    </config>
+    ```
+
+2.  在声明的实例中的模块下创建缓存类型实现
 
