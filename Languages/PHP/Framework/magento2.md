@@ -18,6 +18,23 @@
 
 ###### 获取 magento2
 
+使用 git 和 composer 获取 magento 源码或插件时需要进行 magento markplace 身份验证。推荐在当前用户下创建 .composer 运行时目录放入 auth.json
+
+```json
+// ~/.composer/auth.json
+{
+    "github-oauth": {
+        "github.com": "2e92379cab0b1c6f812b18a40a3d5cfb45ad1b04"
+    },
+    "http-basic": {
+        "repo.magento.com": {
+            "username": "c55018d4d8680c36bd35183e3be66aae",
+            "password": "3ce96aed3a088582bb81f73ab9f6bcf3"
+        }
+    }
+}
+```
+
 *   composer（需要身份认证）
 
     会验证 access key，这里安装默认会创建子目录 magento2 需要在 nginx 中修改相应的 $MATE_ROOT
@@ -417,7 +434,26 @@ bin/magento setup:install \
 
 #### 开发
 
-magento 应用由模块（业务）、主题、语言包组成，构建模块时，必须遵循 PSR-4 兼容结构
+magento 应用由模块（业务）、主题、语言包组成，构建模块时，必须遵循 PSR-4 兼容结构。
+
+##### magento 模块及命名空间
+
+###### 前台
+
+|   模块及命名空间    |      作用       |
+| :-----------------: | :-------------: |
+|       Catalog       | 分类和产品页面  |
+|      Customer       |    用户中心     |
+|      Checkout       |   购物车页面    |
+|      Checkout       |      支付       |
+|        Sales        |      订单       |
+|       Search        |      搜索       |
+|         Cms         | 首页及 Cms 页面 |
+|       Contact       |    联系页面     |
+| ConfigurableProduct |   可配置产品    |
+|    Downloadable     |    下载产品     |
+
+php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模块下重写，xml 在自定义模块下使用 layout 重写
 
 ##### 组件
 
@@ -581,7 +617,7 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
 
 ```xml
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <!-- 一个继承 Magneto\Core\Model\Config 的虚拟类型，system 为构造参数 type 值 -->
+    <!-- 继承 type 属性的虚拟类型，string 类型 system 值的构造函数 -->
     <virtualType name="moduleConfig" type="Magento\Core\Model\Config">
         <arguments>
             <argument name="type" xsi:type="string">system</argument>
@@ -607,7 +643,7 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
   <!-- string -->
   <argument xsi:type="string">{strValue}</argument>
   <argument xsi:type="string" translate="true">{strValue}</argument>
-  <!-- boolean 支持小写和字符串小写 false|"false"*/true|"true"* 和数字字符串 0/1 -->
+  <!-- boolean 支持 false|"false"* true|"true"* 和数字字符串 0/1 -->
   <argument xsi:type="boolean">{boolValue}</argument>
   <!-- number 支持整形和浮点型 -->
   <argument xsi:type="number">{numericValue}</argument>
@@ -623,7 +659,7 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
   </argument>
   <!-- object 创建typeName类型实例作为参数传递，支持类、接口、虚拟类型-->
   <argument xsi:type="object">{typeName}</argument>
-  <!-- shared 定义创建对象实例方式,默认（true）单例第一次请求时创建，false 为每次创建-->
+  <!-- shared 定义创建对象方式 true（默认）单例第一次请求时创建，false 为每次创建-->
   <argument xsi:type="object" shared="{shared}">{typeName}</argument>
   <!-- 声明抽象或接口实现  -->
   <perference for="Magento\Core\Model\UrlInterface" type="Magento\Backend\Model\Url"/>
@@ -697,17 +733,36 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
   </type>
   ```
 
+###### 开发流程
+
+1. 在 app/code 下创建模块目标，包含模块标准结构及文件，模块名与目录结构对应
+
+2. 命令行启用模块，或在 app/etc/config.php 中启用模块
+
+   ```
+   php bin/magento module:enable Magento_module 
+   ```
+
+3. 更新结构
+
+   ```shell
+   php bin/magento setup:upgrade
+   php bin/magento setup:static-content:deploy
+   ```
+
 ##### 功能项
 
-###### 管理后台 Cache Management 项新增缓存管理
+###### 后台缓存管理项新增
 
 1.  在 etc/cache.xml 文件中配置一个可在管理后台操作的缓存项
 
     ```xml
     <?xml version="1.0"?>
     <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Cache/etc/cache.xsd">
-      	<!-- name 唯一缓存类型 id, translate 管理后台 Cache Management 页展示参数 -->
-        <type name="%cache_type_id%" translate="label,description" instance="VendorName\ModuleName\Model\Cache\Type\CacheType">
+      	<!-- name 唯一缓存类型 id, translate 后台 Cache Management 展示项 -->
+        <type name="%cache_type_id_unique%" 
+              translate="label,description" 
+              instance="VendorName\ModuleName\Model\Cache\Type\CacheType">
           	<!-- 后台缓存控制 Cache Type 字段展示 -->
             <label>Cache Type Label</label>
           	<!-- 后台缓存控制 Description 字段展示 -->
@@ -716,5 +771,87 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
     </config>
     ```
 
-2.  在声明的实例中的模块下创建缓存类型实现
+2.  创建 cache.xml 中 instance
+
+    ```php
+    <?php
+    
+    namespace Temp\CacheChange\Model\Cache\Type;
+    
+    use Magento\Framework\App\Cache\Type\FrontendPool;
+    use Magento\Framework\Cache\Frontend\Decorator\TagScope;
+    
+    class DBCache extends TagScope
+    {
+        const TYPE_IDENTIFIER = 'db_cache_id';
+    
+        const CACHE_TAG = 'db_cache_tag';
+    
+        public function __construct(FrontendPool $cacheFrontendPool)
+        {
+            parent::__construct($cacheFrontendPool->get(self::TYPE_IDENTIFIER), self::CACHE_TAG);
+        }
+    
+        public function clean($mode = \Zend_Cache::CLEANING_MODE_ALL, array $tags = [])
+        {
+            return parent::clean($mode, $tags); // TODO: Change the autogenerated stub
+        }
+    }
+    ```
+
+3.  在 etc/env.php 中启用
+
+    ```php
+    'cache_type' => [
+    	'db_cache_id' => 1,
+        'file_cache_id' => 1
+    ]
+    ```
+
+4.  安装模块
+
+    ```shell
+    php ./bin/magento setup:upgrade
+    ```
+
+###### full-page-cache-control
+
+默认所有页面都可以缓存，如果页面布局文件中包含不缓存的 block，则整个页面都是不缓存的，配置时在对应的 layout 中配置其缓存属性，或者在响应头中控制缓存属性
+
+```xml
+<block class="Magento\Paypal\Block\Payflow\Link\Iframe" 		template="payflowlink/redirect.phtml" cacheable="false"/>
+```
+
+定义缓存时，可以在管理员界面或编写代码控制
+
+###### CLI命令
+
+命令依赖于 magento 必须安装且配置正确，命令在模块范围内定义。创建命令的流程：
+
+1. 在 Console 中创建命令类，继承 Symfony\Component\Console\Command\Command，在 execute 方法中处理命令逻辑，在 configure/__construct 中定义命令相关配置或在 di.xml 中定义相关配置
+
+2. 在组件 etc/di.xml 中注入命令
+
+   ```xml
+   <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+       <type name="Magento\Framework\Console\CommandListInterface">
+           <arguments>
+               <argument name="commands" xsi:type="array">
+                   <item name="commandexample_somecommand" xsi:type="object">Magento\CommandExample\Console\Command\SomeCommand</item>
+               </argument>
+           </arguments>
+       </type>
+   </config>
+   ```
+
+3. 清除缓存后注入并编译
+
+   ```shell
+   bin/magento cache:clean
+   bin/mangeot setup:di:compile
+   ```
+
+   
+
+   
 
