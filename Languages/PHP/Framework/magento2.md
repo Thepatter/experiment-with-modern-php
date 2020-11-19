@@ -1,24 +1,24 @@
 ### magento2
 
-十分消耗资源，很重很慢，但在国外很流行，大公司维护，比较可靠与受客户（特别是国外）客户信赖。
+十分消耗资源，很重很慢，但在国外很流行，大公司维护，比较可靠与受（特别是国外）客户信赖。
 
 #### 安装与配置
 
-##### 技术栈及配置需求
+##### 获取 magento 软件
 
-2G 内存
+###### 配置需求
 
-需要以下技术栈：
+典型 LNMP/LAMP 架构
 
 * composer 暂时不支持 2.0
 * nginx（1.x）/apache（2.4）
 * mysql（5.7/8.0）/mariadb（10）
-* elasticsearch（6.8/7.0）
+* elasticsearch（6.8/7.0，2.4 版本必须配置）
 * php7.2 及以上，需要以下扩展（bcmath、ctype、curl、dom、gd、hash、iconv、intl、mbstring、openssl、pdo_mysql、simplexml、soap、xsl、zip）
 
 ###### 获取 magento2
 
-使用 git 和 composer 获取 magento 源码或插件时需要进行 magento markplace 身份验证。推荐在当前用户下创建 .composer 运行时目录放入 auth.json
+使用 git 和 composer 获取 magento 源码或插件时需要进行 magento markplace 身份验证。推荐在当前用户下创建 .composer 运行时目录放入 auth.json，在 marketplace.magento.com 注册并创建 access key，public key 为授权 username，private key 为授权 password，可以写入 php 镜像系统变量
 
 ```json
 // ~/.composer/auth.json
@@ -35,167 +35,19 @@
 }
 ```
 
-*   composer（需要身份认证）
+composer（需要身份认证）
 
-    会验证 access key，这里安装默认会创建子目录 magento2 需要在 nginx 中修改相应的 $MATE_ROOT
+会验证 access key，这里安装默认会创建子目录 magento2 需要在 nginx 中修改相应的 $MATE_ROOT
 
-    ```shell
-    composer create-project --repository=https://repo.magento.com/ magento/project-community-edition magento2
-    ```
-
-*   git-clone
-
-    使用 gitee 镜像仓库
-
-*   在官网下载，需要登录获取下载链接
-
-##### docker 中运行
-
-###### php-dockerfile
-
-安装扩展，官方镜像缺少以下扩展
-
-```dockerfile
-FROM php:7.3.24-fpm-stretch
-
-COPY sources.list /etc/apt
-COPY magento.ini /usr/local/etc/php/conf.d
-COPY composer.phar /usr/local/bin/composer
-
-ENV username=c55018d4d8680c36bd35183e3be66aae password=3ce96aed3a088582bb81f73ab9f6bcf3
-
-RUN apt-get update && apt-get install -y \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libicu-dev \
-    libxml2-dev \
-    libxslt1-dev \
-    libzip-dev \
-    libjpeg-dev \
-    libwebp-dev \
-    composer \
-    git \
-    && docker-php-ext-configure gd --with-jpeg-dir=/usr/include --with-webp-dir=/usr/include --with-png-dir=/usr/include --with-freetype-dir=/usr/include \
-    && docker-php-ext-install  gd \
-    && docker-php-ext-configure bcmath \
-    && docker-php-ext-install  bcmath \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install  intl \
-    && docker-php-ext-configure pdo_mysql \
-    && docker-php-ext-install  pdo_mysql \
-    && docker-php-ext-configure soap \
-    && docker-php-ext-install soap \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install  zip \
-    && docker-php-ext-configure xsl \
-    && docker-php-ext-install  xsl \
-    && docker-php-ext-configure sockets \
-    && docker-php-ext-install  sockets \
-    && pecl install redis-5.3.2 \
-    && docker-php-ext-enable redis \
-    && mv $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini \
-    && chmod a+x /usr/local/bin/composer
+```shell
+composer create-project --repository=https://repo.magento.com/ magento/project-community-edition magento2
 ```
 
-###### docker-compose
-
-magento 目录为代码目录，使用了外部定义的网络 local 方便配置其他容器加入，如从库、redis、mq
-
-```yml
-version: '3'
-
-services:
-  nginx:
-    image: nginx:1.18
-    container_name: docker-nginx
-    hostname: nginx118
-    environment:
-      - TZ=Asia/Shanghai
-    volumes:
-      - ./conf:/etc/nginx/conf.d
-      - ./magento:/var/www/html
-    user: :www-data
-    ports:
-      - 80:80
-    networks:
-      - local
-    depends_on:
-      - php
-  php:
-    build: ./php
-    container_name: docker-php
-    hostname: php73fpmStretch
-    volumes:
-      - ./magento:/var/www/html
-    user: :www-data
-    environment:
-      - TZ=Asia/Shanghai
-    networks:
-      - local
-    depends_on:
-      - mysql
-      - elasticsearch
-  mysql:
-    image: mysql:8.0.22
-    container_name: docker-mysql
-    hostname: docker-mysql
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    environment:
-      - TZ=Asia/Shanghai
-      - MYSQL_ROOT_PASSWORD=secret
-      - MYSQL_DATABASE=magento
-      - MYSQL_USER=magento
-      - MYSQL_PASSWORD=magento
-    ports:
-      - 3306:3306
-    networks:
-      - local
-  elasticsearch:
-    image: elasticsearch:7.9.3
-    container_name: elasticsearch
-    hostname: elasticsearch793
-    ports:
-      - 9300:9300
-      - 9200:9200
-    environment:
-      - TZ=Asia/Shanghai
-      - discovery.type=single-node
-    networks:
-      - local
-  rabbitmq:
-    image: rabbitmq:3.8.9-management
-    container_name: rabbitmq
-    hostname: rabbitmq389m
-    ports:
-      - 5672:5672
-      - 15672:15672
-    environment:
-      - RABBITMQ_ERLANG_COOKIE=secret
-      - TZ=Asia/Shanghai
-    networks:
-      - local
-  redis:
-    image: redis:6
-    container_name: redis
-    hostname: redis6
-    environment:
-      - TZ=Asia/Shanghai
-    ports:
-      - 6379:6379
-    networks:
-      - local
-
-networks:
-  local:
-    external: true
-```
+使用 gitee 镜像仓库克隆或在官网下载打包文件
 
 ##### 安装及配置
 
 ###### 命令行安装
-
-docker 环境下，在 fpm 运行容器中安装
 
 1. 配置文件夹权限
 
@@ -210,6 +62,7 @@ docker 环境下，在 fpm 运行容器中安装
     ```shell
 bin/magento setup:install \
     --base-url=http://localhost \
+    --backend_frontname=admin \
     --db-host=localhost \
     --db-name=magento \
     --db-user=magento \
@@ -227,15 +80,6 @@ bin/magento setup:install \
     ```
 
 ###### 配置
-
-* 获取 composer access-key 用于验证下载 magento 扩展，组件等
-
-    在 marketplace.magento.com 注册并创建 access key，public key 为授权 username，private key 为授权 password，可以写入 php 镜像系统变量
-
-    ```ini
-    PublicKey: c55018d4d8680c36bd35183e3be66aae
-    PrivateKey: 3ce96aed3a088582bb81f73ab9f6bcf3
-    ```
 
 * 常用命令，在网站根目录下使用 ./bin/magento 后接命令来运行
 
@@ -257,7 +101,7 @@ bin/magento setup:install \
     |          indexer:info          |      索引操作      |                                                              |
     | sampledata:remove/deploy/reset |  样本数据模块操作  | 不会删除数据库样本数据，只是删除 composer.json 中模块，更新样本模块前需要 reset，需要授权 |
 
-    该动数据库、模块、样本代码时需要使用 setup:upgrade 更新配置。会清理缓存的编译代码，只更新数据库设计和数据不清理编译代码使用 `--keep-generated` 选项（不要在开发环境中使用该选项，可能会报错）
+    数据库设计变更、模块更新、样本代码部署时需要使用 setup:upgrade 更新配置。会清理缓存的编译代码，只更新数据库设计和数据，不清理编译代码使用 `--keep-generated` 选项（不要在开发环境中使用该选项，可能会报错）
 
 ###### 更改模块
 
@@ -338,9 +182,9 @@ bin/magento setup:install \
 
 ###### 缓存
 
-默认文件系统缓存处于启用状态，文件缓存位于 <magento_root>/var 目录下，<magento_root>/app/etc/env.php 项 cache_type 控制缓存项。支持多种缓存引擎
+默认启用文件缓存位于 <magento_root>/var/cache <magento_root>/var/page_cache
 
-* database
+* 使用数据库缓存
 
   修改  <magento_root>/app/etc/di.xml。缓存数据将存储在 cache 和 cache_tag 表中。
 
@@ -371,70 +215,11 @@ bin/magento setup:install \
 </type>
   ```
 
-  在 env.php 文件中的 cache 配置项中自定义缓存
-  
-  ```php
-      'cache' => [
-          'frontend' => [
-              'default' => [
-                  'id_prefix' => 'ec1_'
-              ],
-              'page_cache' => [
-                  'id_prefix' => 'ec1_'
-              ],
-              'magento_cache' => [
-                  'backend' => 'database'
-              ]
-          ],
-          'type' => [
-              'config' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'layout' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'block_html' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'view_files_fallback' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'view_files_preprocessing' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'collections' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'db_ddl' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'eav' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'full_page' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'translate' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'config_integration' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'config_integration_api' => [
-                  'frontend' => 'magento_cache'
-              ],
-              'config_webservice' => [
-                  'frontend' => 'magento_cache'
-              ],
-          ]
-    ],
-  ```
-  
   修改 di.xml 和 env.php 文件后直接刷新即可看见结果，无需更新配置，验证时删除文件缓存并查看数据库
 
 #### 开发
 
-magento 应用由模块（业务）、主题、语言包组成，构建模块时，必须遵循 PSR-4 兼容结构。
+magento 应用由模块（实现自定义业务逻辑，改变 magento 行为）、主题（前台和后台页面风格与设计）、语言包（本地化相关）组成，构建模块时，必须同时符合 magento 模块标准和 composer pacakge 标准
 
 ##### magento 模块及命名空间
 
@@ -465,12 +250,12 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
 
     ```json
     {
-        "name": "magento/module-backend", // 惯例根据组件类型（module/theme/language）开头来命名
+        "name": "magento/module-backend", // 惯例以组件类型（module/theme/language）开头来命名
         // 打包为单个 magento2-module/language/theme 或 多个组件协作的 metapackage
         "type": "magento2-module",  
         "autoload": {
             "files": [
-                "registration.php" // 注册文件，注册自身
+                "registration.php" // 组件注册文件，声明组件类型并注册到 magento
             ],
             "psr-4": {
                 "Magento\\Backend\\": ""
@@ -487,13 +272,12 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
 
     ```PHP
     <?php
-    
     use \Magento\Framework\Component\ComponentRegistrar;
     // 参数为 type（MODULE/THEME/LANGUAGE/LIBRARY）、contentName、path
     ComponentRegistrar::register(ComponentRegistrar::MODULE, 'Magento_Backend', __DIR__);
     ```
-
-* xml 配置声明文件，Modules 对应 module.xml、Themes 对应 theme.xml、Language packages 对应 language.xml。一般主题和语言包直接在包根目录下创建对应的 xml 声明文件，模块会在根目录下创建一个 etc 文件夹中声明 xml 配置文件
+    
+* xml 配置声明文件，Modules 对应 module.xml、Themes 对应 theme.xml、Language packages 对应 language.xml。一般主题和语言包直接在包根目录下创建对应的 xml 声明文件，模块会在根目录下创建一个 etc 文件夹保存模块用到的 xml 文件
 
 * 可以在 Mangto Markerplace 上以 .zip 格式分发小于 30M 的组件
 
@@ -507,13 +291,13 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
 
 组件根目录与组件的名称匹配，并且包含其所有子目录和文件。根据安装 Magento 的方式，组件位于
 
-* <install_path>/app（git 拉取时，所有组件位于此处），推荐开发位置，其结构为
+* <install_path>/app（git 拉取时，所有组件位于此处），推荐新组件的开发位置，其结构为
 
     |         目录         |            代码             |
     | :------------------: | :-------------------------: |
     |       app/code       | 模块代码，改变 magento 行为 |
-    | app/design/frontend  |          商店主题           |
-    | app/design/adminhtml |        管理后台主题         |
+    | app/design/frontend  |          前台主题           |
+    | app/design/adminhtml |          后台主题           |
     |       app/i18n       |         国际化文件          |
     |       app/etc        |          配置文件           |
 
@@ -537,7 +321,7 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
     |    Model     |                     逻辑实现                     |
     |   Observer   |                      监听器                      |
     |    Plugin    |                       插件                       |
-    |    Setup     |       数据库结构/数据在安装/升级时执行文件       |
+    |    Setup     |      数据库结构/数据，在安装/升级时执行文件      |
     |      UI      |                  生成的数据文件                  |
     |     view     | 视图，包含静态视图，设计模版，邮件模版，布局文件 |
     |  ViewModel   |                   业务逻辑视图                   |
@@ -608,8 +392,6 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
 
 ###### di.xml
 
-dev:di:info 获取依赖注入配置信息
-
 ```shell
 # 获取对应类的注入项
 bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
@@ -653,59 +435,30 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
   <argument xsi:type="const">{Constant::NAME}</argument>
   <!-- null -->
   <argument xsi:type="null"/>
-  <!-- array -->
-  <argument xsi:type="array">
-  	<item name="somekey" xsi:type="<type>">someVal</item>
-  </argument>
+  <!-- array 支持嵌套 array -->
+  <argument name="arrayParam" xsi:type="array">
+      <!-- First element is value of constant -->
+      <item name="firstElem" xsi:type="const">Magento\Some\Class::SOME_CONSTANT</item>
+      <!-- Third element is a subarray -->
+      <item name="thirdElem" xsi:type="array">
+          <!-- Subarray contains scalar value -->
+          <item name="scalarValue" xsi:type="string">
+            ScalarValue
+          </item>
+      </item>
+</argument>
   <!-- object 创建typeName类型实例作为参数传递，支持类、接口、虚拟类型-->
-  <argument xsi:type="object">{typeName}</argument>
+<argument xsi:type="object">{typeName}</argument>
   <!-- shared 定义创建对象方式 true（默认）单例第一次请求时创建，false 为每次创建-->
   <argument xsi:type="object" shared="{shared}">{typeName}</argument>
   <!-- 声明抽象或接口实现  -->
   <perference for="Magento\Core\Model\UrlInterface" type="Magento\Backend\Model\Url"/>
   ```
-
+  
   Magento 合并给定范围的配置文件时，具有相同名称的数组参数将合并到新数组中，加载具体作用域配置时会替换其值。合并时，如果参数的类型不同，参数会用相同的名称替换其他参数，如果参数类型相同，则更新的参数将替换旧的参数
-
-  ```xml
-  <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-      <type name="Magento\Example\Type">
-          <arguments>
-              <!-- Pass simple string -->
-              <argument name="stringParam" xsi:type="string">someStringValue</argument>
-              <!-- Pass instance of Magento\Some\Type -->
-              <argument name="instanceParam" xsi:type="object">Magento\Some\Type</argument>
-              <!-- Pass true -->
-              <argument name="boolParam" xsi:type="boolean">1</argument>
-              <!-- Pass 1 -->
-              <argument name="intParam" xsi:type="number">1</argument>
-              <!-- Pass application init argument, named by constant value -->
-              <argument name="globalInitParam" xsi:type="init_parameter">Magento\Some\Class::SOME_CONSTANT</argument>
-              <!-- Pass constant value -->
-              <argument name="constantParam" xsi:type="const">Magento\Some\Class::SOME_CONSTANT</argument>
-              <!-- Pass null value -->
-              <argument name="optionalParam" xsi:type="null"/>
-              <!-- Pass array -->
-              <argument name="arrayParam" xsi:type="array">
-                  <!-- First element is value of constant -->
-                  <item name="firstElem" xsi:type="const">Magento\Some\Class::SOME_CONSTANT</item>
-                  <!-- Second element is null -->
-                  <item name="secondElem" xsi:type="null"/>
-                  <!-- Third element is a subarray -->
-                  <item name="thirdElem" xsi:type="array">
-                      <!-- Subarray contains scalar value -->
-                      <item name="scalarValue" xsi:type="string">ScalarValue</item>
-                      <!-- and application init argument -->
-                      <item name="globalArgument " xsi:type="init_parameter">Magento\Some\Class::SOME_CONSTANT</item>
-                  </item>
-              </argument>
-          </arguments>
-      </type>
-  </config>
-  ```
-
+  
   多系统部署时，系统间共享 app/etc/config.php 中配置。不要在 app/etc/env.php 中存储敏感配置，也不要在生产环境和开发环境中共享该配置
-
+  
   ```xml
   <type name="Magento\Config\Model\Config\TypePool">
       <arguments>
@@ -713,21 +466,11 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
           <argument name="sensitive" xsi:type="array">
               <item name="carriers/ups/username" xsi:type="string">1</item>
               <item name="carriers/ups/password" xsi:type="string">1</item>
-              <item name="carriers/ups/access_license_number" xsi:type="string">1</item>
-              <item name="carriers/ups/tracking_xml_url" xsi:type="string">1</item>
-              <item name="carriers/ups/gateway_xml_url" xsi:type="string">1</item>
-              <item name="carriers/ups/shipper_number" xsi:type="string">1</item>
-              <item name="carriers/ups/gateway_url" xsi:type="string">1</item>
           </argument>
           <!-- 声明配置是环境独有的 item name 属性指定配置项，值指定是(1)否(0)特定环境-->
           <argument name="environment" xsi:type="array">
               <item name="carriers/ups/access_license_number" xsi:type="string">1</item>
               <item name="carriers/ups/debug" xsi:type="string">1</item>
-              <item name="carriers/ups/gateway_url" xsi:type="string">1</item>
-              <item name="carriers/ups/gateway_xml_url" xsi:type="string">1</item>
-              <item name="carriers/ups/is_account_live" xsi:type="string">1</item>
-              <item name="carriers/ups/password" xsi:type="string">1</item>
-              <item name="carriers/ups/username" xsi:type="string">1</item>
           </argument>
       </arguments>
   </type>
@@ -735,7 +478,7 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
 
 ###### 开发流程
 
-1. 在 app/code 下创建模块目标，包含模块标准结构及文件，模块名与目录结构对应
+1. 在 app/code 下创建模块，包含模块标准结构及文件，模块名与目录结构对应
 
 2. 命令行启用模块，或在 app/etc/config.php 中启用模块
 
@@ -804,10 +547,9 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
     ```php
     'cache_type' => [
     	'db_cache_id' => 1,
-        'file_cache_id' => 1
     ]
     ```
-
+    
 4.  安装模块
 
     ```shell
