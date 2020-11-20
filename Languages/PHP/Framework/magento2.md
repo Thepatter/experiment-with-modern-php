@@ -216,6 +216,16 @@ bin/magento setup:install \
   ```
 
   修改 di.xml 和 env.php 文件后直接刷新即可看见结果，无需更新配置，验证时删除文件缓存并查看数据库
+  
+* 使用 redis 缓存
+
+  ```bash
+  # 指定页面和默认缓存使用 redis，会重写 env.php 中 cache 配置 frontend 对应配置
+  php ./bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=127.0.0.1 --page-cache-redis-db=0
+  php ./bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=127.0.0.1 --page-cache-redis-db=1
+  # 存储会话
+  php ./bin/magento setup:config:set --session-save=redis --session-save-redis-host=127.0.0.1 --session-save-redis-log-level=3 --session-save-redis-db=2
+  ```
 
 #### 开发
 
@@ -320,7 +330,7 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
     |     i18n     |           本地化文件，一般为 csv 文件            |
     |    Model     |                     逻辑实现                     |
     |   Observer   |                      监听器                      |
-    |    Plugin    |                       插件                       |
+    |    Plugin    |                  插件，即拦截器                  |
     |    Setup     |      数据库结构/数据，在安装/升级时执行文件      |
     |      UI      |                  生成的数据文件                  |
     |     view     | 视图，包含静态视图，设计模版，邮件模版，布局文件 |
