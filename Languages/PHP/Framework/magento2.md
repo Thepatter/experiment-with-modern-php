@@ -377,7 +377,22 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
 
 ##### 组件开发
 
-开发前需要安装 magento 及其依赖并将其设置为开发者模式。包括布局文件结构，创建必要的配置文件，构建任何所需的 API 接口和服务以及添加组件所需的任何前端部件。构建过程中关闭缓存
+开发前需要安装 magento 及其依赖并将其设置为开发者模式。包括布局文件结构，创建必要的配置文件，构建任何所需的 API 接口和服务以及添加组件所需的任何前端部件。构建过程中关闭缓存。开发流程
+
+1. 在 app/code 下创建模块，包含模块标准结构及文件，模块名与目录结构对应
+
+2. 命令行启用模块，或在 app/etc/config.php 中启用模块
+
+    ```
+    php bin/magento module:enable Magento_module 
+    ```
+
+3. 更新结构
+
+    ```shell
+    php bin/magento setup:upgrade
+    php bin/magento setup:static-content:deploy
+    ```
 
 ###### 组件配置
 
@@ -486,22 +501,123 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
   </type>
   ```
 
-###### 开发流程
+###### db_schema.xml
 
-1. 在 app/code 下创建模块，包含模块标准结构及文件，模块名与目录结构对应
+使用该文件来声明模块的 schema
 
-2. 命令行启用模块，或在 app/etc/config.php 中启用模块
+*   table 节点
 
-   ```
-   php bin/magento module:enable Magento_module 
-   ```
+    可以包含一个或多个 table 节点，每个节点代码数据库中一个表，可以包含一下属性
 
-3. 更新结构
+    |   属性   |                  描述                   |
+    | :------: | :-------------------------------------: |
+    |   name   |                  表名                   |
+    |  engine  |          只支持 innodb/memroy           |
+    | resource | 数据库分片，支持 default/checkout/sales |
+    | comment  |                  注释                   |
 
-   ```shell
-   php bin/magento setup:upgrade
-   php bin/magento setup:static-content:deploy
-   ```
+    可以包含三种类型的子节点：
+
+    column
+
+    |   属性    |                             描述                             |
+    | :-------: | :----------------------------------------------------------: |
+    | xsi:type  | 列类型：blob/boolean/date/datetime/decimal/float/int/read/smallint/text/timestamp/varbinary/varchar |
+    |   name    |                            列名称                            |
+    |  default  |                           初始化值                           |
+    | disabled  |             禁用或删除已声明的表、列、约束、索引             |
+    | identity  |                          列是否自增                          |
+    |  length   |                            列长度                            |
+    | nullable  |                         是否可以为空                         |
+    | onCreate  | DDL 触发器，将数据从现有列移动到新创建的列，仅创建列时起作用 |
+    |  padding  |                          整数列大小                          |
+    | precision |                   实际数据类型中允许的位数                   |
+    |   scale   |                 实际数据类型中小数点后的位数                 |
+    | unsigned  |                           数据属性                           |
+
+    ```xml
+    <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Credit ID"/>
+    ```
+
+    constraint 子节点
+
+    |    属性     |                    描述                     |
+    | :---------: | :-----------------------------------------: |
+    |    type     |           primary/unique/foreign            |
+    | referenceId | 仅限于 db_schema.xml 文件范围内的关系映射。 |
+
+    ```xml
+    <constraint xsi:type="primary" referenceId="PRIMARY">
+        <column name="entity_id"/>
+    </constraint>
+    <!-- 外键约束 table 当前表名称、column 当前表外键列、referenceTable 被引用表，referenceColumn 引用表列 onDelete 触发器 -->
+    <constraint xsi:type="foreign" referenceId="COMPANY_CREDIT_COMPANY_ID_DIRECTORY_COUNTRY_COUNTRY_ID"
+                table="company_credit" 
+                column="company_id" 
+                referenceTable="company" 
+                referenceColumn="entity_id" 
+                onDelete="CASCADE"/>
+    ```
+
+    index 子节点
+
+    |    属性     |                    描述                     |
+    | :---------: | :-----------------------------------------: |
+    |    type     |             btree/fulltext/hash             |
+    | referenceId | 仅限于 db_schema.xml 文件范围内的关系映射。 |
+
+    ```xml
+    <index referenceId="NEWSLETTER_SUBSCRIBER_CUSTOMER_ID" indexType="btree">
+        <column name="customer_id"/>
+    </index>
+    ```
+
+创建新表后要生成 db_schema_whitelist.json，无法在使用前缀的实例上生成百名的
+
+```shell
+# [options] 可以声明 --module-name[=MODULE-NAME] 指定要为其生成白名单的模块，默认为所有模块生成白名单
+bin/magento setup:db-declaration:generate-whitelist [options]
+```
+
+重命名表格，将删除旧表并创建新表。不支持同时从另一个表迁移数据和重命名列，重命名表时，要重新生成 db_schema_whitelist.json 文件
+
+```xml
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"              xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="new_declarative_table" onCreate="migrateDataFromAnotherTable(declarative_table)">
+    <table name="declarative_table">
+        <column xsi:type="int" name="id_column" padding="10" unsigned="true" nullable="false" comment="Entity Id"/>
+        <column xsi:type="int" name="severity" padding="10" unsigned="true" nullable="false" comment="Severity code"/>
+        <column xsi:type="varchar" name="title" nullable="false" length="255" comment="Title"/>
+        <column xsi:type="timestamp" name="time_occurred" padding="10" comment="Time of event"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="id_column"/>
+        </constraint>
+    </table>
+</schema>
+
+```
+
+表格添加列时，要生成 db_schema_whitelist.json 文件，删除列时仅当 db_schema_whitelist.json 中存在该列时才能删除。支持更改列类型。
+
+要重命名一列，需要删除原始列兵创建一个新的列。在新的列声明中，使用 onCreate 属性指定迁移的数据的列，重命名列时要重新生成 db_schema_whitelist.json 文件，以便包含旧名称的同时还包含新名称
+
+```xml
+onCreate="migrateDataFrom(entity_id)"
+```
+
+添加索引
+
+```xml
+# 添加索引
+<index referenceId="INDEX_SEVERITY" indexType="btree">
+    <column name="severity"/>
+</index>
+# 添加外键，只有在 db_schema.xml 包含两个表时才能创建外键
+<constraint xsi:type="foreign" referenceId="FL_ALLOWED_SEVERITIES" table="declarative_table"
+            column="severity" 
+            referenceTable="severities" referenceColumn="severity_identifier"
+            onDelete="CASCADE"/>
+```
 
 ##### 功能项
 
@@ -603,7 +719,44 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
    bin/mangeot setup:di:compile
    ```
 
-   
+###### API
 
-   
+在 <Module>/etc/webapi.xml 文件中定义
+
+|     元素      |                             属性                             |          描述          |
+| :-----------: | :----------------------------------------------------------: | :--------------------: |
+|  `<routes>`   |  xmlns:xsi（必须）/xmlns:noNamespaceSchemaLocation（必须）   |                        |
+|   `<route>`   | method 必须，请求方；url，必须以 v(int) 开始，必须在模版参数前加上冒号；secure 布尔，是否仅 https；soapOperation 声明 soap 操作 |    定义 HTTP Route     |
+|  `<service>`  |  class，必须，定义实现接口类；method 必须，定义支持请求方法  |      route 子元素      |
+| `<resources>` |                                                              |      Route 子元素      |
+| `<resource>`  |    ref：声明资源，支持 self、anonymous、magento resource     |    resources 子元素    |
+|   `<data>`    |                                                              | route 子元素，定义参数 |
+| `<parameter>` |                 name 属性名；force 是否强制                  |      data 子元素       |
+
+webapi.xml
+
+```xml
+<?xml version="1.0"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
+  <!-- Customer Group Service-->
+  <route url="/V1/customerGroups/:id" method="GET">
+    <service class="Magento\Customer\Api\GroupRepositoryInterface" method="getById"/>
+    <resources>
+      <resource ref="Magento_Customer::group"/>
+    </resources>
+  </route>
+  ...
+  <route url="/V1/customers/me/billingAddress" method="GET">
+    <service class="Magento\Customer\Api\AccountManagementInterface" method="getDefaultBillingAddress"/>
+    <resources>
+      <resource ref="self"/>
+    </resources>
+    <data>
+      <parameter name="customerId" force="true">%customer_id%</parameter>
+    </data>
+  </route>
+</routes>
+```
+
+
 
