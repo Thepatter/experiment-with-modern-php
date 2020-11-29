@@ -14,7 +14,7 @@
 * nginx（1.x）/apache（2.4）
 * mysql（5.7/8.0）/mariadb（10）
 * elasticsearch（6.8/7.0，2.4 版本必须配置）
-* php7.2 及以上，需要以下扩展（bcmath、ctype、curl、dom、gd、hash、iconv、intl、mbstring、openssl、pdo_mysql、simplexml、soap、xsl、zip）
+* php7.2 及以上，需要（bcmath、ctype、curl、dom、gd、hash、iconv、intl、mbstring、openssl、pdo_mysql、simplexml、soap、xsl、zip）扩展
 
 ###### 获取 magento2
 
@@ -45,7 +45,11 @@ composer create-project --repository=https://repo.magento.com/ magento/project-c
 
 使用 gitee 镜像仓库克隆或在官网下载打包文件
 
-##### 安装及配置
+##### 安装
+
+###### web 引导安装
+
+配置好 lnmp 运行环境后访问首页会出现引导安装页面，2.4 已废弃，只能从命令行安装
 
 ###### 命令行安装
 
@@ -79,7 +83,25 @@ bin/magento setup:install \
     --use-rewrites=1
     ```
 
-###### 配置
+##### 配置
+
+###### 模式
+
+```shell
+# 切换
+php ./bin/magento deploy:mode:set developer
+php ./bin/magento deploy:mode:show
+```
+
+*   默认使用 default 模式，会检测代码更改，会缓存，会编译不存在代码
+
+*   developer
+
+*   production
+
+    不会检查代码，只运行编译后的代码
+
+###### 常用命令
 
 * 常用命令，在网站根目录下使用 ./bin/magento 后接命令来运行
 
@@ -87,7 +109,7 @@ bin/magento setup:install \
     | :----------------------------: | :----------------: | :----------------------------------------------------------: |
     |         setup:install          |    安装 magento    |                                                              |
     |        setup:uninstall         |    卸载 magento    |                           需已安装                           |
-    |         setup:upgrade          |    更新 magento    |                         部署配置变更                         |
+    |         setup:upgrade          |    更新 magento    |                    模块 schema、data 修改                    |
     |   mintenance:enable/disable    | 启用/关闭维护模式  |                           需已安装                           |
     |        setup:config:set        | 创建或更新部署配置 |                                                              |
     |     module:enable/disable      |   启用或警用模块   | 需要更新配置和删除缓存，被依赖模块不能禁用，启用时先启用依赖模块，模块冲突时不能同时启用 |
@@ -180,6 +202,12 @@ bin/magento setup:install \
 
 ##### 运行时配置
 
+2.4 版本后台默认开启了两步验证，禁用 Magento_TwoFactorAuth 模块以取消
+
+```shell
+bin/magento module:disable Magento_TwoFactorAuth
+```
+
 ###### 缓存
 
 默认启用文件缓存位于 <magento_root>/var/cache <magento_root>/var/page_cache
@@ -226,10 +254,65 @@ bin/magento setup:install \
   # 存储会话
   php ./bin/magento setup:config:set --session-save=redis --session-save-redis-host=127.0.0.1 --session-save-redis-log-level=3 --session-save-redis-db=2
   ```
+  
+  或直接修改 env.php 文件
+  
+  ```php
+  'session' => [
+          'save' => 'redis',
+          'redis' => [
+              'host' => 'localhost',
+              'port' => '6379',
+              'database' => '0',
+          ]
+      ],
+      'cache' => [
+          'frontend' => [
+              'default' => [
+                  'backend' => 'Cm_Cache_Backend_Redis',
+                  'backend_options' => [
+                      'server' => 'localhost',
+                      'port' => '6379',
+                      'database' => '1',
+                  ]
+              ],
+              'page_cache' => [
+                  'backend' => 'Cm_Cache_Backend_Redis',
+                  'backend_options' => [
+                      'server' => 'localhost',
+                      'port' => '6379',
+                      'database' => '2',
+                  ]
+              ]
+          ],
+          'allow_parallel_generation' => false,
+      ],
+  ```
+
+##### 部署
+
+###### 生产模式
+
+```bash
+# 启用维护模式
+magento maintenance:enable
+# 编译
+bin/magento setup:di:compile
+# 部署静态文件
+bin/magento setup:static-content:deploy
+# 清缓存
+bin/magento cache:flush
+# 停用维护模式
+magento maintenance:disable
+```
+
+##### 基础使用
 
 #### 开发
 
 magento 应用由模块（实现自定义业务逻辑，改变 magento 行为）、主题（前台和后台页面风格与设计）、语言包（本地化相关）组成，构建模块时，必须同时符合 magento 模块标准和 composer pacakge 标准
+
+magento 开发/默认会自动编译代码，修改了 xml 配置后需要清理缓存，修改了 php 文件代码只需要清理缓存
 
 ##### magento 模块及命名空间
 
@@ -745,7 +828,6 @@ webapi.xml
       <resource ref="Magento_Customer::group"/>
     </resources>
   </route>
-  ...
   <route url="/V1/customers/me/billingAddress" method="GET">
     <service class="Magento\Customer\Api\AccountManagementInterface" method="getDefaultBillingAddress"/>
     <resources>
@@ -758,5 +840,53 @@ webapi.xml
 </routes>
 ```
 
+###### 后台功能开发
 
+1.  配置菜单 <module>/etc/mean.xml
+
+    ```xml
+    <?xml version="1.0"?>
+    <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+        <menu>
+            <add id="define_unique_id::acl_xml_use_the_id"
+                 title="show in backend"
+                 module="module_name"
+                 sortOrder="35
+                 <!-- 入口路由 -->
+                 action="default/index/index"
+                 <!-- acl中引用的 resource -->                 
+                 resource="acl_xml::resource"
+                 <!-- 管理后台上级页面 -->
+                 parent="Magento_Backend::marketing_user_content"/>
+        </menu>
+    </config>
+    ```
+
+2.  配置后台 acl <module>/etc/acl.xml
+
+    ```xml
+    <?xml version="1.0"?>
+    <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:noNamespaceSchemaLocation="urn:magento:framework:Acl/etc/acl.xsd">
+        <acl>
+          <!-- 后台根层级开始查找 -->
+            <resources>
+                <resource id="Magento_Backend::admin">
+                    <resource id="Magento_Backend::marketing">
+                        <resource id="Magento_Backend::marketing_user_content">
+                            <!-- mean.xml 中定义的 resource -->
+                            <resource id="meau_xml_define_resource"
+                                      title="show in backend"
+                                      sortOrder="35"/>
+                        </resource>
+                    </resource>
+                </resource>
+           </resources>
+        </acl>
+    </config>
+    ```
+
+3.  模块正常的开发逻辑
+
+###### 前台功能项开发
 
