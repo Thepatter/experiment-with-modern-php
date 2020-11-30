@@ -806,15 +806,44 @@ onCreate="migrateDataFrom(entity_id)"
 
 在 <Module>/etc/webapi.xml 文件中定义
 
-|     元素      |                             属性                             |          描述          |
-| :-----------: | :----------------------------------------------------------: | :--------------------: |
-|  `<routes>`   |  xmlns:xsi（必须）/xmlns:noNamespaceSchemaLocation（必须）   |                        |
-|   `<route>`   | method 必须，请求方；url，必须以 v(int) 开始，必须在模版参数前加上冒号；secure 布尔，是否仅 https；soapOperation 声明 soap 操作 |    定义 HTTP Route     |
-|  `<service>`  |  class，必须，定义实现接口类；method 必须，定义支持请求方法  |      route 子元素      |
-| `<resources>` |                                                              |      Route 子元素      |
-| `<resource>`  |    ref：声明资源，支持 self、anonymous、magento resource     |    resources 子元素    |
-|   `<data>`    |                                                              | route 子元素，定义参数 |
-| `<parameter>` |                 name 属性名；force 是否强制                  |      data 子元素       |
+|     元素      |                             属性                             |                描述                |
+| :-----------: | :----------------------------------------------------------: | :--------------------------------: |
+|  `<routes>`   | `xmlns:xsi`（必须）`xmlns:noNamespaceSchemaLocation`（必须） |               根元素               |
+|   `<route>`   | `method` 必须，请求方法：GET、POST、PUT、DELETE；`url`，必须以 v(int) 开始，必须在模版参数前加上冒号 `/V1/products/:sku`；`secure` 布尔，是否仅 https；`soapOperation` 声明 soap 操作 |          定义 HTTP Route           |
+|  `<service>`  | `class`，必须，定义实现接口类；`method` 必须，定义支持请求方法 | route 子元素，定义实现接口和方法名 |
+| `<resources>` |           route 子元素，定义一个或多个资源访问范围           |                                    |
+| `<resource>`  | `ref`：声明资源访问权限，支持 self、anonymous、magento resource |          resources 子元素          |
+|   `<data>`    |                                                              |       route 子元素，定义参数       |
+| `<parameter>` |               `name` 属性名；`force` 是否强制                |            data 子元素             |
+
+开发接口流程：
+
+1. 定义 module_name/etc/webapi.xml 配置文件
+
+   ```XML
+   <?xml version="1.0"?>
+   <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
+       <!-- Customer Group Service-->
+       <route url="/V1/noAnalysisWords/:page" method="GET">
+           <service class="module\namespace\Api\ProcessInterface" method="index"/>
+           <resources>
+               <resource ref="anonymous"/>
+           </resources>
+       </route>
+   </routes>
+   ```
+
+2. 在 module_name/Api 目录下定义服务接口类，一个类中的方法可以处理一个 webapi.xml 中的 route，这里定义的接口不需要继承或扩展其他接口，但方法必须定义 phpdoc 注释，声明参数和返回值类型，支持标量、数组（不支持关联数组）、对象，对于要返回一个普通的 key=>value 对的 json 字符串，需要预先定义一个类
+
+   ```PHP
+   // 接口方法中的参数名和 webapi.xml 中的参数名一致, 此时 page 值为 url 路径中的 page 值
+   public function index(int $page);
+   ```
+
+3. 在 module_name/etc/di.xml 中定义实现 api 的类
+
+4. 访问时路径前加 rest 前缀
 
 webapi.xml
 
@@ -890,3 +919,9 @@ webapi.xml
 
 ###### 前台功能项开发
 
+##### 常见错误项
+
+###### 实例化失败
+
+1. 检查 di.xml 中 preference 中实际类型的参数是否在 di.xml 中声明
+2. 清除 var/cache、generated 目录
