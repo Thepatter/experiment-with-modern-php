@@ -161,7 +161,9 @@ EXPLAIN 命令是查看查询优化器是如何决定执行查询的主要方法
 
     简单查询，不包括子查询和 UNION。
 
-如果查询有任何复杂的子部分，则最外层部分会标记为 PRIMARY。其他部分标记为：
+*   PRIMARY
+
+    如果查询有任何复杂的子部分，则最外层部分会标记为 PRIMARY。
 
 * SUBQUERY
 
@@ -179,7 +181,7 @@ EXPLAIN 命令是查看查询优化器是如何决定执行查询的主要方法
 
     用来从 UNION 的匿名临时表检索结果的 SELECT 被标记为 UNION RESULT
 
-除了这些值，SUBQUERY 和 UNION 还可以被标记为 DEPENDENT 和 UNCACHEABLE。DEPENDENT 意味着SELECT 依赖于外层查询中发现的数据；UNCACHEABLE 意味着 SELECT 中的某些特性阻止结果被缓存于一个Item_cache 中。（Item_cache未被文档记载；它与查询缓存不是一回事，尽管它可以被一些相同类型的构件否定，例如 RAND() 函数。）
+除了这些值，SUBQUERY 和 UNION 还可以被标记为 DEPENDENT 和 UNCACHEABLE。DEPENDENT 意味着 SELECT 依赖于外层查询中发现的数据；UNCACHEABLE 意味着 SELECT 中的某些特性阻止结果被缓存于一个 Item_cache 中。（Item_cache 未被文档记载；它与查询缓存不是一回事，尽管它可以被一些相同类型的构件否定，例如 RAND() 函数。）
 
 ###### 派生表和联合
 
@@ -197,61 +199,67 @@ EXPLAIN 命令是查看查询优化器是如何决定执行查询的主要方法
 
     MySQL 能在优化阶段分解查询语句，在执行阶段不再访问表或者索引。
 
-2. const、system
+2. const/system
 
-    对查询的某部分进行优化并将其转换成一个常量时，它会使用该访问类型
+    单表中最多有一个匹配行，这个匹配行中的其他列值可以被优化器在当前查询中当作常量来处理。对查询的某部分进行优化并将其转换成一个常量时，它会使用该访问类型。根据 primary key/unique index 进行查询
 
 3. eq_ref
 
-    索引查找，该类型最多只返回一条符合条件的记录
-
-4. ref
-
-    索引访问，返回所有匹配某个单个值的行。可能会返回多个符号条件的行。ref 是因为索引要根某个参考值比较，这个参考值或者是一个常数，或者是来自多表查询前一个表里的结果值
-
-    ref_or_null 是 ref 之上的一个变体，它意味着 MySQL 必须在初次查找的结果里进行第二次查找以找出 NULL 条目。
+    类似 ref，索引查找，该类型最多只返回一条符合条件的记录。区别就在使用的索引是唯一索引，对于每个索引键值，表中只有一条记录匹配；多表连接中使用 primary key 或 unique key 作为关联条件
 
 5. index_merge
 
     合并索引，使用多个单列索引搜索
 
+5. ref
+
+    使用非唯一索引扫描或唯一索引的前缀扫描，返回匹配某个值的记录行（ref_or_null 是 ref 之上的一个变体，它意味着 MySQL 必须在初次查找的结果里进行第二次查找以找出 NULL 条目）经常出现在 join 操作中
+
 6. range
 
-    范围扫描是一个有限制的索引扫描，它开始于索引里的某一点，返回匹配这个值域的行
+    索引范围扫描是一个有限制的索引扫描，它开始于索引里的某一点，返回匹配这个值域的行。常见于 `<`、`<=`、`>`、`>=`、`between` 等操作符。
 
     当 MySQL 使用索引去查找一系列的值时，in 和 or 列表，也会显示为范围扫描（不同的访问类型，存在性能差异）
 
 7. index
 
-    根全表扫描一样，只是扫描表时按索引次序进行而不是行。优点是避免了排序，缺点是承担按索引次序读取整个表的开销。
+    索引全扫描，MySQL 遍历整个索引来查找匹配的行。优点是避免了排序，缺点是承担按索引次序读取整个表的开销。
 
      Extra 列中看到 Using index 说明 MySQL 正在使用覆盖索引，它只扫描索引的数据，而不是按索引次序的每一行。比按索引次序全表扫描的开销要少很多
 
-8. all
+8. All
 
     全表扫描（这里也有个例外，例如在查询里使用了 LIMIT，或者在 Extra 列中显示 Using distinct/not exists）
 
 ###### 补充信息
 
-- Using index
+Extra 列中部分信息描述了 MySQL 对索引的相关使用
 
-    此值表示 MySQL 将使用覆盖索引，比避免访问表。
+*   NULL
 
-- Using where
+    匹配全值（Match the full value），对索引中所有列都指定具体值（对索引中的所有列都有等值匹配），复合索引中每个值都进行等值查询，此时 ref 值为 const
 
-    MySQL 服务器将在存储引擎检索行后再进行过滤，此时引擎层已锁住获取的所有行。
+*   Using index
 
-    许多 WHERE 条件里涉及索引中的列，当它读取索引时，就能被存储引擎检验，因此不是所有带 WHERE 子句的查询都会显示 Using where（5.6 引入索引下推）
+    此值表示 MySQL 将使用覆盖索引，不需要进行回表查询
 
-- Using temporary
+*   Using index condition
+
+    索引下推，在索引层进行过滤条件筛选
+
+* Using where
+
+    MySQL 服务器将在存储引擎检索行后再进行过滤，此时引擎层已锁住获取的所有行。此时需要根据索引回表查询数据
+
+* Using temporary
 
     MySQL 在对查询结果排序时会使用一个临时表
 
-- Using filesort
+* Using filesort
 
     MySQL 会对结果使用一个外部索引排序，而不是按索引次序从表里读取行。（文件或内存排序，无法反映具体排序方式）
 
-- Range checked for each record (index map: N)
+* Range checked for each record (index map: N)
 
     意味没好用的索引，新的索引将在联接的每一行上重新估算。N 是显示在 possible_keys 列中索引的位图，并且是冗余的
 
@@ -264,27 +272,6 @@ EXPLAIN 命令是查看查询优化器是如何决定执行查询的主要方法
 MySQL通过 SHOW VARIABLES 的SQL命令显露了许多系统变量，可以在表达式中使用这些变量，或在命令行中通过 mysqladmin variables 试验。从 5.1 开始，可以通过访问 INFORMATION_SCHEMA 库中的表来获取这些信息
 
 这些变量对应一系列配置信息
-
-###### show profile
-
-5.1 版本引入，默认关闭，剖析会给出查询执行的每个步骤及其花费的时间，但不会告诉原因，一般使用
-
-```mysql
-# 当前会话开启 profile
-set profiling = 1
-# 运行待剖析 SQL 语句
-# 查看查询
-show profiles;
-# 根据 query id 分析单条语句
-show profile for query 1;
-```
-
-未来版本将废弃，5.5 版本引入的 INFORMATION_SHCEMA 库，可以查询其 profiling 数据表剖析
-
-```mysql
-set @query_id = 1;
-select state, sum(duration) as total_r, round(100 * sum(duration) / (select sum(duration) from information_schema.profiling where query_id = @query_id), 2) as pct_r, count(*) as cails, sum(duration) / count(*) as "R/Call" from information_schema.profiling where query_id = @query_id group by state order by total_r desc;
-```
 
 ###### show status
 
@@ -575,13 +562,13 @@ I/O 读写线程数量由 *innodb_read_io_threads* 和 *innodb_write_io_threads*
 
 ###### innodb mutex
 
-SHOW ENGINE INNODB MUTEX返回InnoDB互斥体的详细信息，主要对洞悉可扩展性和并发性问题有帮助。每个互斥体都保护着代码中一个临界区
+SHOW ENGINE INNODB MUTEX 返回 InnoDB 互斥体的详细信息，主要对洞悉可扩展性和并发性问题有帮助。每个互斥体都保护着代码中一个临界区
 
 ##### PERFORMANCE_SCHEMA
 
 ###### schema
 
-开启，配置  my.cnf，或使用 --performanceschema 参数启动，包含指示条件变量、互斥体、读写锁文件IO 实例的表
+开启，配置  my.cnf，或使用 --performanceschema 参数启动，包含指示条件变量、互斥体、读写锁文件 IO 实例的表
 
 ```ini
 [mysqld]
@@ -625,6 +612,20 @@ show profile for query 1;
 ```mysql
 set @query_id = 1;
 select state, sum(duration) as total_r, round(100 * sum(duration) / (select sum(duration) from information_schema.profiling where query_id = @query_id), 2) as pct_r, count(*) as cails, sum(duration) / count(*) as "R/Call" from information_schema.profiling where query_id = @query_id group by state order by total_r desc;
+```
+
+###### trace 分析器
+
+5.6 开始提供对 SQL 的跟踪，使用 trace 获取优化器执行策略。使用流程：
+
+```mysql
+# 打开 trace，设置格式为 json
+SET OPTIMIZER_TRACE = "enabled=on", END MARKES_IN_JSON = ON;
+# 设置 trace 最大能使用的内存大小
+SET OPTIMIZER_TRACE_MAX_MEM_SIZE=1000000;
+# 执行 sql
+# 查询 trace 表
+SELECT * FROM INFORMATION_SCHEMA.OPTIMZER_TRACE\G;
 ```
 
 ##### replication
