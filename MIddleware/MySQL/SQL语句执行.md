@@ -2,7 +2,72 @@
 
 #### 查询语句相关
 
+##### 执行流程
+
+###### 逻辑查询处理
+
+1.  FROM
+
+    对 FROM 子句中左表和右表执笛卡尔积，产生虚拟表 VT1，包含左表和右表乘积行数据，列由源表定义
+
+2.  ON
+
+    对虚拟表 VT1 应用 ON 筛选，只有那些符合 join condition 的行才被插入虚拟表 VT2 中。对于 ON 过滤条件下的 NULL 值比较，此时的比较结果为 UNKNOWN（ORDER BY 子句把所有 NULL 值排列在一起）产生虚拟表 VT2 时，会增加一个额外的列表示 ON 过滤条件的返回值，返回值有 TRUE、FALSE、UNKNOWN，取出 TRUE 的记录，产生虚拟表 VT2
+
+    *   添加外部行
+
+        只有在连接类型为 OUTER JOIN 时才发生：LETF OUTER JOIN 把左表作为保留表，RIGHT OUTER JOIN 把右表作为保留表，FULL OUTER JOIN 把左右表都记为保留表。添加外部行的工作就是在 VT2 表的基础上添加保留表中被过滤条件过滤掉的数据，非保留表中的数据被赋予 NULL 值，最后生成虚拟表 VT3
+
+3.  JOIN
+
+    如果指定了 OUTER JOIN（如 LEFT OUT JOIN、RIGHT OUTER JOIN），那么保留表中未匹配的行作为外部行添加到虚拟表 VT2 中，产生虚拟表 VT3。如果 FROM 子句包含两个以上表，则对上一个连接生成的结果表 VT3 和 下一个表重复执行步骤 1～3，直到处理完所有的表为止
+
+4.  WHERE
+
+    对虚拟表 VT3 应用 WHERE 过滤条件，只有符合 <where_condition> 的记录才被插入虚拟表 VT4 中
+
+    在应用 WHERE 过滤器时，有两种过滤是不被允许的：
+
+    *   由于数据还没有分组，现在还不能在 WHERE 过滤器中使用 where_condition=MIN(col) 这类统计过滤
+    *   由于没有进行列的选取操作，在 SELECT 中使用的列的别名也是不被允许的
+
+    对于 OUTER JOIN 中的过滤，在 ON 过滤器之后还会添加保留表中被 ON 条件过滤掉的记录，而 WHERE 条件中被过滤掉的记录则是永久的过滤，**在 INNER JOIN 中两者没有差别，因为没有添加外部行的操作**
+
+5.  GROUP BY
+
+    根据 GROUP BY 子句中的列，对 VT4 中的记录进行分组操作，产生 VT5，GROUP BY 子句把所有 NULL 值分到同一组
+
+6.  CUBE ｜ ROLLUP
+
+    对表 VT5 进行 CUBE 或 ROLLUP 操作，产生表 VT6
+
+7.  HAVING
+
+    对虚拟表 VT6 应用 HAVING 过滤器，只有符合 <having_condtion> 的记录才被插入虚拟表 VT7 中。HAVING 是对分组条件进行过滤的筛选器，子查询不能用做分组的聚合函数（`HAVING COUNT(SELECT ...）< 2` 非法
+
+8.  SELECT
+
+    执行 SELECT 操作，选择指定的列，插入到虚拟表 VT8 中。列的别名不能再 SELECT 中的其他别名表达式中使用
+
+9.  DISTINCT
+
+    去除重复数据，产生虚拟表 VT9。会创建一个临时表（内存存放不下则放在磁盘上），临时表结构与 VT8 相同，不同的是对进行 DISTINCT 操作的列增加了一个唯一索引，以此来去除重复数据，对于使用了 GROUP BY 的查询，再使用 DISTINCT 是多余的，已经进行分组，不会移除任何行
+
+10.  ORDER BY
+
+     将虚拟表 VT9 中的记录按照 <order_by_list> 进行排序操作，产生虚拟表 VT10。可以在 ORDER BY 子句中指定 SELECT 列表中列的序列号（一般不推荐，除非对网络带宽要求）
+
+     不要为表中的行假定任何特定的顺序，在实际使用环境中，如果确实需要有序输出行记录，必须使用 ORDER BY 子句。在 ORDER BY 子句中，NULL 值被认为是相同的值，会将其排序在一起。NULL 值在升序过程中总是首先被选出，即 NULL 值在 ORDER BY 子句中被视为最小值
+
+11.  LIMIT
+
+     取出指定行的记录，产生虚拟表 VT11，并返回给查询用户
+
 执行相关语句分配的内存在执行完成后就会释放，不会在连接保存。
+
+###### 物理查询处理
+
+
 
 ##### JOIN
 
@@ -19,9 +84,15 @@ select * from t1 straight_join t2 on (t1.a=t2.a)
 
 ###### Join 执行
 
+###### 联接算符
+
+是 MySQL 数据库用于处理联接的物理策略，目前 MySQL 数据库仅支持 Nested-Loop Join 算符，MariaDB 还支持 Classic Hash Join 算法
+
 *   Index Nested-Loop Join 索引嵌套循环执行流程：
 
-    遍历驱动表，取出每一行去被驱动表做连接字段匹配。此时被驱动表的连接字段上有索引，执行索引树搜索。执行时间 `O(n*logn)`，扫描行数（去除索引搜索和回表操作）：驱动表行数与被驱动表行数之和
+    联接的表上有索引时。其联接的时间复杂度为 O(N)，若没有索引，则最坏复杂度为 O(n^2) 遍历驱动表，取出每一行去被驱动表做连接字段匹配。此时被驱动表的连接字段上有索引，执行索引树搜索。执行时间 `O(n*logn)`，扫描行数（去除索引搜索和回表操作）：驱动表行数与被驱动表行数之和
+
+    INNER JOIN 中可以使用索引下推的优化方式，但不能直接在 OUTER JOIN 中使用该方式，有些不满足联接条件的记录会通过外部表行的方式再次添加到结果中
 
 *   Simple Nested-Loop Join
 
@@ -29,13 +100,21 @@ select * from t1 straight_join t2 on (t1.a=t2.a)
 
 *   Block Nested-Loop Join
 
-    对于被驱动表上关联字段没有索引时，将被驱动表读入线程内存 `join_buffer`，扫描驱动表，从驱动表中取出每一行与 `join_buffer` 中数据对比。
+    Simple Nested-Loops Join 算法在内层循环时，外部表的每行记录需要读取内部表一次，在内部表的联接上有索引的情况下，其扫描成本为 O(Rn)；如果没有索引，则扫描成本为 O（Rn * Sn）。如果内部表 S 有相当多的记录，则 Simple Nested-Loops Join 算法会扫描内部表很多次。
+
+    Block Nested-Loops Join 对于被驱动表上关联字段没有索引时，将被驱动表读入线程内存 `join_buffer`，扫描驱动表，从驱动表中取出每一行与 `join_buffer` 中数据对比。
 
     在这个过程中，对表都会做全表扫描，总扫描行数是两者之和。由于 `join_buffer` 是以无序数组的方式组织的，因此在内存中做的判断次数是两者之积。
 
     `Simple Nested-Loop Join`  和 `Block Nested-Loop Join` 算法时间复杂度一致，区别在于磁盘扫描和内存扫描
-
+    
     `join_buffer` 由 `join_buffer_size` 设定的，默认值是 256k。如果放不下被驱动表的所有数据，就会分段放，此时会分段放入被驱动表的部分数据与驱动表数据对比，然后清空 `join_buffer` 放入下一段被驱动表数据。此时应使用小表做驱动表
+
+MySQL 使用 Join Buffer 原则：
+
+系统变量 `join_buffer_size` 决定 Join Buffer 的大小，Join Buffer 可被用于联接上 all、Index、range 的类型，每次联接使用一个 Join Buffer，多表的联接可以使用多个 Join Buffer。Join Buffer 在联接发生之前进行分配，在 SQL 语句执行完后释放。只存储需要进行查询操作的相关列数据，而不是整行记录
+
+SQL 执行计划的 Extra 列中的 Using join buffer，代表使用了 Block Nested-Loops Join 算法，5.6 会详细指示 Using join buffer（Block Nested-Loop）。在 5.5 版本中，Join Buffer 只能在 INNER JOIN 中使用，在 OUTER JOIN 则不能使用。5.6 和 MariaDB 5.3 开始，在 OUTER JOIN 中使用 Join Buffer 受到支持。5.6 中优化了 Join Buffer 在多张表之间联接的内存使用效率，MySQL 5.6 将 Join Buffer 分为 Regular join buffe 和 Incremental join buffer：假设 B1 是表 t1 和 t2 联接使用的 Join Buffer，B2 是 t1 和 t2 联接产生的结果和表 t3 进行联接使用的 Join Buffer，如果 B2 是 Regular join buffer，那么 B2 就会包含 B1 的 Join Buffer 中表 vt1 相关的列，以及表 t3 中相关的列。如果 B2 是 Incremental join buffer，那么 B2 包含表 t2 中的数据及一个指针，该指针指向 B1 中 vt1 相对应的数据。对于第一次联接的表，使用都是 Regular join buffer，之后再联接，则使用 Incremental join buffer。
 
 ###### join语句使用场景判断
 
@@ -43,6 +122,8 @@ select * from t1 straight_join t2 on (t1.a=t2.a)
 * 如果使用 `Block Nested-Loop Join` 算法，扫描行数就会过多。尤其是在大表上的 `join` 操作，这样可能要扫描被驱动表很多次，会占用大量的系统资源。所以这种 `join` 尽量不要用。即观察 `explain` 结果里面，`Extra` 字段里面有没有出现 `Block Nested Loop` 
 
 ###### join 语句优化
+
+要加快 JOIN 的执行速度：加快每次 search-for-match（查询比较）操作的速度（添加索引，让优化器选择索引来进行 search-for-match），search-for-match 根据 group（组，使用 Block Nested-Loops Join）算法来进行，减少对内部表的访问次数
 
 *   Multi-Range Read 优化，尽量使用顺序读盘。
 
@@ -63,13 +144,24 @@ select * from t1 straight_join t2 on (t1.a=t2.a)
 
 *   Batched Key Access
 
-    5.6 版本后开始引入地 `Batched Key Acess(BKA)` 算法。如果要使用 BKA 优化算法，需要在执行 SQL 语句之前，先设置
+    5.6 版本后开始引入地 `Batched Key Acess(BKA)` 算法。如果要使用 BKA 优化算法，需要在执行 SQL 语句之前，先设置。该算法的思想为结合索引的 group 这两种方法（Simple Nested-Loops Join 和 Block Nested-Loops Join 只能使用一种）来提供 search-for-match 的操作，以此加快联接的执行效率。
 
+    算法的工作步骤如下：
+    
+    1.  将外部表中相关的列放入 Join Buffer 中
+2.  批量地将 key 索引健值发送到 Multi-Range Read 接口
+    3.  Multi-Range Read 通过收到的 key，根据其对应 ROWID （主键）进行排序，然后再进行数据的读取操作
+    4.  返回结果集给客户端
+    
+    本质是通过 Multi-Range Read 接口将非主键索引对于记录的访问，转化为根据 ROWID 排序的较为有序的记录获取，所以要想通过 Batched Key Access Join 算法来提高性能
+    
     ```mysql
     set optimizer_switch='mrr=on,mrr_cost_based=off,batched_key_access=on';
     ```
-
+    
     `join_buffer` 中放入的数据是查询需要的字段，如果 `join buffer` 容量不够，则多段放入
+    
+    
 
 MRR 与 BKA 优化都是针对被驱动表上能使用索引的情况
 
