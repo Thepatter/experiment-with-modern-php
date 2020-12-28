@@ -12,7 +12,7 @@
 
 2.  ON
 
-    对虚拟表 VT1 应用 ON 筛选，只有那些符合 join condition 的行才被插入虚拟表 VT2 中。对于 ON 过滤条件下的 NULL 值比较，此时的比较结果为 UNKNOWN（ORDER BY 子句把所有 NULL 值排列在一起）产生虚拟表 VT2 时，会增加一个额外的列表示 ON 过滤条件的返回值，返回值有 TRUE、FALSE、UNKNOWN，取出 TRUE 的记录，产生虚拟表 VT2
+    对虚拟表 VT1 应用 ON 筛选，只有那些符合 join condition 的行才被插入虚拟表 VT2 中。对于 ON 过滤条件下的 NULL 值比较，此时的比较结果为 UNKNOWN 产生虚拟表 VT2 时，会增加一个额外的列表示 ON 过滤条件的返回值，返回值有 TRUE、FALSE、UNKNOWN，取出 TRUE 的记录，产生虚拟表 VT2
 
     *   添加外部行
 
@@ -43,11 +43,11 @@
 
 7.  HAVING
 
-    对虚拟表 VT6 应用 HAVING 过滤器，只有符合 <having_condtion> 的记录才被插入虚拟表 VT7 中。HAVING 是对分组条件进行过滤的筛选器，子查询不能用做分组的聚合函数（`HAVING COUNT(SELECT ...）< 2` 非法
+    对虚拟表 VT6 应用 HAVING 过滤器，只有符合 <having_condtion> 的记录才被插入虚拟表 VT7 中。HAVING 是对分组条件进行过滤的筛选器，子查询不能用做分组的聚合函数（如 `HAVING COUNT(SELECT ...）< 2` 非法
 
 8.  SELECT
 
-    执行 SELECT 操作，选择指定的列，插入到虚拟表 VT8 中。列的别名不能再 SELECT 中的其他别名表达式中使用
+    执行 SELECT 操作，选择指定的列，插入到虚拟表 VT8 中。列的别名不能在非 SELECT 表达式中使用
 
 9.  DISTINCT
 
@@ -61,7 +61,7 @@
 
 11.  LIMIT
 
-     取出指定行的记录，产生虚拟表 VT11，并返回给查询用户
+     取出指定行的记录，产生虚拟表 VT11，并返回给查询用户，如果使用 limit 作为分页，要防止大页数拖垮数据库，因为其会遍历并丢弃前面的页的数据
 
 执行相关语句分配的内存在执行完成后就会释放，不会在连接保存。
 
@@ -109,6 +109,19 @@ select * from t1 straight_join t2 on (t1.a=t2.a)
     `Simple Nested-Loop Join`  和 `Block Nested-Loop Join` 算法时间复杂度一致，区别在于磁盘扫描和内存扫描
     
     `join_buffer` 由 `join_buffer_size` 设定的，默认值是 256k。如果放不下被驱动表的所有数据，就会分段放，此时会分段放入被驱动表的部分数据与驱动表数据对比，然后清空 `join_buffer` 放入下一段被驱动表数据。此时应使用小表做驱动表
+    
+*   Hash Join
+
+    8.0 开始支持，同样使用 Join Buffer，先将外部表中数据放入 Join Buffer，然后根据键值产生一张散列表（第一个阶段，build 阶段）随后读取内部表中的一条记录，对其应用散列函数，将其和散列表中的数据进行比较（第二个阶段，probe 阶段），Hash Join 只能应用于等值的联接操作中（已通过散列函数生成新的联接值，不能将 Hash Join 用于非等值的联接操作中）
+
+    倘若 Join Buffer 能够完全放下外部表的数据，则只需要扫描一次内部表，否则需要分段多次扫描内部表
+
+    在 MariaDB 中使用 Hash Join：
+
+    ```mysql
+    SET join_cache_level=4+;
+    SET optimizer_switch='join_cache_hashed=on';
+    ```
 
 MySQL 使用 Join Buffer 原则：
 
@@ -153,15 +166,15 @@ SQL 执行计划的 Extra 列中的 Using join buffer，代表使用了 Block Ne
     3.  Multi-Range Read 通过收到的 key，根据其对应 ROWID （主键）进行排序，然后再进行数据的读取操作
     4.  返回结果集给客户端
     
-    本质是通过 Multi-Range Read 接口将非主键索引对于记录的访问，转化为根据 ROWID 排序的较为有序的记录获取，所以要想通过 Batched Key Access Join 算法来提高性能
+    本质是通过 Multi-Range Read 接口将非主键索引对于记录的访问，转化为根据 ROWID 排序的较为有序的记录获取，所以要想通过 Batched Key Access Join 算法来提高性能不但需要确保联接的列参与 match 的操作，还要有对非主键列的 search 操作。如果联接不涉及针对主键的进一步获取数据，内部表只参与联接判断，则不会启用 Batch Key Access Join 算法。
+    
+    本质上是 Simple Nested-Loops Join 算法，其发生的条件为内部表上有索引，该索引为非主键的，并且联接需要访问内部表主键上的索引，这时 Batch Key Access Join 算法调用 Multi-Range Read 接口，批量地进行索引健的匹配和主键索引上获取数据的操作
     
     ```mysql
     set optimizer_switch='mrr=on,mrr_cost_based=off,batched_key_access=on';
     ```
     
     `join_buffer` 中放入的数据是查询需要的字段，如果 `join buffer` 容量不够，则多段放入
-    
-    
 
 MRR 与 BKA 优化都是针对被驱动表上能使用索引的情况
 
@@ -208,6 +221,20 @@ select @b-@a;
 ###### 利用索引消除排序
 
 根据索引的有序性
+
+##### UNION
+
+通常将 JOIN 看成表之间的水平操作，该操作生成的虚拟表包含两个表中的列。UNION 看成两个表之间的垂直操作。对两个输入进行操作，并生成一个虚拟表。
+
+UNION 操作的两个输入必须拥有相同的列数，若数据类型不同，MySQL 数据库会自动隐式转化。结果列的名称由第一个输入决定。集合操作中 SELECT 语句和一般的 SELECT 查询类似（只有最后一个 SELECT 可以应用 INTO OUTFILE，但是整个集合的操作将被输出到文件中，不能在 SELECT 语句中使用 HIGH_PRIORITY 关键字），若 SELECT 语句中包含 LIMIT 和 ORDER BY 子句，最好是为参与集合操作的各 SELECT 语句添加括号，否则执行集合查询得到错误提示
+
+###### UNION DISTINCT
+
+组合两个输入，并应用 DISTINCT 过滤重复项。一般省略 DISTINCT 关键字，直接用 UNION，MySQL 数据库目前对 UNION DISTINCT 的实现方式：创建一张临时表，对这张临时表的列添加唯一索引，将输入的数据插入临时表，返回虚拟表。
+
+###### UNION ALL
+
+组合两个输入中所有项的结果集，并包含重复的选项
 
 #### 管理语句
 
