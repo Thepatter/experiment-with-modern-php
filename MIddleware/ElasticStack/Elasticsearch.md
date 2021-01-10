@@ -200,6 +200,56 @@ GET /_analyze
 
 索引中每个文档都有类型，每种类型都有自己的映射或模式定义。映射定义了类型中的域，每个域的数据类型及 ES 如何处理域，映射也用于配置与类型有关的元数据。ES 支持如下简单域类型（当索引一个之前未曾出现的域时，ES 会使用动态映射通过 JSON 中基本数据类型进行映射，如果通过 `"123"` 索引一个数字，它会被映射为 string 类型，而不是 long，如果这个域已经映射为 long。ES 会将这个字符串转化为 long，如果无法转化，则抛出一个异常）：
 
+映射的最高一层被称为根对象，可能包含：
+
+*   properties 节点，列出了文档中可能包含的每个字段的映射
+
+    主要包含：type（字段的数据类型）、index（字段是否应被当成全文（analyzed）来搜索，或准确值（not_analyzed）或不可搜索（no））、analyzer（确定在索引和搜索时全文字段使用的 analyzer）
+
+*   各种元数据字段（以下划线开头）
+
+    _source 字段存储代表文档体的 JSON 字符串
+
+    ```
+    PUT /{index}
+    {
+    	"mappings": {
+    		"_doc": {
+    			"_source": {
+    				// 禁用 source 字段
+    				"enabled": false
+    			}
+    		}
+    	}
+    }
+    ```
+
+    _all 字段，把其他字段值当作一个大字符串来索引的特殊字段。query_string 在没有指定字段时默认使用 _all 字段。include_in_all 设置来控制字段是否要包含在 _all 字段中。默认 true。_all 字段仅仅是一个经过分词的 string 字段。使用默认分词器来分析它的值。不管这个值原本所在字段指定的分词器。
+
+    ```
+    PUT /{index}/_doc/_mapping
+    {
+    	"_doc": {
+    		"include_in_all": false,
+    		"properties": {
+    			"field": {
+    				"type": "string",
+    				"include_in_all": true    // 	手动包含某个字段到 _all 字段
+    			}
+    		}
+    	},
+    	"_all": {"analyzer": "whitespace"} // 设置 all 字段分析器
+    }
+    ```
+
+    文档标识相关元数据字段（`_id`、`_type`、`_index`、`_uid`），默认情况下，`_uid` 字段可搜索。`_id`、`_index` 字段既没有被索引也没有被存储。
+
+*   设置项，控制如何处理新的字段
+
+*   其他设置，可以同时应用在根对象和其他 object 类型的字段上
+
+
+
 *ES简单域类型与JSON类型映射*
 
 | ES 数据类型 |             ES             |           JSON 类型            |
@@ -535,7 +585,9 @@ DELETE /{index}/{_doc}/{id}
           "match": {
               "_field": "keyword"
           }
-      }
+      },
+    	// 获取特定字段
+    	"_source": ["filed", "filed1"]
   }
   // 匹配所有文档，未指定查询方式时，它是默认的查询
   {"match_all": {}}
@@ -740,16 +792,17 @@ GET /{index}/_doc/{_id}/_explain
 
 ##### 索引管理
 
-当需要定制索引属性时可以手动创建索引。和使用索引模板。
+通过索引文档的方式创建的索引，采用默认配置，字段通过动态映射的方式被添加到类型映射。当需要定制索引属性时可以手动创建索引。和使用索引模板。
 
 ```yaml
 action.auto_create_index: false # 禁止自动创建索引
 action.destructive_requires_name: true # 只允许删除特定名称索引，不允许通配符索引删除
 ```
 
-###### 索引配置
+###### 索引设置
 
 ```json
+// 创建时设置索引
 PUT /{index}
 {
     "settings": {
@@ -774,12 +827,84 @@ PUT /{index}
                     "tokenizer":    "standard",
                     "filter":       [ "lowercase", "my_stopwords" ]
             }}
+    },
+    "mappings": {
+      // 如果遇到新字段，抛出异常
+      "_doc": {
+        "dynamic": "strict",
+        "properties": {
+          "field": {"type": "text"},
+          "filed1": {
+            // 遇到新字段，动态创建新字段
+            "type": "object",
+            "dynamic": true
+          }
+        }
+      }
     }
+      
 }
+// 删除索引
+DELETE /{index}
+DELETE /{index_mattern}
 // 修改索引配置
 PUT /{index}/_settings
 {
     "{arguments}": "value"
+}
+```
+
+可以用 dynamic 配置控制动态映射行为支持：true（动态添加新的字段-缺省时的值）、false（忽略新的字段，不会改变 _source 字段内容，仍然包含被索引的整个 JSON 文档，新的字段不会被加到映射中也不可搜索）、strict（如果遇到新字段抛出异常）
+
+###### 动态模版
+
+使用 `dynamic_templates` 可以控制新检测生成字段的映射。每个模版都有一个名称，模版按照顺序来检测，第一个匹配的模版会被启用
+
+```json
+PUT /{index}
+{
+	"mappings": {
+		"_doc": {
+      // 指定缺省设置
+      "_default_": {
+        "_all": {"enabled": false}
+      }
+			"dynamic_templates": {
+				{
+					"es": {
+						"match": "*_es",  // 匹配字段名以 _es 结尾的字段
+						"match_mapping_type": "string",   // 允许应用模版到特定类型的字段上。
+						"mapping": {
+							"type": "string",
+							"analyzer": "english"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+```
+
+###### 索引别名
+
+索引别名类似软连接，可以指向一个多个索引。可以给任何一个需要索引名的 API 来使用。
+
+| 请求方式 |               URL               |           作用           |
+| :------: | :-----------------------------: | :----------------------: |
+|   PUT    | `/{index}/_alias/{index_alias}` |  设置索引别名指向 index  |
+|   GET    |       `/*/_alias/{index}`       | 检测这个别名指向那个索引 |
+|   GET    |       `/{index}/_alias/*`       |   那些别名指向这个索引   |
+
+一个别名可以指向多个索引，在添加别名到新索引的同时必须从旧的索引中删除它。这个操作需要原子化
+
+```json
+POST /_aliases
+{
+    "actions": [
+        { "remove": { "index": "my_index_v1", "alias": "my_index" }},
+        { "add":    { "index": "my_index_v2", "alias": "my_index" }}
+    ]
 }
 ```
 
