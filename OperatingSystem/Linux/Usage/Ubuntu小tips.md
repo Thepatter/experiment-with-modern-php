@@ -1,11 +1,16 @@
-## ubuntu 一些小 tips
+### ubuntu 一些小 tips
 
-### 修改默认编辑器为 vim
+#### 常规使用
+
+##### 配置相关
+
+###### 修改默认编辑器为 vim
+
 ```shell
 sudo update-alternatives --config editor
 ```
 
-### 开启 cron 日志
+###### 开启 cron 日志
 
 ```shell
 # 修改 rsyslog
@@ -31,7 +36,7 @@ sudo apt install xfce4 xrdp slim
 
 ###### 配置中文环境
 
-```
+```bash
 # 安装中文语言包
 sudo apt-get install  language-pack-zh-han*
 # 运行语言支持检查
@@ -68,3 +73,33 @@ LC_IDENTIFICATION="zh_CN"
 LC_ALL="zh_CN.UTF-8"
 ```
 
+#### 运行排错相关
+
+##### 系统错误
+
+###### 引导错误 
+
+无法启动虚拟机报错如下：
+
+```
+Kernel Panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
+```
+
+修复流程：
+
+1. 启动后在 GRUB 界面选择『Advanced options for Ubuntu』
+
+2. 点击可以恢复的内核进入系统
+
+3. 执行新内核引导更新
+
+   ```bash
+   # sudo update-initramfs -u -k {version}
+   sudo update-initramfs -u -k 4.15.0-136-generic
+   # 更新 grub 引导
+   sudo update-grub
+   ```
+
+   
+
+##### 软件错误

@@ -224,15 +224,24 @@ size_t fwrite(const void *ptr, size_t size, size_t nobj, FILE *stream)
 
 ##### 文件定位函数
 
+|                 函数                 |             效果              |
+| :----------------------------------: | :---------------------------: |
+|     `fseek(file, 0L, SEEK_SET)`      |       定位至文件开始处        |
+|     `fseek(file, 0L, SEEK_CUR)`      |       保持当前位置不动        |
+|     `fseek(file, 0L, SEEK_END)`      |        定位到文件末尾         |
+| `fseek(file, ftell(file), SEEK_SET)` | 到距文件开始 ftell 返回值位置 |
+
+fseek 和 ftell 都将文件大小限制在 long 类型范围内。ASCI C 新增了两个处理大文件的新定位函数 fgetpost/fsetpos。这两个函数使用 fpos_t（在文件中指定一个位置，可以实现为结构）
+
 ```c
-// 设置流 stream 的文件位置，后续的读写操作将从新位置开始。对于二进制文件，此位置被设置为从 origin 开始的第 offset 个字符处。origin 的值可以为 SEEK_SET（文件开始处）、SEEK_CUR（当前位置）或 SEEK_END（文件结束处）。对于文本流 offset 必须设置为 0，或者是由函数 ftell 返回的值（此时 origin 的值必须是 SEEK_SET）出错返回非 0 值
+// 设置流 stream 的文件位置，后续的读写操作将从新位置开始。对于二进制文件，此位置被设置为从 origin 开始的第 offset 个字符处。origin 的值可以为 SEEK_SET（文件开始处）、SEEK_CUR（当前位置）或 SEEK_END（文件结束处）。对于文本流 offset 必须设置为 0，或者是由函数 ftell 返回的值（此时 origin 的值必须是 SEEK_SET）出错返回非 0 值, offset 负值时从末尾倒数
 int fseek(FILE *steam, long offset, int origin)
 // 返回 stream 流的当前文件位置。出错时该函数返回 -1L
 long ftell(FILE *stream)
 // 等价于 fseek(fp, 0L, SEEK_SET); clearerr(fp) 的执行结果
 void rewind(FILE *stream)
 // 把 stream 流的当前位置记录在 *ptr 中，供随后的 fsetpos 函数调用使用，出错则返回一个非 0 值
-int fgetpos(FILE *stream, fpos_t *ptr)
+int fgetpos(FILE * restrict stream, fpos_t * restrict ptr);
 // 将流 stream 的当前位置设置为 fgetpos 记录在 *ptr 中的位置。若出错则返回一个非 0 值
 int fsetpos(FILE *stream, const fpos_t, *ptr)
 ```
