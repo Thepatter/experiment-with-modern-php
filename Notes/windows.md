@@ -21,8 +21,8 @@ $env:HTTP_PROXY="http://127.0.0.1:10809"
 
 以管理员运行：
 
-1. hosts 修改后释放 命令行：ipconfig/release
-2. 重建本地DNS缓存 命令行：ipconfig /flushdns
+1. hosts 修改后释放 命令行：`ipconfig /release`
+2. 重建本地DNS缓存 命令行：`ipconfig /flushdns`
 
 #### wsl
 
