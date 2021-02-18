@@ -1,5 +1,9 @@
 ### Servlet 技术
 
+Java Servlet 是一个基于 Java 技术的 Web 组件，运行在服务器端，Servlet 不能独立运行，它必须被部署到 Servlet 容器中，由容器来实例化和调用 Servlet 方法，Servlet 容器在 Servlet 的生命周期内管理 Servlet，用于生成动态内容。Servlet 是平台独立的 Java 类，编写一个 Servlet，实际上就是按照 Servlet 规范编写一个 Java 类。可以被动态地加载到支持 Java 技术的 Web 服务器中运行。当前 Servlet 规范最新的版本是 4.0。
+
+客户端访问 Servlet，Web 服务器接收到请求后，并不是将请求直接交给 Servlet，而是交给 Servlet 容器。Servlet 容器实例化 Servlet，调用 Servlet 的一个特定方法对请求进行处理，并产生一个响应。这个响应由 Servlet 容器返回给 Web 服务器。Web 服务器包装这个响应，以 HTTP 响应的形式发送给 Web 浏览器
+
 #### Servlet
 
 Servlet 缺点
@@ -16,7 +20,7 @@ Servlet 缺点
 | `javax.servlet.annotation` | 定义了 Servlet、Filter、Listener 相关注解 |
 | `javax.servlet.descriptor` |              描述符相关接口               |
 
-Servlet 技术的核心是 `Servlet` 接口，它是所有 Servlet 类必须直接或间接实现的一个接口。在编写 `Servlet` 和 `Servlet` 类时，直接实现它。在扩展实现这个接口的类时，间接实现它。`Servlet` 接口定义了 `Servlet` 与 Servlet 容器之间的契约：Servlet 容器将 `Servlet` 类载入内存，并在 `Servlet` 实例上调用具体的方法。在一个应用程序中，每种 `Servlet` 类型只能有一个实例。
+Servlet 技术的核心是 `Servlet` 接口，定义了 `Servlet` 与 Servlet 容器之间的契约：Servlet 容器将 `Servlet` 类载入内存，并在 `Servlet` 实例上调用具体的方法。在一个应用程序中，每种 `Servlet` 类型只能有一个实例。
 
 * 用户请求使 Servlet 容器调用 `Servlet` 的 `service` 方法，并传入一个 `ServletRequest` 实例和一个 `ServletResponse` 实例。
 * `ServletRequest` 中封装了当前的 HTTP 请求，因此，Servlet 开发人员不必解析和操作原始的 HTTP 数据。
@@ -44,11 +48,65 @@ java.lang.String getServletInfo()
 ServletConfig getServletConfig()
 ```
 
+*servlet info*
+
+```json
+{
+    "HttpServletRequestInfo": {
+        "HttpServletRequest.getRequestURI": "/servlet_demo_war_exploded/method-info",
+        "HttpServletRequest.getMethod": "GET",
+        "HttpServletRequest.getPathInfo": "null",
+        "HttpServletRequest.getCharacterEncoding": "null",
+        "HttpServletRequest.getAuthType": "null",
+        "HttpServletRequest.getContextPath": "/servlet_demo_war_exploded",
+        "HttpServletRequest.getServletPath": "/method-info",
+        "HttpServletRequest.getPathTranslated": "null",
+        "HttpServletRequest.getContentType": "null",
+        "HttpServletRequest.getScheme": "http",
+        "HttpServletRequest.getQueryString": "null",
+        "HttpServletRequest.getRequestedSessionId": "D9A66854C5358EC5FF8E82B32B14ACD7",
+        "HttpServletRequest.getRemoteUser": "null",
+        "HttpServletRequest.getRemoteAddr": "0:0:0:0:0:0:0:1",
+        "HttpServletRequest.getRemoteHost": "0:0:0:0:0:0:0:1",
+        "HttpServletRequest.getRemotePort": "61608",
+        "HttpServletRequest.getLocalAddr": "0:0:0:0:0:0:0:1",
+        "HttpServletRequest.getLocalName": "0:0:0:0:0:0:0:1",
+        "HttpServletRequest.getContentLengthLong": "-1",
+        "HttpServletRequest.getLocalPort": "8080",
+        "HttpServletRequest.getProtocol": "HTTP/1.1",
+        "HttpServletRequest.getServerName": "localhost",
+        "HttpServletRequest.getServerPort": "8080"
+    },
+    "HttpServletResponseInfo": {
+        "HttpServletResponse.getContentType": "application/json;charset=UTF-8",
+        "HttpServletResponse.getCharacterEncoding": "UTF-8",
+        "HttpServletResponse.getStatus": "200",
+        "HttpServletResponse.getBufferSize": "8192"
+    },
+    "ServletConfigInfo": {
+        "ServletConfig.getServletName": "com.example.servlet_demo.MethodInfoServlet"
+    },
+    "ServletContextInfo": {
+        "ServletContext.getContextPath": "/servlet_demo_war_exploded",
+        "ServletContext.getSessionTimeout": "30",
+        "ServletContext.getRequestCharacterEncoding": "null",
+        "ServletContext.getResponseCharacterEncoding": "null",
+        "ServletContext.getServletContextName": "null",
+        "ServletContext.getServletInfo": "Apache Tomcat/9.0.43",
+        "ServletContext.getClassLoader().getClass().getName()": "org.apache.catalina.loader.ParallelWebappClassLoader",
+        "ServletContext.getVirtualServerName": "Catalina/localhost",
+        "ServletContext.getEffectiveMajorVersion": "4",
+        "ServletContext.getEffectiveMinorVersion": "0",
+        "ServletContext.getMajorVersion": "4",
+        "ServletContext.getMinorVersion": "0",
+        "ServletContext.getAttribute(javax.servlet.context.tempdir)": "C:UserszywAppDataLocalJetBrainsIntelliJIdea2020.3\tomcatd9aeba0d-261a-48d4-ace3-237c539ce87dworkCatalinalocalhostservlet_demo_war_exploded"
+    }
+}
+```
+
 ###### *ServletRequest*
 
-对于每个 HTTP 请求，Servlet 容器都会创建一个 *ServletRequest* 实例（封装了客户端请求的所有信息），并将它传给 *Servlet*.Service() 方法
-
-*ServletRequest* 接口的对象只在  *Servlet.Service()* 或 *Filter.doFilter()* 方法作用域内有效；除非启用了异步处理以调用 *ServletRequest*.startAsync()，此时会一直有效，直到调用 *AsyncContext.complete()*
+对于每个 HTTP 请求，Servlet 容器都会创建一个 *ServletRequest* 实例（封装了客户端请求的所有信息），并将它传给 *Servlet*.Service() 方法，*ServletRequest* 接口的对象只在  *Servlet.Service()* 或 *Filter.doFilter()* 方法作用域内有效；除非启用了异步处理以调用 *ServletRequest*.startAsync()，此时会一直有效，直到调用 *AsyncContext.complete()*
 
 容器通常会出于性能重复使用 *ServletRequest* 对象
 
@@ -60,9 +118,10 @@ int getContentLength();
 // 获取 Cookie getCookies();
 // 判断是否为 HTTPS isSecure();
 // 获取客户端语言环境 getLocale() getLocales() 对应 Accept-Language
-// 获取客户端编码 getCharacterEncoding()
 // 返回请求主题的 MIME 类型，失败 null
 String getConteneType();
+// 返回请求正文使用字符编码的名字，如果没有指定字符编码，返回 null
+String getCharacterEncoding();
 // 返回用于读取请求正文的输入流
 ServletInputStream getInputStream();
 // 返回服务器端的 IP 地址
@@ -77,8 +136,10 @@ String getParameter(String name);
 String getProtocol();
 // 在请求范围内保存一个属性
 void setAttribute(String name, Object object);
-// 返回对应属性
-Object getAttribute(String vr1);
+// 返回对应 name 的属性，如果该属性不存在，返回 null
+Object getAttribute(String name);
+// 返回请求中所有可用的属性的名字，如果没有属性，返回一个空的枚举集合
+Enumeration getAttributeNames();
 // 从请求范围内删除一个属性
 void removeAttribute(String name);
 ```
@@ -110,22 +171,17 @@ ServletOutputStream getOutputStream();
 PrintWriter getWriter();
 ```
 
-*ServletOutputStream* 和 *PrintWriter* 先把数据写到缓冲区内，在以下情况下，缓冲区内的数据会被提交给客户：
+*ServletOutputStream* 和 *PrintWriter* 先把数据写到缓冲区内，在以下情况下，缓冲区内的数据会被提交：
 
 * 缓冲区内数据已满时，会自动把缓冲区内的数据发送给客户端，并且清空缓冲区
 * Servlet 调用 *ServletResponse*.flushBuffer() 方法
 * Servlet 调用 *ServletOutputStream* 或 *PrintWriter* 对象的 flush() 方法或 close() 方法
 
-为了确保 *ServletOutputStream* 或 *PrintWriter* 输出的所有数据都会被提交给客户，比较安全的做法是在所有数据都输出完毕后，调用 其对应的 close() 方法。
-
-如果要设置响应正文的 MIME 类型和字符编码，需要按以下顺序
-
-1. 先调用 *ServletResponse*.setContentType() 和 setCharacterEncoding() 方法
-2. 再调用 ServletResponse.getOutputStream() 或  getWriter() 方法，提交缓冲区内的正文数据
+为了确保 *ServletOutputStream* 或 *PrintWriter* 输出的所有数据都会被提交给客户，比较安全的做法是在所有数据都输出完毕后，调用其对应的 close() 方法。
 
 ###### ServletConfig
 
-当 Servlet 容器初始化 Servlet 时，Servlet 容器会给 Servlet 的 `init` 方法传入一个 `ServletConfig` 。`ServletConfig` 封装可以通过 `@WebServlet` 或者部署描述符传给 `Servlet` 的配置信息。这样传入的每一条信息就叫一个初始参数，一个初参数有 Key 和 value
+当 Servlet 容器初始化 `Servlet` 时，Servlet 容器会给 *Servlet*.init 方法传入一个 `ServletConfig` 。`ServletConfig` 封装可以通过 `@WebServlet` 或者部署描述符传给 `Servlet` 的配置信息
 
 ```java
 // 获取参数值
@@ -141,7 +197,7 @@ String getServletName();
 
 *ServletContext* 接口定义了应用运行的上下文，提供了 *Servlet* 与容器通信接口，*Servlet* 容器为每个 Web 应用程序创建一个 *ServletContext*，可以在应用范围内存取共享数据，并且可以动态注册 web 对象（*Filter*、*Servlet*、*Listener*），将对象保存在内部 Map 中
 
-所有 *Servlet* 及它们使用的类需要由一个单独的类加载器加载。每个实现 *ServletContext* 接口的对象都需要一个临时存储目录（容器会为每个 *ServletContext* 分配一个临时目录，在 *ServletContext* 接口中通过 javax.servlet.context.tempdir 属性获取该目录）
+所有 *Servlet* 及它们使用的类需要由一个单独的类加载器加载。每个实现 *ServletContext* 接口的对象都需要一个临时存储目录（容器会为每个 *ServletContext* 分配一个临时目录，在 *ServletContext* 接口中通过 `javax.servlet.context.tempdir` 属性获取该目录）
 
 ```java
 // 添加 Servlet、Filter、Listener 到 ServletContext addServlet、addFilter、addListener
@@ -214,9 +270,11 @@ Cookie[] getCookie();
 String getHeader(String var1);
 // 返回一个 Enumeration 对象，包含了 HTTP 请求头部的所有项目名
 Enumeration<String> getHeaderNames();
+// 返回请求 URL 中从主机名到查询字符串之间的部分
+String getRequestURI();
 // 返回 HTTP 请求方法
 String getMethod();
-// 返回请求 URL 中的查询字符串
+// 返回请求 URL 中的查询字符串，如果没有查询字符串，返回 null
 String getQueryString();
 // 返回session对象，如果没有，将创建一个新的session对象
 HttpSession getSession();
@@ -228,6 +286,10 @@ String getRequestURI();
 Collection<Part> getParts() throws IOException, ServletException;
 // 当通过验证的用户访问 web 资源时，返回当前用户的名字
 String getRemoteUser();
+// 返回客户端请求 URL 的额外路径信息。即 Servlet 之后的路径
+String getPathInfo();
+// 将额外路径信息转换为真实的路径。即 Servlet 所在物理路径
+String getPathTranslated();
 ```
 
 ###### HttpServletResponse
@@ -355,11 +417,11 @@ javax.servlet.GenericServlet 抽象类实现了 *Servlet* 和 *ServletConfig* �
 
 * 实现 `ServletConfig` 接口中的方法
 
-###### HttpServlet
+###### *HttpServlet*
 
 定义了 HTTP 的 *Servlet*
 
-javax.servlet.http.HttpServlet 继承自 `GenericServlet`，实现了 `Service` 方法。并重载了 `Service` 方法，使其基于 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServletResponse resp)` 来处理 HTTP 请求与响应。因此使用该抽象类时，处理对应请求动作的 HTTP 请求，只需覆盖对应的 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServeltResponse resp)` 方法。
+`javax.servlet.http.HttpServlet` 继承自 `GenericServlet`，实现了 `Service` 方法。并重载了 `Service` 方法，使其基于 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServletResponse resp)` 来处理 HTTP 请求与响应。因此使用该抽象类时，处理对应请求动作的 HTTP 请求，只需覆盖对应的 `do{HTTP_REQUEST_METHOD}(HttpServletRequest req, HttpServeltResponse resp)` 方法。
 
 在开发 Web 应用时，自定义的 Servlet 类一般都继承该类。
 
@@ -367,7 +429,17 @@ HttpServlet 类默认情况下不支持会话。Servlet 容器调用 `HttpServle
 
 ##### Servlet 容器
 
-为了解耦，HTTP 服务器不直接调用 Servlet，而是把请求交给 Servlet 容器来处理
+为了解耦，HTTP 服务器不直接调用 Servlet，而是把请求交给 Servlet 容器来处理。
+
+###### Servlet 容器分类
+
+* 进程内的 Servlet 容器
+
+  Servlet 容器由 Web 服务器插件和 Java 容器两部分的实现组成。Web 服务器插件在某个 Web 服务器内部地址空间打开一个 JVM，使得 Java 容器可以在此 JVM 中加载并运行 Servlet。如果客户端调用 Servlet 的请求到来，插件取得对此请求的控制并将它传递（使用 JNI 技术）给 Java 容器，然后由 Java 容器将此请求交由 Servlet 进行处理
+
+* 进程外的 Servlet 容器
+
+  Servlet 容器运行于 Web 服务器之外的地址空间，由 Web 服务器插件和 Java 容器两部分的实现组成。Web 服务器插件和 Java 容器（在外部 JVM 中运行）使用 IPC 机制（通常是 TCP/IP）进行通信。当一个调用 Servlet 的请求到达时，插件取得对此请求控制并将其传递（IPC 机制）给 Java 容器。进程外 Servlet 容器对客户请求的响应速度不如进程内的 Servlet 容器
 
 ###### 工作流程
 
@@ -375,15 +447,11 @@ HttpServlet 类默认情况下不支持会话。Servlet 容器调用 `HttpServle
 
 *servlet工作流程*
 
-![](./Images/servlet工作流程.jpg)
-
 ###### Web 应用
 
 Servlet 容器会实例化和调用 Servlet，一般采用 Web 应用程序的方式来部署 Servlet 的，而根据 Servlet 规范，Web 应用程序有一定的目录结构，在这个目录下分别放置了 Servlet 的类文件、配置文件以及静态资源，Servlet容器通过读取配置文件，就能找到并加载 Servlet
 
 *Web应用目录结构*
-
-![](./Images/Web应用目录结构.png)
 
 Servlet 规范里定义了 `ServletContext` 接口来对应一个 Web 应用。Web 应用部署好后，Servlet 容器在启动时会加载 Web 应用，并为每个 Web 应用创建唯一的 `ServletContext` 对象。可以将 `ServletContext` 看成一个全局对象，一个 Web 应用可能有多个 Servlet，这些 Servlet 可以通过全局的 `ServletContext` 来共享数据，这些数据包括 Web 应用的初始化参数、Web 应用目录下的文件资源等。由于 `ServletContext` 持有所有的 Servlet 实例，还可以通过它实现 Servlet 请求的转发
 

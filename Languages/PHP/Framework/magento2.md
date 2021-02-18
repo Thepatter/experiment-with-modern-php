@@ -24,12 +24,12 @@
 // ~/.composer/auth.json
 {
     "github-oauth": {
-        "github.com": "2e92379cab0b1c6f812b18a40a3d5cfb45ad1b04"
+        "github.com": "github-personal-token"
     },
     "http-basic": {
         "repo.magento.com": {
-            "username": "c55018d4d8680c36bd35183e3be66aae",
-            "password": "3ce96aed3a088582bb81f73ab9f6bcf3"
+            "username": "marketplace-public-key",
+            "password": "marketplace-private-key"
         }
     }
 }
@@ -209,6 +209,29 @@ bin/magento module:disable Magento_TwoFactorAuth
 ```
 
 ###### 缓存
+
+不启用缓存非常慢，启用缓存后每次修改文件需要刷新配置，可以禁用如下缓存来实现布局和显示的
+
+```php
+'cache_types' => 
+      array (
+        'config' => 1,
+        'layout' => 0,
+        'block_html' => 0,
+        'collections' => 1,
+        'reflection' => 1,
+        'db_ddl' => 0,
+        'eav' => 1,
+        'customer_notification' => 1,
+        'target_rule' => 1,
+        'full_page' => 0,
+        'config_integration' => 1,
+        'config_integration_api' => 1,
+        'translate' => 1,
+        'config_webservice' => 1,
+        'compiled_config' => 1,
+      ),
+```
 
 默认启用文件缓存位于 <magento_root>/var/cache <magento_root>/var/page_cache
 
@@ -434,19 +457,19 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
 
 每个模块都有一组配置文件，在 etc 目录。模块的配置 app/etc 顶层可以包含以下顶层配置文件（顶层所需的配置文件取决于新模块的功能和使用的方式。应尽量减小配置的作用域，少使用全局配置），其作用域为该组件全局：
 
-|               文件               | 作用 |
-| :------------------------------: | :--: |
-|         app/etc/acl.xml          |      |
-|        app/etc/config.xml        |      |
-|       app/etc/crontabl.xml       |      |
-|      app/etc/db_schema.xml       |      |
-| app/etc/db_schema_whitelist.json |      |
-|          app/etc/di.xml          |      |
-| app/etc/extension_attributes.xml |      |
-|        app/etc/module.xml        |      |
-|     app/etc/{customize}.xml      |      |
-|     app/etc/{customize}.xsd      |      |
-|        app/etc/webapi.xml        |      |
+|               文件               |           作用           |
+| :------------------------------: | :----------------------: |
+|         app/etc/acl.xml          |       资源权限配置       |
+|        app/etc/config.xml        |        自定义配置        |
+|       app/etc/crontab.xml        |       定时任务配置       |
+|      app/etc/db_schema.xml       |    数据库建表定义相关    |
+| app/etc/db_schema_whitelist.json | 建表字段，索引相关白名单 |
+|          app/etc/di.xml          |     依赖注入相关配置     |
+| app/etc/extension_attributes.xml |                          |
+|        app/etc/module.xml        |         模块配置         |
+|     app/etc/{customize}.xml      |                          |
+|     app/etc/{customize}.xsd      |                          |
+|        app/etc/webapi.xml        |       接口对应设置       |
 
 子配置文件目录，其作用域为特定作用域，会覆盖对应作用域的全局配置。
 
@@ -477,6 +500,10 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
     php bin/magento setup:static-content:deploy
     ```
 
+###### 组件更新
+
+组件更新时执行 `setup:db-data:upgrade` 时会扫描组件 Setup 文件夹下脚本，执行成功后会在 `patch_list` 表中增加一条记录，如果需要重复执行可以删除该表中的记录
+
 ###### 组件配置
 
 在 /etc/module.xml 文件中声明自身
@@ -498,7 +525,9 @@ php 使用 plugin/preference/events 方式重写，phtml 直接在自定义模�
 </config>
 ```
 
-###### di.xml
+###### di.xm
+
+作用注意是为 Service/Interface 选择实例或覆写 Service/Interface 的实例（preference 子元素），其 type 子元素主要是重写其实例的参数，并非为了构造实例，构造实例主要是根据类的构造方法声明进行实例化
 
 ```shell
 # 获取对应类的注入项
@@ -586,7 +615,12 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
 
 ###### db_schema.xml
 
-使用该文件来声明模块的 schema
+使用该文件来声明模块的 schema，可以用来修改表结构（定义表，修改表），Setup 文件夹下 UpgradeSchema 脚本也可以用来进行修改数据库表结构，但是是根据版本号来进行升级的，会强制要求升级模块，但 Setup 目录 patch 数据不会升级模块
+
+如果在同一次更改中修改了表结构和修改了数据，使用 setup:upgrade 会报错（因为其先执行 data:upgrade 再执行 schema:upgrade），可以分开执行
+
+1. 先执行 php ./bin/magento setup:db-schema:upgrade
+2. 再执行 php ./bin/magento setup:db-data:upgrade
 
 *   table 节点
 
@@ -644,10 +678,10 @@ bin/magento dev:di:info "Magento\Quote\Model\Quote\Item\ToOrderItem"
 
     index 子节点
 
-    |    属性     |                    描述                     |
-    | :---------: | :-----------------------------------------: |
-    |    type     |             btree/fulltext/hash             |
-    | referenceId | 仅限于 db_schema.xml 文件范围内的关系映射。 |
+    |    属性     |                             描述                             |
+    | :---------: | :----------------------------------------------------------: |
+    |    type     |                     btree/fulltext/hash                      |
+    | referenceId | 仅限于 db_schema.xml 文件范围内的关系映射，自定义一个唯一的引用，在 whitelist.json 中引用 |
 
     ```xml
     <index referenceId="NEWSLETTER_SUBSCRIBER_CUSTOMER_ID" indexType="btree">
@@ -666,7 +700,9 @@ bin/magento setup:db-declaration:generate-whitelist [options]
 
 ```xml
 <schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"              xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <!-- 修改后的 -->
     <table name="new_declarative_table" onCreate="migrateDataFromAnotherTable(declarative_table)">
+    <!-- 原来的 -->
     <table name="declarative_table">
         <column xsi:type="int" name="id_column" padding="10" unsigned="true" nullable="false" comment="Entity Id"/>
         <column xsi:type="int" name="severity" padding="10" unsigned="true" nullable="false" comment="Severity code"/>
@@ -688,7 +724,7 @@ bin/magento setup:db-declaration:generate-whitelist [options]
 onCreate="migrateDataFrom(entity_id)"
 ```
 
-添加索引
+添加索引，在表定义中直接添加，删除索引，在表定义的节点中删除定义索引的节点后再将 whitelist.json 中对应表的 index 下该 index 的 referenceId 设置 false
 
 ```xml
 # 添加索引
@@ -701,6 +737,92 @@ onCreate="migrateDataFrom(entity_id)"
             referenceTable="severities" referenceColumn="severity_identifier"
             onDelete="CASCADE"/>
 ```
+
+###### db_schema_whitelist.json
+
+配置 db_schema.xml 来进行数据库表结构的更新，其定义类似，对应允许存在的相关定义为 true，需要删除的在 db_schema.xml 中删除定义后再对应的设置中设置为 false：
+
+```json
+{
+    "table": {
+        "column": {
+            "column_name_add": true,
+            "column_name_delete": false,
+        },
+        "constraint": {
+            "CONSTRAINT_DEFINE_REFERENCE_ID": true
+        },
+        "index": {
+        	"INDEX_DEFINE_REFERENCE_ID": true
+   		}
+    }
+}
+```
+
+###### config.xml
+
+配置对应模块的相应配置的值，如 system.xml 中对应 field 的默认值
+
+*etc/adminhtml/system.xml*
+
+```xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="sales">
+            <group id="general">
+                <field id="test" translate="label" type="textarea" sortOrder="710" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>test</label>
+                    <comment>{var} is the template variable, don't modify them.</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
+```
+
+*etc/config.xml*
+
+配置后台相关元素元素默认值（section/group/field）
+
+```xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <sales>
+            <general>
+                <test><![CDATA[default test data]]></test>
+            </general>
+        </sales>
+    </default>
+</config>
+```
+
+* 程序中获取配置项
+
+  ```php
+  private $scopeConfig;
+  public function __construct(ScopeConfigInterface $scopeConfig)
+  {
+      $this->scopeConfig;
+      $storeValue = $this->scopeConfig->getValue('section/group/field', Store::Default);
+  }
+  ```
+
+###### events.xml
+
+定义对应组件 model 的 observer，会在 model 状态符合 event 时进行相关操作，magento 自身的 model（如 `Magento\Sales\Model\Order` 等）源码上会记录其支持的相关 event
+
+```xml
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="sales_order_save_after">
+        <observer name="order_complete_send_sms" instance="Silksoftwarecorp\Sales\Observer\Order\OrderCompleteSendSms"/>
+    </event>
+</config>
+```
+
+配置默认值
 
 ##### 功能项
 
@@ -777,7 +899,7 @@ onCreate="migrateDataFrom(entity_id)"
 
 ###### CLI命令
 
-命令依赖于 magento 必须安装且配置正确，命令在模块范围内定义。创建命令的流程：
+命令在模块范围内定义。创建命令的流程：
 
 1. 在 Console 中创建命令类，继承 Symfony\Component\Console\Command\Command，在 execute 方法中处理命令逻辑，在 configure/__construct 中定义命令相关配置或在 di.xml 中定义相关配置
 
@@ -825,7 +947,7 @@ onCreate="migrateDataFrom(entity_id)"
    <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
        <!-- Customer Group Service-->
-       <route url="/V1/noAnalysisWords/:page" method="GET">
+       <route url="/V1/resource/:page" method="GET">
            <service class="module\namespace\Api\ProcessInterface" method="index"/>
            <resources>
                <resource ref="anonymous"/>
@@ -871,25 +993,29 @@ webapi.xml
 
 ###### 后台功能开发
 
-1.  配置菜单 <module>/etc/mean.xml
+* 如果使用 Grid 类进行渲染布局，Block 文件夹下 Edit 必须创建文件 Edit/From.php 在其中修改 save 的 url 才可以，直接在 Grid 的 Edit.php 中修改 getSaveUrl 无法成功
 
-    ```xml
-    <?xml version="1.0"?>
-    <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
-        <menu>
-            <add id="define_unique_id::acl_xml_use_the_id"
-                 title="show in backend"
-                 module="module_name"
-                 sortOrder="35
-                 <!-- 入口路由 -->
-                 action="default/index/index"
-                 <!-- acl中引用的 resource -->                 
-                 resource="acl_xml::resource"
-                 <!-- 管理后台上级页面 -->
-                 parent="Magento_Backend::marketing_user_content"/>
-        </menu>
-    </config>
-    ```
+1. 配置菜单 <module>/etc/mean.xml
+
+   ```xml
+   <?xml version="1.0"?>
+   <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+       <menu>
+           <add id="define_unique_id::acl_xml_use_the_id"
+                title="show in backend"
+                module="module_name"
+                sortOrder="35
+                <!-- 入口路由 -->
+                action="default/index/index"
+                <!-- acl中引用的 resource -->                 
+                resource="acl_xml::resource"
+                <!-- 管理后台上级页面 -->
+                parent="Magento_Backend::marketing_user_content"/>
+           <!-- 可以使用 remove id 移除自带的 -->
+           <remove id="Magento:Origin_Source"/>
+       </menu>
+   </config>
+   ```
 
 2.  配置后台 acl <module>/etc/acl.xml
 
@@ -917,11 +1043,424 @@ webapi.xml
 
 3.  模块正常的开发逻辑
 
+###### 后台新增配置含文件上传
+
+section 元素中如果未定义 resource 可能导致不显示
+
+1. 在 <Module>/etc/adminhtml/system.xml 中增加 section
+
+   ```xml
+   <?xml version="1.0"?>
+   <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+       <system>
+           <!-- 管理后台 section -->
+           <section id="general">
+               <!-- 管理后台 section 下分组配置 -->
+               <group id="group_config" translate="label" type="text" sortOrder="200" showInDefault="1" showInWebsite="0" showInStore="1">
+                   <!-- 管理后台 section-group 显示的 label -->
+                   <label>Backend Group Config</label>
+                   <!-- 后台配置字段，会存储在 core-config-data 表中 -->
+                   <field id="enabled" 
+                          translate="label comment" <!-- 定义后台显示的项 -->
+                          type="select" <!-- 下拉选项,支持文件，文本等 -->
+                          sortOrder="10" <!-- 在 group 的排序，小的排在前面 -->
+                          showInDefault="1" <!-- 在默认配置(Default Config)范围是否显示 -->
+                          showInWebsite="0" <!-- 在主站(Main Website)范围是否显示 -->
+                          showInStore="0">  <!-- 在店铺范围是否显示 -->
+                       <!-- 字段值显示的 lable 显示在上面 -->
+                       <label>Enable Current Config</label>
+                   	<!-- 指定下拉资源 -->
+                       <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                   	<!-- 字段的 comment 会显示在字段的下面较小字体 -->
+                       <comment>this is comment</comment>
+                   </field>
+                   <field id="text_conf" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
+                       <label>Text Config Label</label>
+                   </field>
+                   <field id="image_conf" translate="label" type="image" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                       <label>FILE LABEL</label>
+                       <!-- 定义后台处理 model，用于文件操作相关 -->
+                       <backend_model>Your\Module\Model\Config\Backend\Image</backend_model>
+                       <!-- 定义范围 -->
+                       <base_url type="media" scope_info="1">live_popup</base_url>
+                   </field>
+               </group>
+           </section>
+       </system>
+   </config>
+   ```
+   
+2. 定义 backend_model 可以指定 front_model 等其他，处理文件上传直接继承 \Magento\Config\Model\Config\Backend\Image，对其做了较好封装
+
+3. 模板文件使用配置
+
+   在 `design\frontend\*\templates` 目录下定义 *.phtml 文件，可以 `design\frontend\*\layout\default.xml` 中配置该模板的 Block
+
+   ```xml
+   <?xml version="1.0"?>
+   <!--
+   /**
+    * Copyright © Magento, Inc. All rights reserved.
+    * See COPYING.txt for license details.
+    */
+   -->
+   <page layout="3columns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+       <update handle="default_head_blocks"/>
+       <body>
+           <referenceContainer name="before.body.end">
+               <block class="Magento\Framework\View\Element\Template" name="{unique_name}"
+                      <!-- 定义 tmeplates 下模板文件，声明其是否启用配置 -->
+                      template="Magento_Theme::{tmplates_name}.phtml" ifconfig="core/config/data/table/path"/>
+           </referenceContainer>
+       </body>
+   </page>
+   ```
+
+4. 模板文件中访问配置
+
+   ```php
+   // 预先定义 config 获取配置
+   $_helper = $this-helper(Your\Module\Helper\Config::class);
+   // 获取配置
+   $textConfig = $_helper->getConfig('core-config-data-path');
+   // 使用 echo 输出，获取 media 下路径
+   <img src="<?php echo $block->getUrl('pub/media/{upload_dir}/').$_helper->getConfig('core_config_path');?>
+   ```
+
+###### 数据库操作
+
+* 打印 SQL 语句
+
+  ```php
+  // 三者等价
+  $collection->getSelect()->assemble();
+  $collection->getSelect()->__toString();
+  echo $collection->getSelect(); 
+  ```
+
+* 指定字段查询
+
+  如果不调用 reset 会查询 * 和 columns 中的字段，调用 reset 后只查询 columns 中的字段
+
+  ```php
+  $collection->getSelect()
+              ->reset(\Zend_Db_Select::COLUMNS)
+              ->columns(['id']);
+  ```
+
+* 使用 connection
+
+  ```php
+  // 删除
+  $resource = $objectManager->get('Magento\Framework\App\ResourceConnection');
+  $connection = $resource->getConnection();
+  $myTable = $resource->getTableName('mytable');
+  $connection->delete(
+      $myTable,
+      ['order_id = ?' => 10000]
+  );
+  // 普通查询
+  $columns = ['col_key', 'col_value'];
+  $select = $this-connection->select()->from($myTable, $columns)->where('id > 1', '100');
+  // 返回 ['col_key' => 'col_value'] 的 map 结构，如果 columns 数量超过 2 个，也只获取前两个字段的数组
+  $fetchPair = $this->connection->fetchPairs($select);
+  // 返回所有数据对象 columns 的 col_key => [column => value] 的数组
+  $fetchAssoc = $this->connection->fetchAssoc($select);
+  // 返回所有数据对象 columns 的 column => value
+  $fetchAll = $this->connection->fetchAll($select);
+  // 返回第一个数据对象 column => value 数组
+  $fetchRow = $this->connection->fetchRow($select);
+  // 返回第一个数据对象的第一个字段，返回值是一个标量
+  $fetchOne = $this->connection->fetchOne($select);
+  // 返回所有数据对象中 columns 中第一个字段的索引数组
+  $fetchCol = $this->connection->fetchCol($select);
+  
+  ```
+
+* resourceCollection 相关操作，注意 ui_comment 中 columns 字段名和 collection 中的查询要字段名对应，不然会存在找不到对应字段名情况
+
+  * 属性筛选
+
+    ```php
+    // Equals: eq
+    $_products->addAttributeToFilter('status', array('eq' => 1)); // Using the operator
+    $_products->addAttributeToFilter('status', 1); // Without using the operator
+    // Not Equals - neq
+    $_products->addAttributeToFilter('sku', array('neq' => 'test-product'));
+    // Like - like
+    $_products->addAttributeToFilter('sku', array('like' => 'UX%'));
+    // Not Like - nlike
+    $_products->addAttributeToFilter('sku', array('nlike' => 'err-prod%'));
+    // In - in
+    $_products->addAttributeToFilter('id', array('in' => array(1,4,98)));
+    // Not In - nin
+    $_products->addAttributeToFilter('id', array('nin' => array(1,4,98)));
+    // NULL - null
+    $_products->addAttributeToFilter('description', array('null' => true));
+    // Not NULL - notnull
+    $_products->addAttributeToFilter('description', array('notnull' => true));
+    // Greater Than - gt
+    $_products->addAttributeToFilter('id', array('gt' => 5));
+    // Less Than - lt
+    $_products->addAttributeToFilter('id', array('lt' => 5));
+    // Greater Than or Equals To- gteq
+    $_products->addAttributeToFilter('id', array('gteq' => 5));
+    // Less Than or Equals To - lteq
+    $_products->addAttributeToFilter('id', array('lteq' => 5));
+    ```
+
+  * 属性排序
+
+    ```php
+    $_products->addAttributeToSort($attribute, $dir = self::SORT_ORDER_ASC);
+    // 或者
+    $this->getSelect()->order($this->_getAttributeFieldName($attribute) . ' ' . $dir);
+    ```
+
+
 ###### 前台功能项开发
 
-##### 常见错误项
+##### eav 相关
+
+entity-attribute-value 模型
+
+* 所有 attribute 都会定义在 eav_attribute 表中
+* 对应的 attribute type 定义在 eav_attribute_type 表中（`eav_attribute.entity_type_id = eav_entity_type.entity_type_id`）
+
+###### 发送邮件
+
+1. 在 etc 目录下定义 email_templates.xml 配置
+
+   ```xml
+   <?xml version="1.0"?>
+   <config xmlns:xsi="">
+   	<template id="模板唯一id" lable="模板label" file="模板文件位置" type="模板文件类型" module="模块" area="区域">
+   </config>
+   ```
+
+   id 会在 transportBuilder 类创建 transport 时使用；file 默认为 `<module>/view/{frontend/adminhtml}/email/` 目录下定义的文件；type：file 的类型，文本或 html，area 区域，对应 view 下区域
+
+2. 定义对应 html
+
+   ```html
+   <!--@subject 自定义邮件主题 @-->
+   <h3>hi {{var name}}</h3>
+   ```
+
+   在顶部注释中定义主题，定义变量使用双括号，两边没有空格，且使用 var 开头
+
+3. 设置并发送，使用 transport 发送
+
+   ```php
+   public function __construct(\Magento\Framework\Mail\Template\TransportBuilder $transportBuilder);
+   $transport = $this->transportBuilder
+       ->setFromByScope('')
+       ->addTo(['test@admin.com', 'test1@admin.com'])
+       ->setTemplateIdentifier('email_templates.xml 中定义的唯一的 template id')
+       ->setTemplateVars([])
+       ->setTempateOption([])
+       ->getTransport();
+   $transport->sendMessage();
+   ```
+
+* 添加附件
+
+  并未内置开箱即用的发送附件方式，2.3 开始发送附件方式
+
+  1. 重写 TransportBuilder 类
+
+     ```php
+     <?php
+     
+     namespace YourModule\Model\Email;
+     
+     use Magento\Framework\Mail\MessageInterface;
+     use Magento\Framework\Mail\MessageInterfaceFactory;
+     use Magento\Framework\Mail\Template\FactoryInterface;
+     use Magento\Framework\Mail\Template\SenderResolverInterface;
+     use Magento\Framework\Mail\TransportInterfaceFactory;
+     use Magento\Framework\ObjectManagerInterface;
+     use Laminas\Mime\Mime;
+     use Laminas\Mime\Part as MimePart;
+     use Laminas\Mime\PartFactory as MimePartFactory;
+     use Laminas\Mime\Message as MimeMessage;
+     use Laminas\Mime\MessageFactory as MimeMessageFactory;
+     
+     
+     class OwnTransportBuilder extends \Magento\Framework\Mail\Template\TransportBuilder
+     {
+         /** @var MimePart[] */
+         private $parts = [];
+     
+         /** @var MimeMessageFactory */
+         private $mimeMessageFactory;
+     
+         /** @var MimePartFactory */
+         private $mimePartFactory;
+     
+         public function __construct(
+             FactoryInterface $templateFactory,
+             MessageInterface $message,
+             SenderResolverInterface $senderResolver,
+             ObjectManagerInterface $objectManager,
+             TransportInterfaceFactory $mailTransportFactory,
+             MimePartFactory $mimePartFactory,
+             MimeMessageFactory $mimeMessageFactory,
+             MessageInterfaceFactory $messageFactory = null
+         ) {
+             parent::__construct(
+                 $templateFactory,
+                 $message,
+                 $senderResolver,
+                 $objectManager,
+                 $mailTransportFactory,
+                 $messageFactory
+             );
+     
+             $this->mimePartFactory    = $mimePartFactory;
+             $this->mimeMessageFactory = $mimeMessageFactory;
+         }
+     
+         protected function prepareMessage(): SyncProductPriceCheckTransportBuilder
+         {
+             parent::prepareMessage();
+     
+             $mimeMessage = $this->getMimeMessage($this->message);
+     
+             foreach ($this->parts as $part) {
+                 $mimeMessage->addPart($part);
+             }
+     
+             $this->message->setBody($mimeMessage);
+     
+             return $this;
+         }
+     
+         public function addAttachment(
+             $body,
+             $filename = null,
+             $mimeType = Mime::TYPE_OCTETSTREAM,
+             $disposition = Mime::DISPOSITION_ATTACHMENT,
+             $encoding = Mime::ENCODING_BASE64
+         ): SyncProductPriceCheckTransportBuilder
+         {
+             $this->parts[] = $this->createMimePart($body, $mimeType, $disposition, $encoding, $filename);
+             return $this;
+         }
+     
+         private function createMimePart(
+             $content,
+             $type = Mime::TYPE_OCTETSTREAM,
+             $disposition = Mime::DISPOSITION_ATTACHMENT,
+             $encoding = Mime::ENCODING_BASE64,
+             $filename = null
+         ): MimePart
+         {
+             $mimePart = $this->mimePartFactory->create(['content' => $content]);
+             $mimePart->setType($type);
+             $mimePart->setDisposition($disposition);
+             $mimePart->setEncoding($encoding);
+     
+             if ($filename) {
+                 $mimePart->setFileName($filename);
+             }
+     
+             return $mimePart;
+         }
+     
+         private function getMimeMessage(MessageInterface $message): MimeMessage
+         {
+             $body = $message->getBody();
+     
+             if ($body instanceof MimeMessage) {
+                 return $body;
+             }
+     
+             $mimeMessage = $this->mimeMessageFactory->create();
+     
+             if ($body) {
+                 $mimePart = $this->createMimePart($body, Mime::TYPE_TEXT, Mime::DISPOSITION_INLINE);
+                 $mimeMessage->setParts([$mimePart]);
+             }
+     
+             return $mimeMessage;
+         }
+     }
+     ```
+
+##### 常见问题
+
+一般改动了以来注入相关内容（自动注入的构造函数，di.xml）等需要重新编译，改动了 grid 相关内容，需要刷新缓存或清空 ui_bookmark，只改动类中方法可以直接替换。
 
 ###### 实例化失败
 
 1. 检查 di.xml 中 preference 中实际类型的参数是否在 di.xml 中声明
 2. 清除 var/cache、generated 目录
+
+###### 代码逻辑不执行
+
+如果定义了且引入了文件但未执行，可能是未编译的原因，重新编译
+
+###### 导航栏丢失
+
+商店页面没有 navigation 相关 html 元素
+
+使用虚拟机且 base_url 为 http 时可能出现，在  `design/frontend/*/Magento_Theme/layout/default.xml` 新增布局
+
+```xml
+<referenceBlock name="store.menu">
+    <block class="Magento\Theme\Block\Html\Topmenu" name="catalog.topnav.fix" template="Magento_Theme::html/topmenu.phtml" before="-"/>
+</referenceBlock>
+```
+
+###### 属性无法保存提示 definer 不存在
+
+原因 magento 创建了很多的触发器用于在特定的表保存时触发，如果使用 magento 安装程序不会出现错误（此时会以命令行指定的数据库用户创建对应的触发器）。而如果使用别人导出的数据库则可能发生这种情况，此时别人的数据库中触发器 definer 为别人的数据库用户。所以执行属性保存时会报错类似
+
+```
+SQLSTATE[HY000]: General error: 1449 The user specified as a definer ('root'@'%') does not exist, query was: UPDATE `catalog_product_entity` SET ...
+```
+
+解决有多种方案：
+
+* 建立一个报错中缺失的用户
+
+* 在数据库中修改 triggers 定义，修改其 Definer 为当前数据库用户
+
+  ```mysql
+  # 对应 sql 语句
+  DROP TRIGGER `trg_cataloginventory_stock_item_after_insert`;
+  CREATE DEFINER=`debian-sys-maint`@`%` TRIGGER `trg_cataloginventory_stock_item_after_insert` AFTER INSERT ON `cataloginventory_stock_item` FOR EACH ROW BEGIN
+  INSERT IGNORE INTO `scconnector_google_feed_cl` (`entity_id`) VALUES (NEW.`product_id`);
+  END;
+  ```
+
+* 导出时忽略 definer（5.7 以上）
+
+  ```bash
+  mysqlpump --uuser -p --skip-definer database_name > dump_without_definer.sql;
+  mysql --uuser -p database_name < dump_without_definer.sql;
+  ```
+
+* 导出时替换
+
+  ```bash
+  mysqldump -h <database host> --user=<database username> --password=<password> --single-transaction <database name>  | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | gzip > /tmp/database_no-definer.sql.gz
+  ```
+
+###### 管理后台 grid 列表筛选缓慢
+
+* 原因
+
+  旧版本在模块的 Block 目录中使用 Grid 类渲染，此时存在 massaction 的操作会将所有的 id 传入 grid 页面，传输及筛选都很耗时
+
+* 解决方案
+
+  使用 ui_comment 组件替换 Grid 类，此时存在 massaction 的操作全选只渲染当前显示页面 id，对于全选只传递一个标识
+
+##### tips
+
+###### 显示相关
+
+* `module/view/adminhtml/ui_component/*.xml` 中元素的 `<label translats>` 值为前台页面上显示的值
+* `module/etc/acl.xml` 中 resource 元素的 translate 为管理后台 System 下 Role Resource 下显示的内容

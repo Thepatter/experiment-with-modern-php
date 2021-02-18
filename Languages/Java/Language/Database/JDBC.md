@@ -2,16 +2,7 @@
 
 #### JDBC 的设计
 
-##### 组成结构
-
-java DataBase Connectivity 是连接 Java 程序和数据库服务器的纽带。JDBC 的实现封装了与各种数据库服务器通信的细节。java 程序通过 JDBC API 来访问数据库，优点：
-
-* 简化访问数据库的程序代码，无须涉及与数据库服务器通信的细节
-* 不依赖于任何数据库平台。同一个 java 程序可以访问多种数据库服务器
-
-*Java 程序通过 JDBC API 访问数据库*
-
-![](../Images/java与JDBCAPI通信.png)
+JDBC 以 Java 类库来取代数据库厂商的专有 API，客户端只需要调用 JDBC API，而由 JDBC 的实现层（JDBC 驱动程序）去处理数据的通信，不依赖于任何数据库平台。同一个 java 程序可以访问多种数据库服务器。
 
 JDBC 的实现包括三部分：
 
@@ -21,29 +12,79 @@ JDBC 的实现包括三部分：
 
 * 驱动器：由数据库供应商或其他第三方工具提供商创建，JDBC 驱动器实现了 JDBC 驱动器 API，负责与特定的数据库连接，以及处理通信细节。JDBC 驱动器可以注册到 JDBC 驱动管理器中
 
-    JDBC 驱动器才是真正的连接 Java 应用程序与特定数据库的纽带，Java 应用如果希望访问某种数据库，必须先获得相应的 JDBC 驱动器的类库，然后把它注册到 JDBC 驱动管理器中
+  JDBC 驱动器才是真正的连接 Java 应用程序与特定数据库的纽带，Java 应用如果希望访问某种数据库，必须先获得相应的 JDBC 驱动器的类库，然后把它注册到 JDBC 驱动管理器中
 
-JDBC 规范将驱动程序归结为以下几类
+JDBC 驱动程序分为：
 
-* 第一类驱动程序将 JDBC 翻译成 ODBC，然后使用一个 ODBC 驱动程序与数据库进行通信。较早版本 Java 包含了一个这样的驱动程序：JDBC/ODBC 桥，不过在使用这个桥接器之前需要对 ODBC 进行相应的部署和正确的设置。在 JDBC 面世之初，桥接器可以方便地用于测试，却不太适用于产品的开发。Java 8 不再提供 JDBC/ODBC 桥
-* 第二类驱动程序由部分 Java 程序和部分本地代码组成的，用于与数据库的客户端 API 进行通信。在使用这种驱动程序之前。客户端不仅需要安装 Java 类库，还需要安装一些与平台相关的代码
-* 第三类驱动程序是纯 Java 客户端类库，它使用一种与具体数据库无关的协议将数据库请求发送给服务器构件，然后该构件再将数据库请求翻译成数据库相关的协议。这简化了部署，因为平台相关的代码只位于服务器端
-* 第四类驱动程序是纯 Java 类库，它将 JDBC 请求直接翻译成数据库相关的协议
+* JDBC-ODBC 桥
 
-JDBC 为了实现以下目标
+  JDBC-ODBC 桥本身也是一个驱动，利用这个驱动，可以使用 JDBC API 通过 ODBC 去访问数据库。实际把标准 JDBC 调用转换成相应的 ODBC 调用，通过 ODBC 库把它们发送给 ODBC 数据源。效率较低调用流程：
 
-* 通过使用标准的 SQL 语句，甚至专门的 SQL 扩展，程序员就可以利用 Java 语言开发访问数据库的应用，同时还依旧遵守 Java 语言的相关约定
-* 数据库供应商和数据库工具开发商可以提供底层的驱动程序。因此可以优化各自数据库产品的驱动程序
+  1. Java 应用访问 JDBC API
+  2. JDBC API 调用 JDBC-ODBC 桥 
+  3. ODBC API 访问 ODBC 层
+  4. ODBC 层访问数据库
 
-JDBC API 主要位于 java.sql 包，关键的接口与类：
+  利用 JDBC-ODBC 桥访问数据库，需要客户端机器上具有 JDBC-ODBC 桥、ODBC 驱动和数据库本地 API。JDK 中，JDBC-ODBC 桥的实现类（sun.jdbc.odbc.JdbcOdbcDriver），Java 8 开始不再提供
+
+* 部分本地 API，部分 Java 驱动程序
+
+  JDBC 驱动将调用请求转换为厂商提供的本地 API 调用，数据库处理完请求将结果通过这些 API 返回，进而返回给 JDBC 驱动程序，JDBC 驱动将结果转化为 JDBC 标准形式，再返回给客户程序
+
+  此种访问下，需要在客户端机器上安装本地 JDBC 驱动程序和特定厂商的本地 API
+
+* JDBC 网络纯 Java 驱动程序
+
+  利用作为中间件的应用服务器来访问数据库。应用服务器（WebLogic、Websphere）作为一个到多个数据库的网关，客户端通过它可以连接到不同的数据库服务器。应用服务器通常有自己的网络协议，Java 客户端通过 JDBC 驱动程序将 JDBC 调用发送给应用服务器，应用服务器使用本地驱动程序访问数据库
+
+* 本地协议纯 Java 驱动程序
+
+  完全由 Java 编写，通过与数据库建立直接的套接字连接，采用具体于厂商的网络协议把 JDBC API 调用转换为直接的网络调用（如 Oracle Thin JDBC Driver）
+
+##### JDBC API
+
+JDBC API 包含在 JDK 中，被分为 java.sql 和 javax.sql
+
+###### java.sql
+
+定义了访问数据库的接口和类，其中一些接口由驱动程序提供商实现
 
 * Driver 接口，驱动器
 
-    所有 JDBC 驱动器都必须实现 Driver 接口，JDBC 驱动器由数据库厂商或第三方提供。在编写访问数据库的 Java 程序时，必须把特定数据库的 JDBC 驱动器的类库加入到 classpath 中
+    所有 JDBC 驱动器都必须实现 Driver 接口，JDBC 驱动器由数据库厂商或第三方提供。这个接口是提供给数据库厂商使用的。在编写访问数据库的 Java 程序时，必须把特定数据库的 JDBC 驱动器的类库加入到 classpath 中，`Driver.Connection()` 建立到数据库的连接
+
+    *常用数据库驱动类名*
+
+    |                      类名                      |     数据库     |
+    | :--------------------------------------------: | :------------: |
+    | `com.microsoft.jdbc.sqlserver.SQLServerDriver` | SQLServer 2005 |
+    |       `oracle.jdbc.driver.OracleDriver`        |     Oracle     |
+    |            `com.mysql.jdbc.Dirver`             | MySQL 8.0 之前 |
+    |           `com.mysql.cj.jdbc.Driver`           |    MySQL 8     |
 
 * DriverManager 类，驱动管理器
 
     用来建立和数据库的连接以及管理 JDBC 驱动器。该类方法都是静态的
+
+    程序中不需要直接访问这些实现了 Driver 接口的类，而是由驱动程序管理器去调用这些驱动。通过 JDBC 驱动程序管理器注册每个驱动程序，使用驱动程序管理器类提供的方法来建立数据库连接。驱动程序管理器类的连接方法调用驱动程序类的 connec 方法建立数据库连接。
+
+    DriverManager 类是驱动程序管理器类，负责管理驱动程序，在 DriverManager 类中提供 registerDriver 方法来注册驱动程序类的实例。通常不需要手动执行，一般 Driver 接口的驱动程序包含了静态代码块会调用 DriverManager.registerDriver 方法注册自身的一个实例
+
+    ```java
+    static Connection getConnection(String url) throws SQLException;
+    static Connection getConnection(String url, String user, String password) throws SQLException;
+    static Connection getConnection(String url, Properties info) throws SQLException;
+    ```
+
+    *常用数据库 URL*
+
+    |       数据库        |                             URL                              |
+    | :-----------------: | :----------------------------------------------------------: |
+    |   SQL Server 2000   |   `jdbc:microsoft:sqlserver://localhost:1433;database=db`    |
+    |   SQL Server 2005   |        `jdbc:sqlserver://localhost:1433;database=db`         |
+    | Oracle 9i、10g、11g |           `jdbc:oracle:thin:@localhost:1521:ORCL`            |
+    |     MySQL 8 前      |          `jdbc:mysql://localhost:3306/databasename`          |
+    |       MySQL 8       | `jdbc:mysql://localhost:3306/dbname?useSSL=false&serverTimezone=UTC` |
 
 * Connection 接口，数据库连接
 
@@ -57,12 +98,13 @@ JDBC API 主要位于 java.sql 包，关键的接口与类：
 
 ##### 高级 SQL 类型
 
-*JDBC支持的SQL数据类型在Java语言中对应的数据类型*
+*JDBC支持的 SQL数据类型在 Java 语言中对应的数据类型*
 
 |               SQL Type               |      Java Type       |
 | :----------------------------------: | :------------------: |
 |            INTEGER or INT            |         int          |
-|               SAMLLINT               |        short         |
+|          SAMLLINT，TINYINT           |        short         |
+|                BIGINT                |         long         |
 | NUMERIC(m,n)，DECIMAL(m,n)，DEC(m,n) | java.math.BigDecimal |
 |               FLOAT(n)               |        double        |
 |                 REAL                 |        float         |
@@ -84,20 +126,6 @@ JDBC API 主要位于 java.sql 包，关键的接口与类：
 SQL ARRAY （SQL 数组）指的是值的序列。从数据库中获得一个 LOB 或数组并不等于获取了它的实际内容，只有在访问具体值时它们才会从数据库中被读出
 
 #### JDBC 的典型用法
-
-传统的客户端/服务器模型中，通常是在服务器部署数据库，而在客户端安装 GUI 程序。在此模型中，JDBC 驱动程序应该部署在客户端
-
-​								*传统客户端、服务器应用*
-
-![](../Images/传统客户端服务器应用.png)
-
-三层模型，在三层应用模型中，客户端不直接调用数据库，而是调用服务器上的中间层，由中间件层完成数据库查询操作。三层模型的优点：它将可视化表示（位于客户端）从业务逻辑（位于中间层）和原始数据（位于数据库）中分离出来。客户端和中间层之间的通信在典型情况下是通过 HTTP 来实现的。JDBC 管理着中间层和后台数据库之间的通信
-
-​				*三层结构的应用*
-
-​				![](../Images/三层数据库连接结构.png)
-
-##### 编写访问数据库程序的步骤
 
 在 Java 程序中，通过 JDBC API 访问数据库包含以下步骤：
 
@@ -123,7 +151,7 @@ SQL ARRAY （SQL 数组）指的是值的序列。从数据库中获得一个 LO
 public void accessDataDemo() {
     // 加载 JdbcDriver 类
     Class.forName("oracle.jdbc.driver.OracleDriver");
-    // 注册 JDBC 驱动器
+    // 注册 JDBC 驱动器，一般不需要手动注册
     java.sql.DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
     // 获取连接
     Connection conn = java.sql.DriverManager.getConnection(jdbc:oracle:thin:@localhost:1521:sid);
@@ -152,7 +180,7 @@ public void accessDataDemo() {
 在连接数据库时，必须使用各种与数据库类型相关的参数，例如主机名，端口号和数据库名。JDBC 使用一种与普通 URL 相类似的语法来描述数据源。
 
 ```java
-# jdbc URL 由 jdbc: + 数据库协议 + /数据库+其他参数
+// jdbc URL 由 jdbc: + 数据库协议 + /数据库+其他参数
 jdbc:subprotocol:other sutff
 jdbc:mysql://localhost:3306/test?useSSL=false
 ```
@@ -240,7 +268,7 @@ while (w != null) {
     w = w.nextWarning();
     // 获取警告信息
     System.out.print(w.getSQLState());
-    // 获取警告代码
+    // 获取警告代码.0
     System.out.print(w.getErrorCode());
 }
 ```
@@ -373,10 +401,30 @@ PreparedStatement stat = conn.prepareStatement(command, type, concurrency);
 Statement stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 // 获得的所有结果集都将是可滚动的
 ResultSet rs = stat.executeQuery(query);
+// 判断 JDBC 是否支持指定的结果集类型
+boolean supportsResultSetType(int type) throws SQLException;
+// 判断 JDBC 驱动是否支持于 type 所指定的结果集类型相结合的并发性类型
+boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException;
+// 游标是否位于第一行之前
+boolean isBeforeFirst() throws SQLException;
+// 游标是否位于最后一行之后
+boolean isAfterLast() throws SQLException;
+// 游标是否位于第一行
+boolean isFirst() throws SQLException;
+// 游标是否位于最后一行
+boolean isLast() throws SQLException;
+// 移动游标到结果集第一行之前
+void beforeFirst() throws SQLException;
+// 移动游标到结果集最后一行之后
+void afterLast() throws SQLException;
+// 移动游标到结果集第一行
+boolean first() throws SQLException;
+// 移动游标到结果集最后一行
+boolean last() throws SQLException;
 // 滚动结果集 n 为正，游标向前移动。如果 n 为负，游标将向后移。如果 n 为 0，那么调用该方法将不起任何作用。如果试图将游标移动到当前行集的范围之外，即根据 n 值的正负号，游标需要被设置在最后一行之后或第一行之前，那么，该方法将返回 false，且不移动游标，如果游标位于一个实际的行上，那么该方法将返回 true
-rs.relative(n);
-// 设置游标到指定的行号上
-rs.absolute(n);
+boolean relative(int row) throws SQLException;
+// 移动游标到结果集中指定的行。 row 可以是正（相对于结果集开始处移动 1 第一行，2第二行），也可以是负（结果集终点开始移动，-1 最后一行，2 倒数二行）。
+boolean absolute(int row) throws SQLException;
 // 返回当前行的行号
 int currentRow = rs.getRow()
 ```
@@ -390,25 +438,31 @@ int currentRow = rs.getRow()
 Statement stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 ```
 
-并非所有的查询都会返回可更新的结果集。如果查询涉及多个表的连接操作，那么它所产生的结果集将是不可更新的。如果查询只涉及了一个表，或者在查询时是使用主键连接多个表的，那么它所产生的结果集将是可更新的结果集。可调用 ResultSet.getConcurrency 方法来确定结果集是否是可更新的
+并非所有的查询都会返回可更新的结果集：如果查询涉及多个表的连接操作，那么它所产生的结果集将是不可更新的；如果查询只涉及了一个表，或者在查询时是使用主键连接多个表的，那么它所产生的结果集将是可更新的结果集；查询操作的表中必须有主键，而且在查询的结果集中必须包含作为主键的字段。可调用 ResultSet.getConcurrency 方法来确定结果集是否是可更新的
 
-所有对应于 SQL 类型的数据类型都配有 `updateXxx` 方法，比如 `updateDouble`、`updateString` 等。与 `getXxx` 方法相同，在使用 `updateXxx` 方法时必须指定列的名称或序号（列序号指的是该列在结果集中的序号，它的值可以与数据库中的列序号不同）。
+* 更新一行
 
-`updateXxx` 方法改变的只是结果集中的行值，而非数据库中的值。当更新完行的字段值后，必须调用 `updateRow` 方法，这个方法将当前行中的所有更新信息发送给数据库。如果没有调用 `updateRow` 方法就将游标移动到其他行上，那么对此行所做的所有更新都将被丢弃，而且永远不会被传递给数据库。还可以调用 `cancelRowUpdates` 方法来取消对当前行的更新
+  所有对应于 SQL 类型的数据类型都配有 `updateXxx` 方法，比如 `updateDouble`、`updateString` 等。与 `getXxx` 方法相同，在使用 `updateXxx` 方法时必须指定列的名称或序号（列序号指的是该列在结果集中的序号，它的值可以与数据库中的列序号不同）。
 
-如果想在数据库中添加一条新的记录，首先需要使用 `moveToInsertRow` 方法将游标移动到特定的位置（插入行）。然后，调用 `updateXxx` 方法在插入行的位置上创建一个新的行。在上述操作全部完成后，还需要调用 `insertRow` 方法将新建的行发送给数据库。完成插入操作后，再调用 `moveToCurrentRow` 方法将游标移回到调用 `moveToInsertRow` 方法之前的位置
+  `updateXxx` 方法改变的只是结果集中的行值，而非数据库中的值。当更新完行的字段值后，必须调用 `updateRow` 方法，这个方法将当前行中的所有更新信息发送给数据库。如果没有调用 `updateRow` 方法就将游标移动到其他行上，那么对此行所做的所有更新都将被丢弃，而且永远不会被传递给数据库。还可以调用 `cancelRowUpdates` 方法来取消对当前行的更新（使该方法有效，必须在调用 updateRow 方法之前调用它）。可以调用 rowUpdate 方法判断当前行是否被更新
 
-```
-rs.moveToInsertRow();
-rs.updateString("title", "title");
-rs.updateString("ISBN", isbn);
-rs.insertRow();
-rs.moveToCurrentRow();
-```
+* 插入一行
 
-对于在插入行中没有指定值的列，将被设置为 SQL 的 NULL。但是，如果这个列有 `NOT NULL` 约束，那么将会抛出异常，而这一行也无法插入
+  首先需要使用 `moveToInsertRow` 方法将游标移动到插入行（插入行是一个与可更新的结果集相联系的特殊的缓存行）。调用 `updateXxx` 方法设置行中的数据（必须指定所有不能为空的列和没有默认值的列），行中数据设置完毕后，调用 `insertRow` 方法将新建的行发送给数据库。完成插入操作后，再调用 `moveToCurrentRow` 方法将游标移回到调用 `moveToInsertRow` 方法之前的位置
 
-删除游标所指的行 `rs.deleteRow()` ，`ResultSet` 接口中的 `updateRow`、`insertRow` 、`deleteRow` 方法的执行效果等同于 SQL 命令中的 `UPDATE`、`INSERT`、`DELETE`。
+  ```java
+  rs.moveToInsertRow();
+  rs.updateString("title", "title");
+  rs.updateString("ISBN", isbn);
+  rs.insertRow();
+  rs.moveToCurrentRow();
+  ```
+
+  对于在插入行中没有指定值的列，将被设置为 SQL 的 NULL。但是，如果这个列有 `NOT NULL` 约束，那么将会抛出异常，而这一行也无法插入。当游标在插入行时，只有 updateXxx、getXxx、insertRow 方法可以被调用，在插入行上调用 getXxx 之前必须先调用 updateXxx，可以调用 rowInserted 方法来判断当前行是否是插入行
+
+* 删除一行
+
+  删除游标所指的行 `rs.deleteRow()` ，当游标指向插入行时，不能调用这个方法。一个被删除的行可能在结果集中留下一个空的位置，可以调用 rowDeleted 方法来判断一行是否被删除。
 
 ##### 行集
 
@@ -480,7 +534,9 @@ crs.acceptChanges();
 
 JDBC 还可以提供关于数据库及其表结构的详细信息。在 SQL 中，描述数据库或其组成部分的数据成为元数据。可以获得三类元数据：关于数据库的元数据、关于结果集的元数据以及关于预备语句参数的元数据
 
-如果要了解数据库的更多信息，可以从数据库连接中获取一个 `DatabaseMetaData` 对象。
+###### DatabaseMeta
+
+可以从数据库连接中获取一个 `Connection.getMetatData` 对象。
 
 ```java
 DatabaseMetaData meta = conn.getMetaData();
@@ -496,7 +552,24 @@ while (mrs.next()) {
 }
 ```
 
-`ResultSetMetaData` 则用于提供结果集的相关信息。每当通过查询得到一个结果集时，可以获得该结果集的行数以及每一列的名称、类型和字段宽度
+###### ResultSetMetaData
+
+用于提供结果集（`ResultSet.getMeataData`）的相关信息。每当通过查询得到一个结果集时，可以获得该结果集的行数以及每一列的名称、类型和字段宽度
+
+```java
+// 返回结果集中列的数量
+int getColumnCount() throws SQLException;
+// 返回列的名字
+String getColumnName(int column) throws SQLException;
+// 返回列的最大字符宽度
+int getColumnDisplaySize(int column) throws SQLException;
+// 返回列的 SQL 类型（JDBC 类型，在 java.sql.Types 类中定义）
+int getColumnType(int column) throws SQLException;
+// 返回列的数据库特定的类型名
+String getColumnTypeName(int column) throws SQLException;
+// 返回列所属的表名
+String getTableName(int column) throws SQLException;
+```
 
 ```java
 ResultSet rs = stat.executeQuery("SELECT * FROM " + tablename);
@@ -507,6 +580,10 @@ for (int i = 1; i <= meta.getColumnCount(); i++) {
 }
 ```
 
+###### ParameterMetaData
+
+得到 PreparedStatement 对象中的参数的类型和属性信息，通过 `PreparedStatement.getParameterMetaData` 方法获取
+
 ##### 事务
 
 ###### 事务操作流程
@@ -516,6 +593,8 @@ for (int i = 1; i <= meta.getColumnCount(); i++) {
 ```java
 // 关闭自动提交
 conn.setAutoCommit(false);
+// 设置事务的隔离级别
+conn.setTransactionIsolation(conn.TRANSACTION_REPEATEBLE_READ); 
 // 现在可以使用通常的方法创建一个语句对象
 Statement stat = conn.createStatement();
 // 然后多次调用 executeUpdate
@@ -570,6 +649,32 @@ int[] counts = stat.executeBatch();
 ```
 
 调用 `executeBatch` 方法将为所有已提交的语句返回一个记录数的数组。为了在批量模式下正确的处理错误，必须将批量执行的操作视为单个事务。如果批量更新在执行过程中失败，那么必须将它回滚到批量操作开始之前的状态
+
+##### JDBC 数据源和连接池
+
+在 javax.sql 中，定义了 DataSource 接口，由驱动供应商来实现，利用 DataSource 建立数据库连接，不需要在客户程序中加载 JDBC 驱动和使用 DriverManager 类。在程序中，通过向一个 JNDI 服务器查询得到 DataSource 对象，调用 DataSource.getConnection 方法来建立数据库连接，DataSource 对象可以看成是连接工厂，用于提供 DataSource 对象所表示的物理数据源的连接
+
+```java
+javax.naming.Context ctx = new javax.naming.InitialContext();
+javax.sql.DataSource ds = (javax.sql.DataSource)ctx.lookup("java:comp/env/jdbc/bookstore");
+java.sql.Connection conn = ds.getConnection();
+```
+
+###### JNDI 名称空间
+
+JNDI 名称空间由一个初始的命名上下文及其下的任意数目的子上下文组成。JNDI 名称空间是分层次的类似文件系统的目录文件结构，初始上下文类似文件系统根，子上下文与子目录类似。jdbc 子上下文保留给 JDBC 数据源使用。逻辑数据源的名字可以在子上下文 jdbc 中，也可以在 jdbc 下的子上下文中，层次的最后一级元素是注册的对象（类似文件）
+
+* `java:comp/env` 是环境命名上下文，解决 JNDI 命名冲突问题，将资源引用名和实际的 JNDI 名相分离，提供移植性
+
+Tomcat 提供了数据源和连接池的实现（使用开源的DBCP连接池实现），在 Tomcat 中，可以在 <Context> 元素的内容中使用 <Resource> 元素来配置 JDBC 数据源。使用 Tomcat 提供的数据源实现来访问数据库，需要将 JDBC 驱动放到 tomcat 的 lib 目录下，是 Tomcat 需要 JDBC 驱动，而非应用程序需要 JDBC 驱动
+
+###### DataSource
+
+javax.sql.DataSource 接口有以下实现：
+
+* 基本实现：产生一个标准的连接对象，与调用 DriverManager.getConnection 方法得到的连接一样，是一个到数据库的物理连接
+* 连接池实现：产生一个自动参与到连接池中的连接对象，这种实现需要和一个中间层连接池管理器一起工作
+* 分布式事务实现：产生一个用于分布式事务的连接对象，这种连接对象总是参与到连接池中，需要和中间层事务管理器和连接池一起工作
 
 #### mysql 实现
 

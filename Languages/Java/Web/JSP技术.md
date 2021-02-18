@@ -1,8 +1,10 @@
 ### Java Server Pages
 
-#### 概述
+#### 执行
 
-jsp 页面本质上是一个 Servlet。用 jsp 页面开发比使用 Servlet 更容易，不必编译 jsp 页面；jsp 页面是以一个以 .jsp 为扩展名的文本文件，可以使用任何文本编辑器来编写它们。jsp 页面在 jsp 容器中运行，一个 Servlet 容器通常也是 jsp 容器。当一个 jsp 页面第一次被请求时，Servlet/JSP 容器主要做以下两件事：
+##### 请求流程
+
+jsp 页面本质上是一个 Servlet。用 jsp 页面开发比使用 Servlet 更容易，不必编译 jsp 页面；jsp 页面是以一个以 .jsp 为扩展名的文本文件。jsp 页面在 jsp 容器中运行，一个 Servlet 容器通常也是 jsp 容器。当一个 jsp 页面第一次被请求时，Servlet/JSP 容器主要做以下两件事：
 
 * 转换 jsp 页面到 jsp 页面实现类，该实现类是一个实现 javax.servlet.jsp.JspPage 接口或子接口 javax.servlet.jsp.HttpJspPage 的 java 类。
 
@@ -10,7 +12,7 @@ jsp 页面本质上是一个 Servlet。用 jsp 页面开发比使用 Servlet 更
 
 * 如果转换成功，Servlet/JSP 容器随后编译该 Servlet 类，并装载和实例化该类，像其他正常的 Servlet 一样执行生命周期操作
 
-Tomcat 将 jsp 转换的源文件和类文件存放在：<CATALINA_HOME>/work/[engine]/[host]/[app]/org/apache/jsp
+Tomcat 将 jsp 转换的源文件和类文件存放在：`<CATALINA_HOME>/work/[engine]/[host]/[app]/org/apache/jsp`
 
 虽然理论上 jsp 和 Servlet 能完成同样的功能，但由于它们形式不一样。（jsp 允许直接包含 HTML 标记，Servlet 是存储的 java 程序）。JSP 技术的出现，使得把 Web 应用中 HTML 文档和业务逻辑代码有效分离成为可能。通常，JSP 负责生成 HTML 文档，业务逻辑由其他可重用的组件，如 JavaBean 或其他 Java 程序来实现。JSP 可通过 Java 程序片段来访问这些业务组件
 
@@ -21,10 +23,108 @@ Tomcat 将 jsp 转换的源文件和类文件存放在：<CATALINA_HOME>/work/[e
 
 JSP 自带的 API 包含 4 个包：
 
-* javax.servlet.jsp 包含用于 Servlet/JSP 容器将 JSP 页面翻译为 Servlet 的核心类和接口。其中的两个重要成员为 JspPage 和 HttpJspPage 接口。所有的 JSP 页面实现类必须实现 JspPage 或 HttpJspPage 接口。
-* javax.servlet.jsp.tagext 包括用于开发自定义标签的类型
-* javax.el 提供统一表达式语言的 API
-* javax.servlet.jsp.el 提供了一组必须由 Servlet/JSP 容器支持，以在 JSP 页面中使用表达式语言的类
+* `javax.servlet.jsp` 
+
+  包含用于 Servlet/JSP 容器将 JSP 页面翻译为 Servlet 的核心类和接口。其中的两个重要成员为 JspPage 和 HttpJspPage 接口。所有的 JSP 页面实现类必须实现 JspPage 或 HttpJspPage 接口。
+
+* `javax.servlet.jsp.tagext`
+
+  包括用于开发自定义标签的类型
+
+* `javax.el`
+
+  提供统一表达式语言的 API
+
+* `javax.servlet.jsp.el`
+
+  提供了一组必须由 Servlet/JSP 容器支持，以在 JSP 页面中使用表达式语言的类
+
+##### JSP 生命周期
+
+JSP 的生命周期包含以下阶段：
+
+* 解析阶段：Servlet 容器解析 JSP 文件的代码，如果有语法错误，就会向客户端返回错误信息
+* 翻译阶段：Servlet 容器把 JSP 文件翻译成 Servlet 源文件
+* 编译阶段：Servlet 容器编译 Servlet 源文件，生成 Servlet 类
+* 初始化阶段：加载与 JSP 对应的 Servlet 类，创建其实例，并调用它的初始化方法
+* 运行时阶段：调用与 JSP 对应的 Servlet 实例的服务方法
+* 销毁阶段：调用与 JSP 对应的 Servlet 实例的销毁方法，然后摧毁 Servlet 实例
+
+解析、翻译、编译阶段仅发生在：
+
+* JSP 文件被客户端首次请求访问
+* JSP 文件被更新
+* 与 JSP 文件对应的 Servlet 类的类文件被手动删除
+
+##### 错误处理
+
+JSP 提供良好的错误处理能力，除了在 Java 代码中使用 try 语句，还可以指定一个特殊页面。当页面遇到未捕获的异常时，将显示该页面。使用 page 指令的 isErrorPage 属性（属性值必须为 True）来标识一个 JSP 页面是错误页面。其他需要防止未捕获的异常的页面使用 page 指令的 errorPage 属性来指向错误处理页面
+
+```jsp
+<!-- 转发错误 -->
+<%@ page errorPage="errorpage.jsp" %>
+<!-- 声明异常处理 -->
+<%@ page isErrorPage="true" %>
+<!-- 处理异常的网页可以直接访问 exception 隐含对象，获取当前异常的详细信息 -->
+<p>
+    错误原因：<% exception.printStackTrace(new PrintWriter(out)); %>
+</p>
+```
+
+##### 配置
+
+也可以在 web.xml 为 JSP 配置 <servlet> 和 <servlet-mapping> 元素
+
+```xml
+<servlet>
+    <servlet-name>hi</servlet-name>
+    <jsp-file>/hello.jsp</jsp-file>
+</servlet>
+<servlet-mapping>
+	<servlet-name>hi</servlet-name>
+    <url-pattern>/hi</url-pattern>
+</servlet-mapping>
+```
+
+在 web.xml 中，可以用 <jsp-config> 元素来对一组 JSP 文件进行配置，包括 <taglib> 和 <jsp-property-group> 子元素
+
+*jsp-property-group子元素*
+
+|       子元素        |               描述               |
+| :-----------------: | :------------------------------: |
+|    <url-pattern>    |      设置该配置所影响的 JSP      |
+|    <description>    |          对 JSP 的描述           |
+|   <display-name>    |          JSP 的显示名字          |
+|    <el-ignored>     |     为 true，不支持 EL 语法      |
+| <scripting-invalid> | true，不支持 <% %> Java 程序片段 |
+|   <page-encoding>   |     设定 JSP  文件的字符编码     |
+|  <include-prelude>  | 设置自动包含 JSP 页面的头部文件  |
+|   <include-coda>    | 设置自动包含 JSP 页面的结尾文件  |
+
+```xml
+<jsp-config>
+	<jsp-property-group>
+    	  <description>this is description</description>
+        <display-name>someePage</display-name>
+        <url-pattern>*.jsp</url-pattern>
+        <el-ignored>true</el-ignored>
+        <page-encoding>UTF-8</page-encoding>
+        <scripting-invalid>true</scripting-invalid>
+        <include-prelude>/include/head.jsp</include-prelude>
+        <include-coda>/include/foot.jsp</include-coda>
+    </jsp-property-group>
+</jsp-config>
+```
+
+##### JSP 会话
+
+默认情况下，JSP 网页都是支持会话的，也可以通过以下语句显示声明支持会话
+
+```java
+<%@ page session="true" %>
+```
+
+在 JSP 文件中可以直接通过固定变量 session 来引用隐含的 HttpSession 对象
 
 #### 语法
 
@@ -259,96 +359,254 @@ JSP 源组件中 forward 标签后的代码不会执行。规则与 Servlet 的
 |   session   |     javax.servlet.http.HttpSession     |
 |  exception  |          java.lang.Exception           |
 
-#### JSP 生命周期
+#### EL 表达式
 
-JSP 的生命周期包含以下阶段：
+JSP 2.0 支持表达式语言（EL），JSP 用户可以用它来访问应用程序数据。用来替代传统的基于 `<%=%>` 的表达式，以及部分 <%%> 形式程序片段
 
-* 解析阶段：Servlet 容器解析 JSP 文件的代码，如果有语法错误，就会向客户端返回错误信息
-* 翻译阶段：Servlet 容器把 JSP 文件翻译成 Servlet 源文件
-* 编译阶段：Servlet 容器编译 Servlet 源文件，生成 Servlet 类
-* 初始化阶段：加载与 JSP 对应的 Servlet 类，创建其实例，并调用它的初始化方法
-* 运行时阶段：调用与 JSP 对应的 Servlet 实例的服务方法
-* 销毁阶段：调用与 JSP 对应的 Servlet 实例的销毁方法，然后摧毁 Servlet 实例
+##### 表达式语法
 
-解析、翻译、编译阶段仅发生在：
+###### 基本形式及操作符 
 
-* JSP 文件被客户端首次请求访问
-* JSP 文件被更新
-* 与 JSP 文件对应的 Servlet 类的类文件被手动删除
+EL 表达式基本形式为：`${ var }` 。对于一系列的表达式，它们的取值将是从左到右进行，计算结果的类型为 String，并且连接在一起。如果在定制标签的属性值中使用 EL 表达式，那么该表达式的取值结果字符串将会强制变成该属性需要的类型。
 
-#### 错误处理
+* 表达式关键字
 
-JSP 提供良好的错误处理能力，除了在 Java 代码中使用 try 语句，还可以指定一个特殊页面。当页面遇到未捕获的异常时，将显示该页面。使用 page 指令的 isErrorPage 属性（属性值必须为 True）来标识一个 JSP 页面是错误页面。其他需要防止未捕获的异常的页面使用 page 指令的 errorPage 属性来指向错误处理页面
+  `and`, `eq`, `gt`, `true`, `instanceof`, `or`, `ne`, `le`, `false`, `empty`, `not`, `lt`, `ge`, `null` `div`, `mod`
 
-```jsp
-<!-- 转发错误 -->
-<%@ page errorPage="errorpage.jsp" %>
-<!-- 声明异常处理 -->
-<%@ page isErrorPage="true" %>
-<!-- 处理异常的网页可以直接访问 exception 隐含对象，获取当前异常的详细信息 -->
-<p>
-    错误原因：<% exception.printStackTrace(new PrintWriter(out)); %>
-</p>
-```
+* `[]` 和 `.` 运算符
 
-#### 配置
+  EL 表达式可以返回任意类型的值。如果 EL 表达式的结果是一个带有属性的对象，则可以利用 `[]` 或者 `.` 运算符来访问该属性，如果 `propertyName` 不是有效的 Java 变量名，只能使用 `[]` 运算符。如果对象的属性是带有属性的另一个对象，则可用 `[]` 或 `.` 来访问对象属性对象的属性。
 
-也可以在 web.xml 为 JSP 配置 <servlet> 和 <servlet-mapping> 元素
+* 算术运算符
+
+  加（`+`）减（`-`）、乘（`*`）、除（`/` 或 `div`）、取模（`%` 或 `mod`）
+
+* 逻辑运算符
+
+  `&&`、`and`、`||`、`or`、`!`、`not`
+
+* 关系运算符
+
+  （`==` 或 `eq`）、（`!=` 或 `ne`）、（`>` 或 `gt`)、（`>=` 或 `ge`）、（`<` 或 `lt`）、（`<=` 或 `le`）
+
+* empty 运算符
+
+  empty 运算符用来检查某一个值是否为 null 或者 empty：`${empty x}` 如果 X 为 null，或者 x 是一个长度为 0 的字符串，该表达式返回 true。x 是一个空 Map、空数组或者空集合、返回 true，否则返回 false
+
+* 条件运算符
+
+  `a ? b : c`
+
+###### 表达式取值规则
+
+  EL 表达式的取值是从左到右进行的。对于 `expr-a[expr-b]` 形式的表达式，其 EL 表达式的取值方法如下： 
+
+  * 先计算 `expr-a` 得到 `value-a`
+
+  * 如果 `value-a` 为 `null`，则返回 `null`，
+
+  * 然后计算 `expr-b` 得到 `value-b`
+
+  * 如果 `value-b` 为 `null`，则返回 `null`
+
+  * 如果 `value-a` 为 `java.util.Map`，则会查看 `value-b` 是否为 `Map` 中的一个 `key`。若是，则返`value-a.get(value-b)`，若不是，则返回 `null`；
+
+  * 如果 `value-a` 为 `java.util.List`，或者假如它是一个 `array`，则进行如下处理：
+
+    强制 `value-b` 为 `int`，如果强制失败，则抛出异常
+
+    如果 `value-a.get（value-b)` 抛出 `IndexOutOfBoundsException`，或者抛出 `ArrayIndexOutOfBoundsException`，则返回 null
+
+    如 `value-a` 是一个 List，则返回 `value-a.get(value-b)`，若 `value-a` 是一个 `array`，则返回 `Array.get(value-a, value-b)`
+
+  * 如果 `value-a` 不是一个 `Map`, `List` 或 `Array`，则 `value-a` 必须是一个 `JavaBean`。此时，必须强制 `value-b` 为 `String`。如果 `value-b` 是 `value-a` 的一个可读属性，则要调用该属性的 `getter` 方法，从中返回值。如果 `getter` 方法抛出异常，该表达式就是无效的，否则，该表达式有效
+
+###### 访问 JavaBean
+
+  使用 `.` 或 `[]` 来访问 bean 属性及属性对象的属性
+
+###### EL 隐式对象
+
+在 JSP 页面中，可以利用 JSP 脚本来访问 JSP 隐式对象。但是，在免脚本的 JSP 页面中，则不可能访问这些隐式对象。EL 允许通过提供一组它自己的隐式对象来访问不同的对象
+
+* `pageContent`
+
+`pageContext` 对象表示当前 JSP 页面的 `javax.servlet.jsp.PageContext`。包含所有其他 JSP 隐式对象，JSP 隐式对象对应 EL 中类型
+
+`PageContext` 类提供了一组用于向各种范围内存取属性的方法，scope 值为以下四个常量：`PageContext.PAGE_SCOPE`，`PageContext.REQUEST_SCOPE`，`PageContext.SESSION_SCOPE`，`PageContext.APPLICATION_SCOPE`
+
+* `getAttribute(String name)`：返回页面范围内的特定属性的值。
+* `getAttribute(String name，int scope)`：返回参数 scope 指定的范围内的特定属性的值。
+* `setAttribute(String name，Object value，int scope)`：向参数 scope 指定的范围内存放属性。
+* `removeAttribute(String name，int scope)`：从参数 scope 指定的范围内删除特定属性。
+* `findAttribute(String name)`：依次从页面范围、请求范围、会话范围和Web应用范围内寻找参数 name 指定的属性，如果找到，就立即返回该属性的值。如果所有的范围内都不存在该属性，就返回 null 。
+* `int getAttributesScope(java.lang.String name)`：返回参数指定的属性所属的范围，如果所有的范围内都不存在该属性，就返回 0。
+
+用于获得由 Servlet 容器提供的其他对象的引用的方法，`PageContext` 类的以下方法用于获得由 Servlet 容器提供的`ServletContext`、`HttpSession`、`ServletRequest` 和 `ServletResponse` 等对象：
+
+* `getPage()`：返回与当前 JSP 对应的 Servlet 实例。
+* `getRequest()`：返回 `ServletRequest` 对象。
+* `getResponse()`：返回 `ServletResponse` 对象。
+* `getServletConfig()` ：返回 `ServletConfig` 对象。
+* `getServletContext()` ：返回 `ServletContext` 对象。
+* `getSession()`：返回 `HttpSession` 对象。
+* `getOut()`：返回一个用于输出响应正文的 `JspWriter` 对象。
+
+* `initParam`
+
+  获取上下文参数的值，包含所有环境初始化参数 Map 对象
+
+* `param`
+
+  获取请求参数 Map 每个 `key` 的值就是指定名称的第一个参数值。如果两个请求参数同名，则只有第一个能够利用 `param` 取值。用 `params()` 访问同名参数的所有参数值
+
+* `paramValues`
+
+  获取请求参数的所有值的 Map，参数名称为 key，值为字符串数组，包含对应 key 的所有值，如果该 key 对应只有一个 值，返回一个元素的数组
+
+* `header`
+
+  包含请求 header，并用 header 名作为 key 的 Map，每个 key 的值就是指定标题名称的第一个标题。如果一个标题的值不止一个，则只返回第一个值。获得多个值的标题，需用 `headerValues` 对象替代
+
+* `headerValues`
+
+  包含请求标题，并用标题名作为 key 的 Map。每个 key 的值就是一个字符串数组，其中包含了指定标题名称的所有参数值
+
+* `cookie`
+
+  包含当前 `HttpServletRequest` 中所有 Cookie 对象的 Map。Cookie 名称就是 key 名称，并且每个 key 都映射到一个 Cookie 对象。 `${cookie.jsessionid.value}`
+
+* `applicationScope`
+
+  包含web应用中所有属性的 Map，并用属性名称作为 key
+
+* `sessionScope`
+
+  包含 `HttpSession` 对象中所有属性的 Map，并用属性名称作为 key
+
+* `requestScope`
+
+  包含了当前 `HttpServletRequest` 对象中的所有属性，属性名为 key 的 Map
+
+* `pageScope`
+
+  包含全页面范围内的所有属性，属性名称为 key 的 Map
+
+###### 命名变量
+
+EL 表达式中的变量称为命名变量， 它不是 JSP 文件中的局部变量或实例变量，而是存放在特定范围内的属性，命名变量的名字和特定范围内的属性名对象
+
+###### 定义和使用 EL 函数
+
+EL 表达式语言可以访问 EL 函数。EL 函数实际上与 Java 类中的方法对应。这个 Java 类必须定义为 public 类型，并且作为函数的方法必须声明为 public static 类型。Java 类型定义好后，在标签库描述符 TLD 文件中，把 Java 类的方法映射为函数。使用 EL 表达式流程为：
+
+1. 定义需要 Java 类及声明方法，将编译后的 class 文件放到 web 目录 classes 目录下
+
+2. 定义标签库描述符 TLD 文件
+
+   *`mytaglib.tld`*
+
+   ```xml
+   <?xml version="1.0" encoding="ISO-8859-1" ?>
+   <taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee web-jsptaglibrary_2_0.xsd"
+           version="2.0">
+       <tlib-version>1.1</tlib-version>
+       <short-name>mytaglib</short-name>
+       <uri>/mytaglib</uri>
+   	<!-- 声明函数 -->
+       <function>
+           <name>add</name>
+           <function-class>web.el.Tool</function-class>
+           <function-signature>int add(java.lang.String,java.lang.String)</function-signature>
+       </function>
+       <function>
+           <name>convert</name>
+           <function-class>web.el.Tool</function-class>
+           <function-signature>java.lang.String covert(java.lang.String)</function-signature>
+       </function>
+   </taglib>
+   ```
+
+   将 `mytaglib.tld` 文件放在 WEB-INF 目录下
+
+3. 在部署描述符中加入 `<taglib>` 元素
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+            version="4.0" >
+       <jsp-config>
+           <taglib>
+               <taglib-uri>/mytaglib</taglib-uri>
+               <taglib-location>/WEB-INF/mytaglib.tld</taglib-location>
+           </taglib>
+       </jsp-config>
+   </web-app>
+   ```
+
+4. 在 JSP 文件中声明并引用
+
+   ```jsp
+   // 声明
+   <%@ taglib prefix="mf" uri="/mytaglib" %>
+   // 使用函数
+   <p>value: ${mf:convert(param.user)}</p>
+   <p>add: ${mf:add(param.x, param.y)}</p>
+   ```
+
+##### 配置 EL
+
+###### 免脚本的 JSP 页面
+
+要关闭 JSP 页面中的脚本元素，要使用 `jsp-property-group` 元素以及 `url-pattern` 和 `scripting-invalid` 两哥子元素，`url-pattern` 元素定义禁用脚本要应用的 URL 样式
 
 ```xml
-<servlet>
-	  <servlet-name>hi</servlet-name>
-    <jsp-file>/hello.jsp</jsp-file>
-</servlet>
-<servlet-mapping>
-	  <servlet-name>hi</servlet-name>
-    <url-pattern>/hi</url-pattern>
-</servlet-mapping>
-```
-
-在 web.xml 中，可以用 <jsp-config> 元素来对一组 JSP 文件进行配置，包括 <taglib> 和 <jsp-property-group> 子元素
-
-*jsp-property-group子元素*
-
-|       子元素        |               描述               |
-| :-----------------: | :------------------------------: |
-|    <url-pattern>    |      设置该配置所影响的 JSP      |
-|    <description>    |          对 JSP 的描述           |
-|   <display-name>    |          JSP 的显示名字          |
-|    <el-ignored>     |     为 true，不支持 EL 语法      |
-| <scripting-invalid> | true，不支持 <% %> Java 程序片段 |
-|   <page-encoding>   |     设定 JSP  文件的字符编码     |
-|  <include-prelude>  | 设置自动包含 JSP 页面的头部文件  |
-|   <include-coda>    | 设置自动包含 JSP 页面的结尾文件  |
-
-```xml
+// 将应用程序中所有 JSP 页面的脚本关闭
 <jsp-config>
-	<jsp-property-group>
-    	  <description>this is description</description>
-        <display-name>someePage</display-name>
+    <jsp-property-group>
         <url-pattern>*.jsp</url-pattern>
-        <el-ignored>true</el-ignored>
-        <page-encoding>UTF-8</page-encoding>
         <scripting-invalid>true</scripting-invalid>
-        <include-prelude>/include/head.jsp</include-prelude>
-        <include-coda>/include/foot.jsp</include-coda>
     </jsp-property-group>
-</jsp-config>
+</jsp-config>    
 ```
 
-#### JSP 会话
+在部署描述符中只能有一个 `jsp-config` 元素。如果已经为禁用 EL 而定义了一个 `jsp-property-group`，就必须在同一个 `jsp-config` 元素下，为禁用脚本而编写 `jsp-property-group`
 
-默认情况下，JSP 网页都是支持会话的，也可以通过以下语句显示声明支持会话
+###### 禁用 EL 计算
 
-```java
-<%@ page session="true" %>
-```
+当需要在 JSP 2.0 及其更高版本的容器中部署 JSP1.2 应用程序时，可能需要禁用 JSP 页面中的 EL 计算。此时，一旦出现 EL 架构，就不会作为一个 EL 表达式进行计算。目前有两种方式可以禁用 JSP 中的 EL 计算。
 
-在 JSP 文件中可以直接通过固定变量 session 来引用隐含的 HttpSession 对象
+* 将 page 指令的 `isELlgnored` 属性设为 true
 
-#### 自定义 JSP 标签
+  ```jsp
+  <%@ page isELIgnored="true" %>
+  ```
 
-##### JSP 标签形式
+  `isELIgnored` 属性的默认值为 false，如果想在一个或者几个 JSP 页面中关闭 EL 表达式计算，建议使用 `isELIgnored` 属性
+
+* 在部署描述符中使用 `jsp-property-group` 元素，`jsp-property-group` 元素时 `jsp-config` 元素的子元素。利用 `jsp-property-group` 可以将某些设置应用到应用程序中的一组 JSP 页面中，为了利用 `jsp-property-group` 元素禁用 EL 计算，还必须有 `url-pattern` 和 `el-ignored` 两个子元素。`url-pattern` 元素用于定义 EL 禁用要应用的 URL 样式。`el-ignored` 元素必须设为 true
+
+  ```xml
+  <jsp-config>
+      <jsp-property-group>
+          <url-pattern>*.jsp</url-pattern>
+          <el-ignored>true</el-ignored>
+      </jsp-property-group>
+  </jsp-config>
+  ```
+
+无论是将其 page 指令的 `isELIgnored` 属性设为 true，还是将其 URL 与子元素 `el-ignored` 设为 true 的 `jsp-property-group` 元素中的模式相匹配，都将禁用 JSP 页面中的 EL 计算。如果将一个 JSP 页面中的 page 指令的 `isELIgnored` 属性设为 false，但其 URL 与在部署描述符中禁用了 EL 计算的 JSP 页面的模式匹配，那么该页面的 EL 计算也将被禁用。如果使用的是与 Servlet2.3 及其更低版本兼容的部署描述符，那么 EL 计算已经默认关闭，即便使用的是 JSP 2.0 及其更高版本容器。
+
+#### 标签
+
+##### 自定义 JSP 标签
+
+###### JSP 标签形式
 
 ```jsp
 // 主体内容和属性都为空的标签
@@ -377,7 +635,7 @@ JSP 提供良好的错误处理能力，除了在 Java 代码中使用 try 语�
 3. 在 web.xml 文件中声明所引用的标签库
 4. 在 JSP 文件中使用标签库中的标签
 
-##### JSPTag API
+###### JSPTag API
 
  Servlet 容器运行  JSP 文件时，如果遇到自定义标签，就会调用这个标签的处理类(Tag Handler Class)的相关方法。标签处理类可以继承 JSP Tag API 中的 TagSupport 类或 BodyTagSupport 类
 
@@ -496,14 +754,14 @@ TagSupport 类实现拿了 IterationTage 接口，BodyTagSupport 类继承 TagSu
 |  required   |                属性是否是必须的，默认 false                 |
 | rtexprvalue | 属性值是否可以为基于 `<%=%>` 形式的 Java 表达式或 EL 表达式 |
 
-#### 简单标签
+##### 简单标签
 
 JSP 2 引入了一种新的标签扩展机制，简单标签扩展，这种机制有两种使用方式
 
 * 定义实现 `javax.servlet.jsp.tagext.Simple` 接口的标签处理器
 * 使用标签文件来定义标签，标签文件以 `.tag` 或 `.tagx` 作为扩展名
 
-##### 实现 SimpleTag 接口
+###### SimpleTag 接口
 
 *javax.servlet.jsp.tagext.SimpleTag*
 
@@ -531,7 +789,7 @@ Servlet 容器得到了 SimpleTag 对象后执行流程：
 
 在开发简单标签时，只需创建 SimpleTagSupport 类的子类，然后覆盖 `doTag()` 方法，后续流程于自定义 JSP 标签流程一致
 
-##### 使用标签文件
+###### 使用标签文件
 
 标签文件采用 JSP 语法编写，可以不包含 Java 程序片段，标签文件的扩展名通常为 `.tag`，如果标签文件使用 XML 语言，则扩展名为 `.tagx`
 
@@ -666,3 +924,1076 @@ JSP 文件中的 page 指令在标签文件中不能使用，标签文件中增�
   * scope 属性：同 `<jsp:invoke>`
   
   如果标签文件未指定标签主体内容，或使用 `<jsp:body>` 指定主体内容，在 JSP 文件用 `<jsp:body>` 子元素设置标签主体内容
+
+#### 标准标签
+
+Oracle 公司指定了一组标准标签库的最新规范，由 [apache 实现](http://tomcat.apache.org/taglibs/standard/)，这组标准标签库简称 JavaServer Pages Standard Tag Library JSTL。项目要引入第三方开发的标签库（第三方标签库打包为一个 Jar 文件，这个 Jar 文件包含：所有标签处理类以及相关类的 `.class` 文件，META-INF 目录，该目录下有一个描述标签库的 TLD 文件）流程：
+
+1. 将 Jar 文件导入到 lib 目录下
+2. 在 JSP 文件中通过 taglib 指令声明标签库（taglib 指令中 uri 属性和 TLD 文件 uri 一致）
+
+#### JavaServer Pages Standard Tag Library)
+
+JSTL 是一个定制标签库的集合，用来解决类似遍历 Map 或集合、条件测试、XML 处理，数据库访问和数据操作等。JSTL 是通过多个标签库来暴露其行为的。
+
+*JSTL标签库*
+
+| 标签库名  | 前缀 |                  URI                   |                            描述                            |
+| :-------: | :--: | :------------------------------------: | :--------------------------------------------------------: |
+|   Core    |  c   |   http://java.sun.com/jsp/jstl/core    |        核心标签库，条件标签、迭代标签、URL 相关标签        |
+|   I18N    | fmt  |    http://java.sun.com/jsp/jstl/fmt    |         国际化web应用标签，日期、时间、数字格式化          |
+|    Sql    | sql  |    http://java.sun.com/jsp/jstl/sql    |                     包含访问数据库标签                     |
+|    Xml    |  x   |    http://java.sun.com/jsp/jstl/xml    |               包含对 XML 文档进行操作的标签                |
+| Functions |  fn  | http://java.sun.com/jsp/jstl/functions | 包含一组通用的 EL 函数，在 EL 表达式中可以使用这些 EL 函数 |
+
+在 JSP 页面中使用 JSTL 库，格式：
+
+```jsp
+<% taglib uri="uri" prefix="prefix" %>
+// 使用 core 库
+<% taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+```
+
+JSTL 标签的 body content 可以为 empty、JSP、tagdependent
+
+#### Core 标签库
+
+##### 一般用途的标签
+
+###### `<c:out>` 
+
+out 标签在运算表达式（该表达式可以为 `<%=%>`或 `${}`）时，是将结果输出到当前的 `JspWriter`，out 的语法有两种形式，即有 `body content` 和没有 `body content`
+
+```jsp
+<% tablib uri="http://java.sun.com/jsp/jstl/core", prefix="c" %>
+<c:out value="value" [escapeXml="{true|false}"] [default="defaultValue"]/>
+<c:out value="value" [escapeXml="{true|false}"]>
+    default value
+</c:out>
+```
+
+在标签语法中，`[]` 表示可选的属性。如果值带下划线，则表示为默认值。`out` 的 `body content` 为 JSP。out 标签属性：
+
+* value*+
+
+  对象，要计算的表达式
+
+* escapeXml+
+
+  布尔，表示结果中的字符 `<`、`>`、`'`、`"`、`&` 将被转化成相应的实体码，`&lt;`、`&gt;`、`&#039;`、`&#034`、`&amp;`
+
+* default+
+
+  对象，默认值
+
+如果包含一个或多个特殊字符的字符串没有进行 XML 转义，它的值就无法在浏览器中正常显示。没有通过转义的特殊字符，会使网站易于遭受交叉网站的脚本攻击；
+
+out 中的 default 属性可以赋一个默认值，当赋予其 value 属性的 EL 表达式返回 null 时，就会显示默认值。default 属性可以赋动态值，如果这个动态值返回 null，out 就会显示一个空的字符串
+
+###### `<c:set>`
+
+可以使用 value 和 body Content 为以下几类 var 赋值：
+
+* 为 String 类型的命名变量设定值
+
+  ```jsp
+  <c:set var="命名变量名" value="表达式" scope="{page|request|session|application}" />
+  // 使用 value 属性设定会话属性 user 值为 Tom
+  <c:set var="user" value="Tom" scope="session"/>
+  // 使用 body content 设置会话属性 user 为 Tom
+  <c:set var="user" scope="session">Tom</c:set>
+  // 等价于
+  <% pageContext.setAttribute("user", "Tom", PageContext.SESSION_SCOPE); %>
+  ```
+
+* 如果命名变量为 JavaBean，那么为这个 JavaBean 对象的特定属性设定值
+
+  ```jsp
+  <c:set target="JavaBean的命名变量" property="JavaBean的属性名" value="表达式" />
+  <%@ page import="package.CounterBean" %>
+  <jsp:useBean id="counterBean" scope="application" class="package.CounterBean" />
+  <c:set target="${counterBean}" property="counter" value="2"/>
+  // 等价于
+  <%
+  	CounterBean counterBean = pageContext.findAttribute("counterBean");
+  	counterBean.setCount(2);
+  %>
+  ```
+
+* 如果命名变量为 Map 类型，那么为这个 Map 对象中的特定 Key 设定值
+
+  ```jsp
+  <c:set target="代表 Map 对象的命名变量" property="key的名字" value="表达式" />
+  <%@ page import="java.util.HashMap" %>
+  <jsp:useBean id="weeks" scope="request" class="java.util.HashMap" />
+  <c:set target="${weeks}" property="1" value="Monday" />
+  // 等价于
+  <%
+  	Map weeks = (HashMap) pageContext.findAttribute("weeks");
+  	weeks.put("1", "Monday");
+  %>
+  ```
+
+set 标签的属性
+
+* value
+
+  对象：要创建的字符串，或者要引用的有界对象，或者新的属性值
+
+* var
+
+  字符串：要创建的有界变量
+
+* scope
+
+  字符串：新创建的有界变量的范围，默认为 page
+
+* target
+
+  对象：其属性要被赋新值的有界对象；这必须时一个 JavaBeans 实例或 java.util.Map 对象
+
+* property
+
+  字符串：要被赋新值的属性名称
+
+###### `<c:remove>` 
+
+`<c:remove>` 标签用于删除范围命名变量，变量引用的对象不能删除，如果另一个变量也引用同一个对象，仍然可以通过另一个变量访问该对象，如果未指定 scope 属性，会从所有范围内删除 var 指定的命名变量
+
+```jsp
+<c:remove var="命名变量的名字" [scope="{page|request|session|application}"]>
+// 删除会话范围的 user 命名变量
+<c:remove var="user" scope="session" />
+// 等价
+<%
+    pageContext.removeAttribute("user", PageContext.SESSION_SCOPE);
+%>
+```
+
+###### `<c:catch>`
+
+用于捕获标签主体中可能出现的异常，并且把异常对象作为命名变量保存在页面范围内
+
+```jsp
+<c:catch var="代表异常对象的命名变量的名字">
+<c:catch var="ex">
+<%
+    int a = 11;
+    int b = 0;
+    int c = a/b;
+%>
+</c:catch>
+// 等价于
+<%
+    try {
+        int a = 11;
+        int b = 0;
+        int c = a/b;
+    } catch (Exception e) {
+        pageContext.setAttribute("ex", e, PageContext.PAGE_SCOPE);
+    }
+%>
+```
+
+##### 条件行为
+
+###### `<c:if>`
+
+if 标签是对某一个条件进行测试，假如结果为 true，就处理它的 body content，测试结果保存在 Boolean 对象中，并创建有界变量来引用这个 boolean 对象。利用 var 属性和 scope 属性分别定义有界变量的名称和范围。if 的语法有两种形式：没有 body content，这种情况下，var定义的有界对象一般是通过其他标签在同一个 JSP 的后续阶段再进行测试；使用 body content，body content 是 JSP，当测试条件的结果为 True 时，就会得到处理
+
+```jsp
+<c:if test="逻辑表达式" var="逻辑表达式值的命名变量名字" scope="{page|request|session|application}" />
+// 判断 username 的参数值是否为 Tom，将判断结果赋值为 request 范围的 result 变量
+<c:if test="${param.username=="Tom"}" var="resutl" scope="request" />
+// 等价
+<%
+	String username = request.getParameter("username");
+	if ("Tom".equals(username)) {
+        request.setAttribute("result", true);
+    } else {
+        request.setAttribute("result", false);
+    }
+%>
+// 包含主体
+<c:if test="${param.save='user'}">
+	Saving user <c:set var="user" value="Tom" />
+</c:if>
+// 等价
+<%
+	String save = request.getParamter("save");
+	if ("user".equals(save)) {
+        out.print("Saving user");
+        pageContext.setAttribute("user", "Tom");
+    }
+%>
+```
+
+if 标签的属性
+
+* test
+
+  布尔：决定是否处理任何现有 body content 的测试条件
+
+* var
+
+  字符串：引用测试条件值的有界变量名称：var 的类型为 Boolean
+
+* scope
+
+  字符串：var 定义的有界变量的范围，默认是 page
+
+###### `<c:choose>`、`<c:when>`、`<c:otherwise>`
+
+* `<c:when>` 和 `<c:otherwise>` 不能单独使用，必须位于 `<c:choose>` 父标签中
+* `<:choose>` 标签中可以包含一个或多个 `<c:when>` 标签
+* `<c:choose>` 标签中可以不包含 `<c:otherwise>` 标签
+* `<c:choose>` 标签中如果同时包含 `<c:when>` 和 `<c:otherwise>` 标签，那么 `<c:otherwise>` 标签必须位于 `<c:when>` 标签之后
+
+```jsp
+<c:choose>
+	<c:when test="${empty param.username}">
+    	Nnknown user
+    </c:when>
+    <c:when test="${param.username=="Tom"}">
+    	${param.username} is manager
+    </c:when>
+    <c:otherwise>
+    	${param.username} is employee
+    </c:otherwise>
+</c:choose>
+// 等价于
+<%
+	String username = request.getParameter("username");
+	if (username == null) {
+        out.print("Nnknown user");
+    } else if (username.equals("Tom")) {
+        out.print(username+ " is manager")
+    } else {
+        out.print(username + " is employee")
+    }
+%>
+```
+
+##### 遍历行为
+
+###### `<c:forEach>`
+
+每次从集合中取出一个元素，把它存放在命名变量中，在标签主体中可以访问这个命名变量
+
+```jsp
+<c:forEach var="代表集合中的一个元素的命名变量的名字" items="集合">
+	body content
+</c:forEach>
+<%@ page import = "java.util.HashSet" %>
+<%
+	HashSet names = new HashSet();
+	names.add("Tom");
+	names.add("Mike");
+%>
+<c:forEach var="name" items="<%=names%>" >
+	${name}
+</c:forEach>
+// 等价
+<%
+	Iterator it = names.iterator();
+	while (it.hasNext()) {
+        String name = (String) it.next();
+        pageContext.setAttribute("name", name);
+%>
+<%
+	name = (String) pageContext.getAttribute("name");
+	out.print("name");
+%>
+<%
+	pageContext.removeAttribute('name');
+}
+%>
+```
+
+固定次数地重复 body content
+
+```jsp
+<c:forEach [var="varName"] begin="begin" end="end" step="step">
+    body content
+</c:forEach>
+```
+
+遍历（`java.util.Set`，`java.util.List`，`java.util.Map`，`java.util.Iterator`，`java.util.Enumeration`）接口实现类；Java 数组，以逗号 `,` 分割的字符串
+
+```jsp
+<c:forEach items="collection" [var="varName"] [varStatus="varStatusName"] [begin="begin"] [end="end"] [step="step"]>
+    body content
+</c:forEach>
+```
+
+body content 是 JSP，forEach 标签属性：
+
+* var
+
+  字符串：引用遍历的当前项目的有界变量名称
+
+* items
+
+  支持的任意类型：遍历的对象集合
+
+* varStatus
+
+  字符串：保存遍历状态的有界变量名称。类型值为 `javax.servlet.jsp.jstl.core.LoopTagStatus`，这个命名变量包含了从集合中取出的当前元素的状态信息：count（当前元素在集合中的序号，从 1 开始计数），index（当前元素在集合中的索引，从 0 开始计数），first（当前元素是否是集合中的第一个元素），last（当前元素是否是集合中的最后一个元素）
+
+* begin
+
+  整数：如果指定 items，遍历将从指定索引处的项目开始。如果没有指定 items，遍历将从设定的索引值开始。如果指定，begin 的值必须大于等于 0
+
+* end
+
+  整数：如果指定 items，遍历将在包含指定索引处的项目结束。如果没有指定items，遍历将在索引到达指定值时结束
+
+* step
+
+  整数：遍历将只处理间隔指定 step 的项目，从第一个项目开始，在这种情况下 step 的值必须大于或等于 1
+
+对于每一次遍历，`forEach` 标签都将创建一个有界变量，变量名称通过 var 属性定义，这个有界变量只存在于开始和关闭的 `forEach` 标签之间，一到关闭的 `forEach` 标签钱，它就会被删除。forEach 标签有一个类型为 `javax.servlet.jsp.jstl.core.LoopTagStatus` 的变量 `varStatus`。`LoopTagStatus` 接口带有 `count` 属性，它返回当前遍历的次数。第一次遍历时，`status.count` 值为 1；依次累加
+
+###### `<c:forTokens>`
+
+用于遍历以特定分隔符分割的子字符串，并且能重复执行标签主体
+
+```jsp
+<c:forTokens items="stringOfTokens" delims="delimiters" [var="varName"] [varStatus="varStatusName"] [begin="begin"] [end="end"] [step="step"]>
+    body content
+</c:forTokens>
+<c:forTokens var="name" items="Tom:Mike:Linda" delims=":">
+	${name}
+</c:forTokens>
+```
+
+body content 是 JSP，forTokens 标签的属性：
+
+* var
+
+  字符串：引用遍历的当前项目的有界变量名称
+
+* items
+
+  支持的任意类型：要遍历的 token 字符集
+
+* varStatus
+
+  字符串：保存遍历状态的有界变量名称。类型值为 javax.servlet.jsp.jstl.core.LoopTagStatus
+
+* begin
+
+  整数：遍历的起始索引，此处索引是从 0 开始的。如有指定，begin 的值必须大于或等于 0
+
+* end
+
+  整数：遍历的终止索引，此处索引是从 0 开始的
+
+* step
+
+  整数：遍历将只处理间隔指定 step 的 token，从第一个 token 开始。如有指定，step 的值必须大于或等于 1
+
+* delims
+
+  字符串：一组分隔符
+
+##### URL 相关的标签
+
+###### `<c:import>`
+
+用于包含其他 web 资源，与 `<jsp:include>` 指令类似，区别在于，`<c:import>` 标签可以包含其他 Web 应用或其他网站中的资源
+
+```jsp
+<c:import url="web 资源的 URL"/>
+```
+
+包含以下属性：
+
+* var
+
+  String 类型，如果设定了 var 属性，不会把 url 属性设定的目标文件的内容直接包含到当前文件中，而是把目标文件中的文本内容保存在 var 属性设定的命名变量中
+
+* context
+
+  设定应用的根路径，url 属性设定的文件在应用中的绝对路径
+
+###### `<c:url>`
+
+按特定的重写规则重新构造 URL，把重新生成的 URL 存在到 var 属性指定的命名变量中，scope 默认 page。
+
+```jsp
+<c:url value="原始url" var="存放新的URL的命名变量" scope="{page|request|session|application}"/>
+// 在页面范围内创建一个 myurl 命名变量
+<c:url value="/dir/origin.jsp" var="newUrl" />
+<a href="${newUrl}">target.jsp</a>
+<c:url value="/dir/origin.jsp" var="newUrl">
+    // 可以包含 param 子标签，用于设定请求参数, param 标签会对特殊符号进行编码
+	<c:param name="username" value="Tom"/>
+</c:url>
+```
+
+###### `<c:redirect>`
+
+把请求重定向到其他 web 资源
+
+```jsp
+<c:redirect url="目标 web 资源的 URL" />
+// 可以设置 context 属性，还可以加入 param 子标签
+<c:redirect url="/dir/target.jsp" context="/dir">
+	<c:param name="num" value="10" />
+    <c:param name="num1" value="20" />
+</c:redirect>
+```
+
+#### I18N 标签库
+
+主要用于编写国际化的 web 应用。一部分用于国际化，另一部分用于对时间、日期和数字进行格式化。如果一个应用支持国际化，应该具有以下特征：
+
+* 当应用需要支持一种新的语言时，无须修改应用程序代码
+* 文本、消息和图片从源程序代码中抽取出来，存储在外部
+* 应该根据用户的语言和地理位置，对和特定文化相关的数据（如日期、时间、货币）进行正确格式化
+* 支持非标准的字符集
+* 可以方便快捷地对应用做出调制，使它适应新的语言和地区
+
+##### 国际化标签
+
+###### `<fmt:setLocale>`
+
+设置 locale，把 locale 保存到特定范围（默认 page）内
+
+```jsp
+<fmt:setLocale value="locale" scope="{page|request|session|application}"/>
+// 存放一个表示中文地 locale
+<fmt:setLocale value="zh_CN" scope="session"/>
+// 等价
+<%
+	Locale locale = new Locale("zh", "CN");
+	session.setAttribute("javax.servlet.jsp.jstl.fmt.locale.session", locale);
+%>
+// 等价
+<%
+	Locale locale = new Locale("zh", "CN");
+	session.setAttribute(Config.FMT_LOCALE + ".session", locale;
+%>
+```
+
+###### `<fmt:setBundle>`
+
+设置 ResourceBundle，把 ResourceBundle 保存到特定范围内（默认 page）
+
+```jsp
+<fmt:setBundle basename="资源文件地名字" var="命名变量的名字" scope="{page|request|session|application}" />
+// 在会话范围存放一个 ResourceBundle
+<fmt:setBundle basename="messages" var="myres" scope="session" />
+// 等价
+<%
+	Locale locale = Config.find(pageContext.Config.FMT_LOCALE);
+	if (locale == null) {
+        locale = request.getLocale();
+    }
+	ResourceBundle bundle = ResourceBundle.getBundle("messages", locale);
+	javax.servlet.jsp.jstl.fmt.LocalizationContext context = new LocalizationContext(bundle);
+	session.setAttribute("myres", bundle);
+%>
+```
+
+如果没有设置 var 属性，那么命名变量将采用 `javax.servlet.jsp.jstl.core.COnfig` 类的静态字符串常量 `FMT_LOCALIZATION_CONTEXT` 的值(`javax.servlet.jsp.jstl.fmt.localizationContext`)，该标签设置的 `ResourceBundle` 将作为特定范围内的默认 `ResourceBundle`
+
+###### `<fmt:bundle>`
+
+设置标签主体使用的 `ResourceBundle`
+
+```jsp
+<fmt:bundle basename="资源文件的名字" 前缀="消息key的前缀">
+	标签主体
+</fmt:bundle>
+// 假定 messages.properties 文件 app.login.user=tom app.login.password=secret
+<fmt:bundle basename="messages" prefix="app.login.">
+	<fmt:message key="user"/>
+    <fmt:message key="password"/>
+</fmt:bundle>
+```
+
+###### `<fmt:message>`
+
+根据属性 key 返回 ResourceBundle 中匹配的消息文本。如果指定了 var 属性和 scope 属性（默认 page），则把消息文本作为命名变量存放在特定范围内，否则直接输出
+
+```jsp
+<fmt:message key="myword" var="msg"/>
+```
+
+###### `<fmt:param>`
+
+嵌套在 `<fmt:message>` 父标签中，用于为消息文本中的消息参数设置值
+
+```jsp
+// 假定 message.properties 文件中包含 ：hello.hi = Nice to meet you,{0}.The current time is {1}.
+// 为 {0} {1} 消息参数设置值
+<fmt:formatDate value="<%=new Date() %>" type="both" var="now" />
+<fmt:message key="hello.hi">
+	<fmt:param value="Tom" />
+    <fmt:param value="${now}" />
+</fmt:message>
+```
+
+###### `<fmt:requestEncoding>`
+
+设置 HTTP 请求正文使用的字符编码
+
+```jsp
+<fmt:requestEncoding value="GB2312"/>
+// 等价
+<% request.setCharacterEncoding("GB2312") %>
+```
+
+##### 格式化标签
+
+###### `<c:setTimeZone>`
+
+设置标签时区，把时区保存到特定范围内，如果没有设置 var 属性，命名变量将采用 `javax.servlet.jsp.jstl.core.Config` 类的静态字符串常量 `FMT_TIME_ZONE` 的值（`javax.servlet.jstl.fmt.timeZone`），该标签设置的时区将作为特定范围内的默认时区
+
+```jsp
+// value 字符串或 java.util.TimeZone 时区，scope 默认 page
+<fmt:setTimeZone value="timeZone" [var="varName"][scope="{page|request|session|application}"]>
+// 在会话范围内存放一个表示 GMT 的时区
+<fmt:setTimeZone value="GMT" var="myzone" scope="session" />
+```
+
+###### `<c:formatDate>`
+
+formatDate 标签用于格式化日期，语法：
+
+```jsp
+<fmt:formatDate value="date" 
+                [type="{time|date|both}"] 
+                [dateStyle="{default|short|medium|long|full}"]
+                [timeStyle="{default|short|medium|long|full|}"]
+                [pattern="customPattern"]
+                [timeZone="timeZone"]
+                [var="varName"]
+                [scope="{page|request|session|application}"]/>
+<c:set value="now" value="<%=new Date() %>" />
+default <fmt:formatDate value="${now}" type="both"/>
+```
+
+formatDate标签的属性:
+
+* value+
+
+  java.util.Date：要格式化的日期或时间
+
+* type+
+
+  字符串：指定格式化日期(date默认)，还是时间(time)，还是日期时间(both)
+
+* dataStyle+
+
+  字符串：预定义时间的格式化样式（default，short，medium，long，full 默认 default），遵循 `java.text.DateFormat` 中定义的语义
+
+* timeStyle+
+
+  字符串：预定义时间的格式化样式（default，short，medium，long，full 默认 default），遵循 `java.text.DateFormat` 中定义的语义
+
+* pattern+
+
+  字符串：定制格式化样式，遵循 `java.text.SimpleDateFormat`
+
+* timezone+
+
+  字符串或 java.util.TimeZone：定义用于显示时间的时区
+
+* var
+
+  字符串：将输出结果存为字符串的有界变量名称，未设定该属性，将直接输出格式化时间
+
+* scope
+
+  字符串：var 的范围，默认 page
+
+###### `<c:parseDate>`
+
+将已经格式化后的字符串形式的日期或时间转换为 `java.util.Date` 日期类型
+
+```jsp
+<fmt:parseDate value="dateString"
+               [type="{time|date|both}"]
+               [dateStyle="{default|short|medium|long|full}"]
+               [timeStyle="{default|short|medium|long|full}"]
+               [pattern="customPattern"]
+               [timeZone="timeZone"]
+               [parseLocale="parseLocale"]
+               [var="varName"]
+               [scope="{page|request|session|application}"]/>
+<fmt:parseDate value="2020-01-09 11:02:03"
+               pattern="yyyy-MM-dd" 
+               parseLocal="zh_CN" 
+               type="both" 
+               var="dd"
+               scope="request"/>
+<fmt:formatDate value="${dd}" type="both" dateStyle="long" timeStyle="long"/>
+```
+
+parseDate 标签属性：
+
+* value
+
+  字符串：要解析的字符串
+
+* type
+
+  字符串：指定解析类型：日期（date，默认）、时间（time）、时间日期（both）
+
+* dateStyle
+
+  字符串：日期的格式化样式，默认 default
+
+* timeStyle
+
+  字符串：时间的格式化样式，默认 default
+
+* pattern
+
+  字符串：定制格式化样式，决定要如何解析该字符串
+
+* timeZone
+
+  字符串或 java.util.TimeZone：定义时区，使日期字符串中的时间信息均根据它来解析
+
+* parseLocale
+
+  字符串或 java.util.Locale：定义 locale，在解析操作期间用其默认为格式化样式，或将 pattern 属性定义的样式应用其中
+
+* var
+
+  字符串：保存输出结果的有界变量名称，未指定则直接输出
+
+* scope
+
+  字符串：var 的范围，默认 page
+
+###### `<c:formatNumber>`
+
+formatNumber 用于格式化数字，可以根据需要利用它的各种属性来获取自己想要的格式。`formatNumber` 的语法有两种形式：
+
+* 没有 body content
+
+```jsp
+<fmt:formatNumber value="numericValue" 
+      [type="{number|currency|percent}"]
+      [pattern="customPattern"] 
+      [currencySymbol="currencySymbol"]
+      [groupingUsed="{true|false}"]
+      [maxIntegerDigits="maxIntegerDigits"]
+      [minIntegerDigits="minIntegerDigits"]
+      [maxFractionDigits="maxFractionDigits"]
+      [minFractionDigits="minFractionDigits"]
+      [var="varName"]
+      [scope="{page|request|session|application}"]
+      />
+<fmt:formatNumber value="123455" type="currency"/>
+```
+
+* 有 body content，body content 是 JSP
+
+formatNumber 属性：
+
+* value+
+
+  字符串或数字：要格式化的数字化值
+
+* type+
+
+  字符串：说明该值是要被格式化成数字(number默认)、货币(currency)、还是百分比(percent)
+
+* pattern+
+
+  字符串：格式化样式
+
+* currencyCode+
+
+  字符串：ISO 4217 码，货币代码
+
+  加拿大元 CAD，人民币 CNY，欧元 EUR，日元 JPY，英镑 GBP，美元 USD
+
+* CurrencySymbol+
+
+  字符串：货币符号，只适用于格式化货币类型的数字，如果没有设置该属性，会根据当前的 Locale 来使用对应的货币符号
+
+* groupingUsed+
+
+  布尔：是否对数字进行分组显示的分隔符，默认 true，自动对数字分组（千位逗号分割）
+
+* maxIntegerDigits+
+
+  整数：规定输出结果的整数部分最多几位数字
+
+* minIntegerDigits+
+
+  整数：规定输出结果的整数部分最少几位数字
+
+* maxFractionDigits+
+
+  整数：规定输出结果的小数部分最多几位数字
+
+* minFractionDigits+
+
+  整数：规定输出结果的小数部分最少几位数字
+
+* var
+
+  字符串：将输出结果存为字符串的有界变量名称
+
+* scope
+
+  字符串：var 的范围，如果有 scope 属性，则必须指定 var 属性
+
+###### `<c:parseNumber>`
+
+将格式化字符串表示的数字、货币或者百分比解析成数字
+
+```jsp
+<fmt:parseNumber value="numericValue" 
+                  [type="{number|currentcy|percent}"]
+                  [pattern="customPattern"]
+                  [parsetLocale="parsetLocale"]
+                  [integerOnly="{true|false}"]
+                  [var="varName"]
+                  [scope="{page|request|session|application}"]/>
+<fmt:parseNumber value="$123,456.78" type="currency" parsetLocal="en_US"/>
+```
+
+支持有 body content 和没有 body content 格式，body content 是 JSP，标签属性:
+
+* value+
+
+  字符串或数字：要解析的字符串
+
+* type+
+
+  字符串：说明该字符串是要被解析成数字（number，默认）、货币（currency）、还是百分比（percent）
+
+* pattern+
+
+  字符串：格式化样式，决定 value 属性中的字符串要如何解析
+
+* parseLocale+
+
+  字符串或者 java.util.Locale： 定义locale，在解析操作期间将其默认为格式化样式，或将 pattern 属性定义的样式应用其中
+
+* integerOnly+
+
+  布尔：说明是否只解析指定值的整数部分
+
+* var
+
+  字符串：保存输出结果的有界变量名称，未指定直接输出结果
+
+* scope
+
+  字符串：var 的范围，默认为 page
+
+#### SQL 标签库
+
+###### `<sql:setDataSource>`
+
+设置数据源，SQL 标签中的其他标签从数据源中得到数据库连接，为 `<sql:setDataSource>` 标签设置的数据源来源：
+
+* 由 Servlet 容器提供的数据源（JNDI）
+
+  ```jsp
+  <sql:setDataSource dataSource="jdbc/webDB" var="conn" scope="application"/>
+  ```
+
+* 由 `<sql:setDataSource>` 标签自身创建数据源
+
+  ```jsp
+  <sql:setDataSource url="jdbc:mysql://localhost:3306/webDB"
+                     driver="com.mysql.cj.jdbc.Driver"
+                     user="root"
+                     password="secret" 
+                     var="conn"
+                     scope="application"/>
+  ```
+
+如果未设置 var 属性，命名变量名将采用 `javax.servlet.jsp.jstl.core.Config` 类的静态字符串常量 `SQL_DATA_SOURCE` 的值（`javax.servlet.jsp.jstl.dataSource`），该标签设置的数据源作为特定范围内的默认数据源
+
+###### `<sql:query>`
+
+用于执行 SQL 查询语句，属性：
+
+* sql 属性：指定 select 查询语句
+* dataSource 属性：指定数据源。如果没有设定该属性，将使用由 `<sql:setDataSource>` 标签设置默认数据源
+* maxRows 属性：指定从原始查询结果中取出的最大记录数目
+* startRow 属性：指定从原始查询结果中第几条记录开始取出记录。原始查询结果中第一条记录的索引为 0
+* var 属性：指定查询结果的命名变量名
+* scope 属性：指定查询结果的存放范围，默认值 page
+
+```jsp
+// 默认数据源
+<sql:setDataSource url="jdbc:mysql://localhost/web"
+                   driver="com.mysql.cj.jdbc.Driver"
+                   user="root"
+                   password="secret"/>
+<sql:setDataSource dataSource="jdbc/webDB" var="conn" />
+// 使用默认数据源
+<sql:query sql="select id,name,title,price from books" var="books" />
+// 指定数据源
+<sql:query sql="select id,name,title,price from books" var="books" dataSource="${myRes}" />
+// 使用 body content
+<sql:query var="books" startRow="1" maxRows="10">
+	select id, name, title, price from books order by id
+</sql:query>
+// 使用结果
+<c:forEach var="book" items="${books.rows}">
+	<tr>
+        <td>${book.id}</td>
+        <td>${book.name}</td>
+        <td>${book.title}</td>
+        <td>${book.price}</td>
+    </tr>
+</c:forEach>
+// 等价
+<c:forEach var="book" items=${books.rowsByIndex}>
+   <tr>
+        <td>${bookp[0]}</td>
+        <td>${book[1]}</td>
+        <td>${book[2]}</td>
+        <td>${book[3]}</td>
+    </tr>
+</c:forEach> 
+```
+
+查询返回 `javax.servlet.jsp.jstl.sql.Result` 接口类型
+
+```java
+// 返回查询结果中所有行，每个 SortedMap 表示一行，以字段名为 key，以相应的字段值为 value
+SortedMap[] getRows();
+// 以二维数组形式返回查询结果，第一维表示查询结果的记录，第二维表示查询结果的字段
+Object[] getRowsByIndex();
+// 返回查询结果中所有字段名
+String[] getColumnNames();
+// 返回查询结果中所有记录数
+int getRowCount();
+// 判断查询结果的记录数目是否受 query 标签的 maxRows 属性限制，当原始查询结果的记录数目大于 maxRows,返回 true，当原始查询结果记录数小于或等于 maxRows，返回 false
+```
+
+###### `<sql:param>`
+
+为 SQL 语句中的参数设置值，和 `PreparedStatement` 类的 `setXxx()` 方法作用相似，可以嵌套在 `<sql:query>` 和 `<sql:update>` 标签中
+
+```jsp
+<sql:query var="books">
+    select id, name, title, price form books where id > ?
+ 	<sql:param>1</sql:param>
+</sql:query>
+```
+
+###### `<sql:dateParam>`
+
+类似 `<sql:param>`，区别在于 `<sql:dateParam>` 标签用来为 SQL 语句中时间或日期类型的参数赋值，value 属性设置 SQL 语句中相应参数的值，`java.util.Date` 类型；type 属性，String 类型，指定参数的类型，可选：date、time、timestamp（默认）
+
+```jsp
+<fmt:parseDate value="2019-12-04" type="date" var="updated_at"/>
+<sql:query var="books">
+	select id, name, title, price from books where updated_at = ?
+    <sql:dateParam value="${updated_at}" type="date"/>
+</sql:query>
+```
+
+###### `<sql:update>`
+
+用于执行 INSERT、UPDATE、DELETE、DDL 语句，具有以下属性：
+
+* sql：指定待执行的 SQL 语句
+* dataSource：指定数据源，如果没有设定该属性，将使用 `<sql:setDataSource>` 标签设置的默认数据源
+* var：指定执行结果的命名变量名。执行结果表示数据库中受影响的记录的数目
+* scope：指定执行结果的存放范围，默认为 page
+
+```jsp
+<sql:update var="result">
+	insert into books(id, name, title, price) values (?,?,?,?)
+    <sql:param>1000</sql:param>
+    <sql:param>索尼</sql:param>
+    <sql:param>oop</sql:param>
+    <sql:param>20.3</sql:param>
+</sql:update>
+```
+
+###### `<sql:transaction>`
+
+用于为嵌套在其中的 `<sql:query>` 和 `<sql:update>` 标签声明数据库事务。位于同一个 `<sql:transaction>` 标签中的所有 `<sql:query>` 和 `<sql:update>` 标签所执行的 SQL 操作将作为一个数据库事务，具有以下属性：
+
+* dataSource：设置数据源
+* isolation：设置事务隔离级别，未设置将使用数据库默认隔离级别
+
+```jsp
+<sql:setDataSource dataSource="jdbc/webDB" var="dbRes"/>
+<sql:transaction dataSource="${dbRes}">
+	<sql:update var="result">
+    	update books set price = price - 10 where id = ?
+        <sql:param>200</sql:param>
+    </sql:update>
+    <sql:update var="result1">
+    	delete from books where id = ?
+        <sql:param>200</sql:param>
+    </sql:update>
+</sql:transaction>
+```
+
+#### Functions 标签库
+
+提供了一组常用的 EL 函数，主要用于处理字符串，在 JSP 中可以直接使用这些函数
+
+###### fn:contains
+
+判断源字符串中是否包含目标字符串
+
+```jsp
+// source 指定源字符串，target 指定目标字符串，返回 bool
+fn:contains(String source, String target)
+${fn:contains("Tomcat", "cal")} // true
+${fn:contains{"Tomcat", "CAT"}} // false
+```
+
+###### fn:containsIgnoreCase
+
+判断源字符串中是否包含目标字符串，判断时忽略大小写
+
+```jsp
+fn:containsIgnoreCase(String source, String target);
+```
+
+###### fn:startsWith
+
+判断源字符串是否以指定的目标字符串开头
+
+```jsp
+fn:startsWith(String source, String target); // bool
+```
+
+###### fn:endsWith
+
+判断源字符串是否以目标字符串结尾
+
+```jsp
+fn:endsWith(String source, String target); // bool
+```
+
+###### fn:indexOf
+
+在源字符串中查找目标字符串，并返回源字符串（第一个字符索引未 0）中最先与目标字符串匹配的第一个字符的索引，如果源字符串中不包含目标字符串，返回 -1
+
+```jsp
+fn:indexOf(String source, String target); //int
+```
+
+###### fn:replace
+
+把源字符串中的一部分替换为另外的字符串，并返回替换后的字符串
+
+```jsp
+// source 参数指定源字符串，before 参数指定源字符串中被替换的子字符串，after 指定用于替换的子字符串
+fn:replace(String source, String before, String after); // String
+${fn:replace("TomcAT", "cAt", "cat")} // Tomcat
+```
+
+###### fn:substring
+
+用于获取源字符串中的特定子字符串
+
+```jsp
+// source 源字符串，beginIndex 表示子字符串中第一个字符在源字符串中的索引（以0开始），endIndex 参数表示子字符串的最后一个字符在源串中的索引加 1，返回 string
+fn:substring(String source, int beginIndex, int endIndex);
+${fn:substring("Tomcat", "3", "6")} // Tom
+```
+
+###### fn:subStringBefore
+
+获取源字符串中指定子字符串之前的子字符串
+
+```jsp
+// source 指定源字符串，target 指定子字符串，返回 String，如果不包含特定字串，返回空字符串
+fn:subStringBefore(String source, String target)
+${fn:subStringBefore("Tomcat", "cat")} // Tom
+```
+
+###### fn:subStringAfter
+
+获取源字符串中指定字符串之后的子字符串
+
+```jsp
+fn:subStringAfter(String source, String target) // String
+${fn:subStringAfter("Tomcat", "Tom")} // cat
+```
+
+###### fn:split
+
+用于将源字符串拆分为一个字符串数组
+
+```jsp
+// source 源字符串，delimiter 分隔符
+fn:split(String source, String delimiter) // String[]
+<c:set value='${fn:split("www.javathinker.net", ".")}' var="strs"/>
+<:forEach var="token" items="${strs}">
+	${token}
+</:forEach>
+```
+
+###### fn:join
+
+用于将源字符串数组中的所有字符串连接为一个字符串
+
+```jsp
+fn:join(String source[], String separator) // String
+<%
+	String strs[] = {"www", "java", "com"};
+%>
+<c:set value="<%=strs%>" var="strs" />
+${fn:join(strs, ".")} // www.java.com
+```
+
+###### fn:toLowerCase
+
+将源字符串转换为小写字符串
+
+```jsp
+fn:toLowerCase(String source); // String
+${fn:toLowerCase("TOMCAT")} // tomcat
+```
+
+###### fn:toUpperCase
+
+用于将源字符串中的所有字符改为大写
+
+```jsp
+fn:toUpperCase(String source) // String
+${fn:toUpperCase(Tomcat)} // TOMCAT
+```
+
+###### fn:trim
+
+将源字符串中开头和末尾的空格删除
+
+```jsp
+fn:trim(String source) // String
+${fn:trim(" Tom ")} // Tom
+```
+
+###### fn:escapeXml
+
+用于将源字符串中的字符 `<`、`>`、`"`、`&` 转义
+
+```jsp
+fn:escapeXml(String source) // String
+```
+
+###### fn:length
+
+用于返回字符串中字符的个数，或者集合、数组中元素的个数
+
+```fn
+fn:length(source) // int
+```
+
+
+

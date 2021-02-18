@@ -19,6 +19,16 @@ export CATALINA_HOME=/path/to/tomcat
 export CATALINA_BASE=/path/to/tomcat
 ```
 
+###### 配置
+
+* Windows 下控制台中文乱码
+
+  在 `CATALINA_HOME/conf` 目录中，修改 `logging.properties` 文件的 ConsoleHandler 的编码为 GBK
+
+  ```properties
+  java.util.logging.ConsoleHandler.encoding=UTF-8
+  ```
+
 ##### 目录结构
 
 ###### CATALINA_HOME
@@ -49,6 +59,8 @@ export CATALINA_BASE=/path/to/tomcat
 
 ##### 启动
 
+将 CATALINA_HOME/bin 加入到 PATH 后，直接使用 `catalina run` 等相关命令
+
 * Windows
 
     `startup.bat` 、`shutdown.bat`
@@ -67,29 +79,54 @@ export CATALINA_BASE=/path/to/tomcat
 
 #### 组件结构
 
-Tomcat 本身由一系列可配置的组件构成，其中核心组件是 Server 容器组件，它是所有其他 Tomcat 组件的顶层容器。Tomcat 的各个组件可以在 *<CATALINA_HOME>/conf/server.xml* 文件进行配置
+Tomcat 本身由一系列可配置的组件构成，这些组件与 `%CATALINA_HOME%\conf\server.xml` 文件中的各元素相对应。组件配置也通过 server.xml 文件中的元素来完成
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<Server>
+	<Listener/>
+	<GlobalNamingResources>
+		<Resource/>
+	</GlobalNamingResources>
+    <Service>
+    	<Executor/>
+        <Connector/>
+        <Engine>
+        	<Cluster/>
+            <Realm/>
+            <Host>
+            	<Context/>
+            </Host>
+        </Engine>
+    </Service>
+</Server>
+```
 
 *各Tomcat组件之间关系*
 
 <img src="./Images/tomcat组件.jpg" style="zoom:80%;" />
 
-在 server.xml 文件中，每个元素都代表一种 tomcat 组件
-
 ##### 顶级组件
 
-###### Server
+###### `<Server>`
 
-代表整个 Tomcat 的运行实例，在一个 jvm 中只会包含一个 Server，由 *org.apache.catalina.Server* 接口来定义。
+代表整个 Tomcat 的运行实例，在一个 jvm 中只会包含一个 Server，由 *org.apache.catalina.Server* 接口来定义。包含一个 `<GlobalNamingResources>` 子元素（JNDI）和零个或多个 `<Listener>` 子元素
 
-可以包含一个或多个 Service 组件，一个或多个 Listener 组件（Tomcat 整个生命周期中对不同事件进行处理），一个 GlobalNamingResources 组件（负责集成 JNDI，Tomcat 全局的命名资源实现）
+*子元素*
 
-*server 属性*
+|          子元素           |    个数    |
+| :-----------------------: | :--------: |
+|        `<Service>`        | 一个或多个 |
+|       `<Listener>`        | 一个或多个 |
+| `<GlobalNamingResources>` |    一个    |
 
-|   属性    |                             描述                             |
-| :-------: | :----------------------------------------------------------: |
-| className | 指定实现 *org.apache.catalina.Server* 接口的类，默认为 *org.apache.catalina.core.StandardServer* |
-|   port    |     指定 Tomcat 监听 shutdown 命令的端口，必须设置该属性     |
-| shutdown  | 终止Tomcat服务器运行时，发送给监听端口的字符串，必须设置该属性 |
+*属性*
+
+|    属性     |                             描述                             |
+| :---------: | :----------------------------------------------------------: |
+| `className` | 指定实现 *org.apache.catalina.Server* 接口的类，默认为 *org.apache.catalina.core.StandardServer* |
+|   `port`    | 指定 Tomcat 监听 shutdown 命令的（TCP/IP）端口，必须设置该属性。在关闭 Tomcat 服务器时，必须从当前正在运行 Tomcat 实例的服务器上发出 showdown 实例 |
+| `shutdown`  | 终止 Tomcat 服务器运行时，发送给监听端口的字符串，必须设置该属性 |
 
 Tomcat 的整个生命周期存在很多阶段：初始化前、初始化中、初始化后、启动前、启动中、启动后、停止前、停止中、停止后、销毁中、销毁后，为了在 Server 组件的某阶段执行某些逻辑，Tomcat 提供了监听器机制。
 
@@ -115,56 +152,95 @@ Tomcat 的整个生命周期存在很多阶段：初始化前、初始化中、�
 
     主要解决 ThreadLocal 的使用可能带来的内存泄漏问题。该监听器会在 Tomcat 启动后将 Web 应用重加载的监听器注册到每个 Web 应用上，当 Web 应用重加载时，该监听器会将所有工作线程销毁并再创建，以避免 ThreadLocal 引起的内存泄漏
 
-###### Service
+###### `<Service>`
 
-是服务的抽象，代表请求从接收到处理的所有组件的集合，由 *org.apache.catalina.Service* 接口定义
+是服务的抽象，代表请求从接收到处理的所有组件的集合，由 *org.apache.catalina.Service* 接口定义，在 Service 元素中，可以嵌套  Connector 和 Engine 元素
 
-Service 组件包含若干用于接收客户端消息的 Connector 组件和一个处理请求的 Engine 组件
+*子元素*
 
-|   属性    |                             描述                             |
-| :-------: | :----------------------------------------------------------: |
-| className | 指定实现接口类，默认 *org.apache.catalina.core.StandardService* |
-|   name    |                      定义 Service 名字                       |
+|    子元素    |                             个数                             |
+| :----------: | :----------------------------------------------------------: |
+| `Connector`  |                 一个或多个（接收客户端消息）                 |
+|  `<Engine>`  |              一个（由多个连接器共享，处理请求）              |
+| `<Executor>` | 零个或多个，每个 Executor 都是一个线程池，可以为 Service 内所有组件提供线程池执行任务 |
+
+|    属性     |                             描述                             |
+| :---------: | :----------------------------------------------------------: |
+| `className` | 指定实现接口类，默认 *org.apache.catalina.core.StandardService* |
+|   `name`    | 定义 Service 名字，如果使用标准 Catalina 组件，指定的名字将被包含在日志消息中。和特定的 Server 元素相关的每个 Service 元素的名字必须是唯一的，该属性是必须的 |
 
 ##### 连接器类组件
 
-###### Connector
+处理与客户端的通信，负责接收客户请求，及向客户返回响应结果
 
-接收客户端连接并接收消息报文，消息报文经由它解析后送往容器中处理，每种协议对应一个 Connector 组件，目前支持 HTTP、HTTPS、AJP
+###### `<Connector>`
+
+接收客户端连接并接收消息报文，消息报文经由它解析后送往容器中处理，每种协议对应一个 Connector 组件，目前支持 HTTP、HTTPS、AJP，不支持子元素。每个 Connector 都将指定一个端口进行监听，分别负责对请求报文解析和对响应报文组装，解析过程生成 Request 对象。同个 Service 实例内可以配置若干 Connector 实例，端口必须不同，但协议可以相同。
 
 ```xml
 <!-- 通过 8080 接收 HTTP 请求 -->
-<Connector port="8080" protocol="HTTP/1.1"
-               connectionTimeout="20000"
-               redirectPort="8443" />
+<Connector port="8080" protocol="HTTP/1.1" maxThreads="150" minSpareThreads="25" maxSpareThreads="75" 
+    	   emableLookups="false" readirectPort="8443" acceptCount="100" connectionTimeout="20000" disableUploadTimeout="true"/>
 <!-- 通过 8009 端口接收其他 HTTP 服务器转发的请求 -->
 <Connector port="8009" protocol="AJP/1.3" redirectPort="8443" />
 ```
 
-|     属性      |                             描述                             |
-| :-----------: | :----------------------------------------------------------: |
-| enableLookups | 为 true，支持域名解析，可以把 IP 地址解析为主机名，Web 应用中调用 `request.getRemostHost()` 方法将返回客户的主机名，默认为 false |
-| redirectPort  | 指定转发端口，如果当前端口只支持 non-SSL 请求，在需要安全通信的场合，将把客户请求转发到基于 SSL 的 redirectPort 端口 |
-|     port      |                       设定 TCP 端口号                        |
-|   protocol    |                设定客户端的与服务端的通信协议                |
+* 公共属性
 
-*HTTP/1.1 Connector 元素的属性*
+  |      属性       |                             描述                             |
+  | :-------------: | :----------------------------------------------------------: |
+  | `enableLookups` | 为 true，支持域名解析，可以把 IP 地址解析为主机名，Web 应用中调用 `request.getRemostHost()` 方法将返回客户的主机名，默认为 false 则返回字符串形式 IP 地址 |
+  | `redirectPort`  | 指定转发端口，如果当前端口只支持 non-SSL 请求，在需要安全通信的场合，将把客户请求转发到基于 SSL 的 redirectPort 端口 |
+  |     `port`      |                       设定 TCP 端口号                        |
+  |   `protocol`    |                设定客户端的与服务端的通信协议                |
+  |    `address`    | 如果服务器有两个以上 IP 地址，该属性可以设定端口监听的 IP 地址，默认情况下，端口会监听服务器上所有 IP 地址 |
+  |  `tcpNoDelay`   | 布尔，true TCP_NO_DELAY 选项将在服务器套接字上被设置（提高性能），默认为 true |
 
-|       属性        |                             描述                             |
-| :---------------: | :----------------------------------------------------------: |
-|      address      | 如果服务器有两个以上 IP 地址，该属性可以设定端口监听的 IP 地址，默认情况下，端口会监听服务器上所有 IP 地址 |
-|    maxThreads     | 设定处理客户请求的线程的最大数目，这个值设定了服务器可以同时响应客户请求的最大数目，默认值为 200 |
-|    acceptCount    | 客户请求队列中存放了等待被服务器处理的客户请求。该属性用于设定在客户请求队列中的最大客户请求数。默认 100 如果队列已满，新的客户请求将被拒绝 |
-| connectionTimeout |   建立客户链接超时时间，单位毫秒， -1 为无限制。默认 20000   |
-|  maxConnections   | 设定在任何时刻服务器会接受并处理的最大连接数。当服务器接受和处理的连接数达到这个上限时，新的连接将被阻塞。 |
-|  maxCookieCount   | 指定对于一个客户请求所允许的最大 Cookie 数目。默认 200，如果设为一个负数，则无限制 |
-| maxHttpHeaderSize | 指定 HTTP 请求头和响应头的最大长度，以字节为单位，默认 8192（8kb） |
-|  maxSwallowSize   | 指定请求正文的最大长度，以字节为单位，默认 2097152（2mb）。为负，则无限制 |
-|     executor      |                    指定所使用执行器的名字                    |
+* HTTP Connector 元素附加属性，启用 HTTP Connector 时，protocol 值必须是 `HTTP/1.1`，默认的 prot 为 8080。
 
-每个 Connector 都将指定一个端口进行监听，分别负责对请求报文解析和对响应报文组装，解析过程生成 Request 对象。同个 Service 实例内可以配置若干 Connector 实例，端口必须不同，但协议可以相同。HTTP Connector 包含的协议处理组件有 Http11Protocol（Java BIO 模式），Http11NioProtocol（Java NIO 模式）和 Http11AprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式。
+  Connector 组件的内部实现会根据网络 I/O 的不同方式而不同分为阻塞 I/O 和非阻塞 I/O。
 
-AJP Connector 组件用于支持 AJP 协议通信，AJP Connector 包含的协议处理组件有 AjpProtocol（Java BIO 模式），AjpNioProtocol（Java NIO 模式），AjpAprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式
+  HTTP Connector 包含的协议处理组件有 Http11Protocol（Java BIO 模式），Http11NioProtocol（Java NIO 模式）和 Http11AprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式。
+
+  |          属性           |                             描述                             |
+  | :---------------------: | :----------------------------------------------------------: |
+  |      `bufferSize`       |   设置由连接器创建的输入流的缓冲区大小（字节），默认 2048    |
+  |      `maxThreads`       | 设定处理客户请求的线程的最大数目，这个值设定了服务器可以同时响应客户请求的最大数目，默认值为 200 |
+  |      `acceptCount`      | 客户请求队列中存放了等待被服务器处理的客户请求。该属性用于设定在客户请求队列中的最大客户请求数。默认 100 如果队列已满，新的客户请求将被拒绝 |
+  |   `connectionTimeout`   |   建立客户链接超时时间，单位毫秒， -1 为无限制。默认 60000   |
+  | `compressableMimeType`  | 以 ，分割 MIME 类型列表，指定压缩的类型，默认值是 text/html,text/xml,text/plain |
+  |      `compression`      | 指定响应数据是否压缩，支持（off：禁止压缩、on：允许压缩、force：所有情况都强制压缩、整数值：启用并指定压缩的最小数据量）默认 off |
+  | `disableUploadTimeout`  |             是否取消上传文件处理超时，默认 false             |
+  |    `maxConnections`     | 设定在任何时刻服务器会接受并处理的最大连接数。当服务器接受和处理的连接数达到这个上限时，新的连接将被阻塞。 |
+  |    `maxCookieCount`     | 指定对于一个客户请求所允许的最大 Cookie 数目。默认 200，如果设为一个负数，则无限制 |
+  |   `maxHttpHeaderSize`   | 指定 HTTP 请求头和响应头的最大长度，以字节为单位，默认 8192（8kb） |
+  | `maxKeepAliveRequests`  | 指定服务端关闭连接前，客户端发送的流水线请求的最大数目，该属性默认 100 |
+  |    `maxSpareThreads`    |      设定线程池中允许存在的空闲线程的最大数目，默认 50       |
+  |    `minSpareThreads`    | 连接器第一次启用时创建的请求处理线程的数目。连接器将确保有指定数目的空闲线程可用。应小于 maxSpareThreads 默认 4 |
+  |    `maxSwallowSize`     | 指定请求正文的最大长度，以字节为单位，默认 2097152（2mb）。为负，则无限制 |
+  |      `maxThreads`       | 指定连接器创建的请求处理线程的最大数目，决定了服务器可以同时处理的客户端请求的最大数目。默认 200 |
+  |       `executor`        |                    指定所使用执行器的名字                    |
+  |      `allowTrace`       |   布尔，是否允许 HTTP 的 TRACE 方法。该属性默认值为 false    |
+  |   `emptySessionPath`    |   布尔，true 用于会话 cookie 的所有路径都将被设置。默认为    |
+  |      `maxPostSize`      |  字节，指定 POST 请求最大尺寸。未设置该属性时默认为 2097152  |
+  |       `proxyName`       | 如果这个连接器正在一个代理配置中被使用，那么配置这个属性，指定当调用 `request.getServerName()` 方法，返回服务器名字 |
+  |       `proxyPort`       | 如果这个连接器正在一个代理配置中被使用，配置该属性，调用 `request.getServerPort()` 返回服务器端口号 |
+  |        `schema`         | 设置协议的名字，调用 `request.getScheme()` 方法时返回。默认为 http |
+  |        `secure`         |      默认为 false，调用 `request.isSecure()` 方法返回值      |
+  |     `socketBuffer`      | 设置 Socket 输出缓冲区大小（字节）。-1 则不使用缓冲。默认 9000 |
+  |      `URLEncoding`      | 指定用于解码 URL 字节的字符编码，在 %xx 后解码 URL，未指定则使用 ISO-8859-1 |
+  | `useBodyEncodingForURL` | 指示是否使用在 contentType 中指定的编码来取代 URIEncoding，用于解码 URL 查询参数。主要用于兼容 Tomcat4.1.x。在 Content 中或通过调用 `Request.setCharacterEncoding()` 方法来指定用于 URL 查询参数的编码，默认 false |
+  |      `xpoweredBy`       | 布尔，true 将使用规范建议的报头表明支持的 Servlet 规范的版本。该属性默认是 false |
+  |    `threadPriority`     |   设置 JVM 允许的请求处理线程的优先级。默认 NORM_PRIORITY    |
+
+* AJP Connector，默认 port 为 8009
+
+  AJP Connector 组件用于支持 AJP 协议通信，AJP Connector 包含的协议处理组件有 AjpProtocol（Java BIO 模式），AjpNioProtocol（Java NIO 模式），AjpAprProtocol（APR/native 模式），Tomcat 启动时根据 server.xml 的 Connector 节点配置 I/O 模式
+
+  |    属性     |              作用              |
+  | :---------: | :----------------------------: |
+  |  `backlog`  | 等待队列中的最大数目。默认 100 |
+  | `soTimeout` |  设置超时连接时间，默认 60000  |
 
 ##### 执行器组件
 
@@ -188,48 +264,63 @@ AJP Connector 组件用于支持 AJP 协议通信，AJP Connector 包含的协�
 
 代表处理客户请求并生成响应结果的组件
 
-###### Engine
+###### `<Engine>`
 
 为特定的 Service 组件处理所有客户请求，处理在同一个 Service 中的所有 Connector 元素接收到的客户请求，由 *org.apache.catalina.Engine* 接口定义
 
-|    描述     |                             属性                             |
-| :---------: | :----------------------------------------------------------: |
-|  className  |  指定实现类，默认 *org.apache.catalina.core.StandardEngine*  |
-| defaultHost | 指定处理客户请求的默认主机名，在 Engine 的 Host 子元素中必须定义该主机 |
-|    name     |                      定义 Engine 的名字                      |
+|     描述      |                             属性                             |
+| :-----------: | :----------------------------------------------------------: |
+|  `className`  |  指定实现类，默认 *org.apache.catalina.core.StandardEngine*  |
+| `defaultHost` | 指定处理客户请求的默认主机名，名字必须和在 Engine 元素下任一 Host 子元素的 name 属性值相匹配。必须指定 |
+|    `name`     | 定义 Engine 的逻辑名字，该名字将用于日志和错误消息中。必须指定 |
+|  `jvmRoute`   | 指定在负载均衡中使用的标识符，在所有参与集群的 Tomcat5 服务器中，该标识符是唯一的 |
 
 Engine 中可以包含 Realm、Value、Host 子元素
 
-###### Host
+|      子元素      |                             个数                             |   描述   |
+| :--------------: | :----------------------------------------------------------: | :------: |
+|      `Host`      | 一个或多个（至少一个），且必须有一个 Host 子元素名字匹配 Engine 元素的 defaultHost 属性的值 | 虚拟主机 |
+| `DefaultContext` |                                                              |          |
+|     `Realm`      |                                                              |          |
+|     `Logger`     |                                                              |          |
+|     `Value`      |                                                              |          |
+|    `Listener`    |                          一个或多个                          |          |
 
-代表虚拟主机，处理特定虚拟主机的所有客户请求，由 *org.apache.catalina.Host* 接口定义，可以存放若干代表 Web 应用的 Context 组件，可以有一个或多个 alias 元素，指定别名
+###### `<Host>`
 
-|      属性       |                             描述                             |
-| :-------------: | :----------------------------------------------------------: |
-|    className    |     指定实现类，默认 *org.apache.catalina.StandardHost*      |
-|     appBase     | 指定虚拟主机的目录，可以指定绝对目录，也可以指定相对于 <CATALINA_HOME> 的相对目录，如果未设定，默认为 *<CATALINA_HOME>/webapps* |
-|   unpackWARS    | 为 true，将把 Web 应用的 WAR 文件先展开为开发目录结构后再运行，如果设为 false，将直接运行 WAR 文件 |
-|   autoDeploy    | 为 true，当 Tomcat 服务器处于运行状态时，能够检测 appBase 下的文件，如果有新的 web 应用加入，会自动发布 |
-|      alias      |             指定虚拟主机的别名，可以指定多个别名             |
-| deployOnStartup | 为 true，当 Tomcat 启动时自动发布 appBase 目录下所有 web 应用，如果 Web 应用在 server.xml 中没有相应的 `<Context>` 元素，将采用默认 `<Context>` 元素。默认值为 true |
-|      name       |                       定义虚拟主机名字                       |
-|     workDir     | 指定虚拟主机的工作目录。运行时会把与这个虚拟主机的所有 Web 应用相关的临时文件放在此目录下。默认为 *<CATALINA_HOME>/work*，如果 `<Host>` 元素下的一个 `<Context>` 元素也设置了 workDir 属性，那么 `<Context>` 元素的 workDir 属性会覆盖该属性 |
-|    deployXML    | 如果设为 false，那么 Tomcat 不会解析 web 应用中用于设置 Context 元素的 *META-INF/context.xml* 文件。默认为 true |
+代表虚拟主机，处理特定虚拟主机的所有客户请求，由 *org.apache.catalina.Host* 接口定义。可以包含一个或多个 Context 元素，还可以包含可选的 DefaultContext、Realm、Logger、Value、Listener 等元素
 
-###### Context
+|          属性           |                             描述                             |
+| :---------------------: | :----------------------------------------------------------: |
+|       `className`       |     指定实现类，默认 *org.apache.catalina.StandardHost*      |
+|        `appBase`        | 指定虚拟主机的目录，可以指定绝对目录，也可以指定相对于 <CATALINA_HOME> 的相对目录，如果未设定，默认为 *<CATALINA_HOME>/webapps* |
+|      `unpackWARS`       | 为 true，将把 Web 应用的 WAR 文件先展开为开发目录结构后再运行，如果设为 false，将直接运行 WAR 文件 |
+|      `autoDeploy`       | 为 true，当 Tomcat 服务器处于运行状态时，能够检测 appBase 下的文件，如果有新的 web 应用加入，会自动发布 |
+|         `alias`         |             指定虚拟主机的别名，可以指定多个别名             |
+|    `deployOnStartup`    | 为 true，当 Tomcat 启动时自动发布 appBase 目录下所有 web 应用，如果 Web 应用在 server.xml 中没有相应的 `<Context>` 元素，将采用默认 `<Context>` 元素。默认值为 true |
+|         `name`          |                       定义虚拟主机名字                       |
+|        `workDir`        | 指定虚拟主机的工作目录。运行时会把与这个虚拟主机的所有 Web 应用相关的临时文件放在此目录下。默认为 `<CATALINA_HOME>/work`，如果 `<Host>` 元素下的一个 `<Context>` 元素也设置了 workDir 属性，那么 `<Context>` 元素的 workDir 属性会覆盖该属性 |
+|       `deployXML`       | 如果设为 false，那么 Tomcat 不会解析 web 应用中用于设置 Context 元素的 `META-INF/context.xml`文件。默认为 true |
+| `errorReportValueClass` | 指定虚拟主机使用的错误报告类名，设置这个类是为了输出错误报告。设置这个属性可以定制 Tomcat 生成的错误页面外观。该类必须实现 `org.apache.catalina.value` 缺省值为：`org.apache.catalina.values.ErrorReportValue` |
+
+###### `<Context>`
 
 为特定的 Web 应用处理所有客户的请求，每个 Context 元素代表了运行在虚拟主机上的单个 Web 应用，一个 host 可以包含多个 Context 元素，由 *org.apache.catalina.Context* 接口定义
 
-|    属性     |                              --                              |
-| :---------: | :----------------------------------------------------------: |
-|  className  |    指定实现类，默认 *org.apache.catalina.StandardContext*    |
-|    path     |                指定访问该 Web 应用的 URL 入口                |
-|   docBase   | 指定 Web 应用的文件路径，可以给定绝对路径，也可以给定相对于 Host 的 appBase 属性的相对路径。如果 Web 采用开放目录接口，则指定根目录，采用 WAR 则指定 WAR 文件路径 |
-| reloadable  | 为 true，在运行状态下会监视 WEB-INF/classes 和 WEB-INF/lib 目录下的 class 文件的改动，以及监视 WEB-INF/web.xml 文件的改动。如果有改动则自动刷新，默认为 false，（建议开放为 true，生产为 false） |
-|   cookies   |       指定是否通过 Cookie 来支持 Session，默认为 true        |
-| unloadDelay |   设定 Tomcat 等待 Servlet 卸载的毫秒数，该属性默认为 2000   |
-|   workDir   | 指定 web 应用的工作目录。Tomcat 运行时会把与这个 web 应用相关的临时文件放在此目录下 |
-|  uppackWar  | 为 true，将把 web 应用的 WAR 文件先展开为开放目录结构后再运行，false 则直接运行，默认为 true |
+|       属性       |                              --                              |
+| :--------------: | :----------------------------------------------------------: |
+|   `className`    |    指定实现类，默认 *org.apache.catalina.StandardContext*    |
+|      `path`      | 指定访问该 Web 应用的 URL 入口。在特定的虚拟主机中，所有的上下文路径都必须是唯一的。如果指定一个上下文路径为空字符串（`""`），则定义了这个虚拟主机的默认 Web 应用程序，负责处理所有的没有分配给其他 Web 应用程序的请求 |
+|    `docBase`     | 指定 Web 应用的文件路径，可以给定绝对路径，也可以给定相对于 Host 的 appBase 属性的相对路径。如果 Web 采用开放目录接口，则指定根目录，采用 WAR 则指定 WAR 文件路径 |
+|   `reloadable`   | 为 true，在运行状态下会监视 WEB-INF/classes 和 WEB-INF/lib 目录下的 class 文件的改动，以及监视 WEB-INF/web.xml 文件的改动。如果有改动则自动刷新，默认为 false，（建议开发为 true 会有额外开销，生产为 false） |
+|    `cookies`     |       指定是否通过 Cookie 来支持 Session，默认为 true        |
+|  `unloadDelay`   |   设定 Tomcat 等待 Servlet 卸载的毫秒数，该属性默认为 2000   |
+|    `workDir`     | 指定 web 应用的工作目录。Tomcat 运行时会把与这个 web 应用相关的临时文件放在此目录下 |
+|   `unpackWar`    | 为 true，将把 web 应用的 WAR 文件先展开为开放目录结构后再运行，false 则直接运行，默认为 true |
+|   `privileged`   |          为 true，允许该 web 应用使用容器的 Servlet          |
+|  `cacheMaxSize`  |     以千字节为单位指定静态资源缓存的最大值，默认 10240k      |
+| `cachingAllowed` |             指示是否使用静态资源缓存，默认 true              |
+| `caseSensitive`  | true 资源默认大小写敏感，该属性为 false 时，禁止大小写敏感检查 |
 
 ###### Cluster
 
@@ -239,7 +330,15 @@ Engine 中可以包含 Realm、Value、Host 子元素
 
 代表可以嵌入到容器中的组件
 
-###### Realm
+###### `<Loader>`
+
+###### `<GlobalNaming Resources>`
+
+###### `<Resource>`
+
+###### `<Manager>`
+
+###### `<Realm>`
 
 提供用户-密码-权限的数据对象，配合资源认证模块使用
 
@@ -416,7 +515,7 @@ File workDir = (File) context.getAttribute("javax.servlet.context.tempdir");
 |      属性       |                             描述                             |
 | :-------------: | :----------------------------------------------------------: |
 |      name       |                  指定 Resource 的 JNDI 名字                  |
-|      auth       | 指定管理 Resource 的 Manager，有两个可选值：Container（由容器来创建和管理） 和 Application（由 web 应用俩创建和管理） |
+|      auth       | 指定管理 Resource 的 Manager，有两个可选值：Container（由容器来创建和管理） 和 Application（由 web 应用来创建和管理）。如果 Web 应用程序在 web.xml 文件中使用 <resource-ref> 元素，该属性不需要。如果使用 <resource-env-ref> 元素，这个属性是可选的 |
 |      type       |                   指定 Resource 所属的类名                   |
 |    maxActive    |   指定数据库连接池中处于活跃状态的最大连接数，0 即不受限制   |
 |     maxIdle     | 指定数据库连接池中处于空闲状态的数据库连接的最大数目，0 即不受限制 |
@@ -430,11 +529,11 @@ File workDir = (File) context.getAttribute("javax.servlet.context.tempdir");
 
 ```xml
 <Context path="/appName" docBase="/your/app/path">
-		<Resource name="jdbc/dataSourceName" auth="Container" type="javax.sql.DataSource"
-				username="root"
-				password="secret"
-				driverClassName="com.mysql.cj.jdbc.Driver"
-				url="jdbc:mysql://localhost:3306/web?characterEncoding=UTF-8&amp;userSSL=false"/>
+    <Resource name="jdbc/dataSourceName" auth="Container" type="javax.sql.DataSource"
+              username="root"
+              password="secret"
+              driverClassName="com.mysql.cj.jdbc.Driver"
+              url="jdbc:mysql://localhost:3306/web?characterEncoding=UTF-8&amp;userSSL=false"/>
 </Context>
 ```
 
@@ -903,7 +1002,7 @@ org.apache.catalina.realm.DataSourceRealm   和 JDBCRealm 很相似：两者都�
 
 ##### 集成 nginx
 
-配置 tomcat 为上游服务器，有 nginx 提供负载均衡
+配置 tomcat 为上游服务器，nginx 提供负载均衡
 
 ##### 集成 Apache
 
@@ -927,7 +1026,7 @@ org.apache.catalina.realm.DataSourceRealm   和 JDBCRealm 很相似：两者都�
 
    在 `<APACHE_HOME>/conf/httpd.conf`
 
-   ```apache
+   ```nginx
    LoadModule jk_module modules/mod_jk_linux.so
    <IfModule jk_module>
        JkWorkersFile conf/workers.properties
