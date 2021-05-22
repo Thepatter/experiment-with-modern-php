@@ -1,45 +1,28 @@
-##  安全
+### java 安全领域组成部分
 
-Java 技术提供了以下三种确保安全的机制
+Java 安全领域分为：
 
-* 语言设计特性（对数组的边界进行检查，无不受检查的类型转换，无指针算法）
-* 访问控制机制，用于控制代码能够执行的操作（比如文件访问，网络访问等）
-* 代码签名，利用该特性，代码的作者就能够用标准的加密算法来认证 Java 代码。这样，该代码的使用者就能够准确地知道谁创建了该代码，以及代码被标识后是否被修改过
+* JCA（Java Cryptography Architecture，Java 加密体系）
 
-### 安全管理器与访问权限
+  提供基本的加密框架、证书、数字签名、消息摘要、密钥对产生器
 
-一旦某个类被加载到虚拟机中，并由检验器检查过之后，JAVA 平台的第二种安全机制就启动，这个机制就是安全管理器
+* JCE（Java Cryptography Extension，Java 加密扩展包）
 
-#### 权限检查
+  扩展了 JCA，提供了各种加密算法、消息摘要和密钥管理（DES、AES、RSA）实现包是：`javax.crypto.*` 及子包
 
-安全管理器是一个负责控制具体操作是否允许执行的类。安全管理器负责检查的操作包括以下内容：
+* JSSE（Java Secure Sockets Extension，Java 安全套接字扩展包）
 
-* 创建一个新的类加载器
-* 退出虚拟机
-* 使用反射访问另一个类的成员
-* 访问本地文件
-* 打开 socket 连接
-* 启动打印作业
-* 访问系统剪贴板
-* 访问 AWT 事件队列
-* 打开一个顶层窗口
+  基于 SSL（安全套接字）的加密功能
 
-### 数字签名
+* JAAS（Java Authentication and Authentication Service，Java 鉴别与安全服务）
+
+  Java 平台进行身份鉴别的功能
+
+JCA 和 JCE 是 Java 平台提供的用于安全和加密服务的两组 API（只定义接口，具体实现由第三方厂商提供）JDK 1.4 版本后包含了上述扩展包。安全提供者实现了两个概念的抽象：引擎（具体操作：加解密）和算法（定义了操作如何执行），一个算法可以理解为一个引擎的具体实现，一个算法可以有多种引擎的实现方式。 
 
 #### 消息摘要
 
-消息摘要是数据块的数字指纹。（SHA1可将任何数据块，无论其数据有多长，都压缩为 160 位（20字节）的序列，因为只存在 2^160 个 SHA1指纹，所以肯定会有某些消息具有相同的指纹）
-
-消息摘要具有两个基本属性
-
-1）如果数据的 1 位或者几位改变了，那么消息摘要也将改变
-
-2）拥有给定消息的伪造者不能创建与原消息具有相同摘要的假消息
-
-Java 编程语言已经实现了 `MD5`、`SHA-1`、`SHA-256`、`SHA-384`、`SHA-512`。`MessageDigest` 类是用于创建封装了指纹算法的对象的「工厂」，它的静态方法 `getInstance` 返回继承了 `MessageDigest` 类的某个类的对象。即，`MessageDigest` 类能够承担下面的双重职责
-
-* 作为一个工厂类
-* 作为所有消息摘要算法的超类
+*java.security.MessageDigest*（提供核心消息摘要实现）、*DigestInputStream*，*DigestOutputStream*（提供以 *MessageDigest* 为核心的消息摘要流实现）、*javax.crypto.Mac*（提供基于密钥的安全消息摘要实现与 *MessageDigest* 无任何依赖关系） 类均是消息认证引擎类。
 
 ```java
 MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
@@ -58,6 +41,28 @@ for (byte b : hashString) {
 }
 return hBuilder.toString();
 ```
+
+#### 加密
+
+##### key
+
+key 接口是所有密钥接口的顶层接口，一切加解密都需要 key 接口。密钥：
+
+* 算法
+
+  密钥的算法，如 DES、DSA，`getAlgorithm()` 得到算法名
+
+* 编码形式
+
+  密钥的外部编码形式（X.509 SubjectPublicKeyInfo 或 PKCS#8），`getEncode()` 获得编码格式
+
+* 格式
+
+  已编码密钥的格式名称，`getFormat()` 方法获取
+
+*javax.crypto.SecretKey* 接口是对称密钥顶层接口（*javax.crypto.spec.SecretKeySpec* 为其实现，*javax.crypto.interface.PBE* 接口继承该接口并提供 PEB 算法）。DES、AES 等对称算法密钥可通过该接口提供。
+
+*java.security.interfaces.PublicKey* 和 *java.security.interfaces.PrivateKey* 定义了非对称加密相关接口（*javax.crypto.interfaces.DH*、*java.security.interfaces.RSA*、*java.security.interfaces.DSA*、*java.security.interfaces.EC*s 等继承了该接口）
 
 #### 消息签名
 

@@ -919,7 +919,7 @@ GET /_index/_doc/_search
 
 使用 hightlight 参数指定，返回匹配部分，以 `<em>`  标签封装
 
-```
+```json
 GET /_index/_doc/_search
 {
 	"query": {
@@ -937,7 +937,7 @@ GET /_index/_doc/_search
 
 ###### 分页
 
-```
+```json
 GET /_search?size=5;
 GET /_search?size=5&from=10
 GET /_search
