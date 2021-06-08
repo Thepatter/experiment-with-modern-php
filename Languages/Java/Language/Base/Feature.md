@@ -180,39 +180,69 @@ new Resource().action();
 
 ##### 异常类型
 
-异常对象派生于 *java.lang.Throwable*，所有的异常都直接或间接继承该类。
+异常对象派生于 *java.lang.Throwable*，所有的异常都直接或间接继承该类。对于受检异常，Java会强制要求处理，否则无法编译。如果方法没有声明（使用 throws 声明所有异常类，用逗号分隔）所有可能发生的受检异常，编译无法通过。如果在子类中覆盖了超类的一个方法，子类方法中声明的受检异常不能比超类方法中声明的异常更通用。如果超类方法没有抛出任何受检异常，子类也不能抛出任何异常。
 
-*   非受检异常
+###### 非受检异常
 
-    派生于 *Error* 或 *RuntimeException* 的所有异常
+派生于 *Error* 或 *RuntimeException* 的所有异常。未受检异常表示编程的逻辑错误（空指针），编程时应该检查以避免这些错误。
 
-    *   *Error* 
+* *Error* 
 
-        类层次结构描述了运行时系统的内部错误和资源耗尽错误。应用程序不应该抛出这种类型的对象。如果发生，除了通知用户以及尽量稳妥的终止程序外，几乎什么都不能做
+  类层次结构描述了运行时系统的内部错误和资源耗尽错误。应用程序不应该抛出这种类型的对象。如果发生，除了通知用户以及尽量稳妥的终止程序外，几乎什么都不能做
 
-    *   *RuntimeException*
+  *场景错误*
 
-        由程序错误导致的异常，会自动被虚拟机抛出，如果没有被捕获而直到 main()，在程序退出前将调用 printStackTrace()。该异常发生在运行时，代表编程错误，编译器无法捕获该异常及其子异常其他类型异常的处理都是由编译器强制实施的
+  |          类型          |                             说明                             |
+  | :--------------------: | :----------------------------------------------------------: |
+  | *NoClassDefFoundError* | 运行时错误：运行时系统尝试加载类定义时引发的错误，并且该类定义不再可用，所需的类定义在编译时存在，但在运行时丢失（缺少对应 .class 文件） |
+  |                        |                                                              |
+  |                        |                                                              |
 
-*   受检异常
+*   *RuntimeException*
 
-    应用程序应该预料到并从中恢复的异常。基本上是所有派生自 Exception 的子类，但不是 *RuntimeException* 的子类（如 *IOException*、*SQLException*）。编译器可以通过拒绝编译任何包含可能引发已检查异常的程序来防止发生已检异常，一个编写良好的 Java 库应向它的用户指出方法所有可能抛出的异常
+    由程序错误导致的异常，会自动被虚拟机抛出，如果没有被捕获而直到 main()，在程序退出前将调用 printStackTrace()。该异常发生在运行时，代表编程错误，编译器无法捕获该异常及其子异常其他类型异常的处理都是由编译器强制实施的
+    
+    *常见异常*
+    
+    |               异常                |                             说明                             |
+    | :-------------------------------: | :----------------------------------------------------------: |
+    |      *NullPointerException*       |                          空指针异常                          |
+    |      *NumberFormatException*      |                         数字格式错误                         |
+    |      *IllegalStateException*      |                           非法状态                           |
+    |    *IndexOutOfBoundsException*    |                           索引越界                           |
+    |       *ClassCastException*        |                         类型转换错误                         |
+    | *ArrayIndexOutOfBoundsException*  |                         数组索引越界                         |
+    |    *IllegalArgumentException*     |                           非法参数                           |
+    | *StringIndexOutOfBoundsException* |                        字符串索引越界                        |
+    |     *ClassNotFoundException*      | 运行时异常：执行：class.forName()、loadClass()、findSystemclass()、反序列化时在运行时加载或验证类，并且在类路径中找不到具有指定名称的类时抛出 |
 
-###### 常见异常
+###### 受检异常
 
-|             异常类             |                             含义                             |
-| :----------------------------: | :----------------------------------------------------------: |
-|       ClassCastException       |                          类转型异常                          |
-|      NullPointerException      |                          空指针异常                          |
-| ArrayIndexOutOfBoundsException |                       数组访问越界异常                       |
-|      NoClassDefFoundError      | 运行时错误：运行时系统尝试加载类定义时引发的错误，并且该类定义不再可用，所需的类定义在编译时存在，但在运行时丢失（缺少对应 .class 文件） |
-|     ClassNotFoundException     | 运行时异常：执行：class.forName()、loadClass()、findSystemclass()、反序列化时在运行时加载或验证类，并且在类路径中找不到具有指定名称的类时抛出 |
+受检异常必须出现在 throws 语句中，调用者必须处理。Java 编译器会强制检查。表示程序本身没问题，但由于 I/O、网络、数据库等其他错误导致的异常，调用者应该适当处理
 
-##### 异常在编程中运用
+* *Exception*
 
-如果方法没有声明（使用 throws 声明所有异常类，用逗号分隔）所有可能发生的受检异常，编译无法通过。
+  应用程序应该预料到并从中恢复的异常。基本上是所有派生自 Exception 的子类，但不是 *RuntimeException* 的子类（如 *IOException*、*SQLException*）。编译器可以通过拒绝编译任何包含可能引发已检查异常的程序来防止发生已检异常，一个编写良好的 Java 库应向它的用户指出方法所有可能抛出的异常
 
-如果在子类中覆盖了超类的一个方法，子类方法中声明的受检异常不能比超类方法中声明的异常更通用。如果超类方法没有抛出任何受检异常，子类也不能抛出任何异常。
+##### 异常处理
+
+异常处理目标分为恢复和报告，恢复（通过程序自动处理），报告的目标可能是用户也可能是运维、程序员。报告的目的是为了恢复（常需要人参与）
+
+* 用户
+
+  输入错误，提示用户那里输入错误
+
+* 程序员
+
+  编程错误，提供用户系统错误
+
+* 第三方
+
+  I/O 错误，网络、数据库、第三方服务等，提示用户稍后重试
+
+###### 捕获异常
+
+如果某个异常发生的时候没有在任何地方进行捕获，程序便会终止执行，并在控制台打印异常堆栈信息。使用 try/catch 语句块捕获异常，一个 try 语句块中可以捕获多个异常类型，SE 7 开始，同一个 catch 子句中可以捕获多个异常类型（当捕获的异常类彼此之间不存在子类关系时才需要这个特性），捕获多个异常时，细化异常类型在前（抛出异常类型是 catch 中声明异常的子类也算匹配）。
 
 ###### 抛出异常
 
@@ -239,13 +269,64 @@ new Resource().action();
     throw (Exception) e.fillInStackTrace();
     ```
 
-###### 捕获异常
-
-如果某个异常发生的时候没有在任何地方进行捕获，程序便会终止执行，并在控制台打印异常堆栈信息。使用 try/catch 语句块捕获异常，一个 try 语句块中可以捕获多个异常类型，SE 7 开始，同一个 catch 子句中可以捕获多个异常类型（当捕获的异常类彼此之间不存在子类关系时才需要这个特性），捕获多个异常时，细化异常类型在前
-
 ###### finally 子句
 
-在任何情况下，finally 块中的代码都会执行，不论 try 块中是否出现异常或者是否被捕获，不要在 finally 里 return，且不要出现无法访问语句，以下情况 finally 代码不会被执行
+在任何情况下，finally 块中的代码都会执行：
+
+* 如果没有异常发生，在 try 内的代码执行结束后执行
+* 如果有异常发生，在 catch 内代码结束后执行
+* 如果有异常发生但没捕获，在异常被抛给上层之前执行
+
+有 finally 语句时的 return 情况
+
+* 如果在 try 或 catch 语句内有 return 语句，则 return 语句在 finally 语句执行结束后才执行，但 finally 不会改变返回值
+
+  实际执行过程中，执行到 try 内的 return 语句前，会先将返回值保存在一个临时变量中，然后执行 finally 语句，最后返回临时变量，finally 中对 ret 的修改不会被返回）
+
+  ```java
+  public static int finallyReturn() // 返回 0
+  {
+      int ret = 0; 
+      try {
+          return ret;
+      } finally {
+          ret = 2;
+      }
+  }
+  ```
+
+* 如果在 finally 中存在 return 语句，则 try 和 catch 内的 return 会丢失（会掩盖 try 和 catch 内的异常，就像异常未发生），实际会返回 finally 中的返回值。
+
+  ```java
+  public static int finallyReturn()
+  {
+      int ret = 0;
+      try {
+          int a = 5/0;  // 触发 ArithmeticException 异常，但不会向上传递
+          return ret;
+      } finally {
+          return 2;
+      }
+  }
+  ```
+
+* 如果 finally 中抛出了异常，则原异常也会被掩盖
+
+  ```java
+  public static int finallyReturn()
+  {
+      int ret = 0;
+      try {
+          int a = 5/0;  // 触发 ArithmeticException 异常，但不会向上传递
+          return ret;
+      } finally {
+          // 抛出该异常
+          throw new RuntimeException("hello");
+      }
+  }
+  ```
+
+以下情况 finally 代码不会被执行
 
 ```java
 try {
@@ -263,6 +344,10 @@ try {
 * 利用异常层次结构，不要只抛出 *RuntimeException* 异常，不要只捕获 *Thowable*
 * 不要压制异常
 * 早抛出，晚捕获（抛出异常到上层方法及应用）
+
+###### throws
+
+声明一个方法可能抛出的异常，支持逗号分割多个异常。对于未受检异常，不要求使用 throws 进行声明的，对于受检异常则必须进行声明（未声明则不能抛出，可以声明抛出但实际不抛出，子类不能抛出父类方法中没有声明的受检异常）
 
 #### 断言
 
@@ -294,7 +379,7 @@ assert Condition : expression;
 
 ##### try-with-resources
 
-可以使资源（实现了 *java.lang.AutoCloseable*）自动关闭。
+可以使资源（实现了 *java.lang.AutoCloseable*  接口的对象）自动关闭。资源可以定义多个，以分号分隔。在 Java 9 之前，资源必须声明和初始化在 try 语句块内，Java 9 去除了该限制，资源可以在 try 语句外被声明和初始化（但必须是 final 或事实上 final 的（没有声明未 final 但未重新赋值））
 
 #### 日志
 
@@ -926,7 +1011,7 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
 ###### Date
 
-1.0 中，对日期和时间的支持智能依赖 *java.util.Date* 类，只能以毫秒的精度表示时间，年份从 1900 年开始，月份从 0 开始，且对象可变。
+1.0 中，对日期和时间的支持智能依赖 *java.util.Date* 类，只能以毫秒的精度表示时间，年份从 1900 年开始，月份从 0 开始，且对象可变。代表一个时刻，绝对时间，与年月日无关。内部由 long 类型表示纪元的毫秒数（默认 `System.currentTimeMillis()` 未当前时刻距离纪元时的毫秒数）
 
 ###### Time
 
@@ -934,11 +1019,13 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
 ###### Calendar
 
-1.1 中，*Date* 类的很多方法被废弃了（getDate、getMonth、getYear），使用 *Calendar* 类代替，修改了时间，但月份还是从 0 开始，对象可变
+1.1 中，*Date* 类的很多方法被废弃了（getDate、getMonth、getYear），使用 *Calendar* 类代替表示年历是抽象类，表示公历子类是 *GrgorianCalendar*，修改了时间，但月份还是从 0 开始，对象可变。
+
+*Calendar* 类是日期和时间操作中的主要类，表示与 *TimeZone* 和 *Locale* 相关的日历信息。内部有一个表示时刻的毫秒数。和日历各个字段值的数组。由静态变量引用这些字段（*Calendar.YEAR*、*Calendar.MONTH*：月，1 月是 0、*C*）
 
 ###### DateFormat
 
-*java.text.DateFormat* 格式化和解析日期或时间，非线程安全。支持样式和模式
+*java.text.DateFormat* 格式化和解析日期或时间，非线程安全。支持样式和模式，将日期和时间与字符串相互转换。抽象类，常用子类 *SimpleDateFormat*
 
 |       样式        |           模式           |
 | :---------------: | :----------------------: |
@@ -949,9 +1036,20 @@ Java 正则表达式提供了一些相应的替换方法，对于各种形式的
 
 默认 DateFormat 是宽松的（Lenient），可以接收不存在的日期，自由地将日期改为存在的日期。否则不会接收不存在的日期
 
-###### SimpleDateFormat
+###### *TimeZone*
 
-*java.text.SimpleDateFormat* 格式化日期和解析，该类是 *DateFormat* 的具体实现。支持自定义模式
+时区（抽象类），默认获取当前时区 `user.timezone` 属性指定
+
+```java
+java -Duser.timezone=Asia/Shanghai
+// 获取
+TimeZone tz = TimeZone.getTimeZone("US/Eastern");
+TimeZone tz = TimeZone.getTimeZone("GMT + 08:00");
+```
+
+###### *Locale*
+
+国家地区和语言。由国家（地区）和语言代码组成。国家地区不是必须。
 
 ##### SE 8
 
